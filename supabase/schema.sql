@@ -265,3 +265,12 @@ end $$;
 
 grant execute on function public.create_kos, public.generate_invoices, public.start_lease, public.end_lease to authenticated;
 grant select on public.invoice_summary to authenticated;
+
+-- ---------- Izin akses untuk pengguna yang login ----------
+-- (Tetap dibatasi oleh Row Level Security di atas: tiap pemilik hanya melihat kosnya.)
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on
+  public.rooms, public.occupants, public.leases, public.invoices, public.payments,
+  public.expense_categories, public.expenses to authenticated;
+grant select, update, delete on public.kos to authenticated;
+grant select on public.kos_members to authenticated;
