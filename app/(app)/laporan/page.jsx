@@ -1,4 +1,5 @@
 'use client';
+import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
 import { useData } from '@/lib/useData';
 import { Loading, Tile } from '@/components/ui';
@@ -63,7 +64,7 @@ export default function Laporan() {
     <div className="stack">
       <div className="row between">
         <button className="sm" onClick={() => setYm(addMonthsYm(ym, -1))} aria-label="Bulan sebelumnya">‹</button>
-        <h2>Laporan {bulan(ym)}</h2>
+        <div className="row" style={{ justifyContent: 'center' }}><h2>Laporan {bulan(ym)}</h2><PageHelp page="laporan" /></div>
         <button className="sm" onClick={() => setYm(addMonthsYm(ym, 1))} disabled={ym >= thisMonth()} aria-label="Bulan berikutnya">›</button>
       </div>
       <div className="grid">

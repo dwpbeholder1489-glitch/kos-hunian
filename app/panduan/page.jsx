@@ -1,134 +1,213 @@
 import Link from 'next/link';
 import LandingNav from '@/components/LandingNav';
 import { BUSINESS } from '@/lib/plan';
+import {
+  ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
+  ScrExtra, ScrExpense, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan,
+} from '@/components/demo/Screens';
 
 export const metadata = {
-  title: 'Panduan Pemakaian — Kos Hunian',
-  description: 'Cara memakai Kos Hunian langkah demi langkah: kamar, penghuni, tagihan, pembayaran, pengeluaran, laporan, dan langganan.',
+  title: 'Panduan Kos Hunian — Langkah demi Langkah',
+  description: 'Panduan lengkap memakai Kos Hunian: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, kwitansi, dan langganan.',
 };
 
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi Kos Hunian.')}`;
+const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Standar</span>;
 
-const Std = () => <span className="chip gold">Standar</span>;
+const MENUS = [
+  ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
+  ['Kamar', 'Peta kamar, harga sewa, fasilitas, dan memasukkan penghuni'],
+  ['Penghuni', 'Data penghuni, tunggakan, pengingat WhatsApp, dan akhiri sewa'],
+  ['Tagihan', 'Tagihan sewa otomatis, tagihan tambahan, dan mencatat pembayaran'],
+  ['Pembayaran', 'Memverifikasi pembayaran dan riwayat uang masuk per bulan'],
+  ['Pengeluaran', 'Listrik, air, internet, perbaikan, dan biaya kos lainnya'],
+  ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
+  ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
+  ['Pengaturan', 'Profil kos, kategori pengeluaran, tambah kos, keluar'],
+];
 
-const SECTIONS = [
-  ['mulai', '🚀', 'Memulai', (
-    <>
-      <ol>
-        <li>Buka <b>kos-hunian.vercel.app</b> → <b>Coba gratis</b> → isi email & kata sandi → <b>Buat akun</b>.</li>
-        <li>Buka email Anda, ketuk tautan konfirmasi dari Supabase.</li>
-        <li>Masuk, lalu isi <b>nama kos</b>, <b>jumlah kamar</b>, dan <b>awalan kode</b> (mis. A → kamar A01, A02, …).</li>
-        <li>Ikuti daftar <b>"Mulai di sini"</b> di Dashboard — 4 langkah yang tercentang otomatis.</li>
-      </ol>
-      <p className="tip">💡 Agar terasa seperti aplikasi: di Safari ketuk ikon <b>Bagikan</b> → <b>Tambah ke Layar Utama</b>. Di Chrome Android: menu <b>⋮</b> → <b>Tambahkan ke layar utama</b>.</p>
-    </>
-  )],
-  ['kamar', '🏠', 'Kamar', (
-    <>
-      <p>Menu <b>Kamar</b> menampilkan semua kamar dengan warna status: <b>biru</b> tersedia, <b>hijau</b> terisi, <b>kuning</b> perbaikan, <b>abu</b> tidak disewakan.</p>
-      <ol>
-        <li>Ketuk kamar → <b>Ubah data kamar</b> → isi <b>harga sewa</b>, fasilitas, catatan → <b>Simpan</b>.</li>
-        <li>Tambah kamar baru dengan tombol <b>+ Kamar</b>.</li>
-        <li>Status <b>Terisi</b> diatur otomatis saat penghuni masuk atau keluar.</li>
-      </ol>
-    </>
-  )],
-  ['penghuni', '👤', 'Penghuni & sewa', (
-    <>
-      <ol>
-        <li>Di menu <b>Kamar</b>, ketuk kamar yang tersedia → <b>Isi kamar ini</b>.</li>
-        <li>Pilih <b>Penghuni baru</b> (isi nama & WhatsApp) atau penghuni yang sudah terdaftar.</li>
-        <li>Isi <b>harga sewa</b>, <b>tanggal masuk</b>, dan <b>tagihan pertama jatuh tempo</b> → <b>Mulai sewa</b>.</li>
-      </ol>
-      <p className="tip">💡 <b>Penghuni lama</b> yang sudah tinggal sebelum memakai aplikasi: isi <b>tagihan pertama jatuh tempo</b> dengan tanggal jatuh tempo <b>berikutnya yang belum dibayar</b>, supaya bulan yang sudah lunas tidak ditagih lagi.</p>
-      <p>Saat penghuni keluar: buka kamar atau menu <b>Penghuni</b> → <b>Akhiri sewa</b>. Kamar kembali tersedia dan tagihan bulan berikutnya dibatalkan otomatis.</p>
-    </>
-  )],
-  ['tagihan', '🧾', 'Tagihan', (
-    <>
-      <p>Tagihan sewa <b>terbit otomatis</b> setiap bulan, 7 hari sebelum jatuh tempo — Anda tidak perlu membuatnya.</p>
-      <ul>
-        <li><b>Belum lunas</b>: semua yang masih ada sisa. <b>Menunggak</b>: sudah lewat jatuh tempo.</li>
-        <li>Biaya di luar sewa (listrik, laundry, denda, deposit): <b>+ Tagihan tambahan</b>.</li>
-        <li>Tagihan yang salah bisa dibatalkan dari detail tagihan → <b>Batalkan tagihan</b>.</li>
-      </ul>
-    </>
-  )],
-  ['bayar', '💰', 'Mencatat pembayaran', (
-    <>
-      <ol>
-        <li>Menu <b>Tagihan</b> → ketuk tagihan → <b>Catat pembayaran</b>.</li>
-        <li>Isi jumlah (bisa sebagian), tanggal, dan metode (tunai, transfer, QRIS).</li>
-        <li>Centang <b>"Uang sudah saya terima"</b> jika uang sudah masuk. Jika belum dicek, kosongkan — pembayaran masuk ke daftar <b>menunggu verifikasi</b> di menu <b>Pembayaran</b>.</li>
-      </ol>
-      <p>Sisa tagihan, status lunas, dan tunggakan di Dashboard terhitung otomatis.</p>
-    </>
-  )],
-  ['pengingat', '💬', 'Mengingatkan penghuni', (
-    <>
-      <ol>
-        <li>Menu <b>Penghuni</b> → ketuk penghuni yang menunggak.</li>
-        <li>Ketuk <b>Kirim pengingat via WhatsApp</b> — pesan berisi rincian tagihan sudah tersusun rapi, tinggal kirim.</li>
-      </ol>
-      <p className="tip">💡 Pastikan nomor WhatsApp penghuni sudah diisi di data penghuni.</p>
-    </>
-  )],
-  ['pengeluaran', '📤', 'Pengeluaran', (
-    <>
-      <ol>
-        <li>Menu <b>Pengeluaran</b> → <b>+ Catat</b>.</li>
-        <li>Isi jumlah (boleh ditulis <b>350rb</b> atau <b>1,2jt</b>), tanggal, kategori, dan keterangan.</li>
-      </ol>
-      <p>Kategori bisa ditambah atau dihapus di <b>Pengaturan</b>. Jenis <b>Modal</b> (renovasi, beli kasur) tidak mengurangi laba operasional, tetapi mengurangi arus kas.</p>
-    </>
-  )],
-  ['laporan', '📊', 'Laporan, ekspor & kwitansi', (
-    <>
-      <p>Menu <b>Laporan</b> menampilkan pendapatan, biaya, laba, dan arus kas per bulan. Geser bulan dengan tombol ‹ ›.</p>
-      <ul>
-        <li>Tren 6 bulan & pendapatan per kamar <Std /></li>
-        <li><b>Ekspor Excel</b> laporan 12 bulan & transaksi bulanan <Std /></li>
-        <li><b>Cetak / simpan PDF</b>: ketuk tombolnya, lalu pilih <b>Simpan sebagai PDF</b> <Std /></li>
-        <li><b>Kwitansi</b>: Tagihan → ketuk tagihan → di riwayat pembayaran ketuk <b>🧾 Kwitansi</b> → cetak atau kirim via WhatsApp <Std /></li>
-      </ul>
-    </>
-  )],
-  ['langganan', '⭐', 'Paket & langganan', (
-    <>
-      <p>Kos baru mendapat <b>{BUSINESS.trialDays} hari semua fitur</b>. Setelah itu otomatis menjadi <b>Gratis</b> (maks {BUSINESS.freeRoomLimit} kamar terisi) — data tidak pernah hilang.</p>
-      <ol>
-        <li>Menu <b>Langganan</b> → pilih paket & durasi.</li>
-        <li>Bayar lewat <b>QRIS</b> atau <b>transfer bank</b> sesuai nominal.</li>
-        <li>Ketuk <b>Saya sudah bayar</b> → <b>Kirim bukti via WhatsApp</b>.</li>
-        <li>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam.</li>
-      </ol>
-    </>
-  )],
-  ['akun', '⚙️', 'Akun & beberapa kos', (
-    <ul>
-      <li>Punya lebih dari satu kos? <b>Pengaturan</b> → <b>+ Tambah kos lain</b>. Pindah kos lewat pilihan di pojok kanan atas.</li>
-      <li>Ubah nama & alamat kos di <b>Pengaturan</b>.</li>
-      <li>Keluar dari akun: <b>Pengaturan</b> → <b>Keluar</b>.</li>
-    </ul>
-  )],
+// [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
+const PARTS = [
+  ['A', 'Persiapan (sekali saja)', [
+    ['Daftar dan buat kos', 'Halaman depan › Coba gratis', [
+      <>Buka <b>kos-hunian.vercel.app</b>, tekan <b>Coba gratis</b>, isi email dan kata sandi, lalu <b>Buat akun</b>.</>,
+      <>Buka email Anda dan ketuk tautan konfirmasi.</>,
+      <>Masuk, lalu isi <b>Nama kos</b>, <b>Jumlah kamar</b>, dan <b>Awalan kode</b>.</>,
+      <>Tekan <b>Buat kos</b>. Kamar A01, A02, … dibuat otomatis.</>,
+    ], 'Tidak menerima email konfirmasi? Periksa folder Spam atau Promosi.', null, <ScrSignup />],
+    ['Kenali tombol Panduan', 'Semua menu', [
+      <>Di sebelah judul setiap menu ada tombol kecil <b>? Panduan</b>.</>,
+      <>Tekan untuk membaca <b>Cara pakai</b> menu itu dalam 3 langkah.</>,
+      <>Kotak kuning <b>Perhatian</b> berisi kesalahan yang sering terjadi.</>,
+      <>Tekan <b>Mengerti</b> untuk kembali. Tombol <b>?</b> di pojok kanan atas membuka panduan ini.</>,
+    ], 'Kalau ragu di menu mana pun, buka Panduan dulu sebelum menyimpan.', null, <ScrHelp />],
+    ['Isi harga dan data kamar', 'Kamar › ketuk kamar › Ubah data kamar', [
+      <>Isi <b>Harga sewa / bulan</b>. Boleh ditulis 750000, 750.000, atau 750rb.</>,
+      <>Isi <b>Fasilitas</b> dipisah koma, misalnya kasur, lemari, KM dalam.</>,
+      <>Atur <b>Status</b>: Tersedia, Dalam perbaikan, atau Tidak disewakan.</>,
+      <>Tekan <b>Simpan</b>. Ulangi untuk setiap kamar.</>,
+    ], 'Status "Terisi" tidak perlu dipilih — otomatis berubah saat penghuni masuk.', null, <ScrRoomEdit />],
+    ['Masukkan penghuni', 'Kamar › ketuk kamar Tersedia › Isi kamar ini', [
+      <>Pilih <b>Penghuni baru</b>, isi <b>Nama lengkap</b> dan <b>No. WhatsApp</b>.</>,
+      <>Isi <b>Harga sewa per bulan</b> dan <b>Tanggal masuk</b>.</>,
+      <>Isi <b>Tagihan pertama jatuh tempo</b>, lalu tekan <b>Mulai sewa</b>.</>,
+      <>Tagihan sewa langsung terbit otomatis dan kamar menjadi <b>Terisi</b>.</>,
+    ], <><b>Penghuni lama</b> (sudah tinggal sebelum memakai aplikasi): isi tagihan pertama dengan jatuh tempo <b>berikutnya yang belum dibayar</b>. Jika diisi tanggal masuk dulu, bulan-bulan yang sudah lunas ikut ditagih.</>, 'warn', <ScrStartLease />],
+    ['Periksa peta kamar', 'Kamar', [
+      <>Warna kotak: <b>hijau</b> terisi, <b>biru</b> tersedia, <b>kuning</b> perbaikan, <b>abu</b> tidak disewakan.</>,
+      <>Setiap kamar menampilkan penghuni, harga, dan tunggakan bila ada.</>,
+      <>Saring dengan tombol <b>Semua · Tersedia · Terisi</b> di atas.</>,
+    ], null, null, <ScrRooms />],
+  ]],
+  ['B', 'Rutin setiap bulan', [
+    ['Cek tagihan yang terbit', 'Tagihan', [
+      <>Tagihan sewa terbit sendiri <b>7 hari sebelum jatuh tempo</b>. Anda tidak perlu membuatnya.</>,
+      <><b>Belum lunas</b>: masih ada sisa. <b>Menunggak</b>: lewat jatuh tempo.</>,
+      <>Ketuk tagihan untuk melihat rincian dan riwayat pembayarannya.</>,
+    ], null, null, <ScrInvoices />],
+    ['Catat pembayaran', 'Tagihan › ketuk tagihan › Catat pembayaran', [
+      <>Isi <b>Jumlah</b>. Bayar sebagian boleh — sisanya tetap tercatat.</>,
+      <>Isi <b>Tanggal bayar</b> dan <b>Metode</b>: tunai, transfer, atau QRIS.</>,
+      <>Centang <b>Uang sudah saya terima</b> bila uang sudah dicek masuk.</>,
+      <>Tekan <b>Simpan pembayaran</b>. Status tagihan berubah otomatis.</>,
+    ], <>Untuk transfer dan QRIS, centang <b>Uang sudah saya terima</b> hanya setelah notifikasi uang masuk muncul di aplikasi bank Anda.</>, 'warn', <ScrPay />],
+    ['Verifikasi pembayaran', 'Pembayaran', [
+      <>Pembayaran yang belum dicentang muncul di <b>Menunggu verifikasi</b>.</>,
+      <>Cek mutasi rekening, lalu tekan <b>Uang sudah masuk</b> atau <b>Tolak</b>.</>,
+      <>Di bawahnya tampil total uang yang diterima bulan ini.</>,
+    ], null, null, <ScrVerify />],
+    ['Ingatkan penghuni lewat WhatsApp', 'Penghuni › ketuk penghuni', [
+      <>Buka penghuni yang menunggak.</>,
+      <>Tekan <b>Kirim pengingat via WhatsApp</b>.</>,
+      <>Pesan berisi rincian tagihan sudah tersusun sopan — tinggal tekan kirim.</>,
+    ], 'Tombol pengingat hanya muncul bila nomor WhatsApp penghuni sudah diisi.', null, <ScrReminder />],
+    ['Tagihan tambahan', 'Tagihan › + Tagihan tambahan', [
+      <>Pilih <b>Penghuni</b>.</>,
+      <>Isi <b>Keterangan</b> (listrik token, laundry, denda, deposit) dan <b>Jumlah</b>.</>,
+      <>Isi <b>Jatuh tempo</b>, lalu tekan <b>Buat tagihan</b>.</>,
+    ], null, null, <ScrExtra />],
+    ['Catat pengeluaran', 'Pengeluaran › + Catat', [
+      <>Isi <b>Jumlah</b> (boleh 275rb atau 1,2jt) dan <b>Tanggal</b>.</>,
+      <>Pilih <b>Kategori</b>: listrik dan air, internet, perbaikan, kebersihan, dan lainnya.</>,
+      <>Isi <b>Keterangan</b> agar mudah diingat, lalu <b>Simpan</b>.</>,
+    ], <>Renovasi dan beli perabot memakai kategori jenis <b>Modal</b> — tidak mengurangi laba operasional, tetapi tetap mengurangi kas.</>, null, <ScrExpense />],
+    ['Penghuni keluar', 'Penghuni (atau Kamar) › Akhiri sewa', [
+      <>Isi <b>Tanggal keluar</b> dan alasan bila perlu.</>,
+      <>Tekan <b>Akhiri sewa</b>. Kamar kembali <b>Tersedia</b>.</>,
+      <>Tagihan bulan berikutnya yang belum dibayar dibatalkan otomatis. Tunggakan lama tetap tercatat.</>,
+    ], null, null, <ScrEndLease />],
+  ]],
+  ['C', 'Pengecekan', [
+    ['Pantau kondisi kos di Dashboard', 'Dashboard', [
+      <><b>Kas bersih</b> = uang masuk − pengeluaran bulan ini.</>,
+      <><b>Hunian</b> = kamar terisi dibanding kamar yang bisa disewakan.</>,
+      <><b>Tunggakan</b> dan daftar <b>penghuni menunggak</b> untuk ditindaklanjuti.</>,
+    ], 'Kas bersih bukan laba. Untuk laba yang benar, lihat Laporan.', null, <ScrDashboard />],
+    ['Laporan bulanan', 'Laporan', [
+      <>Pilih bulan dengan tombol <b>‹ ›</b>.</>,
+      <><b>Laba operasional</b> = pendapatan − biaya operasional.</>,
+      <><b>Arus kas bersih</b> = laba − belanja modal − pengeluaran non-operasional.</>,
+      <>Tren 6 bulan dan pendapatan per kamar <Std /></>,
+    ], 'Laporan berbasis kas: pendapatan dihitung saat uang diterima, bukan saat ditagih.', null, <ScrReport />],
+    ['Ekspor Excel dan PDF', 'Laporan › Ekspor', [
+      <><b>Laporan 12 bulan</b>: rekap pendapatan, biaya, dan laba per bulan.</>,
+      <><b>Transaksi bulan ini</b>: semua uang masuk dan keluar.</>,
+      <><b>Cetak / simpan PDF</b>: pilih "Simpan sebagai PDF" di jendela cetak.</>,
+    ], 'Unduh laporan setiap akhir bulan dan simpan sebagai arsip pembukuan.', null, <ScrExport />, true],
+    ['Kwitansi untuk penghuni', 'Tagihan › ketuk tagihan › 🧾 Kwitansi', [
+      <>Di riwayat pembayaran, tekan <b>🧾 Kwitansi</b>.</>,
+      <>Kwitansi berisi nomor, nama, kamar, jumlah, dan terbilang.</>,
+      <>Tekan <b>Kirim via WhatsApp</b> atau <b>Cetak / PDF</b>.</>,
+    ], null, null, <ScrReceipt />, true],
+  ]],
+  ['D', 'Akun dan langganan', [
+    ['Berlangganan', 'Langganan', [
+      <>Pilih paket <b>Standar</b> atau <b>Pro</b> dan durasinya.</>,
+      <>Bayar lewat <b>QRIS</b> atau <b>transfer bank</b> sesuai total.</>,
+      <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>.</>,
+      <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam.</>,
+    ], <>Kos baru mendapat {BUSINESS.trialDays} hari semua fitur. Setelah itu menjadi Gratis (maks {BUSINESS.freeRoomLimit} kamar terisi). <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
+    ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
+      <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,
+      <>Tambah kategori pengeluaran sesuai kebutuhan.</>,
+      <>Punya kos lain? <b>+ Tambah kos lain</b>, lalu pindah lewat pilihan di pojok kanan atas.</>,
+      <>Pasang di layar utama HP: Safari › <b>Bagikan</b> › <b>Tambah ke Layar Utama</b>; Chrome › <b>⋮</b> › <b>Tambahkan ke layar utama</b>.</>,
+    ], null, null, null],
+  ]],
+];
+
+const RULES = [
+  'Catat semua uang keluar untuk kos, sekecil apa pun. Laba hanya akurat jika semua biaya tercatat.',
+  'Transfer dan QRIS dicatat sebagai diterima hanya setelah uang benar-benar masuk ke rekening.',
+  'Penghuni lama: isi tagihan pertama dengan jatuh tempo berikutnya yang belum dibayar.',
+  'Kas bersih bukan laba. Lihat Laporan untuk laba, dan Tunggakan untuk uang yang belum tertagih.',
 ];
 
 export default function Panduan() {
+  let n = 0;
   return (
     <div className="lp">
       <LandingNav />
       <div className="guide">
-        <h1>Panduan pemakaian</h1>
-        <p className="muted" style={{ margin: 0 }}>Ketuk topik untuk melihat langkahnya. Masih bingung? <a href={wa} target="_blank" rel="noreferrer">Tanya via WhatsApp</a>.</p>
-        <nav className="toc" aria-label="Daftar topik">{SECTIONS.map(([id, ico, t]) => <a key={id} href={'#' + id}>{ico} {t}</a>)}</nav>
-        {SECTIONS.map(([id, ico, title, body], i) => (
-          <details key={id} id={id} open={i === 0}>
-            <summary><span>{ico}</span>{title}</summary>
-            {body}
-          </details>
+        <h1>Panduan Kos Hunian</h1>
+        <p className="muted" style={{ margin: 0 }}>Langkah demi langkah memakai aplikasi pengelolaan kos: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, dan kwitansi.</p>
+
+        <h2 style={{ color: 'var(--brand-2)' }}>Sembilan menu di bagian atas aplikasi</h2>
+        <div className="panel" style={{ padding: 0, overflowX: 'auto' }}>
+          <table className="g-table"><thead><tr><th>Menu</th><th>Dipakai untuk</th></tr></thead>
+            <tbody>{MENUS.map(([m, t]) => <tr key={m}><td><b>{m}</b></td><td>{t}</td></tr>)}</tbody></table>
+        </div>
+
+        <h2 style={{ color: 'var(--brand-2)' }}>Urutan panduan</h2>
+        <div className="g-order">
+          <div><b>Persiapan</b><span><a href="#bagian-A">Langkah 1–5</a><br />Daftar, kamar, penghuni</span></div>
+          <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–12</a><br />Tagihan, bayar, pengingat, biaya</span></div>
+          <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 13–16</a><br />Dashboard, laporan, kwitansi</span></div>
+          <div><b>Akun</b><span><a href="#bagian-D">Langkah 17–18</a><br />Langganan, pengaturan</span></div>
+        </div>
+        <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
+
+        <h2 style={{ color: 'var(--brand-2)' }}>Cara kerja otomatisnya</h2>
+        <ol style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <li>Saat penghuni <b>mulai sewa</b>, kamar menjadi Terisi dan tagihan sewa bulanan berjalan sendiri.</li>
+          <li>Setiap <b>pembayaran</b> mengurangi sisa tagihan; status Lunas, Sebagian, atau Menunggak dihitung otomatis.</li>
+          <li>Saat sewa <b>diakhiri</b>, kamar kembali Tersedia dan tagihan bulan berikutnya dibatalkan.</li>
+          <li><b>Laba</b> = pembayaran diterima − biaya operasional. Belanja modal tidak dihitung sebagai biaya operasional.</li>
+          <li>Data tersimpan aman di server dan bisa dibuka dari HP maupun laptop. Setiap pemilik hanya melihat datanya sendiri.</li>
+        </ol>
+
+        {PARTS.map(([code, partTitle, steps]) => (
+          <section key={code} id={`bagian-${code}`} style={{ scrollMarginTop: 70 }}>
+            <div className="g-part">Bagian {code} · {partTitle}</div>
+            {steps.map(([title, menu, items, note, noteKind, screen, std]) => {
+              n += 1;
+              return (
+                <article key={title} id={`langkah-${n}`} className="g-step">
+                  <div>
+                    <h3>Langkah {n} · {title}{std && <Std />}</h3>
+                    <p className="g-menu">Menu: <b>{menu}</b></p>
+                    <ol>{items.map((it, i) => <li key={i}>{it}</li>)}</ol>
+                    {note && <div className={'g-note' + (noteKind === 'warn' ? ' warn' : '')}>{note}</div>}
+                  </div>
+                  {screen}
+                </article>
+              );
+            })}
+          </section>
         ))}
-        <div className="row" style={{ justifyContent: 'center', marginTop: 8 }}>
-          <Link href="/beranda"><button className="primary">Buka aplikasi</button></Link>
+
+        <div className="g-gold" style={{ marginTop: 20 }}>
+          <h3 style={{ color: 'var(--brand-2)', fontSize: 18 }}>Empat aturan emas agar angkanya akurat</h3>
+          <ol>{RULES.map((r, i) => <li key={r}><b>{i + 1}</b><span>{r}</span></li>)}</ol>
+        </div>
+
+        <div className="panel" style={{ alignItems: 'center', textAlign: 'center' }}>
+          <b>Masih bingung?</b>
+          <span className="small muted">Tanyakan langsung, kami bantu sampai bisa.</span>
+          <div className="row" style={{ justifyContent: 'center' }}>
+            <a href={wa} target="_blank" rel="noreferrer"><button className="primary">Tanya via WhatsApp</button></a>
+            <Link href="/beranda"><button>Buka aplikasi</button></Link>
+          </div>
         </div>
       </div>
     </div>

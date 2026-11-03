@@ -1,4 +1,5 @@
 'use client';
+import PageHelp from '@/components/PageHelp';
 import { Fragment, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -19,7 +20,7 @@ export default function Pengeluaran() {
 
   return (
     <div className="stack">
-      <div className="row between"><h2>Pengeluaran</h2><button className="primary" onClick={() => setSheet({ x: null })}>+ Catat</button></div>
+      <div className="row between"><div className="row"><h2>Pengeluaran</h2><PageHelp page="pengeluaran" /></div><button className="primary" onClick={() => setSheet({ x: null })}>+ Catat</button></div>
       <section className="panel">
         <div className="row between">
           <button className="sm" onClick={() => setYm(addMonthsYm(ym, -1))} aria-label="Bulan sebelumnya">‹</button>

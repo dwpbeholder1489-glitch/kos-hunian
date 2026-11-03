@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { PLANS, FEATURES, BUSINESS } from '@/lib/plan';
 import LandingNav from '@/components/LandingNav';
+import { ScrDashboard, ScrRooms, ScrInvoices, ScrReminder, ScrReport, ScrReceipt } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Kos Hunian — Aplikasi Pengelolaan Kos untuk Pemilik Kos Indonesia',
@@ -10,6 +11,15 @@ export const metadata = {
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
 const WaIcon = () => <svg className="wa-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.4-.2Z"/></svg>;
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi Kos Hunian.')}`;
+
+const SHOWCASE = [
+  [ScrDashboard, 'Dashboard', 'Kas bersih, hunian, dan siapa yang menunggak — sekali lihat.'],
+  [ScrRooms, 'Peta kamar', 'Status, penghuni, harga, dan tunggakan tiap kamar.'],
+  [ScrInvoices, 'Tagihan otomatis', 'Terbit sendiri tiap bulan, lengkap dengan status bayar.'],
+  [ScrReminder, 'Pengingat WhatsApp', 'Rincian tagihan tersusun rapi, tinggal kirim.'],
+  [ScrReport, 'Laporan laba rugi', 'Pendapatan, biaya, laba, dan tren 6 bulan.'],
+  [ScrReceipt, 'Kwitansi', 'Kirim ke penghuni via WhatsApp atau cetak PDF.'],
+];
 
 const PAINS = [
   ['📒', 'Catatan tercecer', 'Buku tulis, catatan HP, dan chat WhatsApp — susah dicari saat dibutuhkan.'],
@@ -59,6 +69,18 @@ export default function Landing() {
       </section>
 
       <main className="wrap stack lp-main">
+        <section className="lp-sec" id="lihat">
+          <h2>Lihat isi aplikasinya</h2>
+          <p className="muted" style={{ margin: 0 }}>Contoh kos 10 kamar yang sudah berjalan satu bulan. Geser untuk melihat layar lainnya →</p>
+          <div className="showcase">
+            {SHOWCASE.map(([Scr, t, c]) => <figure key={t}><Scr /><figcaption><b>{t}</b><span className="muted">{c}</span></figcaption></figure>)}
+          </div>
+          <div className="row between">
+            <span className="demo-note">Nama, nomor, dan angka di atas adalah data contoh.</span>
+            <Link href="/panduan" className="small">Lihat panduan lengkap →</Link>
+          </div>
+        </section>
+
         <section className="lp-sec">
           <h2>Masalah yang sering dialami pemilik kos</h2>
           <div className="lp-grid3">

@@ -1,4 +1,5 @@
 'use client';
+import PageHelp from '@/components/PageHelp';
 import Link from 'next/link';
 import { useData } from '@/lib/useData';
 import { Tile, Loading, Empty, InvChip } from '@/components/ui';
@@ -37,7 +38,7 @@ export default function Beranda() {
   return (
     <div className="stack">
       <Checklist d={d} kosId={kosId} />
-      <h2>Ringkasan {bulan(ym)}</h2>
+      <div className="row"><h2>Ringkasan {bulan(ym)}</h2><PageHelp page="beranda" /></div>
       <div className="grid">
         <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn - cashOut)} sub={`Masuk ${rp(cashIn)} · keluar ${rp(cashOut)}`} />
         <Tile label="Hunian" value={`${occ}%`} sub={`${filled} dari ${rentable.length} kamar terisi`} />

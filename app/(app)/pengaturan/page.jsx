@@ -1,4 +1,5 @@
 'use client';
+import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -34,7 +35,7 @@ export default function Pengaturan() {
 
   return (
     <div className="stack">
-      <h2>Pengaturan</h2>
+      <div className="row"><h2>Pengaturan</h2><PageHelp page="pengaturan" /></div>
       <section className="panel"><h3>Profil kos</h3>
         <Field label="Nama kos"><input value={name} onChange={(e) => setName(e.target.value)} disabled={!isOwner} /></Field>
         <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} disabled={!isOwner} /></Field>

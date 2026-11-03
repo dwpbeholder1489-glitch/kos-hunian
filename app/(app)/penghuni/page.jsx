@@ -1,4 +1,5 @@
 'use client';
+import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -21,7 +22,7 @@ export default function Penghuni() {
 
   return (
     <div className="stack">
-      <div className="row between"><h2>Penghuni</h2><button className="primary" onClick={() => setSheet({ t: 'edit', occ: null })}>+ Penghuni</button></div>
+      <div className="row between"><div className="row"><h2>Penghuni</h2><PageHelp page="penghuni" /></div><button className="primary" onClick={() => setSheet({ t: 'edit', occ: null })}>+ Penghuni</button></div>
       <div className="row">
         <div className="seg">
           {[['aktif', 'Aktif'], ['keluar', 'Tidak aktif'], ['semua', 'Semua']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
