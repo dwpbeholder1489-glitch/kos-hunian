@@ -1,163 +1,286 @@
 import Link from 'next/link';
-import { PLANS, FEATURES, BUSINESS } from '@/lib/plan';
 import LandingNav from '@/components/LandingNav';
-import { ScrDashboard, ScrRooms, ScrInvoices, ScrReminder, ScrReport, ScrReceipt, ScrPortal } from '@/components/demo/Screens';
+import Icon from '@/components/landing/Icon';
+import HeroMock from '@/components/landing/HeroMock';
+import Showcase from '@/components/landing/Showcase';
+import { PLANS, FEATURES, BUSINESS } from '@/lib/plan';
+import { TESTIMONIALS } from '@/lib/testimonials';
+import { rp as rpDemo, CASH_IN, CASH_OUT, ROOMS } from '@/components/demo/sample';
 
+const TITLE = 'Kos Hunian — Aplikasi Pengelolaan Kos Online untuk Pemilik Kos';
+const DESC = 'Kelola kamar, penghuni, tagihan, pembayaran, dan laporan keuangan kos dengan mudah. Coba Kos Hunian gratis selama 30 hari.';
 export const metadata = {
-  title: 'Kos Hunian — Aplikasi Pengelolaan Kos untuk Pemilik Kos Indonesia',
-  description: 'Catat kamar, penghuni, tagihan sewa otomatis, pembayaran, dan laporan keuangan kos dari HP. Gratis untuk 5 kamar.',
+  title: TITLE,
+  description: DESC,
+  openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'Kos Hunian' },
 };
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
-const WaIcon = () => <svg className="wa-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.4-.2Z"/></svg>;
-const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi Kos Hunian.')}`;
+const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi Kos Hunian.')}`;
+const START = '/masuk?daftar=1';
 
-const SHOWCASE = [
-  [ScrDashboard, 'Dashboard', 'Kas bersih, hunian, dan siapa yang menunggak — sekali lihat.'],
-  [ScrRooms, 'Peta kamar', 'Status, penghuni, harga, dan tunggakan tiap kamar.'],
-  [ScrInvoices, 'Tagihan otomatis', 'Terbit sendiri tiap bulan, lengkap dengan status bayar.'],
-  [ScrReminder, 'Pengingat WhatsApp', 'Rincian tagihan tersusun rapi, tinggal kirim.'],
-  [ScrReport, 'Laporan laba rugi', 'Pendapatan, biaya, laba, dan tren 6 bulan.'],
-  [ScrReceipt, 'Kwitansi', 'Kirim ke penghuni via WhatsApp atau cetak PDF.'],
-  [ScrPortal, 'Portal penghuni + asisten (Pro)', 'Penghuni cek tagihan, kirim bukti, dan bertanya 24 jam — hanya soal kos.'],
+const PROBLEMS = [
+  ['notebook', 'Catatan yang tercecer', 'Buku, spreadsheet, dan percakapan WhatsApp membuat informasi sulit dilacak saat dibutuhkan.'],
+  ['clock', 'Tagihan yang terlupakan', 'Sulit mengetahui siapa yang sudah membayar, belum membayar, atau masih memiliki tunggakan.'],
+  ['trend', 'Keuangan yang tidak jelas', 'Uang masuk dan keluar bercampur, sehingga keuntungan bersih kos sulit diketahui.'],
 ];
 
-const PAINS = [
-  ['📒', 'Catatan tercecer', 'Buku tulis, catatan HP, dan chat WhatsApp — susah dicari saat dibutuhkan.'],
-  ['⏰', 'Lupa siapa yang belum bayar', 'Tagihan menumpuk tanpa sadar, menagih pun jadi canggung.'],
-  ['📉', 'Untung atau rugi?', 'Uang masuk dan keluar bercampur, laba bersih kos tidak pernah jelas.'],
+// [ikon, judul grup, [ [fitur, manfaat, label?] ]]
+const GROUPS = [
+  ['bed', 'Kamar & penghuni', [
+    ['Manajemen kamar', 'Status, harga, dan fasilitas setiap kamar terlihat sekilas.'],
+    ['Manajemen penghuni', 'Kontak, kamar, dan riwayat sewa tersimpan rapi di satu tempat.'],
+    ['Portal penghuni', 'Penghuni cek tagihan dan kirim bukti transfer sendiri lewat link pribadi.', 'Pro'],
+  ]],
+  ['receipt', 'Tagihan & pembayaran', [
+    ['Tagihan otomatis', 'Tagihan sewa terbit sendiri setiap bulan — tidak ada yang terlewat.'],
+    ['Pencatatan pembayaran', 'Tunai, transfer, atau QRIS tercatat dan diverifikasi sebelum dihitung lunas.'],
+    ['Pembayaran sebagian', 'Penghuni boleh mencicil; sisa tagihan dihitung otomatis.'],
+    ['Pengingat WhatsApp', 'Pesan pengingat berisi rincian tagihan siap dikirim dengan satu ketukan.'],
+  ]],
+  ['chart', 'Keuangan', [
+    ['Pencatatan pengeluaran', 'Listrik, air, perbaikan, gaji penjaga — semua biaya kos tercatat.'],
+    ['Laporan laba rugi', 'Tahu untung bersih setiap bulan, terpisah dari uang yang diambil pemilik.'],
+    ['Kwitansi PDF', 'Kirim kwitansi resmi ke penghuni lewat WhatsApp atau cetak.', 'Standar'],
+    ['Ekspor Excel', 'Unduh laporan dan transaksi untuk pembukuan atau pajak.', 'Standar'],
+  ]],
+  ['sparkles', 'Asisten AI khusus kos', [
+    ['Asisten untuk penghuni', 'Menjawab pertanyaan penghuni soal tagihan, cara bayar, dan peraturan — hanya urusan kos.', 'Pro'],
+    ['Asisten untuk pemilik', 'Tanya kondisi bisnis kos dengan bahasa sehari-hari.', 'Segera hadir'],
+  ]],
 ];
 
-const FEATS = [
-  ['🏠', 'Peta kamar sekilas', 'Lihat kamar terisi, kosong, atau dalam perbaikan — beserta penghuni dan tunggakannya.'],
-  ['🧾', 'Tagihan sewa otomatis', 'Tagihan bulanan terbit sendiri sesuai tanggal masuk penghuni. Tidak ada yang terlewat.'],
-  ['💬', 'Pengingat WhatsApp', 'Satu ketukan untuk mengirim rincian tagihan yang sopan ke penghuni.'],
-  ['💰', 'Catat pembayaran', 'Tunai, transfer, atau QRIS — termasuk bayar sebagian. Sisa tagihan dihitung otomatis.'],
-  ['📊', 'Laporan laba rugi', 'Pendapatan, biaya, dan laba bersih tiap bulan. Siap untuk pembukuan.'],
-  ['🤖', 'Portal penghuni & asisten 24 jam', 'Penghuni punya link pribadi untuk cek tagihan, kirim bukti transfer, dan bertanya ke asisten AI yang hanya menjawab urusan kos. (Pro)'],
-  ['🔒', 'Data aman & terpisah', 'Setiap pemilik hanya bisa melihat data kosnya sendiri. Bisa dibuka dari HP mana saja.'],
+const STEPS = [
+  ['Daftarkan kos Anda', 'Buat akun dengan email, isi nama kos dan jumlah kamar. Kamar A01, A02, … dibuat otomatis.'],
+  ['Masukkan kamar dan penghuni', 'Isi harga sewa, lalu masukkan penghuni beserta tanggal masuknya. Penghuni lama pun bisa dimulai dari tagihan berikutnya.'],
+  ['Kelola secara otomatis', 'Tagihan terbit sendiri, pembayaran tercatat, pengingat siap dikirim, dan laporan tersusun setiap bulan.'],
+];
+
+const TRUST = [
+  ['database', 'Data setiap pemilik terpisah', 'Pemisahan data dijaga langsung di tingkat database. Pemilik kos lain tidak dapat melihat data Anda.'],
+  ['link', 'Penghuni hanya melihat miliknya', 'Link portal bersifat pribadi, hanya menampilkan tagihan penghuni itu, dan bisa diganti kapan saja.'],
+  ['globe', 'Akses lewat browser', 'Tidak perlu memasang aplikasi. Koneksi ke Kos Hunian selalu terenkripsi (HTTPS).'],
+  ['phone', 'HP dan laptop', 'Dirancang untuk dipakai dari HP, tetap nyaman di laptop. Data selalu sama di semua perangkat.'],
+  ['lock', 'Data tetap milik Anda', 'Berhenti berlangganan tidak menghapus data. Laporan bisa diekspor ke Excel (Standar).'],
+  ['headset', 'Bantuan langsung', `Ada pertanyaan atau kendala? Hubungi kami lewat WhatsApp ${BUSINESS.whatsappDisplay}.`],
 ];
 
 const FAQ = [
-  ['Apakah perlu memasang aplikasi?', 'Tidak. Kos Hunian dibuka lewat browser di HP atau laptop. Bisa juga ditambahkan ke layar utama HP agar terasa seperti aplikasi.'],
-  ['Bagaimana masa coba gratisnya?', `Setiap kos baru mendapat ${BUSINESS.trialDays} hari akses penuh. Setelah itu otomatis menjadi paket Gratis (maks ${BUSINESS.freeRoomLimit} kamar terisi) kecuali Anda berlangganan. Data tidak pernah dihapus.`],
-  ['Bagaimana cara membayar langganan?', 'Lewat QRIS atau transfer bank dari menu Langganan di dalam aplikasi, lalu konfirmasi via WhatsApp. Paket aktif setelah pembayaran diperiksa.'],
-  ['Apakah data saya aman?', 'Data disimpan di server database terenkripsi dan dipisahkan per pemilik. Orang lain — termasuk pemilik kos lain — tidak dapat melihat data Anda.'],
-  ['Kalau berhenti berlangganan, data saya hilang?', 'Tidak. Data tetap tersimpan dan bisa dilihat. Hanya fitur berbayar dan kamar di atas batas paket Gratis yang terkunci.'],
+  ['Apakah harus memasang aplikasi?', 'Tidak. Kos Hunian dibuka lewat browser di HP atau laptop. Agar terasa seperti aplikasi, tambahkan ke layar utama HP: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
+  ['Bagaimana cara mencoba gratis?', `Daftar dengan email, lalu isi nama kos dan jumlah kamar. Setiap kos baru mendapat ${BUSINESS.trialDays} hari akses ke semua fitur tanpa kartu kredit. Setelah itu kos otomatis menjadi paket Gratis (maksimal ${BUSINESS.freeRoomLimit} kamar terisi), kecuali Anda berlangganan.`],
+  ['Bagaimana cara membayar langganan?', 'Buka menu Langganan di aplikasi, pilih paket dan durasi, lalu bayar lewat QRIS atau transfer bank. Tekan "Saya sudah bayar" dan kirim bukti lewat WhatsApp. Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam.'],
+  ['Apakah data saya aman?', 'Data setiap pemilik dipisahkan di tingkat database sehingga pemilik lain tidak bisa melihatnya, dan koneksi ke aplikasi selalu terenkripsi. Penghuni hanya bisa melihat tagihannya sendiri lewat link pribadi yang bisa Anda ganti kapan saja.'],
+  ['Apa yang terjadi jika berhenti berlangganan?', `Data tidak dihapus. Kos kembali ke paket Gratis: fitur berbayar terkunci, dan penghuni baru tidak bisa ditambahkan jika sudah ada ${BUSINESS.freeRoomLimit} kamar terisi. Begitu berlangganan lagi, semuanya terbuka kembali.`],
+  ['Apakah bisa digunakan melalui HP?', 'Bisa. Kos Hunian dirancang untuk dipakai dari HP — mulai dari mencatat pembayaran, mengirim pengingat WhatsApp, sampai melihat laporan.'],
+  ['Bagaimana jika memiliki banyak kamar?', 'Paket Standar dan Pro tidak membatasi jumlah kamar. Harga berlaku per kos, dan satu akun bisa mengelola beberapa kos sekaligus.'],
 ];
 
-function Check({ v }) {
-  if (v === true) return <span className="lp-yes">✓</span>;
-  if (v === false) return <span className="lp-no">—</span>;
-  return <span className="small">{v}</span>;
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'Kos Hunian', applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web', description: DESC, inLanguage: 'id',
+  offers: ['gratis', 'standar', 'pro'].map((k) => ({ '@type': 'Offer', name: PLANS[k].name, price: PLANS[k].price, priceCurrency: 'IDR' })),
+};
+
+function Badge({ t }) {
+  if (!t) return null;
+  return <span className={'ln-badge ' + (t === 'Segera hadir' ? 'soon' : t === 'Pro' ? 'pro' : 'std')}>{t}</span>;
+}
+function Cell({ v }) {
+  if (v === true) return <Icon name="check" size={18} className="ln-yes" />;
+  if (v === false) return <Icon name="minus" size={18} className="ln-no" />;
+  return <span className="ln-small">{v}</span>;
 }
 
 export default function Landing() {
+  const vacant = ROOMS.filter((r) => r.status === 'tersedia').map((r) => r.code).join(' dan ');
   return (
-    <div className="lp">
+    <div className="ln">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingNav />
 
-      <section className="lp-hero">
-        <div className="wrap lp-hero-in">
-          <span className="lp-pill">Untuk pemilik kos di seluruh Indonesia</span>
-          <h1>Kelola kos dari HP.<br />Tagihan rapi, uang jelas.</h1>
-          <p className="lp-lead">Kos Hunian mencatat kamar, penghuni, tagihan sewa otomatis, pembayaran, dan laba rugi kos Anda — semuanya di satu tempat.</p>
-          <div className="row">
-            <Link href="/masuk?daftar=1"><button className="cta">Coba gratis {BUSINESS.trialDays} hari</button></Link>
-            <a href={wa} target="_blank" rel="noreferrer"><button className="lp-ghost"><WaIcon />Tanya via WhatsApp</button></a>
-          </div>
-          <p className="small lp-note">Tanpa kartu kredit · Gratis selamanya untuk {BUSINESS.freeRoomLimit} kamar</p>
-        </div>
-      </section>
-
-      <main className="wrap stack lp-main">
-        <section className="lp-sec" id="lihat">
-          <h2>Lihat isi aplikasinya</h2>
-          <p className="muted" style={{ margin: 0 }}>Contoh kos 10 kamar yang sudah berjalan satu bulan. Geser untuk melihat layar lainnya →</p>
-          <div className="showcase">
-            {SHOWCASE.map(([Scr, t, c]) => <figure key={t}><Scr /><figcaption><b>{t}</b><span className="muted">{c}</span></figcaption></figure>)}
-          </div>
-          <div className="row between">
-            <span className="demo-note">Nama, nomor, dan angka di atas adalah data contoh.</span>
-            <Link href="/panduan" className="small">Lihat panduan lengkap →</Link>
-          </div>
-        </section>
-
-        <section className="lp-sec">
-          <h2>Masalah yang sering dialami pemilik kos</h2>
-          <div className="lp-grid3">
-            {PAINS.map(([i, t, d]) => <div key={t} className="panel"><span className="lp-ico">{i}</span><h3>{t}</h3><p className="muted small">{d}</p></div>)}
-          </div>
-        </section>
-
-        <section className="lp-sec" id="fitur">
-          <h2>Semua yang Anda butuhkan untuk mengelola kos</h2>
-          <div className="lp-grid3">
-            {FEATS.map(([i, t, d]) => <div key={t} className="panel"><span className="lp-ico">{i}</span><h3>{t}</h3><p className="muted small">{d}</p></div>)}
-          </div>
-        </section>
-
-        <section className="lp-sec">
-          <h2>Mulai dalam 3 langkah</h2>
-          <ol className="lp-steps">
-            <li><b>Daftar</b> dengan email — kurang dari 1 menit.</li>
-            <li><b>Isi nama kos & jumlah kamar.</b> Kamar dibuat otomatis.</li>
-            <li><b>Masukkan penghuni.</b> Tagihan bulanan langsung berjalan sendiri.</li>
-          </ol>
-        </section>
-
-        <section className="lp-sec" id="harga">
-          <h2>Harga sederhana, per kos</h2>
-          <p className="muted" style={{ margin: 0 }}>Semua kos baru mendapat akses penuh {BUSINESS.trialDays} hari. Bayar bulanan, bisa berhenti kapan saja.</p>
-          <div className="lp-grid3">
-            {['gratis', 'standar', 'pro'].map((k) => (
-              <div key={k} className={'panel lp-price' + (k === 'standar' ? ' lp-best' : '')}>
-                {k === 'standar' && <span className="chip gold" style={{ alignSelf: 'flex-start' }}>Paling pas untuk kos aktif</span>}
-                <h3>{PLANS[k].name}</h3>
-                <div><span className="lp-amount">{PLANS[k].price ? rp(PLANS[k].price) : 'Rp0'}</span><span className="muted small">{PLANS[k].price ? ' /bulan' : ' selamanya'}</span></div>
-                <p className="muted small" style={{ margin: 0 }}>{PLANS[k].tagline}</p>
-                <ul className="lp-list">
-                  {FEATURES.filter((f) => f[k]).map((f) => (
-                    <li key={f.label}>✓ {f.label}{typeof f[k] === 'string' ? ` (${f[k]})` : ''}{f.soon && <span className="chip info" style={{ marginLeft: 6 }}>Segera</span>}</li>
-                  ))}
-                </ul>
-                <Link href="/masuk?daftar=1"><button className={k === 'standar' ? 'cta' : 'primary'} style={{ width: '100%' }}>{k === 'gratis' ? 'Mulai gratis' : `Coba ${PLANS[k].name}`}</button></Link>
+      <main>
+        {/* HERO */}
+        <section className="ln-hero" id="beranda">
+          <div className="ln-wrap ln-hero-grid">
+            <div className="ln-hero-text ln-rise">
+              <span className="ln-eyebrow">Aplikasi pengelolaan kos untuk pemilik kos di Indonesia</span>
+              <h1>Kos tetap berjalan. <span>Anda tetap tenang.</span></h1>
+              <p className="ln-lead">Kelola kamar, penghuni, tagihan, pembayaran, dan keuntungan kos dalam satu dashboard. Tidak perlu lagi membuka banyak catatan atau mengingat siapa yang belum membayar.</p>
+              <div className="ln-cta-row">
+                <Link href={START} className="ln-btn ln-btn-primary ln-btn-lg">Mulai Gratis {BUSINESS.trialDays} Hari <Icon name="arrow" size={18} /></Link>
+                <a href="#cara-kerja" className="ln-btn ln-btn-outline ln-btn-lg">Lihat Cara Kerjanya</a>
               </div>
-            ))}
-          </div>
-          <div className="panel" style={{ overflowX: 'auto' }}>
-            <table>
-              <thead><tr><th>Fitur</th><th className="n">Gratis</th><th className="n">Standar</th><th className="n">Pro</th></tr></thead>
-              <tbody>{FEATURES.map((f) => (
-                <tr key={f.label}><td>{f.label}{f.soon && <span className="chip info" style={{ marginLeft: 6 }}>Segera</span>}</td><td className="n"><Check v={f.gratis} /></td><td className="n"><Check v={f.standar} /></td><td className="n"><Check v={f.pro} /></td></tr>
-              ))}</tbody>
-            </table>
+              <p className="ln-support">Tanpa kartu kredit. Setelah masa uji coba, tersedia paket Gratis untuk maksimal {BUSINESS.freeRoomLimit} kamar terisi.</p>
+            </div>
+            <div className="ln-rise ln-rise-2"><HeroMock /></div>
           </div>
         </section>
 
-        <section className="lp-sec" id="faq">
-          <h2>Pertanyaan umum</h2>
-          <p className="muted" style={{ margin: 0 }}>Ingin tahu cara pakainya langkah demi langkah? <Link href="/panduan">Baca panduan lengkap →</Link></p>
-          <div className="panel">
-            {FAQ.map(([q, a]) => <details key={q} className="lp-faq"><summary>{q}</summary><p className="muted">{a}</p></details>)}
+        {/* MASALAH */}
+        <section className="ln-sec" aria-labelledby="h-masalah">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Masalahnya</span><h2 id="h-masalah">Mengelola kos seharusnya tidak serumit ini.</h2></div>
+            <div className="ln-problems">
+              {PROBLEMS.map(([ic, t, d]) => (
+                <div key={t} className="ln-problem"><span className="ln-ico-wrap warn"><Icon name={ic} size={22} /></span><h3>{t}</h3><p>{d}</p></div>
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="lp-final">
-          <h2>Siap merapikan kos Anda?</h2>
-          <p>Coba semua fitur gratis selama {BUSINESS.trialDays} hari.</p>
-          <div className="row" style={{ justifyContent: 'center' }}>
-            <Link href="/masuk?daftar=1"><button className="cta">Daftar sekarang</button></Link>
-            <a href={wa} target="_blank" rel="noreferrer"><button className="lp-ghost"><WaIcon />{BUSINESS.whatsappDisplay}</button></a>
+        {/* SOLUSI */}
+        <section className="ln-sec ln-sec-alt" id="fitur" aria-labelledby="h-fitur">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Solusinya</span><h2 id="h-fitur">Semua urusan kos, dalam satu kendali.</h2>
+              <p>Dari kamar kosong sampai laba bersih — Kos Hunian mencatat, menghitung, dan mengingatkan untuk Anda.</p></div>
+            <div className="ln-groups">
+              {GROUPS.map(([ic, g, items]) => (
+                <div key={g} className="ln-group">
+                  <div className="ln-group-h"><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span><h3>{g}</h3></div>
+                  <ul>{items.map(([t, d, b]) => (
+                    <li key={t}><div className="ln-feat-t">{t} <Badge t={b} /></div><p>{d}</p></li>
+                  ))}</ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SHOWCASE */}
+        <section className="ln-sec" id="produk" aria-labelledby="h-produk">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Lihat aplikasinya</span><h2 id="h-produk">Dirancang untuk dipakai setiap hari, dari HP.</h2></div>
+            <Showcase />
+          </div>
+        </section>
+
+        {/* CARA KERJA */}
+        <section className="ln-sec ln-sec-alt" id="cara-kerja" aria-labelledby="h-cara">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Cara kerja</span><h2 id="h-cara">Mulai mengelola kos dengan lebih mudah.</h2></div>
+            <ol className="ln-steps">
+              {STEPS.map(([t, d], i) => <li key={t}><span className="ln-step-n">{i + 1}</span><h3>{t}</h3><p>{d}</p></li>)}
+            </ol>
+            <div className="ln-center"><Link href="/panduan" className="ln-textlink">Baca panduan lengkap langkah demi langkah <Icon name="arrow" size={16} /></Link></div>
+          </div>
+        </section>
+
+        {/* AI */}
+        <section className="ln-sec" id="asisten" aria-labelledby="h-ai">
+          <div className="ln-wrap ln-ai">
+            <div>
+              <span className="ln-kicker">Asisten AI</span>
+              <h2 id="h-ai">Punya pertanyaan tentang bisnis kos Anda? Tinggal tanyakan.</h2>
+              <p className="ln-p">Asisten AI Kos Hunian khusus untuk urusan kos. Ia hanya menjawab berdasarkan data yang tercatat di aplikasi dan sesuai hak akses — penghuni hanya bisa menanyakan tagihannya sendiri. Pertanyaan di luar urusan kos ditolak dengan sopan.</p>
+              <div className="ln-ai-cards">
+                <div className="ln-ai-card"><div className="ln-feat-t">Asisten untuk penghuni <Badge t="Pro" /></div><p>Di portal penghuni: tagihan, cara bayar, jatuh tempo, peraturan, dan kamar kosong.</p></div>
+                <div className="ln-ai-card"><div className="ln-feat-t">Asisten untuk pemilik <Badge t="Segera hadir" /></div>
+                  <p>Contoh pertanyaan yang sedang kami siapkan:</p>
+                  <ul className="ln-qs">{['Berapa keuntungan bersih bulan ini?', 'Siapa saja penghuni yang belum membayar?', 'Berapa total pengeluaran bulan ini?', 'Kamar mana yang masih kosong?', 'Bagaimana kondisi keuangan kos saya?'].map((q) => <li key={q}>{q}</li>)}</ul>
+                </div>
+              </div>
+            </div>
+            <div className="ln-chat" aria-label="Pratinjau percakapan asisten pemilik dengan data contoh">
+              <div className="ln-chat-h"><span className="ln-ico-wrap sm"><Icon name="sparkles" size={18} /></span><b>Asisten Kos Hunian</b><Badge t="Segera hadir" /></div>
+              <div className="ln-bub me">Berapa keuntungan bersih bulan ini?</div>
+              <div className="ln-bub">Pendapatan bulan ini {rpDemo(CASH_IN)} dan biaya operasional {rpDemo(CASH_OUT)}, jadi laba operasional {rpDemo(CASH_IN - CASH_OUT)}.</div>
+              <div className="ln-bub me">Siapa saja yang belum membayar?</div>
+              <div className="ln-bub">Ada 2 penghuni: Budi Santoso (A02) {rpDemo(750000)} sudah lewat jatuh tempo, dan Dimas Pratama (A05) sisa {rpDemo(350000)}. Kamar {vacant} masih kosong.</div>
+              <p className="ln-note">Pratinjau dengan data contoh. Fitur asisten untuk pemilik belum tersedia.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* KEPERCAYAAN */}
+        <section className="ln-sec ln-sec-dark" aria-labelledby="h-trust">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Keamanan & privasi</span><h2 id="h-trust">Data kos Anda, tetap milik Anda.</h2></div>
+            <div className="ln-trust">
+              {TRUST.map(([ic, t, d]) => <div key={t}><Icon name={ic} size={22} /><h3>{t}</h3><p>{d}</p></div>)}
+            </div>
+          </div>
+        </section>
+
+        {/* HARGA */}
+        <section className="ln-sec" id="harga" aria-labelledby="h-harga">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Harga</span><h2 id="h-harga">Harga sederhana, per kos.</h2>
+              <p>Setiap kos baru mendapat <b>{BUSINESS.trialDays} hari akses semua fitur</b>. Setelah itu kos otomatis menjadi paket Gratis kecuali Anda memilih berlangganan — tanpa tagihan kejutan, dan data tidak pernah dihapus.</p></div>
+            <div className="ln-prices">
+              {['gratis', 'standar', 'pro'].map((k) => (
+                <div key={k} className={'ln-price' + (k === 'standar' ? ' best' : '')}>
+                  {k === 'standar' && <span className="ln-best">Paling sesuai untuk kos aktif</span>}
+                  <h3>{PLANS[k].name}</h3>
+                  <p className="ln-tag">{PLANS[k].tagline}</p>
+                  <div className="ln-amount">{rp(PLANS[k].price)}<span>{PLANS[k].price ? ' /bulan' : ' selamanya'}</span></div>
+                  <ul>{FEATURES.filter((f) => f[k]).map((f) => (
+                    <li key={f.label} className={f.soon ? 'soon' : ''}><Icon name={f.soon ? 'clock' : 'check'} size={17} /><span>{f.label}{typeof f[k] === 'string' ? ` — ${f[k]}` : ''}{f.soon && <> <Badge t="Segera hadir" /></>}</span></li>
+                  ))}</ul>
+                  <Link href={START} className={'ln-btn ' + (k === 'standar' ? 'ln-btn-primary' : 'ln-btn-outline')}>{k === 'gratis' ? 'Mulai gratis' : `Coba ${PLANS[k].name} 30 hari`}</Link>
+                </div>
+              ))}
+            </div>
+            <details className="ln-compare">
+              <summary>Bandingkan semua fitur</summary>
+              <div className="ln-table-wrap"><table>
+                <thead><tr><th>Fitur</th><th>Gratis</th><th>Standar</th><th>Pro</th></tr></thead>
+                <tbody>{FEATURES.map((f) => (
+                  <tr key={f.label}><td>{f.label}{f.soon && <Badge t="Segera hadir" />}</td><td><Cell v={f.gratis} /></td><td><Cell v={f.standar} /></td><td><Cell v={f.pro} /></td></tr>
+                ))}</tbody>
+              </table></div>
+            </details>
+          </div>
+        </section>
+
+        {/* TESTIMONI — tampil otomatis bila lib/testimonials.js sudah berisi testimoni asli */}
+        {TESTIMONIALS.length > 0 && (
+          <section className="ln-sec ln-sec-alt" aria-labelledby="h-testi">
+            <div className="ln-wrap">
+              <div className="ln-head"><span className="ln-kicker">Kata pengguna</span><h2 id="h-testi">Dipakai pemilik kos sungguhan.</h2></div>
+              <div className="ln-testi">{TESTIMONIALS.map((t) => (
+                <figure key={t.name}><blockquote>“{t.quote}”</blockquote><figcaption><b>{t.name}</b><span>{t.role}</span></figcaption></figure>
+              ))}</div>
+            </div>
+          </section>
+        )}
+
+        {/* FAQ */}
+        <section className="ln-sec ln-sec-alt" id="faq" aria-labelledby="h-faq">
+          <div className="ln-wrap ln-faq-wrap">
+            <div className="ln-head"><span className="ln-kicker">FAQ</span><h2 id="h-faq">Pertanyaan yang sering diajukan</h2></div>
+            <div className="ln-faq">
+              {FAQ.map(([q, a]) => <details key={q}><summary>{q}<Icon name="plus" size={18} /></summary><p>{a}</p></details>)}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA AKHIR */}
+        <section className="ln-sec">
+          <div className="ln-wrap">
+            <div className="ln-final">
+              <h2>Mulai kelola kos dengan lebih teratur hari ini.</h2>
+              <p>Lebih sedikit pekerjaan administratif. Lebih banyak kendali atas bisnis kos Anda.</p>
+              <div className="ln-cta-row center">
+                <Link href={START} className="ln-btn ln-btn-accent ln-btn-lg">Mulai Gratis {BUSINESS.trialDays} Hari <Icon name="arrow" size={18} /></Link>
+                <a href={WA} target="_blank" rel="noreferrer" className="ln-btn ln-btn-onDark ln-btn-lg"><Icon name="message" size={18} />Hubungi Kami</a>
+              </div>
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="lp-foot">
-        <div className="wrap row between">
-          <span>© {new Date().getFullYear()} Kos Hunian · Manage Smarter. Live Better.</span>
-          <span className="row"><Link href="/panduan">Panduan</Link><a href={wa} target="_blank" rel="noreferrer">Hubungi kami</a></span>
+      <footer className="ln-foot">
+        <div className="ln-wrap ln-foot-in">
+          <div>
+            <div className="ln-logo"><span className="ln-logo-mark">KH</span><b>Kos Hunian</b></div>
+            <p>Kos tetap berjalan. Anda tetap tenang.</p>
+          </div>
+          <nav aria-label="Tautan footer">
+            <a href="#fitur">Fitur</a><a href="#harga">Harga</a><Link href="/panduan">Panduan</Link><Link href="/p/contoh">Contoh portal penghuni</Link><Link href="/masuk">Masuk</Link>
+            <a href={WA} target="_blank" rel="noreferrer">WhatsApp {BUSINESS.whatsappDisplay}</a>
+          </nav>
         </div>
+        <div className="ln-wrap ln-copy">© {new Date().getFullYear()} Kos Hunian</div>
       </footer>
     </div>
   );

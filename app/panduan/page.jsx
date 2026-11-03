@@ -30,8 +30,8 @@ const MENUS = [
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
 const PARTS = [
   ['A', 'Persiapan (sekali saja)', [
-    ['Daftar dan buat kos', 'Halaman depan › Coba gratis', [
-      <>Buka <b>kos-hunian.vercel.app</b>, tekan <b>Coba gratis</b>, isi email dan kata sandi, lalu <b>Buat akun</b>.</>,
+    ['Daftar dan buat kos', 'Halaman depan › Mulai Gratis 30 Hari', [
+      <>Buka <b>kos-hunian.vercel.app</b>, tekan <b>Mulai Gratis 30 Hari</b>, isi email dan kata sandi, lalu <b>Buat akun</b>.</>,
       <>Buka email Anda dan ketuk tautan konfirmasi.</>,
       <>Masuk, lalu isi <b>Nama kos</b>, <b>Jumlah kamar</b>, dan <b>Awalan kode</b>.</>,
       <>Tekan <b>Buat kos</b>. Kamar A01, A02, … dibuat otomatis.</>,
