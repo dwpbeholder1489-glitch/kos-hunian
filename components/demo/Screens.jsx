@@ -295,3 +295,21 @@ export function ScrPlan() {
     </Phone>
   );
 }
+
+export function ScrPortal() {
+  return (
+    <div className="mini" aria-label="Contoh portal penghuni">
+      <div className="mini-top">
+        <div className="mini-brand"><span className="mark">KH</span><b>{KOS.name}</b><span className="mini-help" style={{ width: 'auto', padding: '0 8px', borderRadius: 99 }}>Hubungi</span></div>
+        <div className="mini-tabs"><span>Tagihan</span><span>Riwayat</span><span>Info kos</span><span className="on">Tanya asisten</span></div>
+      </div>
+      <div className="mini-body">
+        <h2>Halo, Budi Santoso</h2>
+        <div className="chatmsg user"><div>Berapa tagihan saya bulan ini?</div></div>
+        <div className="chatmsg assistant"><div>Tagihan sewa kamar A02 periode {d(1)} – {d(30)} sebesar Rp750.000 belum dibayar dan sudah lewat jatuh tempo {d(1)}. Silakan transfer lalu tekan "Kirim bukti" di tab Tagihan ya.</div></div>
+        <div className="chatmsg user"><div>Ajarin PR matematika dong</div></div>
+        <div className="chatmsg assistant"><div>Maaf, saya hanya bisa membantu urusan kos. Ada yang ingin ditanyakan soal tagihan atau peraturan kos?</div></div>
+      </div>
+    </div>
+  );
+}

@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan,
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal,
 } from '@/components/demo/Screens';
 
 export const metadata = {
@@ -13,6 +13,7 @@ export const metadata = {
 
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi Kos Hunian.')}`;
 const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Standar</span>;
+const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</span>;
 
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
@@ -125,7 +126,7 @@ const PARTS = [
       <>Tekan <b>Kirim via WhatsApp</b> atau <b>Cetak / PDF</b>.</>,
     ], null, null, <ScrReceipt />, true],
   ]],
-  ['D', 'Akun dan langganan', [
+  ['D', 'Akun, langganan, dan portal penghuni', [
     ['Berlangganan', 'Langganan', [
       <>Pilih paket <b>Standar</b> atau <b>Pro</b> dan durasinya.</>,
       <>Bayar lewat <b>QRIS</b> atau <b>transfer bank</b> sesuai total.</>,
@@ -138,6 +139,12 @@ const PARTS = [
       <>Punya kos lain? <b>+ Tambah kos lain</b>, lalu pindah lewat pilihan di pojok kanan atas.</>,
       <>Pasang di layar utama HP: Safari › <b>Bagikan</b> › <b>Tambah ke Layar Utama</b>; Chrome › <b>⋮</b> › <b>Tambahkan ke layar utama</b>.</>,
     ], null, null, null],
+    ['Portal penghuni & asisten 24 jam', 'Penghuni › ketuk penghuni › Portal penghuni', [
+      <>Isi dulu <b>Info untuk penghuni</b> di Pengaturan: nomor WhatsApp pengelola, <b>cara bayar</b>, dan <b>peraturan kos</b>.</>,
+      <>Buka penghuni, tekan <b>Kirim link via WhatsApp</b>. Penghuni menerima link pribadi tanpa perlu daftar.</>,
+      <>Penghuni bisa melihat tagihan, <b>mengirim bukti transfer</b>, dan <b>bertanya ke asisten</b> soal tagihan, cara bayar, dan peraturan.</>,
+      <>Bukti yang dikirim muncul di <b>Pembayaran › Menunggu verifikasi</b> dengan tombol <b>Lihat bukti</b>.</>,
+    ], <>Asisten hanya menjawab urusan kos dan hanya memakai data penghuni itu sendiri. Jika link tersebar ke orang lain, tekan <b>Ganti link</b>.</>, 'warn', <ScrPortal />, 'pro'],
   ]],
 ];
 
@@ -168,7 +175,7 @@ export default function Panduan() {
           <div><b>Persiapan</b><span><a href="#bagian-A">Langkah 1–5</a><br />Daftar, kamar, penghuni</span></div>
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
-          <div><b>Akun</b><span><a href="#bagian-D">Langkah 18–19</a><br />Langganan, pengaturan</span></div>
+          <div><b>Akun & Pro</b><span><a href="#bagian-D">Langkah 18–20</a><br />Langganan, pengaturan, portal</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
@@ -189,7 +196,7 @@ export default function Panduan() {
               return (
                 <article key={title} id={`langkah-${n}`} className="g-step">
                   <div>
-                    <h3>Langkah {n} · {title}{std && <Std />}</h3>
+                    <h3>Langkah {n} · {title}{std === 'pro' ? <Pro /> : std && <Std />}</h3>
                     <p className="g-menu">Menu: <b>{menu}</b></p>
                     <ol>{items.map((it, i) => <li key={i}>{it}</li>)}</ol>
                     {note && <div className={'g-note' + (noteKind === 'warn' ? ' warn' : '')}>{note}</div>}

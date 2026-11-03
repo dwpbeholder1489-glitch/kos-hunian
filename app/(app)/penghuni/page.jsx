@@ -1,4 +1,5 @@
 'use client';
+import PortalBox from '@/components/PortalBox';
 import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -70,6 +71,7 @@ function OccDetail({ d, occ, go, onClose }) {
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
       </dl>
       {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
+      <PortalBox occ={occ} />
       <section className="panel"><span className="label">Tagihan terakhir</span>
         {invs.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Belum ada tagihan.</p> : (
           <div className="list">{invs.map((i) => (

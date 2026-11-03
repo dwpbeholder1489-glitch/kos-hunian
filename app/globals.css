@@ -248,3 +248,14 @@ tr.total td{font-weight:800;border-top:2px solid var(--fg)}
 .g-gold li:first-child{border-top:0}
 .g-gold li b{font-size:22px;color:var(--brand-2);width:20px;flex:none}
 .lp-sec .mini h2,.mini h2{font-family:var(--font);font-weight:800;font-size:17px;line-height:1.3}
+
+/* ---------- portal penghuni ---------- */
+.chatmsg{display:flex}
+.chatmsg>div{max-width:85%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45}
+.chatmsg.user{justify-content:flex-end}
+.chatmsg.user>div{background:var(--brand-2);color:#fff;border-bottom-right-radius:4px}
+.chatmsg.assistant>div{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.chatform{display:flex;gap:8px;position:sticky;bottom:10px;background:var(--bg);padding-block:6px}
+.chatform input{flex:1}
+.chatform button{flex:none}
+.proofimg{width:100%;max-height:70vh;object-fit:contain;border-radius:10px;border:1px solid var(--line);background:#fff}

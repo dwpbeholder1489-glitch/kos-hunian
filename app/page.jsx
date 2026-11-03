@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { PLANS, FEATURES, BUSINESS } from '@/lib/plan';
 import LandingNav from '@/components/LandingNav';
-import { ScrDashboard, ScrRooms, ScrInvoices, ScrReminder, ScrReport, ScrReceipt } from '@/components/demo/Screens';
+import { ScrDashboard, ScrRooms, ScrInvoices, ScrReminder, ScrReport, ScrReceipt, ScrPortal } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Kos Hunian — Aplikasi Pengelolaan Kos untuk Pemilik Kos Indonesia',
@@ -19,6 +19,7 @@ const SHOWCASE = [
   [ScrReminder, 'Pengingat WhatsApp', 'Rincian tagihan tersusun rapi, tinggal kirim.'],
   [ScrReport, 'Laporan laba rugi', 'Pendapatan, biaya, laba, dan tren 6 bulan.'],
   [ScrReceipt, 'Kwitansi', 'Kirim ke penghuni via WhatsApp atau cetak PDF.'],
+  [ScrPortal, 'Portal penghuni + asisten (Pro)', 'Penghuni cek tagihan, kirim bukti, dan bertanya 24 jam — hanya soal kos.'],
 ];
 
 const PAINS = [
@@ -33,6 +34,7 @@ const FEATS = [
   ['💬', 'Pengingat WhatsApp', 'Satu ketukan untuk mengirim rincian tagihan yang sopan ke penghuni.'],
   ['💰', 'Catat pembayaran', 'Tunai, transfer, atau QRIS — termasuk bayar sebagian. Sisa tagihan dihitung otomatis.'],
   ['📊', 'Laporan laba rugi', 'Pendapatan, biaya, dan laba bersih tiap bulan. Siap untuk pembukuan.'],
+  ['🤖', 'Portal penghuni & asisten 24 jam', 'Penghuni punya link pribadi untuk cek tagihan, kirim bukti transfer, dan bertanya ke asisten AI yang hanya menjawab urusan kos. (Pro)'],
   ['🔒', 'Data aman & terpisah', 'Setiap pemilik hanya bisa melihat data kosnya sendiri. Bisa dibuka dari HP mana saja.'],
 ];
 
