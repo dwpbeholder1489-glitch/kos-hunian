@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Sheet, Field, toast } from '@/components/ui';
 import { rp, tgl, tglShort, today, parseRp, angka, waLink } from '@/lib/format';
+import { DEMO_TOKEN, DEMO_PORTAL, demoAnswer } from '@/components/demo/portalDemo';
 
 const PAY = { menunggu: ['Diperiksa pengelola', 'gold'], terverifikasi: ['Diterima', 'good'], ditolak: ['Ditolak', 'bad'], dibatalkan: ['Dibatalkan', 'void'] };
 const QUICK = ['Berapa tagihan saya bulan ini?', 'Ke mana saya harus transfer?', 'Kapan jatuh tempo berikutnya?', 'Ada kamar kosong untuk teman?'];
@@ -40,12 +41,14 @@ export default function Portal() {
   const [pay, setPay] = useState(null);
   const [ai, setAi] = useState(false);
 
+  const demo = token === DEMO_TOKEN;
   const load = async () => {
+    if (demo) { setAi(true); return setP(DEMO_PORTAL); }
     if (!supabase) return setP(null);
     const { data, error } = await supabase.rpc('portal_get', { p_token: token });
     setP(error ? null : data);
   };
-  useEffect(() => { load(); fetch('/api/portal-chat').then((r) => r.json()).then((x) => setAi(Boolean(x.enabled))).catch(() => {}); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); if (token !== DEMO_TOKEN) fetch('/api/portal-chat').then((r) => r.json()).then((x) => setAi(Boolean(x.enabled))).catch(() => {}); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (p === undefined) return <main className="auth"><p className="muted">Membuka portal…</p></main>;
   if (p === null) return <main className="auth"><p className="hello">Link tidak ditemukan</p><p className="muted">Link portal ini salah atau sudah diganti. Mintalah link terbaru kepada pengelola kos.</p></main>;
@@ -77,6 +80,7 @@ export default function Portal() {
         </div>
       </header>
       <main className="wrap stack" style={{ paddingBottom: 60 }}>
+        {p.demo && <div className="notice info" style={{ fontWeight: 500 }}><b>Ini halaman contoh.</b> Nama dan angka adalah data contoh. Penghuni Anda akan mendapat link pribadi dengan data aslinya.</div>}
         <div><h2>Halo, {p.occupant.name}</h2>{p.lease && <p className="muted" style={{ margin: 0 }}>Kamar {p.lease.room} · {rp(p.lease.rent)}/bulan{p.lease.status !== 'aktif' ? ' · sewa sudah berakhir' : ''}</p>}</div>
 
         {tab === 'tagihan' && (
@@ -122,14 +126,14 @@ export default function Portal() {
           </>
         )}
 
-        {tab === 'tanya' && ai && <Chat token={token} name={p.occupant.name} kos={p.kos.name} />}
+        {tab === 'tanya' && ai && <Chat demo={demo} token={token} name={p.occupant.name} kos={p.kos.name} />}
       </main>
-      {pay && <PaySheet token={token} inv={pay} info={p.kos.payment_info} onClose={() => setPay(null)} onDone={() => { setPay(null); load(); }} />}
+      {pay && <PaySheet demo={demo} token={token} inv={pay} info={p.kos.payment_info} onClose={() => setPay(null)} onDone={() => { setPay(null); load(); }} />}
     </>
   );
 }
 
-function PaySheet({ token, inv, info, onClose, onDone }) {
+function PaySheet({ demo, token, inv, info, onClose, onDone }) {
   const [amt, setAmt] = useState(angka(inv.outstanding));
   const [date, setDate] = useState(today());
   const [method, setMethod] = useState('transfer');
@@ -144,6 +148,7 @@ function PaySheet({ token, inv, info, onClose, onDone }) {
     const a = parseRp(amt);
     if (!(a > 0)) return toast('Isi jumlah yang dibayar');
     if (!proof && !confirm('Kirim tanpa foto bukti? Pengelola mungkin perlu waktu lebih lama untuk memeriksa.')) return;
+    if (demo) { toast('Contoh: di portal asli, bukti ini terkirim ke pengelola untuk diperiksa.'); return onClose(); }
     setBusy(true);
     const { error } = await supabase.rpc('portal_submit_payment', { p_token: token, p_invoice: inv.id, p_amount: a, p_paid_at: date, p_method: method, p_note: note, p_proof: proof });
     setBusy(false);
@@ -171,7 +176,7 @@ function PaySheet({ token, inv, info, onClose, onDone }) {
   );
 }
 
-function Chat({ token, name, kos }) {
+function Chat({ demo, token, name, kos }) {
   const [msgs, setMsgs] = useState([{ role: 'assistant', content: `Halo ${name}! Saya asisten ${kos}. Saya bisa bantu soal tagihan, cara bayar, jatuh tempo, peraturan, dan info kamar. Mau tanya apa?` }]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -182,6 +187,7 @@ function Chat({ token, name, kos }) {
     const content = (q ?? text).trim(); if (!content || busy) return;
     const next = [...msgs, { role: 'user', content }];
     setMsgs(next); setText(''); setBusy(true);
+    if (demo) { setTimeout(() => { setMsgs([...next, { role: 'assistant', content: demoAnswer(content) }]); setBusy(false); }, 600); return; }
     try {
       const r = await fetch('/api/portal-chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, messages: next.slice(1) }) });
       const x = await r.json();
