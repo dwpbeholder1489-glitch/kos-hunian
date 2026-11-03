@@ -25,8 +25,9 @@ Pakai browser Chrome di HP. Kalau tampilan situs terlalu kecil atau tombol tidak
 1. Buka **supabase.com** → *Start your project* → daftar dengan akun GitHub.
 2. *New project*. Isi nama `kos-hunian`, buat **Database Password** (simpan baik-baik), Region pilih **Southeast Asia (Singapore)**. Klik *Create*. Tunggu ±2 menit.
 3. Di menu kiri buka **SQL Editor** → *New query*.
-4. Buka file `supabase/schema.sql` di GitHub repo ini → tombol **Raw** → tekan lama → *Pilih semua* → *Salin*.
+4. Buka file pertama di `supabase/migrations/` di GitHub repo ini → tombol **Raw** → tekan lama → *Pilih semua* → *Salin*.
 5. Tempel di SQL Editor Supabase → **Run**. Harus muncul *Success. No rows returned*.
+6. Ulangi untuk setiap file lain di `supabase/migrations/` sesuai urutan nama file.
 
 ### 2. Ambil kunci koneksi
 Di Supabase: **Project Settings → API** (atau *Data API*). Catat dua nilai:
@@ -60,7 +61,8 @@ Setiap kali kode di GitHub diperbarui, Vercel otomatis memasang versi terbaru.
 ## Struktur kode
 
 ```
-supabase/schema.sql   tabel, keamanan per kos (RLS), tagihan otomatis
+supabase/migrations/  skema database berurutan (tabel, RLS, tagihan otomatis, paket langganan)
+lib/plan.js           harga paket, fitur per paket, nomor WhatsApp & rekening pembayaran
 lib/                  koneksi Supabase, format rupiah & tanggal, pemuat data
 components/           kerangka aplikasi, formulir sewa, komponen tampilan
 app/masuk             login & daftar
@@ -68,9 +70,15 @@ app/mulai             membuat kos baru
 app/(app)/…           beranda, kamar, penghuni, tagihan, pembayaran, pengeluaran, laporan, pengaturan
 ```
 
-## Belum ada di versi ini (rencana berikutnya)
+## Paket & langganan
+- Gratis: maks 5 kamar terisi · Standar Rp100.000/bln · Pro Rp150.000/bln (atur di `lib/plan.js` dan fungsi `plan_price` di database)
+- Kos baru otomatis mendapat masa coba 30 hari semua fitur
+- Pembayaran manual: QRIS / transfer → pengguna konfirmasi di menu Langganan → admin menyetujui di menu Admin
+- Admin ditentukan oleh tabel `app_admins` (berisi email)
+
+## Rencana berikutnya (paket Pro)
 - Asisten AI
-- Langganan berbayar (Midtrans/Xendit) dan batas paket
-- Akun pengelola/penjaga kos dengan hak terbatas
-- Portal penghuni (penghuni melihat tagihan & kirim bukti transfer)
-- Ekspor laporan ke Excel/PDF
+- Portal penghuni (lihat tagihan & kirim bukti transfer)
+- Pengingat WhatsApp otomatis
+- Akun penjaga/pengelola dengan hak terbatas
+- Pembayaran otomatis lewat payment gateway

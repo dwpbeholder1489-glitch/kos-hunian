@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
-import { Sheet, Field, Loading, Empty, InvChip, PayChip, run } from '@/components/ui';
+import Link from 'next/link';
+import { Sheet, Field, Loading, Empty, InvChip, PayChip, run, toast } from '@/components/ui';
+import { hasPlan } from '@/lib/plan';
 import { rp, tgl, today, parseRp, angka, invTitle, METHOD, errMsg } from '@/lib/format';
 
 const FILTERS = [['terbuka', 'Belum lunas'], ['menunggak', 'Menunggak'], ['lunas', 'Lunas'], ['semua', 'Semua']];
@@ -46,7 +48,8 @@ export default function Tagihan() {
 }
 
 function InvDetail({ d, inv, go, onClose }) {
-  const { bump } = useKos();
+  const { bump, kos } = useKos();
+  const canReceipt = hasPlan(kos, 'standar');
   if (!inv) return null;
   const pays = d.payments.filter((p) => p.invoice_id === inv.id);
   async function cancel() {
@@ -71,7 +74,8 @@ function InvDetail({ d, inv, go, onClose }) {
       {pays.length > 0 && (
         <section className="panel"><span className="label">Riwayat pembayaran</span>
           <div className="list">{pays.map((p) => (
-            <div className="li" key={p.id}><div className="main"><b>{rp(p.amount)}</b><span className="small muted">{tgl(p.paid_at)} · {METHOD[p.method]}</span></div><PayChip status={p.status} /></div>
+            <div className="li" key={p.id}><div className="main"><b>{rp(p.amount)}</b><span className="small muted">{tgl(p.paid_at)} · {METHOD[p.method]}</span>
+              {p.status === 'terverifikasi' && <Link href={'/kwitansi/' + p.id} className="small" onClick={(e) => { if (!canReceipt) { e.preventDefault(); toast('Kwitansi PDF tersedia di paket Standar'); } }}>🧾 Kwitansi{!canReceipt && ' 🔒'}</Link>}</div><PayChip status={p.status} /></div>
           ))}</div>
         </section>
       )}

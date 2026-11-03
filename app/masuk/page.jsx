@@ -15,6 +15,7 @@ export default function Masuk() {
   const [msg, setMsg] = useState(null);
 
   useEffect(() => { if (session) router.replace('/beranda'); }, [session, router]);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('daftar')) setMode('daftar'); }, []);
 
   if (!configured) {
     return (
@@ -44,7 +45,7 @@ export default function Masuk() {
 
   return (
     <div className="auth">
-      <div className="brand"><span className="mark">KH</span><div><b>Kos Hunian</b><div className="small muted">Manage Smarter. Live Better.</div></div></div>
+      <a href="/" className="brand" style={{ textDecoration: 'none', color: 'inherit' }}><span className="mark">KH</span><div><b>Kos Hunian</b><div className="small muted">Manage Smarter. Live Better.</div></div></a>
       <p className="hello">{mode === 'masuk' ? 'Selamat datang kembali' : 'Kelola kos jadi lebih rapi'}</p>
       <p className="muted" style={{ margin: 0 }}>Kamar, penghuni, tagihan, dan keuangan kos dalam satu aplikasi.</p>
       <div className="seg">

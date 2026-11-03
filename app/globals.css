@@ -98,3 +98,54 @@ td,th{padding:8px 10px 8px 0;border-top:1px solid var(--line);text-align:left}
 th{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-top:0}
 td.n,th.n{text-align:right;white-space:nowrap;padding-right:0}
 tr.total td{font-weight:800;border-top:2px solid var(--fg)}
+
+/* ---------- landing page ---------- */
+.lp{background:var(--bg)}
+.lp-nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.lp-nav .wrap{padding-block:10px}
+.lp-link{color:var(--fg);font-weight:700;text-decoration:none;padding:8px}
+.lp-hero{background:var(--brand);color:var(--brand-fg)}
+.lp-hero-in{padding-block:48px 56px;display:flex;flex-direction:column;gap:16px}
+.lp-hero h1{font-family:var(--display);font-weight:400;font-size:clamp(36px,9vw,60px);line-height:1.05;margin:0}
+.lp-lead{font-size:17px;max-width:56ch;margin:0;opacity:.92}
+.lp-pill{align-self:flex-start;background:rgba(255,255,255,.12);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
+.lp-note{opacity:.8;margin:0}
+.lp-ghost{background:transparent;color:inherit;border-color:currentColor}
+.lp-main{padding-block:32px}
+.lp-sec{display:flex;flex-direction:column;gap:14px;padding-block:12px}
+.lp-sec h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.15}
+.lp-grid3{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.lp-ico{font-size:26px}
+.lp-sec .panel p{margin:0}
+.lp-steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:16px}
+.lp-price{gap:10px}
+.lp-best{border:2px solid var(--gold)}
+.lp-amount{font-size:30px;font-weight:800}
+.lp-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px;flex:1}
+.lp-yes{color:var(--good);font-weight:800}.lp-no{color:var(--muted)}
+.lp-faq{border-top:1px solid var(--line);padding-block:4px}
+.lp-faq:first-child{border-top:0}
+.lp-faq summary{cursor:pointer;font-weight:800;min-height:44px;display:flex;align-items:center}
+.lp-faq p{margin:0 0 10px}
+.lp-final{background:var(--brand);color:var(--brand-fg);border-radius:18px;padding:32px 20px;text-align:center;display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.lp-final h2{font-family:var(--display);font-weight:400;font-size:32px}
+.lp-final p{margin:0;opacity:.9}
+.lp-foot{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);font-size:13px}
+.lp-foot a{color:inherit}
+
+/* ---------- langganan & kunci fitur ---------- */
+.planbar{display:block;text-decoration:none;font-size:13px;font-weight:700;padding:8px 16px;text-align:center}
+.planbar.trial{background:var(--gold-soft);color:var(--gold-fg)}
+.planbar.free{background:var(--info-bg);color:var(--info)}
+.planbar.warn{background:var(--warn-bg);color:var(--warn)}
+.lock{border:1.5px dashed var(--gold);background:var(--gold-soft);color:var(--gold-fg);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.qris{max-width:280px;width:100%;border-radius:12px;border:1px solid var(--line);align-self:center}
+.copyrow{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--sunk);border-radius:10px;padding:8px 12px;font-weight:800}
+
+/* ---------- cetak (PDF) ---------- */
+@media print{
+  header.top,.planbar,.noprint,nav.tabs,button,.toast{display:none!important}
+  body{background:#fff;color:#000}
+  main{padding:0}
+  .panel,.tile{border-color:#ccc;break-inside:avoid}
+}
