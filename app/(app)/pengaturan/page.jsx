@@ -1,6 +1,7 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { compressImage } from '@/lib/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -70,6 +71,7 @@ export default function Pengaturan() {
         <button className="primary" onClick={saveInfo}>Simpan info</button>
         {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}
       </section>}
+      {isOwner && <QrisBox kosId={kos.id} />}
       <section className="panel"><h3>Kategori pengeluaran</h3>
         <div className="list">{d.categories.map((c) => (
           <div className="li" key={c.id}><div className="main"><b>{c.name}</b><span className="small muted">{KIND[c.kind]}</span></div><button className="sm ghost danger" onClick={() => delCat(c)}>Hapus</button></div>
@@ -88,5 +90,36 @@ export default function Pengaturan() {
         </div>
       </section>
     </div>
+  );
+}
+
+function QrisBox({ kosId }) {
+  const [img, setImg] = useState(undefined);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    supabase.from('kos').select('qris_image').eq('id', kosId).maybeSingle()
+      .then(({ data, error }) => setImg(error ? null : data?.qris_image || null));
+  }, [kosId]);
+  async function save(v) {
+    setBusy(true);
+    const ok = await run(() => supabase.from('kos').update({ qris_image: v }).eq('id', kosId), v ? 'QRIS disimpan' : 'QRIS dihapus', errMsg);
+    setBusy(false);
+    if (ok) setImg(v);
+  }
+  async function pick(e) {
+    const f = e.target.files?.[0]; e.target.value = '';
+    if (!f) return;
+    try { await save(await compressImage(f, 1100, 0.9)); } catch (er) { toast(er.message); }
+  }
+  return (
+    <section className="panel"><h3>QRIS kos</h3>
+      <p className="small muted" style={{ margin: 0 }}>Tampil di portal penghuni agar mereka bisa langsung scan dan bayar. Pakai screenshot atau foto QRIS dari aplikasi bank / merchant Anda yang tajam dan tidak terpotong.</p>
+      {img === undefined ? <p className="small muted" style={{ margin: 0 }}>Memuat…</p> : img ? (
+        <img src={img} alt="QRIS kos" className="qris" />
+      ) : <div className="empty"><span className="muted small">Belum ada gambar QRIS</span></div>}
+      <label className="f">{img ? 'Ganti gambar QRIS' : 'Unggah gambar QRIS'}<input type="file" accept="image/*" onChange={pick} disabled={busy} /></label>
+      {img && <button className="sm ghost danger" onClick={() => confirm('Hapus gambar QRIS?') && save(null)} disabled={busy}>Hapus QRIS</button>}
+      <p className="small muted" style={{ margin: 0 }}>Setelah mengganti QRIS, uji dengan satu pembayaran kecil.</p>
+    </section>
   );
 }

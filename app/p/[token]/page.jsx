@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Sheet, Field, toast } from '@/components/ui';
 import { rp, tgl, tglShort, today, parseRp, angka, waLink } from '@/lib/format';
 import { DEMO_TOKEN, DEMO_PORTAL, demoAnswer } from '@/components/demo/portalDemo';
+import { compressImage } from '@/lib/image';
 
 const PAY = { menunggu: ['Diperiksa pengelola', 'gold'], terverifikasi: ['Diterima', 'good'], ditolak: ['Ditolak', 'bad'], dibatalkan: ['Dibatalkan', 'void'] };
 const QUICK = ['Berapa tagihan saya bulan ini?', 'Ke mana saya harus transfer?', 'Kapan jatuh tempo berikutnya?', 'Ada kamar kosong untuk teman?'];
@@ -15,23 +16,6 @@ function InvChip({ i }) {
   if (i.overdue) return <span className="chip bad">Lewat jatuh tempo</span>;
   if (i.pay_state === 'sebagian') return <span className="chip gold">Dibayar sebagian</span>;
   return <span className="chip info">Belum dibayar</span>;
-}
-
-// Kecilkan foto bukti transfer agar cepat dikirim (maks 1280px, JPEG)
-function compress(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const s = Math.min(1, 1280 / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(img.src);
-      resolve(c.toDataURL('image/jpeg', 0.72));
-    };
-    img.onerror = () => reject(new Error('Foto tidak bisa dibaca'));
-    img.src = URL.createObjectURL(file);
-  });
 }
 
 export default function Portal() {
@@ -99,6 +83,7 @@ export default function Portal() {
                 </div>
               ))}</div></section>
             ) : <p className="muted small" style={{ margin: 0 }}>Tidak ada tagihan yang perlu dibayar. Terima kasih!</p>}
+            {p.kos.qris && <QrisPanel src={p.kos.qris} kos={p.kos.name} />}
             {p.kos.payment_info && <section className="panel"><span className="label">Cara bayar</span><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{p.kos.payment_info}</p></section>}
             <EmailBox demo={demo} token={token} current={p.occupant.email} onSaved={load} />
           </>
@@ -129,12 +114,12 @@ export default function Portal() {
 
         {tab === 'tanya' && ai && <Chat demo={demo} token={token} name={p.occupant.name} kos={p.kos.name} />}
       </main>
-      {pay && <PaySheet demo={demo} token={token} inv={pay} info={p.kos.payment_info} onClose={() => setPay(null)} onDone={() => { setPay(null); load(); }} />}
+      {pay && <PaySheet demo={demo} token={token} inv={pay} info={p.kos.payment_info} qris={p.kos.qris} onClose={() => setPay(null)} onDone={() => { setPay(null); load(); }} />}
     </>
   );
 }
 
-function PaySheet({ demo, token, inv, info, onClose, onDone }) {
+function PaySheet({ demo, token, inv, info, qris, onClose, onDone }) {
   const [amt, setAmt] = useState(angka(inv.outstanding));
   const [date, setDate] = useState(today());
   const [method, setMethod] = useState('transfer');
@@ -143,7 +128,7 @@ function PaySheet({ demo, token, inv, info, onClose, onDone }) {
   const [busy, setBusy] = useState(false);
   async function pick(e) {
     const f = e.target.files?.[0]; if (!f) return;
-    try { setProof(await compress(f)); } catch (er) { toast(er.message); }
+    try { setProof(await compressImage(f)); } catch (er) { toast(er.message); }
   }
   async function send() {
     const a = parseRp(amt);
@@ -165,6 +150,7 @@ function PaySheet({ demo, token, inv, info, onClose, onDone }) {
     <Sheet title="Bayar & kirim bukti" onClose={onClose}>
       <p className="small muted" style={{ margin: 0 }}>{title(inv)} · sisa {rp(inv.outstanding)}</p>
       {info && <div className="notice info" style={{ whiteSpace: 'pre-wrap', fontWeight: 500 }}><b>Cara bayar</b>{'\n'}{info}</div>}
+      {qris && <details><summary className="small" style={{ fontWeight: 800, cursor: 'pointer', minHeight: 36 }}>Tampilkan QRIS</summary><img src={qris} alt="QRIS kos" className="qris" style={{ display: 'block', margin: '8px auto 0' }} /></details>}
       <div className="row">
         <Field label="Jumlah yang dibayar"><input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} /></Field>
         <Field label="Tanggal bayar"><input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -248,6 +234,17 @@ function EmailBox({ demo, token, current, onSaved }) {
           </div>
         </>
       )}
+    </section>
+  );
+}
+
+function QrisPanel({ src, kos }) {
+  return (
+    <section className="panel" style={{ alignItems: 'center', textAlign: 'center' }}>
+      <span className="label">Bayar dengan QRIS</span>
+      <img src={src} alt={`QRIS ${kos}`} className="qris" />
+      <span className="small muted">Scan dengan aplikasi bank atau e-wallet, masukkan nominal sesuai tagihan, lalu tekan "Bayar & kirim bukti".</span>
+      <a href={src} download={`QRIS-${kos}.jpg`} className="small">Simpan gambar QRIS</a>
     </section>
   );
 }
