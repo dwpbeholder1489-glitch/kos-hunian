@@ -171,6 +171,7 @@ export function ScrReminder() {
       <dl className="kv"><dt>Kamar</dt><dd>A02</dd><dt>WhatsApp</dt><dd>0813-xxxx-2211</dd><dt>Belum dibayar</dt><dd style={{ color: 'var(--bad)' }}>{rp(750000)}</dd></dl>
       <span className="mini-btn primary">Kirim pengingat via WhatsApp</span>
       <div className="mini-wa">Halo Budi Santoso, ini pengingat dari {KOS.name}. Tagihan yang belum dibayar:<br />• Sewa {d(1)} – {d(30)}: {rp(750000)}<br />Total {rp(750000)}. Terima kasih 🙏</div>
+      <span className="small" style={{ textAlign: 'center', color: 'var(--accent, #1D4A37)', fontWeight: 700 }}>Ubah teks pesan WhatsApp</span>
     </Phone>
   );
 }

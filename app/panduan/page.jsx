@@ -82,6 +82,7 @@ const PARTS = [
       <>Buka penghuni yang menunggak.</>,
       <>Tekan <b>Kirim pengingat via WhatsApp</b>.</>,
       <>Pesan berisi rincian tagihan sudah tersusun sopan — tinggal tekan kirim.</>,
+      <>Ingin kata-katanya sesuai gaya Anda? Ketuk <b>Ubah teks pesan WhatsApp</b> di bawah tombol, atau buka <b>Pengaturan › Teks pesan WhatsApp</b>.</>,
     ], 'Tombol pengingat hanya muncul bila nomor WhatsApp penghuni sudah diisi.', null, <ScrReminder />],
     ['Tagihan tambahan', 'Tagihan › + Tagihan tambahan', [
       <>Pilih <b>Penghuni</b>.</>,
@@ -137,6 +138,7 @@ const PARTS = [
     ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
       <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,
       <><b>Info untuk penghuni</b>: nomor WhatsApp, cara bayar, dan peraturan kos (tampil di portal), serta pilihan email <b>notifikasi bukti transfer</b> dan <b>daftar tagih setiap pagi</b>.</>,
+      <><b>Teks pesan WhatsApp</b>: ubah kata-kata pesan pengingat tagihan dan pesan link portal. Ketuk kata berwarna seperti <b>{'{nama}'}</b> atau <b>{'{total}'}</b> untuk menyisipkan data penghuni otomatis; lihat <b>Contoh pesan</b> sebelum menyimpan. <b>Pakai teks bawaan</b> mengembalikan teks awal.</>,
       <><b>QRIS kos</b>: unggah screenshot QRIS dari aplikasi bank/merchant agar penghuni bisa scan dari portal. Uji dengan satu pembayaran kecil setelah mengganti.</>,
       <>Tambah kategori pengeluaran sesuai kebutuhan.</>,
       <>Punya kos lain? <b>+ Tambah kos lain</b>, lalu pindah lewat pilihan di pojok kanan atas.</>,
@@ -144,13 +146,13 @@ const PARTS = [
     ], null, null, null],
     ['Portal penghuni & asisten 24 jam', 'Penghuni › ketuk penghuni › Portal penghuni', [
       <>Isi dulu <b>Info untuk penghuni</b> di Pengaturan: nomor WhatsApp pengelola, <b>cara bayar</b>, <b>peraturan kos</b>, dan unggah <b>QRIS kos</b> agar penghuni bisa langsung scan.</>,
-      <>Buka penghuni, tekan <b>Kirim link via WhatsApp</b>. Penghuni menerima link pribadi tanpa perlu daftar.</>,
+      <>Buka penghuni, tekan <b>Kirim link via WhatsApp</b>. Penghuni menerima link pribadi tanpa perlu daftar. Kata-kata pesannya bisa diubah di <b>Pengaturan › Teks pesan WhatsApp</b>; link selalu ikut terkirim.</>,
       <>Penghuni bisa melihat tagihan, <b>mengirim bukti transfer</b>, dan <b>bertanya ke asisten</b> soal tagihan, cara bayar, dan peraturan.</>,
       <>Bukti yang dikirim muncul di <b>Pembayaran › Menunggu verifikasi</b> dengan tombol <b>Lihat bukti</b>.</>,
     ], <>Asisten hanya menjawab urusan kos dan hanya memakai data penghuni itu sendiri. Jika link tersebar ke orang lain, tekan <b>Ganti link</b>.</>, 'warn', <ScrPortal />, 'pro'],
     ['Pengingat jatuh tempo otomatis', 'Pengaturan › Info untuk penghuni', [
       <>Setiap pagi sekitar pukul 07.00, <b>daftar tagih</b> dikirim ke email Anda: siapa yang telat dan yang jatuh tempo 3 hari ke depan.</>,
-      <>Di daftar itu setiap penghuni punya tombol <b>Kirim WA</b> — satu ketukan membuka WhatsApp Anda dengan pesan pengingat yang sudah tersusun.</>,
+      <>Di daftar itu setiap penghuni punya tombol <b>Kirim WA</b> — satu ketukan membuka WhatsApp Anda dengan pesan pengingat yang sudah tersusun (memakai teks dari <b>Pengaturan › Teks pesan WhatsApp</b> bila sudah Anda ubah).</>,
       <>Penghuni yang punya <b>email</b> mendapat pengingat otomatis 3 hari sebelum, pada hari jatuh tempo, dan 3 hari setelah telat.</>,
       <>Email penghuni diisi di data penghuni, atau oleh penghuni sendiri lewat <b>Portal › Pengingat email</b>.</>,
     ], <>Tekan <b>Kirim daftar tagih sekarang (uji)</b> di Pengaturan untuk mencoba. Pengingat hanya dikirim untuk tagihan yang belum lunas.</>, null, null, true],

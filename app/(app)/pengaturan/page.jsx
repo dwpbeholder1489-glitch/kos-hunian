@@ -1,6 +1,7 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { TPL, MAX_TPL, fill } from '@/lib/templates';
 import { compressImage } from '@/lib/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -72,6 +73,7 @@ export default function Pengaturan() {
         {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}
       </section>}
       {isOwner && <QrisBox kosId={kos.id} />}
+      {isOwner && kos.wa_reminder_tpl !== undefined && <TemplateBox kos={kos} onSaved={loadKos} />}
       <section className="panel"><h3>Kategori pengeluaran</h3>
         <div className="list">{d.categories.map((c) => (
           <div className="li" key={c.id}><div className="main"><b>{c.name}</b><span className="small muted">{KIND[c.kind]}</span></div><button className="sm ghost danger" onClick={() => delCat(c)}>Hapus</button></div>
@@ -120,6 +122,60 @@ function QrisBox({ kosId }) {
       <label className="f">{img ? 'Ganti gambar QRIS' : 'Unggah gambar QRIS'}<input type="file" accept="image/*" onChange={pick} disabled={busy} /></label>
       {img && <button className="sm ghost danger" onClick={() => confirm('Hapus gambar QRIS?') && save(null)} disabled={busy}>Hapus QRIS</button>}
       <p className="small muted" style={{ margin: 0 }}>Setelah mengganti QRIS, uji dengan satu pembayaran kecil.</p>
+    </section>
+  );
+}
+
+// Teks pesan WhatsApp yang bisa diubah pemilik (pengingat tagihan & link portal)
+function TemplateBox({ kos, onSaved }) {
+  const [vals, setVals] = useState({ reminder: kos.wa_reminder_tpl || TPL.reminder.def, portal: kos.wa_portal_tpl || TPL.portal.def });
+  const [busy, setBusy] = useState(false);
+  const refs = { reminder: useRef(null), portal: useRef(null) };
+  useEffect(() => { if (window.location.hash === '#pesan') document.getElementById('pesan')?.scrollIntoView({ behavior: 'smooth' }); }, []);
+
+  const set = (k, v) => setVals((s) => ({ ...s, [k]: v }));
+  function insert(k, word) {
+    const el = refs[k].current, tag = `{${word}}`;
+    const v = vals[k], a = el ? el.selectionStart : v.length, b = el ? el.selectionEnd : v.length;
+    set(k, v.slice(0, a) + tag + v.slice(b));
+    requestAnimationFrame(() => { if (el) { el.focus(); el.setSelectionRange(a + tag.length, a + tag.length); } });
+  }
+  async function save() {
+    for (const k of ['reminder', 'portal']) {
+      if (!vals[k].trim()) return run(() => { throw new Error(`Teks "${TPL[k].title}" tidak boleh kosong. Tekan "Pakai teks bawaan" bila ingin kembali ke awal.`); });
+      if (vals[k].length > MAX_TPL) return run(() => { throw new Error(`Teks "${TPL[k].title}" maksimal ${MAX_TPL} karakter.`); });
+    }
+    // sama dengan teks bawaan → simpan kosong, agar ikut pembaruan teks bawaan berikutnya
+    const norm = (k) => (vals[k].trim() === TPL[k].def ? null : vals[k].trim());
+    setBusy(true);
+    const ok = await run(() => supabase.from('kos').update({ wa_reminder_tpl: norm('reminder'), wa_portal_tpl: norm('portal') }).eq('id', kos.id), 'Teks pesan disimpan', errMsg);
+    setBusy(false);
+    if (ok) onSaved();
+  }
+
+  return (
+    <section className="panel" id="pesan"><h3>Teks pesan WhatsApp</h3>
+      <p className="small muted" style={{ margin: 0 }}>Sesuaikan kata-kata pesan yang dikirim ke penghuni. Ketuk kata berwarna untuk menyisipkannya; saat dikirim, kata itu otomatis diganti dengan data penghuni.</p>
+      {['reminder', 'portal'].map((k) => {
+        const t = TPL[k];
+        const missLink = k === 'portal' && !vals[k].includes('{link}');
+        return (
+          <div className="stack" key={k} style={{ gap: 8 }}>
+            <b>{t.title}</b>
+            <span className="small muted">{t.where}</span>
+            <textarea ref={refs[k]} value={vals[k]} maxLength={MAX_TPL} onChange={(e) => set(k, e.target.value)} style={{ minHeight: 150 }} />
+            <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+              {t.vars.map(([w, label]) => <button key={w} type="button" className="sm" title={label} onClick={() => insert(k, w)}>{'{' + w + '}'}</button>)}
+            </div>
+            <span className="small muted">{t.vars.map(([w, label]) => `{${w}} = ${label}`).join(' · ')}</span>
+            {missLink && <span className="small" style={{ color: 'var(--warn)' }}>Tidak ada {'{link}'} — link portal akan ditambahkan otomatis di akhir pesan.</span>}
+            <span className="label">Contoh pesan</span>
+            <div className="mini-wa" style={{ whiteSpace: 'pre-wrap', fontSize: 13, alignSelf: 'stretch', maxWidth: '100%' }}>{fill(vals[k], t.sample)}{missLink ? '\n\n' + t.sample.link : ''}</div>
+            {vals[k] !== t.def && <button type="button" className="sm ghost" onClick={() => set(k, t.def)}>Pakai teks bawaan</button>}
+          </div>
+        );
+      })}
+      <button className="primary" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan teks pesan'}</button>
     </section>
   );
 }

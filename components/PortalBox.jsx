@@ -6,9 +6,10 @@ import { toast } from '@/components/ui';
 import Locked from '@/components/Locked';
 import { hasPlan } from '@/lib/plan';
 import { waLink, errMsg } from '@/lib/format';
+import { message } from '@/lib/templates';
 
 // Bagian "Portal penghuni" di detail penghuni: kirim / salin / ganti link pribadi
-export default function PortalBox({ occ }) {
+export default function PortalBox({ occ, room }) {
   const { kos } = useKos();
   const pro = hasPlan(kos, 'pro');
   const [token, setToken] = useState(null);
@@ -21,7 +22,7 @@ export default function PortalBox({ occ }) {
 
   if (!pro) return <Locked need="pro" title="Portal penghuni" text="Penghuni bisa melihat tagihan sendiri, mengirim bukti transfer, dan bertanya ke asisten 24 jam lewat link pribadi." />;
   const url = token ? `${window.location.origin}/p/${token}` : '';
-  const msg = `Halo ${occ.name}, ini link portal penghuni ${kos.name}. Di sini Anda bisa melihat tagihan, mengirim bukti transfer, dan bertanya ke asisten kos kapan saja:\n${url}\n\nMohon link ini tidak dibagikan ke orang lain.`;
+  const msg = message('portal', kos.wa_portal_tpl, { nama: occ.name, kos: kos.name, kamar: room || '', link: url });
 
   async function reset() {
     if (!confirm('Ganti link? Link lama tidak bisa dipakai lagi. Gunakan ini jika link tersebar ke orang lain.')) return;

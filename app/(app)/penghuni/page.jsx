@@ -8,6 +8,8 @@ import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, InvChip, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet } from '@/components/LeaseForms';
 import { rp, tgl, invTitle, errMsg, waLink } from '@/lib/format';
+import { message, caraBayar } from '@/lib/templates';
+import Link from 'next/link';
 
 export default function Penghuni() {
   const d = useData();
@@ -53,14 +55,17 @@ export default function Penghuni() {
 }
 
 function OccDetail({ d, occ, go, onClose }) {
-  const { kos } = useKos();
+  const { kos, user } = useKos();
   if (!occ) return null;
   const l = d.activeByOcc.get(occ.id);
   const invs = d.invoices.filter((i) => i.occupant_id === occ.id && i.status !== 'batal').slice(0, 12);
   const debt = d.outByOcc.get(occ.id) || 0;
   const unpaid = invs.filter((i) => i.outstanding > 0);
-  const reminder = `Halo ${occ.name}, ini pengingat dari ${kos.name}. Tagihan yang belum dibayar:\n` +
-    unpaid.map((i) => `• ${invTitle(i)}: ${rp(i.outstanding)}`).join('\n') + `\nTotal ${rp(debt)}. Terima kasih 🙏`;
+  const reminder = message('reminder', kos.wa_reminder_tpl, {
+    nama: occ.name, kos: kos.name, kamar: l ? d.roomCode(l.room_id) : '',
+    rincian: unpaid.map((i) => `• ${invTitle(i)}: ${rp(i.outstanding)}`).join('\n'),
+    total: rp(debt), cara_bayar: caraBayar(kos.payment_info),
+  });
   return (
     <Sheet title={occ.name} onClose={onClose}>
       <dl className="kv">
@@ -71,7 +76,8 @@ function OccDetail({ d, occ, go, onClose }) {
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
       </dl>
       {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
-      <PortalBox occ={occ} />
+      <PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />
+      {kos.owner_id === user?.id && <Link href="/pengaturan#pesan" className="small" style={{ textAlign: 'center' }}>Ubah teks pesan WhatsApp</Link>}
       <section className="panel"><span className="label">Tagihan terakhir</span>
         {invs.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Belum ada tagihan.</p> : (
           <div className="list">{invs.map((i) => (
