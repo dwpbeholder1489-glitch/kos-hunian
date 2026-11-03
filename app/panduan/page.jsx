@@ -9,6 +9,7 @@ import {
 export const metadata = {
   title: 'Panduan Kos Hunian — Langkah demi Langkah',
   description: 'Panduan lengkap memakai Kos Hunian: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, kwitansi, dan langganan.',
+  openGraph: { title: 'Panduan Kos Hunian — Langkah demi Langkah', description: 'Cara memakai Kos Hunian dari daftar sampai laporan, lengkap dengan gambar.', url: '/panduan', images: [{ url: '/og.jpg', width: 1200, height: 630 }] },
 };
 
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi Kos Hunian.')}`;

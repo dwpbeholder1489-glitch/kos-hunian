@@ -12,7 +12,8 @@ const DESC = 'Kelola kamar, penghuni, tagihan, pembayaran, dan laporan keuangan 
 export const metadata = {
   title: TITLE,
   description: DESC,
-  openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'Kos Hunian' },
+  openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'Kos Hunian', url: '/', images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Kos Hunian — aplikasi pengelolaan kos' }] },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: ['/og.jpg'] },
 };
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
