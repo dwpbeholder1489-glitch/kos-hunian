@@ -19,6 +19,9 @@ Teknologi: Next.js (App Router) + Supabase (PostgreSQL, Auth, Row Level Security
 Pakai browser Chrome di HP. Kalau tampilan situs terlalu kecil atau tombol tidak muncul, buka menu ⋮ lalu centang **Situs desktop**.
 
 ### 1. Buat database di Supabase
+
+> Cara termudah dari HP: sambungkan repo ini di Supabase → Integrations → GitHub (Working directory `.`, Deploy to production ON, branch `main`). Skema di `supabase/migrations` terpasang otomatis. Langkah manual di bawah hanya cadangan.
+
 1. Buka **supabase.com** → *Start your project* → daftar dengan akun GitHub.
 2. *New project*. Isi nama `kos-hunian`, buat **Database Password** (simpan baik-baik), Region pilih **Southeast Asia (Singapore)**. Klik *Create*. Tunggu ±2 menit.
 3. Di menu kiri buka **SQL Editor** → *New query*.
