@@ -39,12 +39,15 @@ export default function AppLayout({ children }) {
               <span className="mark">KH</span>
               <div><h1>{kos.name}</h1><small>Manage Smarter. Live Better.</small></div>
             </div>
+            <div className="right">
             {list.length > 1 ? (
               <select className="kossel" value={kosId} onChange={(e) => (e.target.value === '+' ? router.push('/mulai') : pickKos(e.target.value))} aria-label="Pilih kos">
                 {list.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
                 <option value="+">+ Tambah kos</option>
               </select>
             ) : <span className="small" style={{ opacity: 0.85 }}>{tgl(today())}</span>}
+            <Link href="/panduan" className="helpbtn" aria-label="Panduan pemakaian" title="Panduan">?</Link>
+            </div>
           </div>
           <nav className="tabs" aria-label="Menu">
             {tabs.map(([href, label]) => (

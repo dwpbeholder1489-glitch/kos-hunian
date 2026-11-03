@@ -2,10 +2,13 @@
 import Link from 'next/link';
 import { useData } from '@/lib/useData';
 import { Tile, Loading, Empty, InvChip } from '@/components/ui';
+import Checklist from '@/components/Checklist';
+import { useKos } from '@/components/KosProvider';
 import { rp, tgl, today, thisMonth, bulan, invTitle } from '@/lib/format';
 
 export default function Beranda() {
   const d = useData();
+  const { kosId } = useKos();
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const t = today(), ym = thisMonth();
@@ -33,7 +36,8 @@ export default function Beranda() {
 
   return (
     <div className="stack">
-      <div className="row between"><h2>Ringkasan {bulan(ym)}</h2><span className="muted small">{tgl(t)}</span></div>
+      <Checklist d={d} kosId={kosId} />
+      <h2>Ringkasan {bulan(ym)}</h2>
       <div className="grid">
         <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn - cashOut)} sub={`Masuk ${rp(cashIn)} · keluar ${rp(cashOut)}`} />
         <Tile label="Hunian" value={`${occ}%`} sub={`${filled} dari ${rentable.length} kamar terisi`} />

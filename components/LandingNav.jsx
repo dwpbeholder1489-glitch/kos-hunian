@@ -11,7 +11,8 @@ export default function LandingNav() {
           <span className="mark">KH</span><b>Kos Hunian</b>
         </Link>
         <nav className="row">
-          <a href="#harga" className="lp-link">Harga</a>
+          <Link href="/panduan" className="lp-link">Panduan</Link>
+          <a href="/#harga" className="lp-link hide-sm">Harga</a>
           {session
             ? <Link href="/beranda"><button className="primary sm">Buka aplikasi</button></Link>
             : <Link href="/masuk"><button className="sm">Masuk</button></Link>}

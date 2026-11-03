@@ -8,6 +8,7 @@ export const metadata = {
 };
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
+const WaIcon = () => <svg className="wa-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.4-.2Z"/></svg>;
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi Kos Hunian.')}`;
 
 const PAINS = [
@@ -51,7 +52,7 @@ export default function Landing() {
           <p className="lp-lead">Kos Hunian mencatat kamar, penghuni, tagihan sewa otomatis, pembayaran, dan laba rugi kos Anda — semuanya di satu tempat.</p>
           <div className="row">
             <Link href="/masuk?daftar=1"><button className="cta">Coba gratis {BUSINESS.trialDays} hari</button></Link>
-            <a href={wa} target="_blank" rel="noreferrer"><button className="lp-ghost">Tanya via WhatsApp</button></a>
+            <a href={wa} target="_blank" rel="noreferrer"><button className="lp-ghost"><WaIcon />Tanya via WhatsApp</button></a>
           </div>
           <p className="small lp-note">Tanpa kartu kredit · Gratis selamanya untuk {BUSINESS.freeRoomLimit} kamar</p>
         </div>
@@ -112,6 +113,7 @@ export default function Landing() {
 
         <section className="lp-sec" id="faq">
           <h2>Pertanyaan umum</h2>
+          <p className="muted" style={{ margin: 0 }}>Ingin tahu cara pakainya langkah demi langkah? <Link href="/panduan">Baca panduan lengkap →</Link></p>
           <div className="panel">
             {FAQ.map(([q, a]) => <details key={q} className="lp-faq"><summary>{q}</summary><p className="muted">{a}</p></details>)}
           </div>
@@ -122,7 +124,7 @@ export default function Landing() {
           <p>Coba semua fitur gratis selama {BUSINESS.trialDays} hari.</p>
           <div className="row" style={{ justifyContent: 'center' }}>
             <Link href="/masuk?daftar=1"><button className="cta">Daftar sekarang</button></Link>
-            <a href={wa} target="_blank" rel="noreferrer"><button className="lp-ghost">WhatsApp {BUSINESS.whatsappDisplay}</button></a>
+            <a href={wa} target="_blank" rel="noreferrer"><button className="lp-ghost"><WaIcon />{BUSINESS.whatsappDisplay}</button></a>
           </div>
         </section>
       </main>
@@ -130,7 +132,7 @@ export default function Landing() {
       <footer className="lp-foot">
         <div className="wrap row between">
           <span>© {new Date().getFullYear()} Kos Hunian · Manage Smarter. Live Better.</span>
-          <a href={wa} target="_blank" rel="noreferrer">Hubungi kami</a>
+          <span className="row"><Link href="/panduan">Panduan</Link><a href={wa} target="_blank" rel="noreferrer">Hubungi kami</a></span>
         </div>
       </footer>
     </div>

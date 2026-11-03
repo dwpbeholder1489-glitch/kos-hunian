@@ -7,7 +7,7 @@ const Ctx = createContext(null);
 export const useKos = () => useContext(Ctx);
 
 const KEY = 'koshunian.kos';
-const PUBLIC = ['/', '/masuk'];
+const PUBLIC = ['/', '/masuk', '/panduan'];
 
 export default function KosProvider({ children }) {
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function KosProvider({ children }) {
   }, [session]);
 
   useEffect(() => {
-    if (session && list && list.length === 0 && !['/mulai', '/'].includes(path)) router.replace('/mulai');
+    if (session && list && list.length === 0 && !['/mulai', '/', '/panduan'].includes(path)) router.replace('/mulai');
   }, [session, list, path, router]);
 
   const pickKos = (id) => { setKosId(id); try { localStorage.setItem(KEY, id); } catch {} setVer((v) => v + 1); };
