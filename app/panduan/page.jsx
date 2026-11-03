@@ -73,10 +73,11 @@ const PARTS = [
       <>Tekan <b>Simpan pembayaran</b>. Status tagihan berubah otomatis.</>,
     ], <>Untuk transfer dan QRIS, centang <b>Uang sudah saya terima</b> hanya setelah notifikasi uang masuk muncul di aplikasi bank Anda.</>, 'warn', <ScrPay />],
     ['Verifikasi pembayaran', 'Pembayaran', [
-      <>Pembayaran yang belum dicentang muncul di <b>Menunggu verifikasi</b>.</>,
+      <>Pembayaran yang belum dicentang, dan bukti yang dikirim penghuni lewat portal (label <b>Dikirim penghuni</b>), muncul di <b>Menunggu verifikasi</b>.</>,
+      <>Untuk kiriman penghuni, tekan <b>Lihat bukti</b> untuk melihat foto transfernya.</>,
       <>Cek mutasi rekening, lalu tekan <b>Uang sudah masuk</b> atau <b>Tolak</b>.</>,
       <>Di bawahnya tampil total uang yang diterima bulan ini.</>,
-    ], null, null, <ScrVerify />],
+    ], <>Setiap ada bukti baru dari penghuni, email pemberitahuan berisi foto bukti dikirim ke email akun Anda (bisa dimatikan di Pengaturan).</>, null, <ScrVerify />],
     ['Ingatkan penghuni lewat WhatsApp', 'Penghuni › ketuk penghuni', [
       <>Buka penghuni yang menunggak.</>,
       <>Tekan <b>Kirim pengingat via WhatsApp</b>.</>,
@@ -135,6 +136,8 @@ const PARTS = [
     ], <>Kos baru mendapat {BUSINESS.trialDays} hari semua fitur. Setelah itu menjadi Gratis (maks {BUSINESS.freeRoomLimit} kamar terisi). <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
     ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
       <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,
+      <><b>Info untuk penghuni</b>: nomor WhatsApp, cara bayar, dan peraturan kos (tampil di portal), serta pilihan email <b>notifikasi bukti transfer</b> dan <b>daftar tagih setiap pagi</b>.</>,
+      <><b>QRIS kos</b>: unggah screenshot QRIS dari aplikasi bank/merchant agar penghuni bisa scan dari portal. Uji dengan satu pembayaran kecil setelah mengganti.</>,
       <>Tambah kategori pengeluaran sesuai kebutuhan.</>,
       <>Punya kos lain? <b>+ Tambah kos lain</b>, lalu pindah lewat pilihan di pojok kanan atas.</>,
       <>Pasang di layar utama HP: Safari › <b>Bagikan</b> › <b>Tambah ke Layar Utama</b>; Chrome › <b>⋮</b> › <b>Tambahkan ke layar utama</b>.</>,
