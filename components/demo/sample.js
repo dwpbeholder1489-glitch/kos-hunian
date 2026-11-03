@@ -50,7 +50,7 @@ export const EXPENSES = [
   ['Listrik dan air', 'Token & PDAM bulan ini', 1250000, d(2)],
   ['Internet', 'WiFi 50 Mbps', 350000, d(1)],
   ['Perbaikan', 'Ganti kran kamar mandi A08', 275000, d(6)],
-  ['Kebersihan', 'Gaji kebersihan mingguan', 400000, d(7)],
+  ['Gaji pengelola / penjaga', 'Gaji penjaga kos', 400000, d(7)],
 ];
 
 // angka ringkasan dihitung dari data di atas agar konsisten

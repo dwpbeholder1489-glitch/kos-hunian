@@ -22,6 +22,8 @@ export default function Beranda() {
   const billedMonth = live.filter((i) => i.due_date.startsWith(ym)).reduce((s, i) => s + i.amount, 0);
   const cashIn = d.payments.filter((p) => p.status === 'terverifikasi' && p.paid_at.startsWith(ym)).reduce((s, p) => s + p.amount, 0);
   const cashOut = d.expenses.filter((x) => x.date.startsWith(ym)).reduce((s, x) => s + x.amount, 0);
+  const entIn = d.entries.filter((x) => x.date.startsWith(ym) && ['pendapatan_lain', 'setoran_modal', 'pinjaman_masuk'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
+  const entOut = d.entries.filter((x) => x.date.startsWith(ym) && ['prive', 'bayar_pinjaman'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
   const overdue = live.filter((i) => i.overdue);
   const arrears = overdue.reduce((s, i) => s + i.outstanding, 0);
   const pending = d.payments.filter((p) => p.status === 'menunggu');
@@ -40,7 +42,7 @@ export default function Beranda() {
       <Checklist d={d} kosId={kosId} />
       <div className="row"><h2>Ringkasan {bulan(ym)}</h2><PageHelp page="beranda" /></div>
       <div className="grid">
-        <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn - cashOut)} sub={`Masuk ${rp(cashIn)} · keluar ${rp(cashOut)}`} />
+        <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn - cashOut - entOut)} sub={`Masuk ${rp(cashIn + entIn)} · keluar ${rp(cashOut + entOut)}`} />
         <Tile label="Hunian" value={`${occ}%`} sub={`${filled} dari ${rentable.length} kamar terisi`} />
         <Tile label="Tagihan bulan ini" value={rp(billedMonth)} sub={`Terkumpul ${rp(cashIn)}`} />
         <Tile tone={arrears > 0 ? 'bad' : ''} label="Tunggakan" value={rp(arrears)} sub={`${overdue.length} tagihan lewat jatuh tempo`} />

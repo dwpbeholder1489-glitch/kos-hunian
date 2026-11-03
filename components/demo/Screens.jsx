@@ -190,6 +190,7 @@ export function ScrExtra() {
 export function ScrExpense() {
   return (
     <Phone bare>
+      <div className="seg"><button className="on">Biaya kos</button><button>Diambil pemilik & lainnya</button></div>
       <div className="row between"><h3>Catat pengeluaran</h3><span className="small" style={{ color: 'var(--brand-2)', fontWeight: 800 }}>Tutup</span></div>
       <div className="row"><F label="Jumlah" value="275rb" money /><F label="Tanggal" value={dFull(6)} /></div>
       <F label="Kategori" value="Perbaikan" sel hint="Jenis: Operasional" />
@@ -197,6 +198,20 @@ export function ScrExpense() {
       <span className="mini-btn cta">Simpan</span>
       <div className="panel"><div className="row between"><span className="label">Total {MONTH_SHORT}</span><b>{rp(CASH_OUT)}</b></div>
         <dl className="kv">{EXPENSES.map(([c, , a]) => [<dt key={c + 't'}>{c}</dt>, <dd key={c + 'd'}>{rp(a)}</dd>])}</dl></div>
+    </Phone>
+  );
+}
+
+export function ScrOwner() {
+  return (
+    <Phone bare>
+      <div className="seg"><button>Biaya kos</button><button className="on">Diambil pemilik & lainnya</button></div>
+      <div className="row between"><h3>Catat transaksi lain</h3><span className="small" style={{ color: 'var(--brand-2)', fontWeight: 800 }}>Tutup</span></div>
+      <F label="Jenis" value="Diambil pemilik (prive)" sel hint="Uang kos dipakai untuk keperluan pribadi" />
+      <div className="row"><F label="Jumlah" value="500rb" money /><F label="Tanggal" value={dFull(9)} /></div>
+      <F label="Keterangan" value="Belanja rumah tangga" />
+      <span className="mini-btn cta">Simpan</span>
+      <dl className="kv"><dt>Diambil pemilik (prive)</dt><dd style={{ color: 'var(--bad)' }}>−{rp(500000)}</dd><dt>Pendapatan lain</dt><dd style={{ color: 'var(--good)' }}>+{rp(150000)}</dd></dl>
     </Phone>
   );
 }

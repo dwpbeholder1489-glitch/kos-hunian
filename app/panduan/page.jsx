@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan,
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan,
 } from '@/components/demo/Screens';
 
 export const metadata = {
@@ -20,7 +20,7 @@ const MENUS = [
   ['Penghuni', 'Data penghuni, tunggakan, pengingat WhatsApp, dan akhiri sewa'],
   ['Tagihan', 'Tagihan sewa otomatis, tagihan tambahan, dan mencatat pembayaran'],
   ['Pembayaran', 'Memverifikasi pembayaran dan riwayat uang masuk per bulan'],
-  ['Pengeluaran', 'Listrik, air, internet, perbaikan, dan biaya kos lainnya'],
+  ['Pengeluaran', 'Biaya kos (termasuk gaji pengelola) dan uang yang diambil pemilik'],
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
   ['Pengaturan', 'Profil kos, kategori pengeluaran, tambah kos, keluar'],
@@ -86,11 +86,16 @@ const PARTS = [
       <>Isi <b>Keterangan</b> (listrik token, laundry, denda, deposit) dan <b>Jumlah</b>.</>,
       <>Isi <b>Jatuh tempo</b>, lalu tekan <b>Buat tagihan</b>.</>,
     ], null, null, <ScrExtra />],
-    ['Catat pengeluaran', 'Pengeluaran › + Catat', [
+    ['Catat pengeluaran', 'Pengeluaran › Biaya kos › + Catat', [
       <>Isi <b>Jumlah</b> (boleh 275rb atau 1,2jt) dan <b>Tanggal</b>.</>,
-      <>Pilih <b>Kategori</b>: listrik dan air, internet, perbaikan, kebersihan, dan lainnya.</>,
+      <>Pilih <b>Kategori</b>: listrik dan air, internet, perbaikan, kebersihan, <b>gaji pengelola / penjaga</b>, dan lainnya.</>,
       <>Isi <b>Keterangan</b> agar mudah diingat, lalu <b>Simpan</b>.</>,
     ], <>Renovasi dan beli perabot memakai kategori jenis <b>Modal</b> — tidak mengurangi laba operasional, tetapi tetap mengurangi kas.</>, null, <ScrExpense />],
+    ['Uang diambil pemilik & transaksi lain', 'Pengeluaran › Diambil pemilik & lainnya › + Catat', [
+      <>Pilih <b>Jenis</b>: <b>Diambil pemilik (prive)</b>, Setoran modal, Pendapatan lain, Pinjaman diterima, atau Bayar pinjaman.</>,
+      <>Isi <b>Jumlah</b>, <b>Tanggal</b>, dan keterangan, lalu <b>Simpan</b>.</>,
+      <>Laporan memisahkannya: prive mengurangi kas tetapi <b>tidak</b> mengurangi laba.</>,
+    ], <><b>Jangan tertukar:</b> gaji pengelola/penjaga adalah <b>biaya kos</b> (tab Biaya kos). Uang yang dipakai pemilik untuk keperluan pribadi adalah <b>prive</b> (tab ini).</>, 'warn', <ScrOwner />],
     ['Penghuni keluar', 'Penghuni (atau Kamar) › Akhiri sewa', [
       <>Isi <b>Tanggal keluar</b> dan alasan bila perlu.</>,
       <>Tekan <b>Akhiri sewa</b>. Kamar kembali <b>Tersedia</b>.</>,
@@ -137,7 +142,7 @@ const PARTS = [
 ];
 
 const RULES = [
-  'Catat semua uang keluar untuk kos, sekecil apa pun. Laba hanya akurat jika semua biaya tercatat.',
+  'Catat semua uang keluar, sekecil apa pun — termasuk yang diambil pemilik untuk pribadi (prive). Saldo kas hanya cocok jika semuanya tercatat.',
   'Transfer dan QRIS dicatat sebagai diterima hanya setelah uang benar-benar masuk ke rekening.',
   'Penghuni lama: isi tagihan pertama dengan jatuh tempo berikutnya yang belum dibayar.',
   'Kas bersih bukan laba. Lihat Laporan untuk laba, dan Tunggakan untuk uang yang belum tertagih.',
@@ -161,9 +166,9 @@ export default function Panduan() {
         <h2 style={{ color: 'var(--brand-2)' }}>Urutan panduan</h2>
         <div className="g-order">
           <div><b>Persiapan</b><span><a href="#bagian-A">Langkah 1–5</a><br />Daftar, kamar, penghuni</span></div>
-          <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–12</a><br />Tagihan, bayar, pengingat, biaya</span></div>
-          <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 13–16</a><br />Dashboard, laporan, kwitansi</span></div>
-          <div><b>Akun</b><span><a href="#bagian-D">Langkah 17–18</a><br />Langganan, pengaturan</span></div>
+          <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
+          <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
+          <div><b>Akun</b><span><a href="#bagian-D">Langkah 18–19</a><br />Langganan, pengaturan</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
@@ -172,7 +177,7 @@ export default function Panduan() {
           <li>Saat penghuni <b>mulai sewa</b>, kamar menjadi Terisi dan tagihan sewa bulanan berjalan sendiri.</li>
           <li>Setiap <b>pembayaran</b> mengurangi sisa tagihan; status Lunas, Sebagian, atau Menunggak dihitung otomatis.</li>
           <li>Saat sewa <b>diakhiri</b>, kamar kembali Tersedia dan tagihan bulan berikutnya dibatalkan.</li>
-          <li><b>Laba</b> = pembayaran diterima − biaya operasional. Belanja modal tidak dihitung sebagai biaya operasional.</li>
+          <li><b>Laba</b> = pembayaran diterima − biaya operasional. Belanja modal dan uang yang diambil pemilik (prive) <b>bukan biaya</b>, tetapi mengurangi kas.</li>
           <li>Data tersimpan aman di server dan bisa dibuka dari HP maupun laptop. Setiap pemilik hanya melihat datanya sendiri.</li>
         </ol>
 

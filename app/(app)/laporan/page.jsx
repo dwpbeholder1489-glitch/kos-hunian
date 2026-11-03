@@ -6,7 +6,7 @@ import { Loading, Tile } from '@/components/ui';
 import Locked from '@/components/Locked';
 import { useKos } from '@/components/KosProvider';
 import { hasPlan } from '@/lib/plan';
-import { rp, tgl, thisMonth, bulan, addMonthsYm, BLN, METHOD } from '@/lib/format';
+import { rp, tgl, thisMonth, bulan, addMonthsYm, BLN, METHOD, ENTRY } from '@/lib/format';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma untuk Excel berbahasa Indonesia)
 function downloadCsv(name, rows) {
@@ -35,7 +35,12 @@ export default function Laporan() {
     const sum = (k) => ex.filter((x) => x.kind === k).reduce((s, x) => s + x.amount, 0);
     const ops = sum('operasional'), modal = sum('modal'), non = sum('non_operasional');
     const billed = d.invoices.filter((i) => i.status !== 'batal' && i.due_date.startsWith(m)).reduce((s, i) => s + i.amount, 0);
-    return { sewa, tambahan, income: sewa + tambahan, ops, modal, non, laba: sewa + tambahan - ops, kas: sewa + tambahan - ops - modal - non, billed };
+    const en = (k) => d.entries.filter((x) => x.kind === k && x.date.startsWith(m)).reduce((s, x) => s + x.amount, 0);
+    const lain = en('pendapatan_lain'), prive = en('prive'), modalIn = en('setoran_modal'), loanIn = en('pinjaman_masuk'), loanOut = en('bayar_pinjaman');
+    const income = sewa + tambahan + lain;
+    const laba = income - ops;
+    return { sewa, tambahan, lain, income, ops, modal, non, laba, prive, modalIn, loanIn, loanOut,
+      kas: laba - modal - non - prive + modalIn + loanIn - loanOut, billed };
   };
   const r = calc(ym);
   const months = Array.from({ length: 6 }, (_, k) => addMonthsYm(ym, k - 5));
@@ -46,14 +51,15 @@ export default function Laporan() {
   const exportReport = () => {
     const ms = Array.from({ length: 12 }, (_, k) => addMonthsYm(ym, k - 11));
     downloadCsv(`laporan-${kos.name}-${ym}.csv`, [
-      ['Bulan', 'Pendapatan sewa', 'Pendapatan tambahan', 'Total pendapatan', 'Biaya operasional', 'Laba operasional', 'Belanja modal', 'Non-operasional', 'Arus kas bersih', 'Total ditagihkan'],
-      ...ms.map((m) => { const x = calc(m); return [bulan(m), x.sewa, x.tambahan, x.income, x.ops, x.laba, x.modal, x.non, x.kas, x.billed]; }),
+      ['Bulan', 'Pendapatan sewa', 'Pendapatan tambahan', 'Pendapatan lain', 'Total pendapatan', 'Biaya operasional', 'Laba operasional', 'Belanja modal', 'Non-operasional', 'Diambil pemilik (prive)', 'Setoran modal', 'Pinjaman diterima', 'Bayar pinjaman', 'Arus kas bersih', 'Total ditagihkan'],
+      ...ms.map((m) => { const x = calc(m); return [bulan(m), x.sewa, x.tambahan, x.lain, x.income, x.ops, x.laba, x.modal, x.non, x.prive, x.modalIn, x.loanIn, x.loanOut, x.kas, x.billed]; }),
     ]);
   };
   const exportTx = () => {
     const rows = [['Tanggal', 'Jenis', 'Keterangan', 'Kamar', 'Penghuni', 'Metode', 'Masuk', 'Keluar']];
     for (const p of d.payments) if (p.status === 'terverifikasi' && p.paid_at.startsWith(ym)) { const i = d.invById.get(p.invoice_id); rows.push([p.paid_at, 'Pembayaran', i?.kind === 'tambahan' ? (i.description || 'Tagihan tambahan') : 'Sewa', i ? d.roomCode(i.room_id) : '', i ? d.occName(i.occupant_id) : '', METHOD[p.method], p.amount, '']); }
     for (const x of d.expenses) if (x.date.startsWith(ym)) rows.push([x.date, 'Pengeluaran', x.description || d.catById.get(x.category_id)?.name || '', '', '', '', '', x.amount]);
+    for (const x of d.entries) if (x.date.startsWith(ym)) { const [l, , dir] = ENTRY[x.kind]; rows.push([x.date, l, x.description || '', '', '', '', dir === 'in' ? x.amount : '', dir === 'out' ? x.amount : '']); }
     rows.sort((a, b) => (a[0] === 'Tanggal' ? -1 : b[0] === 'Tanggal' ? 1 : a[0].localeCompare(b[0])));
     downloadCsv(`transaksi-${kos.name}-${ym}.csv`, rows);
   };
@@ -71,17 +77,21 @@ export default function Laporan() {
         <Tile tone="hero" label="Laba operasional" value={rp(r.laba)} sub={`Margin ${margin}%`} />
         <Tile label="Pendapatan" value={rp(r.income)} sub={`Tertagih ${collect}% dari tagihan bulan ini`} />
         <Tile label="Biaya operasional" value={rp(r.ops)} />
-        <Tile label="Arus kas bersih" value={rp(r.kas)} sub="Setelah belanja modal & non-operasional" />
+        <Tile label="Arus kas bersih" value={rp(r.kas)} sub="Setelah modal, prive & lainnya" />
       </div>
       <section className="panel"><h3>Laba rugi</h3>
         <table><tbody>
           <tr><td>Pendapatan sewa</td><td className="n">{rp(r.sewa)}</td></tr>
           <tr><td>Pendapatan tagihan tambahan</td><td className="n">{rp(r.tambahan)}</td></tr>
+          {r.lain > 0 && <tr><td>Pendapatan lain</td><td className="n">{rp(r.lain)}</td></tr>}
           <tr><td><b>Total pendapatan</b></td><td className="n"><b>{rp(r.income)}</b></td></tr>
           <tr><td>Biaya operasional</td><td className="n">−{rp(r.ops)}</td></tr>
           <tr className="total"><td>Laba operasional</td><td className="n">{rp(r.laba)}</td></tr>
           <tr><td className="muted">Belanja modal / renovasi</td><td className="n muted">−{rp(r.modal)}</td></tr>
           <tr><td className="muted">Pengeluaran non-operasional</td><td className="n muted">−{rp(r.non)}</td></tr>
+          <tr><td className="muted">Diambil pemilik (prive, bukan biaya)</td><td className="n muted">−{rp(r.prive)}</td></tr>
+          {r.modalIn > 0 && <tr><td className="muted">Setoran modal pemilik</td><td className="n muted">+{rp(r.modalIn)}</td></tr>}
+          {(r.loanIn > 0 || r.loanOut > 0) && <tr><td className="muted">Pinjaman (diterima − dibayar)</td><td className="n muted">{rp(r.loanIn - r.loanOut)}</td></tr>}
           <tr className="total"><td>Arus kas bersih</td><td className="n">{rp(r.kas)}</td></tr>
         </tbody></table>
       </section>
