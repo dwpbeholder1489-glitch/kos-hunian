@@ -26,9 +26,10 @@ export default function KosProvider({ children }) {
   }, []);
 
   const loadKos = useCallback(async () => {
-    let { data, error } = await supabase.from('kos').select('id,name,address,owner_id,plan,trial_until,paid_until').order('created_at');
-    // database belum diperbarui (kolom paket belum ada) → muat tanpa info paket
-    if (error) ({ data, error } = await supabase.from('kos').select('id,name,address,owner_id').order('created_at'));
+    // coba kolom terlengkap dulu; kalau database belum diperbarui, turun ke kolom yang lebih sedikit
+    const COLS = ['id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin', 'id,name,address,owner_id,plan,trial_until,paid_until', 'id,name,address,owner_id'];
+    let data = null, error = null;
+    for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
     if (error) { setList([]); return []; }
     setList(data);
     let saved = null;

@@ -41,6 +41,18 @@ export default function Langganan() {
     loadReqs();
   }
 
+  if (p.owner) return (
+    <div className="stack">
+      <h2>Langganan</h2>
+      <section className="panel">
+        <span className="label">Paket saat ini</span>
+        <b style={{ fontSize: 20 }}>Pro · Pemilik aplikasi 👑</b>
+        <p className="small muted" style={{ margin: 0 }}>Kos ini milik akun admin Kos Hunian, jadi semua fitur aktif selamanya tanpa langganan dan tanpa batas kamar.</p>
+      </section>
+      <p className="small muted" style={{ margin: 0 }}>Konfirmasi pembayaran dari pelanggan bisa diperiksa di menu Admin.</p>
+    </div>
+  );
+
   return (
     <div className="stack">
       <h2>Langganan</h2>

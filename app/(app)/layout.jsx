@@ -13,6 +13,7 @@ const TABS = [
 
 function PlanBar({ kos }) {
   const p = planOf(kos);
+  if (p.owner) return null;
   if (p.trial) return <Link href="/langganan" className="planbar trial">Masa coba semua fitur · {p.daysLeft} hari lagi · Lihat paket →</Link>;
   if (p.plan === 'gratis') return <Link href="/langganan" className="planbar free">Paket Gratis · maks {BUSINESS.freeRoomLimit} kamar terisi · Upgrade →</Link>;
   if (p.daysLeft <= 7) return <Link href="/langganan" className="planbar warn">Paket {PLANS[p.plan].name} berakhir {p.daysLeft === 0 ? 'hari ini' : `${p.daysLeft} hari lagi`} · Perpanjang →</Link>;
