@@ -150,9 +150,13 @@ function PaySheet({ demo, token, inv, info, onClose, onDone }) {
     if (!proof && !confirm('Kirim tanpa foto bukti? Pengelola mungkin perlu waktu lebih lama untuk memeriksa.')) return;
     if (demo) { toast('Contoh: di portal asli, bukti ini terkirim ke pengelola untuk diperiksa.'); return onClose(); }
     setBusy(true);
-    const { error } = await supabase.rpc('portal_submit_payment', { p_token: token, p_invoice: inv.id, p_amount: a, p_paid_at: date, p_method: method, p_note: note, p_proof: proof });
+    let error = null;
+    try {
+      const r = await fetch('/api/portal-pay', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, invoice: inv.id, amount: a, paid_at: date, method, note, proof }) });
+      const x = await r.json(); if (!r.ok) error = x.error || 'Gagal mengirim';
+    } catch { error = 'Gagal terhubung. Periksa internet lalu coba lagi.'; }
     setBusy(false);
-    if (error) return toast(error.message);
+    if (error) return toast(error);
     toast('Terkirim. Pengelola akan memeriksa pembayaran Anda.');
     onDone();
   }
