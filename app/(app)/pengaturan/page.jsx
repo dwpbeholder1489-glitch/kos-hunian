@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
-import { Field, Loading, run } from '@/components/ui';
+import { Field, Loading, run, toast } from '@/components/ui';
 import { KIND, errMsg } from '@/lib/format';
 
 export default function Pengaturan() {
@@ -18,6 +18,8 @@ export default function Pengaturan() {
   const [payInfo, setPayInfo] = useState(kos?.payment_info || '');
   const [rules, setRules] = useState(kos?.house_rules || '');
   const [notify, setNotify] = useState(kos?.notify_email !== false);
+  const [digest, setDigest] = useState(kos?.daily_digest !== false);
+  const [sending, setSending] = useState(false);
   const [cName, setCName] = useState('');
   const [cKind, setCKind] = useState('operasional');
   if (!d.ready || !kos) return <Loading />;
@@ -27,8 +29,18 @@ export default function Pengaturan() {
     if (!name.trim()) return run(() => { throw new Error('Nama kos wajib diisi.'); });
     if (await run(() => supabase.from('kos').update({ name: name.trim(), address: addr.trim() || null }).eq('id', kos.id), 'Profil kos disimpan', errMsg)) loadKos();
   }
+  async function sendNow() {
+    setSending(true);
+    try {
+      const { data: ses } = await supabase.auth.getSession();
+      const r = await fetch('/api/reminders/now', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + ses.session?.access_token }, body: JSON.stringify({ kosId: kos.id }) });
+      const x = await r.json();
+      toast(!r.ok ? (x.error || 'Gagal mengirim') : x.empty ? 'Tidak ada tagihan yang jatuh tempo 3 hari ke depan atau telat. Tidak ada yang dikirim.' : x.digests ? `Daftar tagih dikirim ke ${user?.email}` : 'Fitur ini butuh paket Standar.');
+    } catch { toast('Gagal terhubung'); }
+    setSending(false);
+  }
   async function saveInfo() {
-    if (await run(() => supabase.from('kos').update({ contact_phone: phone.trim() || null, payment_info: payInfo.trim() || null, house_rules: rules.trim() || null, ...(kos.notify_email !== undefined ? { notify_email: notify } : {}) }).eq('id', kos.id), 'Info penghuni disimpan', errMsg)) loadKos();
+    if (await run(() => supabase.from('kos').update({ contact_phone: phone.trim() || null, payment_info: payInfo.trim() || null, house_rules: rules.trim() || null, ...(kos.notify_email !== undefined ? { notify_email: notify } : {}), ...(kos.daily_digest !== undefined ? { daily_digest: digest } : {}) }).eq('id', kos.id), 'Info penghuni disimpan', errMsg)) loadKos();
   }
   async function addCat() {
     if (!cName.trim()) return;
@@ -54,7 +66,9 @@ export default function Pengaturan() {
         <Field label="Cara bayar" hint="Nomor rekening, e-wallet, atau QRIS, dan batas waktu bayar"><textarea value={payInfo} onChange={(e) => setPayInfo(e.target.value)} placeholder={'Transfer ke BRI 1234-5678 a.n. Nama Pemilik\nPaling lambat tanggal jatuh tempo'} /></Field>
         <Field label="Peraturan kos" hint="Jam malam, tamu, kebersihan, parkir, dll."><textarea value={rules} onChange={(e) => setRules(e.target.value)} placeholder={'Jam malam 22.00\nTamu lawan jenis hanya di ruang tamu'} style={{ minHeight: 110 }} /></Field>
         {kos.notify_email !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={notify} onChange={(e) => setNotify(e.target.checked)} /> Kirim email ke {user?.email} saat penghuni mengirim bukti transfer</label>}
+        {kos.daily_digest !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={digest} onChange={(e) => setDigest(e.target.checked)} /> Kirim daftar tagih setiap pagi ke {user?.email} (paket Standar)</label>}
         <button className="primary" onClick={saveInfo}>Simpan info</button>
+        {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}
       </section>}
       <section className="panel"><h3>Kategori pengeluaran</h3>
         <div className="list">{d.categories.map((c) => (

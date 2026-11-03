@@ -89,4 +89,5 @@ app/(app)/…           beranda, kamar, penghuni, tagihan, pembayaran, pengeluar
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ya | koneksi database |
 | `ANTHROPIC_API_KEY` | opsional | asisten AI di portal penghuni |
 | `SUPABASE_SECRET_KEY` | opsional | email notifikasi (membaca email pemilik kos) — rahasia, hanya di server |
-| `SMTP_USER`, `SMTP_PASS` | opsional | akun Gmail + App Password pengirim email notifikasi |
+| `SMTP_USER`, `SMTP_PASS` | opsional | akun Gmail + App Password pengirim email notifikasi & pengingat |
+| `CRON_SECRET` | opsional | mengamankan pengingat harian (`vercel.json`, tiap 07.00 WIB) |

@@ -100,6 +100,7 @@ export default function Portal() {
               ))}</div></section>
             ) : <p className="muted small" style={{ margin: 0 }}>Tidak ada tagihan yang perlu dibayar. Terima kasih!</p>}
             {p.kos.payment_info && <section className="panel"><span className="label">Cara bayar</span><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{p.kos.payment_info}</p></section>}
+            <EmailBox demo={demo} token={token} current={p.occupant.email} onSaved={load} />
           </>
         )}
 
@@ -213,6 +214,40 @@ function Chat({ demo, token, name, kos }) {
         <button className="primary" disabled={busy || !text.trim()}>Kirim</button>
       </form>
       <p className="small muted" style={{ margin: 0 }}>Asisten hanya menjawab urusan kos berdasarkan data Anda. Untuk keluhan atau keringanan, hubungi pengelola.</p>
+    </section>
+  );
+}
+
+function EmailBox({ demo, token, current, onSaved }) {
+  const [edit, setEdit] = useState(false);
+  const [val, setVal] = useState(current || '');
+  const [busy, setBusy] = useState(false);
+  async function save(v) {
+    if (demo) { toast('Contoh: di portal asli, email ini disimpan untuk pengingat.'); return setEdit(false); }
+    setBusy(true);
+    const { error } = await supabase.rpc('portal_set_email', { p_token: token, p_email: v });
+    setBusy(false);
+    if (error) return toast(error.message);
+    toast(v ? 'Pengingat email aktif' : 'Pengingat email dimatikan');
+    setEdit(false); onSaved();
+  }
+  return (
+    <section className="panel">
+      <span className="label">Pengingat email</span>
+      {current && !edit ? (
+        <>
+          <p className="small" style={{ margin: 0 }}>Pengingat jatuh tempo dikirim ke <b>{current}</b>: 3 hari sebelum, pada hari jatuh tempo, dan bila terlambat.</p>
+          <div className="row"><button className="sm" onClick={() => setEdit(true)}>Ganti email</button><button className="sm ghost danger" onClick={() => save('')} disabled={busy}>Berhenti</button></div>
+        </>
+      ) : (
+        <>
+          <p className="small muted" style={{ margin: 0 }}>Mau diingatkan sebelum jatuh tempo? Isi email Anda. Bisa dimatikan kapan saja.</p>
+          <div className="row">
+            <input type="email" inputMode="email" value={val} onChange={(e) => setVal(e.target.value)} placeholder="nama@gmail.com" style={{ flex: '1 1 200px' }} />
+            <button className="primary" onClick={() => save(val.trim())} disabled={busy || !val.trim()}>{busy ? 'Menyimpan…' : 'Aktifkan'}</button>
+          </div>
+        </>
+      )}
     </section>
   );
 }
