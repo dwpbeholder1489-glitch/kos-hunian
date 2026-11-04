@@ -1,0 +1,37 @@
+'use client';
+import { useState } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+
+// Tautan dari bagian bawah email arahan. Pemilik menekan tombol dulu, supaya pemindai tautan email tidak ikut menghentikan.
+export default function Berhenti() {
+  const { token } = useParams();
+  const [state, setState] = useState(null);
+  const stop = async () => {
+    setState('busy');
+    const { data, error } = await supabase.rpc('onboarding_unsubscribe', { p_token: String(token) });
+    setState(error || !data ? 'gagal' : { name: data });
+  };
+  return (
+    <div className="auth">
+      <p className="hello">Kos Hunian</p>
+      <section className="panel">
+        {state && state.name ? (
+          <>
+            <b>Email arahan untuk {state.name} sudah dihentikan.</b>
+            <span className="small muted">Pengingat tagihan dan daftar tagih harian tidak terpengaruh. Untuk menyalakannya lagi: Pengaturan → Email arahan dari Kos Hunian.</span>
+            <Link href="/beranda"><button className="primary">Buka aplikasi</button></Link>
+          </>
+        ) : (
+          <>
+            <b>Berhenti terima email arahan?</b>
+            <span className="small muted">Email arahan berisi langkah memakai Kos Hunian selama masa coba. Pengingat tagihan dan daftar tagih harian tetap berjalan.</span>
+            {state === 'gagal' && <div className="notice bad">Tautan tidak dikenali. Matikan lewat Pengaturan di aplikasi.</div>}
+            <button className="primary" disabled={state === 'busy'} onClick={stop}>{state === 'busy' ? 'Memproses…' : 'Ya, berhenti'}</button>
+          </>
+        )}
+      </section>
+    </div>
+  );
+}

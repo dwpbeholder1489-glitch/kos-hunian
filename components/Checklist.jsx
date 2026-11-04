@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useKos } from '@/components/KosProvider';
 
 // Daftar "Mulai di sini" untuk pengguna baru — tercentang otomatis dari data, bisa disembunyikan
 export default function Checklist({ d, kosId }) {
+  const { kos } = useKos();
   const key = 'koshunian.checklist.' + kosId;
   const [hidden, setHidden] = useState(true);
   useEffect(() => { try { setHidden(localStorage.getItem(key) === '1'); } catch { setHidden(false); } }, [key]);
@@ -13,6 +15,7 @@ export default function Checklist({ d, kosId }) {
     ['Masukkan penghuni pertama', 'Kamar → ketuk kamar kosong → Isi kamar ini', '/kamar', d.leases.length > 0],
     ['Catat pembayaran pertama', 'Tagihan → ketuk tagihan → Catat pembayaran', '/tagihan', d.payments.length > 0],
     ['Catat pengeluaran', 'Pengeluaran → + Catat', '/pengeluaran', d.expenses.length > 0],
+    ['Isi info untuk penghuni', 'Pengaturan → nomor WhatsApp & cara bayar', '/pengaturan', Boolean(kos?.contact_phone || kos?.payment_info)],
   ];
   const done = steps.filter((s) => s[3]).length;
   if (hidden || done === steps.length) return null;
@@ -31,7 +34,7 @@ export default function Checklist({ d, kosId }) {
           </Link>
         ))}
       </div>
-      <Link href="/panduan" className="small">Baca panduan lengkap →</Link>
+      <div className="row"><Link href="/bantuan" className="small">Pusat bantuan →</Link><Link href="/panduan" className="small">Panduan bergambar →</Link></div>
     </section>
   );
 }

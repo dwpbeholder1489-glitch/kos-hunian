@@ -27,7 +27,7 @@ export default function KosProvider({ children }) {
 
   const loadKos = useCallback(async () => {
     // coba kolom terlengkap dulu; kalau database belum diperbarui, turun ke kolom yang lebih sedikit
-    const COLS = ['id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin', 'id,name,address,owner_id,plan,trial_until,paid_until', 'id,name,address,owner_id'];
+    const COLS = ['id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin', 'id,name,address,owner_id,plan,trial_until,paid_until', 'id,name,address,owner_id'];
     let data = null, error = null;
     for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
     if (error) { setList([]); return []; }
@@ -41,7 +41,7 @@ export default function KosProvider({ children }) {
 
   useEffect(() => {
     if (session === undefined) return;
-    if (path.startsWith('/p/')) return; // portal penghuni tidak memakai akun pengelola
+    if (path.startsWith('/p/') || path.startsWith('/berhenti/')) return; // portal penghuni & tautan berhenti email tidak memakai akun
     if (!session) { setList(null); if (!PUBLIC.includes(path)) router.replace('/masuk'); return; }
     loadKos();
   }, [session, loadKos, path, router]);
@@ -52,7 +52,7 @@ export default function KosProvider({ children }) {
   }, [session]);
 
   useEffect(() => {
-    if (session && list && list.length === 0 && !['/mulai', '/', '/panduan'].includes(path) && !path.startsWith('/p/')) router.replace('/mulai');
+    if (session && list && list.length === 0 && !['/mulai', '/', '/panduan'].includes(path) && !path.startsWith('/p/') && !path.startsWith('/berhenti/')) router.replace('/mulai');
   }, [session, list, path, router]);
 
   const pickKos = (id) => { setKosId(id); try { localStorage.setItem(KEY, id); } catch {} setVer((v) => v + 1); };

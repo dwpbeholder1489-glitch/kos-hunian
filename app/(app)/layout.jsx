@@ -46,7 +46,7 @@ export default function AppLayout({ children }) {
                 <option value="+">+ Tambah kos</option>
               </select>
             ) : <span className="small" style={{ opacity: 0.85 }}>{tgl(today())}</span>}
-            <Link href="/panduan" className="helpbtn" aria-label="Panduan pemakaian" title="Panduan">?</Link>
+            <Link href="/bantuan" className="helpbtn" aria-label="Pusat bantuan" title="Bantuan">?</Link>
             </div>
           </div>
           <nav className="tabs" aria-label="Menu">

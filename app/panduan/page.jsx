@@ -41,7 +41,7 @@ const PARTS = [
       <>Di sebelah judul setiap menu ada tombol kecil <b>? Panduan</b>.</>,
       <>Tekan untuk membaca <b>Cara pakai</b> menu itu dalam 3 langkah.</>,
       <>Kotak kuning <b>Perhatian</b> berisi kesalahan yang sering terjadi.</>,
-      <>Tekan <b>Mengerti</b> untuk kembali. Tombol <b>?</b> di pojok kanan atas membuka panduan ini.</>,
+      <>Tekan <b>Mengerti</b> untuk kembali. Tombol <b>?</b> di pojok kanan atas membuka <b>Pusat bantuan</b> (lihat Langkah 22).</>,
     ], 'Kalau ragu di menu mana pun, buka Panduan dulu sebelum menyimpan.', null, <ScrHelp />],
     ['Isi harga dan data kamar', 'Kamar › ketuk kamar › Ubah data kamar', [
       <>Isi <b>Harga sewa / bulan</b>. Boleh ditulis 750000, 750.000, atau 750rb.</>,
@@ -157,6 +157,12 @@ const PARTS = [
       <>Penghuni yang punya <b>email</b> mendapat pengingat otomatis 3 hari sebelum, pada hari jatuh tempo, dan 3 hari setelah telat.</>,
       <>Email penghuni diisi di data penghuni, atau oleh penghuni sendiri lewat <b>Portal › Pengingat email</b>.</>,
     ], <>Tekan <b>Kirim daftar tagih sekarang (uji)</b> di Pengaturan untuk mencoba. Pengingat hanya dikirim untuk tagihan yang belum lunas.</>, null, null, true],
+    ['Pusat bantuan & email arahan', 'Tombol ? di pojok kanan atas', [
+      <>Tekan tombol <b>?</b> di pojok kanan atas untuk membuka <b>Pusat bantuan</b>.</>,
+      <>Ketik pertanyaan, misalnya <i>penghuni lama</i>, <i>kwitansi</i>, atau <i>prive</i>. Ketuk jawabannya, lalu <b>Buka menunya</b>.</>,
+      <>Belum terjawab? Tekan <b>Tanya via WhatsApp</b> di bagian bawah.</>,
+      <>Selama masa coba, Kos Hunian mengirim <b>email arahan</b> hanya untuk langkah yang belum Anda kerjakan, paling banyak satu email tiap 2 hari.</>,
+    ], <>Email arahan bisa dimatikan lewat tautan <b>Berhenti terima email arahan</b> di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan tidak ikut berhenti.</>, null, null],
   ]],
 ];
 
@@ -187,7 +193,7 @@ export default function Panduan() {
           <div><b>Persiapan</b><span><a href="#bagian-A">Langkah 1–5</a><br />Daftar, kamar, penghuni</span></div>
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
-          <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–21</a><br />Langganan, portal, pengingat</span></div>
+          <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–22</a><br />Langganan, portal, pengingat</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
