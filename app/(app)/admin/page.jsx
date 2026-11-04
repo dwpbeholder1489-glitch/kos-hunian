@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
-import { Loading, Empty, Tile, run } from '@/components/ui';
-import { rp, tgl, errMsg } from '@/lib/format';
+import { Loading, Empty, Tile, Sheet, run } from '@/components/ui';
+import { rp, tgl, errMsg, waLink } from '@/lib/format';
+import { ADMIN_TEMPLATES, fillAdmin } from '@/lib/adminTemplates';
 import { PLANS } from '@/lib/plan';
 import { STEPS, stepsDone, statusOf } from '@/lib/onboardingRules';
 
@@ -52,7 +53,8 @@ export default function Admin() {
       <div className="seg">
         <button className={tab === 'permintaan' ? 'on' : ''} onClick={() => setTab('permintaan')}>Pembayaran {pending.length ? `(${pending.length})` : ''}</button>
         <button className={tab === 'kos' ? 'on' : ''} onClick={() => setTab('kos')}>Semua kos</button>
-        <button className={tab === 'dampingi' ? 'on' : ''} onClick={() => setTab('dampingi')}>Pendampingan</button>
+        <button className={tab === 'dampingi' ? 'on' : ''} onClick={() => setTab('dampingi')}>Pelanggan</button>
+        <button className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>Aktivitas</button>
       </div>
 
       {tab === 'permintaan' && (reqs.length === 0 ? <Empty title="Belum ada konfirmasi pembayaran" /> : (
@@ -91,18 +93,24 @@ export default function Admin() {
       )}
 
       {tab === 'dampingi' && <Pendampingan />}
+      {tab === 'log' && <Aktivitas />}
     </div>
   );
 }
 
 const EMAIL_NAME = { h0: 'Sambutan', kamar: 'Isi harga kamar', penghuni: 'Masukkan penghuni', bayar: 'Catat pembayaran', sapa: 'Ada yang bisa dibantu?', ringkasan: 'Fitur lain', coba5: 'Sisa 5 hari', coba2: 'Sisa 2 hari' };
 const ORDER = ['Coba hampir habis', 'Berisiko', 'Belum mulai', 'Baru', 'Teraktivasi', 'Berlangganan'];
+const ACTION = { buka_profil: 'Membuka profil', ubah_paket: 'Mengubah paket', setujui_pembayaran: 'Menyetujui pembayaran', tolak_pembayaran: 'Menolak pembayaran', tambah_catatan: 'Menambah catatan', kirim_wa: 'Membuka WhatsApp ke pelanggan', kirim_email: 'Membuka email ke pelanggan' };
+const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 
-// Status setiap pelanggan: siapa yang perlu disapa lebih dulu
+// Daftar pelanggan: cari, saring status/paket, ketuk untuk detail. Urutan teratas paling perlu disapa.
 function Pendampingan() {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
   const [f, setF] = useState('semua');
+  const [plan, setPlan] = useState('semua');
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(null);
   useEffect(() => {
     supabase.rpc('admin_onboarding').then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data || [])));
   }, []);
@@ -111,26 +119,120 @@ function Pendampingan() {
   const list = rows.map((r) => ({ ...r, st: statusOf(r) }))
     .sort((a, b) => ORDER.indexOf(a.st[0]) - ORDER.indexOf(b.st[0]) || a.age_days - b.age_days);
   const count = (s) => list.filter((r) => r.st[0] === s).length;
-  const shown = f === 'semua' ? list : list.filter((r) => r.st[0] === f);
+  const term = q.trim().toLowerCase();
+  const shown = list.filter((r) => (f === 'semua' || r.st[0] === f) && (plan === 'semua' || r.plan === plan)
+    && (!term || r.kos_name.toLowerCase().includes(term) || (r.owner_email || '').toLowerCase().includes(term)));
   const ago = (n) => (n == null ? '—' : n === 0 ? 'hari ini' : `${n} hari lalu`);
   return (
     <div className="stack">
-      <p className="small muted" style={{ margin: 0 }}>Urutan teratas paling perlu disapa. Berisiko = tidak ada catatan baru 14 hari. Belum mulai = 3 hari belum ada penghuni. Teraktivasi = sudah ada penghuni dan pembayaran.</p>
+      <div className="grid">
+        <Tile label="Pelanggan" value={list.length} sub={`${list.filter((r) => r.paid).length} berlangganan`} />
+        <Tile tone={count('Coba hampir habis') + count('Berisiko') ? 'bad' : ''} label="Perlu disapa" value={count('Coba hampir habis') + count('Berisiko') + count('Belum mulai')} sub="coba hampir habis, berisiko, belum mulai" />
+        <Tile label="Teraktivasi" value={count('Teraktivasi') + count('Berlangganan')} sub="sudah ada penghuni & pembayaran" />
+      </div>
+      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama kos atau email" aria-label="Cari pelanggan" />
       <div className="seg">
         <button className={f === 'semua' ? 'on' : ''} onClick={() => setF('semua')}>Semua ({list.length})</button>
         {ORDER.filter(count).map((s) => <button key={s} className={f === s ? 'on' : ''} onClick={() => setF(s)}>{s} ({count(s)})</button>)}
       </div>
-      {shown.length === 0 ? <Empty title="Belum ada pelanggan" /> : (
+      <div className="seg">{['semua', 'gratis', 'standar', 'pro'].map((p) => <button key={p} className={plan === p ? 'on' : ''} onClick={() => setPlan(p)}>{p === 'semua' ? 'Semua paket' : PLANS[p].name}</button>)}</div>
+      <p className="small muted" style={{ margin: 0 }}>Berisiko = tidak ada catatan baru 14 hari. Belum mulai = 3 hari belum ada penghuni. Teraktivasi = sudah ada penghuni dan pembayaran.</p>
+      {shown.length === 0 ? <Empty title={list.length ? 'Tidak ada yang cocok' : 'Belum ada pelanggan'} /> : (
         <section className="panel"><div className="list">{shown.map((r) => (
-          <div className="li" key={r.kos_id} style={{ alignItems: 'flex-start' }}>
+          <div className="li click" key={r.kos_id} style={{ alignItems: 'flex-start' }} onClick={() => setOpen(r)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setOpen(r)}>
             <div className="main">
               <b>{r.kos_name}</b>
-              <a href={`mailto:${r.owner_email}`} className="small">{r.owner_email}</a>
-              <span className="small">Hari ke-{r.age_days} · {r.active_leases} kamar terisi · aktivitas terakhir {ago(r.idle_days)}{r.trial_left != null && r.trial_left >= 0 && !r.paid ? ` · coba sisa ${r.trial_left} hari` : ''}</span>
+              <span className="small muted">{r.owner_email}</span>
+              <span className="small">Hari ke-{r.age_days} · {PLANS[r.plan]?.name} · {r.active_leases} kamar terisi · aktivitas {ago(r.idle_days)}{r.trial_left != null && r.trial_left >= 0 && !r.paid ? ` · coba sisa ${r.trial_left} hari` : ''}</span>
               <span className="small muted">Langkah {stepsDone(r)}/{STEPS.length}{stepsDone(r) < STEPS.length ? ` · belum: ${STEPS.filter(([k]) => !r[k]).map(([, n]) => n).join(', ')}` : ''}</span>
-              <span className="small muted">Email arahan: {r.onboarding_emails ? (r.sent_kinds.length ? r.sent_kinds.map((k) => EMAIL_NAME[k] || k).join(' → ') : 'belum ada') : 'dimatikan pemilik'}</span>
             </div>
             <span className={'chip ' + r.st[1]}>{r.st[0]}</span>
+          </div>
+        ))}</div></section>
+      )}
+      {open && <Customer row={open} onClose={() => setOpen(null)} />}
+    </div>
+  );
+}
+
+// Detail satu pelanggan: akun, paket, ringkasan kos (tanpa data penghuni), catatan internal, chat cepat
+function Customer({ row, onClose }) {
+  const [c, setC] = useState(null);
+  const [err, setErr] = useState(null);
+  const [note, setNote] = useState('');
+  const [tpl, setTpl] = useState(ADMIN_TEMPLATES[0][0]);
+  const [msg, setMsg] = useState('');
+  const load = () => supabase.rpc('admin_customer', { p_kos: row.kos_id }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setC(data)));
+  useEffect(() => { load(); }, [row.kos_id]);
+  useEffect(() => { if (c) setMsg(fillAdmin(ADMIN_TEMPLATES.find((t) => t[0] === tpl)[2], c.kos)); }, [tpl, c]);
+  const k = c?.kos;
+  const addNote = async () => { if (await run(() => supabase.rpc('admin_add_note', { p_kos: row.kos_id, p_body: note }), 'Catatan disimpan', errMsg)) { setNote(''); load(); } };
+  const record = (action) => supabase.rpc('admin_record', { p_action: action, p_kos: row.kos_id, p_detail: { template: tpl } });
+  return (
+    <Sheet title={row.kos_name} onClose={onClose}>
+      {err ? <div className="notice bad">{err}</div> : !c ? <Loading /> : (<>
+        <div className="list">
+          <div className="li"><span className="muted small">Email</span><b className="small">{k.owner_email}</b></div>
+          <div className="li"><span className="muted small">No. WA (dari Info untuk penghuni)</span><b className="small">{k.contact_phone || '—'}</b></div>
+          <div className="li"><span className="muted small">Daftar</span><b className="small">{tgl(String(k.created_at).slice(0, 10))}</b></div>
+          <div className="li"><span className="muted small">Paket</span><b className="small">{PLANS[k.effective_plan]?.name}{k.paid_until ? ` · bayar s.d. ${tgl(k.paid_until)}` : k.trial_until ? ` · coba s.d. ${tgl(k.trial_until)}` : ''}</b></div>
+          <div className="li"><span className="muted small">Kos</span><b className="small">{c.counts.rooms} kamar · {c.counts.active_leases} terisi · {c.counts.payments} pembayaran · {c.counts.expenses} pengeluaran</b></div>
+          <div className="li"><span className="muted small">Status</span><span className={'chip ' + row.st[1]}>{row.st[0]}</span></div>
+        </div>
+
+        <span className="label">Chat cepat</span>
+        <select value={tpl} onChange={(e) => setTpl(e.target.value)} aria-label="Template pesan">{ADMIN_TEMPLATES.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select>
+        <textarea value={msg} onChange={(e) => setMsg(e.target.value)} style={{ minHeight: 110 }} aria-label="Isi pesan" />
+        <div className="row">
+          {k.contact_phone
+            ? <a href={waLink(k.contact_phone, msg)} target="_blank" rel="noreferrer" onClick={() => record('kirim_wa')}><button className="primary">Buka WhatsApp</button></a>
+            : <span className="small muted">Pelanggan belum mengisi nomor WhatsApp.</span>}
+          <a href={`mailto:${k.owner_email}?subject=${encodeURIComponent('Kos Hunian · ' + k.name)}&body=${encodeURIComponent(msg)}`} onClick={() => record('kirim_email')}><button>Kirim email</button></a>
+        </div>
+
+        <span className="label">Catatan internal (tidak terlihat pelanggan)</span>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. Sudah ditelepon, minta dibantu isi penghuni minggu depan" aria-label="Catatan baru" />
+        <button onClick={addNote} disabled={!note.trim()}>Simpan catatan</button>
+        {c.notes.length > 0 && <div className="list">{c.notes.map((n, i) => <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span style={{ whiteSpace: 'pre-wrap' }}>{n.body}</span><span className="small muted" style={{ whiteSpace: 'nowrap' }}>{tgl(String(n.created_at).slice(0, 10))}</span></div>)}</div>}
+
+        <span className="label">Pembayaran langganan</span>
+        {c.requests.length === 0 ? <span className="small muted">Belum ada.</span> : <div className="list">{c.requests.map((r, i) => (
+          <div className="li" key={i}><span className="small">{PLANS[r.plan]?.name} {r.months} bln · {rp(r.amount)} · {tgl(String(r.created_at).slice(0, 10))}</span><span className={'chip ' + (ST[r.status]?.[1] || '')}>{ST[r.status]?.[0] || r.status}</span></div>
+        ))}</div>}
+
+        <span className="label">Email otomatis terkirim</span>
+        {c.emails.length === 0 ? <span className="small muted">Belum ada.</span> : <div className="list">{c.emails.map((e, i) => <div className="li" key={i}><span className="small">{e.what.replace(/\((\w+)\)/, (_, x) => `(${EMAIL_NAME[x] || x})`)}</span><span className="small muted">{tgl(String(e.at).slice(0, 10))}</span></div>)}</div>}
+
+        <span className="label">Riwayat tindakan admin</span>
+        {c.log.length === 0 ? <span className="small muted">Belum ada.</span> : <div className="list">{c.log.map((l, i) => <div className="li" key={i}><span className="small">{ACTION[l.action] || l.action}</span><span className="small muted">{when(l.created_at)}</span></div>)}</div>}
+      </>)}
+    </Sheet>
+  );
+}
+
+// Catatan aktivitas admin (siapa melakukan apa, kapan)
+function Aktivitas() {
+  const [rows, setRows] = useState(null);
+  const [err, setErr] = useState(null);
+  const [hideView, setHideView] = useState(true);
+  useEffect(() => { supabase.rpc('admin_log_list', { p_limit: 200 }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data || []))); }, []);
+  if (err) return <div className="notice bad">{err}</div>;
+  if (!rows) return <Loading />;
+  const shown = hideView ? rows.filter((r) => r.action !== 'buka_profil') : rows;
+  const det = (r) => {
+    const d = r.detail || {};
+    if (r.action === 'ubah_paket') return `${PLANS[d.sebelum?.paket]?.name || d.sebelum?.paket} → ${PLANS[d.sesudah?.paket]?.name || d.sesudah?.paket}${d.sesudah?.bayar_sampai ? ` s.d. ${tgl(d.sesudah.bayar_sampai)}` : ''}`;
+    if (r.action.endsWith('_pembayaran')) return `${PLANS[d.paket]?.name} ${d.bulan} bln · ${rp(d.jumlah)}`;
+    return '';
+  };
+  return (
+    <div className="stack">
+      <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={hideView} onChange={(e) => setHideView(e.target.checked)} /> Sembunyikan "membuka profil"</label>
+      {shown.length === 0 ? <Empty title="Belum ada aktivitas" /> : (
+        <section className="panel"><div className="list">{shown.map((r, i) => (
+          <div className="li" key={i} style={{ alignItems: 'flex-start' }}>
+            <div className="main"><b className="small">{ACTION[r.action] || r.action}{r.kos_name ? ` · ${r.kos_name}` : ''}</b><span className="small muted">{det(r)}{det(r) ? ' · ' : ''}{r.actor_email}</span></div>
+            <span className="small muted" style={{ whiteSpace: 'nowrap' }}>{when(r.created_at)}</span>
           </div>
         ))}</div></section>
       )}

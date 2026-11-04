@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useKos } from '@/components/KosProvider';
 import { tgl, today } from '@/lib/format';
 import { planOf, PLANS, BUSINESS } from '@/lib/plan';
+import NotifBell from '@/components/NotifBell';
 
 const TABS = [
   ['/beranda', 'Dashboard'], ['/kamar', 'Kamar'], ['/penghuni', 'Penghuni'], ['/tagihan', 'Tagihan'],
@@ -46,6 +47,7 @@ export default function AppLayout({ children }) {
                 <option value="+">+ Tambah kos</option>
               </select>
             ) : <span className="small" style={{ opacity: 0.85 }}>{tgl(today())}</span>}
+            <NotifBell />
             <Link href="/bantuan" className="helpbtn" aria-label="Pusat bantuan" title="Bantuan">?</Link>
             </div>
           </div>

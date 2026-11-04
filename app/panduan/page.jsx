@@ -163,6 +163,12 @@ const PARTS = [
       <>Belum terjawab? Tekan <b>Tanya via WhatsApp</b> di bagian bawah.</>,
       <>Selama masa coba, Kos Hunian mengirim <b>email arahan</b> hanya untuk langkah yang belum Anda kerjakan, paling banyak satu email tiap 2 hari.</>,
     ], <>Email arahan bisa dimatikan lewat tautan <b>Berhenti terima email arahan</b> di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan tidak ikut berhenti.</>, null, null],
+    ['Notifikasi & ringkasan lewat email', 'Lonceng di kanan atas', [
+      <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti hari ini: pembayaran menunggu diperiksa, tagihan telat, dan jatuh tempo hari ini.</>,
+      <>Ketuk lonceng. Bagian <b>Perlu perhatian</b> juga menampilkan sewa yang akan berakhir, kamar tanpa harga, dan penghuni tanpa nomor WhatsApp. Ketuk untuk membuka menunya.</>,
+      <>Di <b>Pengaturan email</b>, pilih yang ingin diterima: daftar tagih setiap pagi, <b>ringkasan mingguan</b> (Senin), dan <b>ringkasan bulanan</b> (tanggal 1).</>,
+      <>Tekan <b>Kirim contoh ringkasan</b> untuk melihat isinya di email Anda.</>,
+    ], <>Ringkasan bulanan menyala otomatis, ringkasan mingguan mati sampai Anda menyalakannya. Semua angka berasal dari data yang Anda catat — sama dengan menu Laporan.</>, null, null],
   ]],
 ];
 
@@ -193,7 +199,7 @@ export default function Panduan() {
           <div><b>Persiapan</b><span><a href="#bagian-A">Langkah 1–5</a><br />Daftar, kamar, penghuni</span></div>
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
-          <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–22</a><br />Langganan, portal, pengingat</span></div>
+          <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–23</a><br />Langganan, portal, pengingat</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

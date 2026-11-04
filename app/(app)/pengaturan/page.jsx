@@ -70,6 +70,7 @@ export default function Pengaturan() {
         {kos.notify_email !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={notify} onChange={(e) => setNotify(e.target.checked)} /> Kirim email ke {user?.email} saat penghuni mengirim bukti transfer</label>}
         {kos.daily_digest !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={digest} onChange={(e) => setDigest(e.target.checked)} /> Kirim daftar tagih setiap pagi ke {user?.email} (paket Standar)</label>}
         <button className="primary" onClick={saveInfo}>Simpan info</button>
+        <a href="/notifikasi" className="small">Atur ringkasan mingguan & bulanan di menu Notifikasi (lonceng) →</a>
         {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}
       </section>}
       {isOwner && <QrisBox kosId={kos.id} />}
