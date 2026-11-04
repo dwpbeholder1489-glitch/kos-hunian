@@ -3,6 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import Icon from '@/components/landing/Icon';
 import HeroMock from '@/components/landing/HeroMock';
 import Showcase from '@/components/landing/Showcase';
+import Onboarding from '@/components/landing/Onboarding';
 import { PLANS, FEATURES, BUSINESS } from '@/lib/plan';
 import { TESTIMONIALS } from '@/lib/testimonials';
 import { rp as rpDemo, CASH_IN, CASH_OUT, ROOMS } from '@/components/demo/sample';
@@ -72,6 +73,7 @@ const FAQ = [
   ['Bagaimana cara membayar langganan?', 'Buka menu Langganan di aplikasi, pilih paket dan durasi, lalu bayar lewat QRIS atau transfer bank. Tekan "Saya sudah bayar" dan kirim bukti lewat WhatsApp. Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam.'],
   ['Apakah data saya aman?', 'Data setiap pemilik dipisahkan di tingkat database sehingga pemilik lain tidak bisa melihatnya, dan koneksi ke aplikasi selalu terenkripsi. Penghuni hanya bisa melihat tagihannya sendiri lewat link pribadi yang bisa Anda ganti kapan saja.'],
   ['Apa yang terjadi jika berhenti berlangganan?', `Data tidak dihapus. Kos kembali ke paket Gratis: fitur berbayar terkunci, dan penghuni baru tidak bisa ditambahkan jika sudah ada ${BUSINESS.freeRoomLimit} kamar terisi. Begitu berlangganan lagi, semuanya terbuka kembali.`],
+  ['Bagaimana kalau saya bingung setelah mendaftar?', `Dashboard langsung menampilkan daftar "Mulai di sini" berisi 4 langkah awal, setiap menu punya tombol "? Panduan", dan panduan bergambar bisa dibuka kapan saja. Jika masih ada kendala, hubungi kami lewat WhatsApp ${BUSINESS.whatsappDisplay}.`],
   ['Apakah bisa digunakan melalui HP?', 'Bisa. Kos Hunian dirancang untuk dipakai dari HP — mulai dari mencatat pembayaran, mengirim pengingat WhatsApp, sampai melihat laporan.'],
   ['Bagaimana jika memiliki banyak kamar?', 'Paket Standar dan Pro tidak membatasi jumlah kamar. Harga berlaku per kos, dan satu akun bisa mengelola beberapa kos sekaligus.'],
 ];
@@ -201,6 +203,9 @@ export default function Landing() {
             </div>
           </div>
         </section>
+
+        {/* PENDAMPINGAN PENGGUNA BARU */}
+        <Onboarding />
 
         {/* HARGA */}
         <section className="ln-sec" id="harga" aria-labelledby="h-harga">
