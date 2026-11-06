@@ -185,12 +185,12 @@ const PARTS = [
       <>Di <b>Pengaturan email</b>, pilih yang ingin diterima: daftar tagih setiap pagi, <b>ringkasan mingguan</b> (Senin), dan <b>ringkasan bulanan</b> (tanggal 1).</>,
       <>Tekan <b>Kirim contoh ringkasan</b> untuk melihat isinya di email Anda.</>,
     ], <>Ringkasan bulanan menyala otomatis, ringkasan mingguan mati sampai Anda menyalakannya. Semua angka berasal dari data yang Anda catat — sama dengan menu Laporan.</>, null, null],
-    ['Banyak bisnis dalam satu akun', 'Menu Bisnis saya', [
-      <>Buka <b>Bisnis saya</b>, tekan <b>+ Tambah bisnis</b>.</>,
-      <>Pilih jenisnya: <b>Properti & Sewa</b> (kos, kontrakan) atau <b>Retail & Grosir</b> (toko: kasir, stok, belanja, kasbon).</>,
-      <>Isi nama dan alamat, lalu <b>Buat bisnis</b>. Menu di atas menyesuaikan jenis bisnis.</>,
-      <>Pindah bisnis dengan <b>mengetuk nama bisnis di kiri atas</b>. Halaman <b>Bisnis saya</b> menampilkan ringkasan semua bisnis bulan ini.</>,
-    ], <>Pembukuan setiap bisnis terpisah: transaksi toko tidak akan masuk ke laporan kos, dan sebaliknya.</>, null, null],
+    ['Banyak bisnis & Ringkasan pemilik', 'Lainnya › Ringkasan pemilik', [
+      <>Tekan <b>+ Tambah bisnis</b> (atau ketuk nama bisnis di kiri atas › Tambah bisnis), pilih jenisnya, isi nama, tinjau modul, lalu <b>Setujui & buat bisnis</b>.</>,
+      <>Jika punya lebih dari satu bisnis, aplikasi dibuka di <b>Ringkasan pemilik</b>: hal yang <b>perlu perhatian</b> dari semua bisnis, lalu angka tiap bisnis (pendapatan, biaya, laba, tunggakan/kasbon, utang, kas).</>,
+      <>Ketuk angka mana pun untuk membuka <b>sumbernya</b> di bisnis itu (mis. Laporan atau Kas) dan melihat transaksinya. Ganti bulan dengan tombol ‹ ›.</>,
+      <>Tanda <b>Lengkap</b> / <b>Perkiraan</b> menunjukkan apakah angkanya sudah final. <b>Ringkasan manajemen</b> di bawah menjumlahkan per badan usaha dan semua bisnis.</>,
+    ], <>Pembukuan setiap bisnis terpisah: transaksi toko tidak masuk ke laporan kos. Jumlah gabungan hanya indikasi (bukan laporan konsolidasi resmi), apalagi bila basis pencatatannya berbeda — kos dicatat saat uang diterima, toko saat penjualan terjadi.</>, null, null],
   ]],
   ['E', 'Retail & Grosir (toko)', [
     ['Barang, satuan, dan stok', 'Menu Barang & stok', [

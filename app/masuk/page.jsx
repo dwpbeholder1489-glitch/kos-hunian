@@ -14,7 +14,7 @@ export default function Masuk() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  useEffect(() => { if (session) router.replace('/beranda'); }, [session, router]);
+  useEffect(() => { if (session) router.replace('/buka'); }, [session, router]);
   useEffect(() => { if (new URLSearchParams(window.location.search).get('daftar')) setMode('daftar'); }, []);
 
   if (!configured) {
