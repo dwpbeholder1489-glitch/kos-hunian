@@ -189,6 +189,12 @@ const PARTS = [
       <>Ketuk bar <b>Keranjang</b> di bawah. Ubah jumlah atau harga bila perlu, isi diskon, lalu pilih <b>Tunai</b> (isi uang diterima → kembalian), <b>Transfer / QRIS</b>, atau <b>Kasbon</b> (pilih/isi nama pelanggan).</>,
       <>Tekan <b>Simpan</b>. Stok berkurang otomatis. Tekan <b>Lihat / kirim struk</b> untuk mencetak atau mengirim struk lewat WhatsApp.</>,
     ], <>Transaksi yang salah dibatalkan dari menu <b>Penjualan</b> (ketuk transaksinya › Batalkan, isi alasan). Stok dikembalikan dan transaksinya tetap tercatat sebagai Batal.</>, null, null],
+    ['Belanja ke supplier', 'Menu Belanja', [
+      <>Buka <b>Belanja</b>, tekan <b>+ Belanja</b>. Isi tanggal dan pilih supplier (atau ketik nama supplier baru).</>,
+      <>Ketik nama barang di kolom <b>+ Cari barang</b>, ketuk barangnya. Pilih satuan yang dibeli (mis. dus), isi jumlah dan <b>harga beli per satuan</b> itu.</>,
+      <>Di bawah setiap barang terlihat stok yang bertambah dan <b>harga modal baru</b> (rata-rata dengan stok lama).</>,
+      <>Pilih <b>Tunai</b>, <b>Transfer</b>, atau <b>Utang ke supplier</b> (wajib ada supplier), lalu <b>Simpan belanja</b>.</>,
+    ], <>Harga beli terakhir terisi otomatis. Belanja yang salah dibatalkan dari daftar Belanja: stok dikurangi lagi dan harga modal dikembalikan.</>, null, null],
   ]],
 ];
 
@@ -220,7 +226,7 @@ export default function Panduan() {
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
-          <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–26</a><br />Barang, stok, kasir</span></div>
+          <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–27</a><br />Barang, kasir, belanja</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
