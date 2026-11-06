@@ -46,7 +46,13 @@ export default function Bisnis() {
                   {Number(b.outstanding) > 0 && <> · <span style={{ color: 'var(--bad)' }}>belum dibayar {rp(b.outstanding)}</span></>}
                   {b.pending > 0 && <> · {b.pending} bukti menunggu</>}
                 </span>
-              ) : <span className="small muted" style={{ fontWeight: 500 }}>Modul kasir & stok sedang dibangun.</span>}
+              ) : (
+                <span className="small" style={{ fontWeight: 500 }}>
+                  hari ini {rp(b.sales_today)} · bulan ini {rp(b.sales_month)} · laba kotor {rp(b.gross_month)}
+                  {Number(b.kasbon) > 0 && <> · kasbon {rp(b.kasbon)}</>}
+                  {b.low_stock > 0 && <> · <span style={{ color: 'var(--bad)' }}>{b.low_stock} stok menipis</span></>}
+                </span>
+              )}
             </span>
           </button>
         );

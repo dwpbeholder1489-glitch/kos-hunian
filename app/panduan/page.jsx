@@ -171,7 +171,7 @@ const PARTS = [
     ], <>Ringkasan bulanan menyala otomatis, ringkasan mingguan mati sampai Anda menyalakannya. Semua angka berasal dari data yang Anda catat — sama dengan menu Laporan.</>, null, null],
     ['Banyak bisnis dalam satu akun', 'Menu Bisnis saya', [
       <>Buka <b>Bisnis saya</b>, tekan <b>+ Tambah bisnis</b>.</>,
-      <>Pilih jenisnya: <b>Properti & Sewa</b> (kos, kontrakan) atau <b>Retail & Grosir</b> (toko — modulnya sedang dibangun).</>,
+      <>Pilih jenisnya: <b>Properti & Sewa</b> (kos, kontrakan) atau <b>Retail & Grosir</b> (toko: kasir, stok, belanja, kasbon).</>,
       <>Isi nama dan alamat, lalu <b>Buat bisnis</b>. Menu di atas menyesuaikan jenis bisnis.</>,
       <>Pindah bisnis lewat pilihan di <b>kanan atas</b>. Halaman <b>Bisnis saya</b> menampilkan ringkasan semua bisnis bulan ini.</>,
     ], <>Pembukuan setiap bisnis terpisah: transaksi toko tidak akan masuk ke laporan kos, dan sebaliknya.</>, null, null],
@@ -201,6 +201,12 @@ const PARTS = [
       <>Tab <b>Kasbon pelanggan</b>: daftar yang masih berutang beserta sisanya. Tekan <b>Terima bayar</b> (boleh dicicil) atau <b>Ingatkan WA</b>.</>,
       <>Tab <b>Utang supplier</b>: tekan <b>Bayar</b> saat melunasi belanja utang.</>,
     ], <>Saldo kas & bank dihitung otomatis dari penjualan, belanja, biaya, dan pelunasan. Hitung uang di laci sesekali; kalau beda, ada transaksi yang belum dicatat.</>, null, null],
+    ['Laporan toko', 'Menu Laporan', [
+      <>Buka <b>Laporan</b>, pilih bulan dengan tombol <b>‹ ›</b>.</>,
+      <><b>Laba rugi</b>: penjualan − modal barang terjual = laba kotor, lalu dikurangi biaya operasional dan selisih stok = <b>laba bersih</b>. Prive dan belanja barang tidak mengurangi laba.</>,
+      <><b>Produk</b>: pilih <b>Terlaris</b> atau <b>Paling untung</b>. Bagian <b>Tidak laku</b> menunjukkan barang berstok yang tidak terjual bulan itu.</>,
+      <>Paket Standar: <b>Unduh Excel</b> dan <b>Cetak / PDF</b>.</>,
+    ], <>Kalau muncul peringatan harga modal kosong, isi modalnya di Barang & stok — tanpa modal, laba barang itu terlihat terlalu tinggi.</>, null, null],
   ]],
 ];
 
@@ -232,7 +238,7 @@ export default function Panduan() {
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
-          <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–28</a><br />Barang, kasir, belanja, kas</span></div>
+          <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–29</a><br />Barang, kasir, belanja, kas, laporan</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

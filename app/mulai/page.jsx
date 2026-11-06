@@ -60,7 +60,7 @@ export default function Mulai() {
       <p className="hello">{t.icon} {t.name}</p>
       {type === 'properti'
         ? <p className="muted" style={{ margin: 0 }}>Kamar dibuat otomatis dengan kode berurutan (mis. A01–A10). Harga sewa diisi nanti per kamar.</p>
-        : <div className="notice">Modul Retail & Grosir sedang dibangun (kasir, stok, belanja, kasbon). Bisnisnya bisa dibuat sekarang, menu kasir dan stok muncul begitu modulnya selesai.</div>}
+        : <p className="muted" style={{ margin: 0 }}>Setelah dibuat: masukkan barang di <b>Barang & stok</b>, catat uang awal laci di <b>Kas & kasbon</b>, lalu mulai jualan di <b>Kasir</b>.</p>}
       <form className="stack" onSubmit={submit}>
         <Field label={type === 'properti' ? 'Nama kos / properti' : 'Nama usaha'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'properti' ? 'mis. Kos Melati' : 'mis. Toko Subur'} /></Field>
         <Field label="Alamat (opsional)"><input value={addr} onChange={(e) => setAddr(e.target.value)} /></Field>

@@ -34,10 +34,7 @@ export default function Toko() {
       {ps.length === 0 ? (
         <section className="panel"><b>Mulai di sini</b><span className="small muted">Masukkan barang yang dijual beserta satuan, harga eceran/grosir, dan stoknya.</span><Link href="/barang"><button className="primary">Buka Barang & stok</button></Link></section>
       ) : <Link href="/kasir"><button className="cta" style={{ width: '100%' }}>Buka Kasir</button></Link>}
-      <section className="panel">
-        <h3>Sedang dibangun</h3>
-        <p className="small muted" style={{ margin: 0 }}>Menyusul: laporan laba rugi bulanan & ekspor.</p>
-      </section>
+      <div className="row"><Link href="/kas"><button>Kas & kasbon</button></Link><Link href="/laporan-toko"><button>Laporan bulan ini</button></Link></div>
     </div>
   );
 }
