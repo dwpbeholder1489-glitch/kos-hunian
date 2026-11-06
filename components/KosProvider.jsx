@@ -34,13 +34,14 @@ export default function KosProvider({ children }) {
     let data = null, error = null;
     for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
     if (error) { setList([]); return []; }
-    let mods = null;
+    let mods = null, locs = {};
     const [roles, ents] = await Promise.all([
       supabase.rpc('my_roles').then((r) => r.data || {}, () => ({})),
       supabase.rpc('my_entitlements').then((r) => r.data || {}, () => ({})), // paket, fitur & batas dari database
       supabase.rpc('my_modules').then((r) => (r.error ? null : r.data || {}), () => null), // modul aktif per bisnis
-    ]).then(([a, b, c]) => { mods = c; return [a, b]; });
-    data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null }));
+      supabase.rpc('my_locations').then((r) => r.data || {}, () => ({})), // lokasi (cabang/gudang) & lokasi kerja saya
+    ]).then(([a, b, c, d]) => { mods = c; locs = d; return [a, b]; });
+    data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null, locs: locs[k.id] || null }));
     setList(data);
     let saved = null;
     try { saved = localStorage.getItem(KEY); } catch {}

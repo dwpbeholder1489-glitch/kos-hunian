@@ -13,7 +13,7 @@ import { GROUPS, LEGAL_KIND, PROFILE_Q } from '@/lib/modules';
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
 const ACT = {
   aktifkan_modul: 'Mengaktifkan modul', nonaktifkan_modul: 'Menonaktifkan modul', minta_persetujuan: 'Meminta persetujuan', tolak_persetujuan: 'Menolak permintaan',
-  konfigurasi_awal: 'Konfigurasi awal', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang',
+  konfigurasi_awal: 'Konfigurasi awal', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang',
 };
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 
@@ -73,7 +73,7 @@ export default function Konfigurasi() {
       </>}
 
       {tab === 'profil' && <ProfileTab kos={kos} owner={owner} onSaved={refresh} />}
-      {tab === 'cabang' && <BranchTab kosId={kosId} owner={owner} branches={branches} onSaved={load} />}
+      {tab === 'cabang' && <BranchTab kosId={kosId} owner={owner} branches={branches} onSaved={() => { load(); loadKos(); }} />}
 
       {tab === 'setuju' && (
         <section className="panel">
@@ -204,18 +204,18 @@ function BranchTab({ kosId, owner, branches, onSaved }) {
         <div className="row between"><h3>Cabang & gudang</h3>{owner && <button className="sm primary" onClick={() => setF({ name: '', kind: 'cabang', address: '', active: true })}>+ Tambah</button>}</div>
         {branches.length === 0 ? <span className="small muted">Belum ada. Lokasi utama adalah alamat bisnis di Pengaturan.</span> : <div className="list">{branches.map((b) => (
           <button key={b.id} className="li click" disabled={!owner} onClick={() => setF({ ...b })} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}>
-            <div className="main"><b>{b.name}</b><span className="small muted">{b.kind === 'gudang' ? 'Gudang' : 'Cabang'}{b.address ? ` · ${b.address}` : ''}</span></div>
+            <div className="main"><b>{b.name}{b.is_main && <span className="chip gold" style={{ marginLeft: 6 }}>Utama</span>}</b><span className="small muted">{b.kind === 'gudang' ? 'Gudang' : 'Cabang'}{b.address ? ` · ${b.address}` : ''}</span></div>
             <span className={'chip ' + (b.active ? 'good' : 'void')}>{b.active ? 'Aktif' : 'Nonaktif'}</span>
           </button>
         ))}</div>}
-        <span className="small muted">Saat ini cabang & gudang dicatat sebagai struktur bisnis. Stok dan transaksi per cabang belum dipisahkan (segera hadir).</span>
+        <span className="small muted">Toko: setiap lokasi punya stoknya sendiri. Penjualan, belanja, dan penyesuaian stok tercatat di lokasi kerja pengguna; pindahkan barang lewat Mutasi stok. Lokasi yang masih ada stoknya tidak bisa dinonaktifkan. Kas, biaya, dan pembukuan tetap satu untuk seluruh bisnis.</span>
       </section>
       {f && (
         <Sheet title={f.id ? 'Ubah cabang/gudang' : 'Cabang/gudang baru'} onClose={() => setF(null)}>
           <Field label="Nama"><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
           <Field label="Jenis"><select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}><option value="cabang">Cabang</option><option value="gudang">Gudang</option></select></Field>
           <Field label="Alamat"><input value={f.address || ''} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
-          {f.id && <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} />Aktif</label>}
+          {f.id && !f.is_main && <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} />Aktif</label>}
           <button className="primary" onClick={save} disabled={f.name.trim().length < 2}>Simpan</button>
         </Sheet>
       )}

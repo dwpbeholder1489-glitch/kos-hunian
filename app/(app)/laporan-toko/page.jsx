@@ -66,8 +66,9 @@ export default function LaporanToko() {
     ['Penjualan (setelah diskon)', a.omzet], ['Modal barang terjual', a.hpp], ['Laba kotor', a.kotor],
     ['Biaya operasional', N(r.biaya)], ...r.biaya_rinci.map((x) => ['  ' + x.name, N(x.total)]),
     ['Selisih stok (opname/rusak)', N(r.selisih_stok)], ['Pemasukan lain', N(r.pendapatan_lain)], ['Laba bersih', a.bersih], [],
-    ['Prive (bukan biaya)', N(r.prive)], ['Setoran modal', N(r.setoran_modal)], ['Belanja barang', N(r.belanja)], ['Belanja modal/peralatan', N(r.belanja_modal)], [],
+    ['Prive (bukan biaya)', N(r.prive)], ['Setoran modal', N(r.setoran_modal)], ['Belanja barang (bersih setelah retur)', N(r.belanja)], ['Retur ke supplier', N(r.retur_beli)], ['Belanja modal/peralatan', N(r.belanja_modal)], [],
     ['Produk', 'Terjual (satuan dasar)', 'Penjualan', 'Modal', 'Laba'], ...r.produk.map((p) => [p.name, N(p.qty), N(p.omzet), N(p.hpp), N(p.laba)]), [],
+    ...((r.lokasi || []).length > 1 ? [['Lokasi', 'Transaksi', 'Penjualan', 'Laba kotor'], ...r.lokasi.map((x) => [x.name, x.trx, N(x.omzet), N(x.laba)]), []] : []),
     ['Tanggal', 'Transaksi', 'Penjualan', 'Laba kotor'], ...r.harian.map((h) => [h.d, h.trx, N(h.omzet), N(h.laba)]),
   ]);
 
@@ -105,7 +106,7 @@ export default function LaporanToko() {
             {N(r.pendapatan_lain) > 0 && <Row l="Pemasukan lain" v={N(r.pendapatan_lain)} />}
             <Row l="Laba bersih" v={a.bersih} bold tone="bad" />
           </div>
-          <p className="small muted" style={{ margin: 0 }}>Tidak termasuk laba: prive {rp(r.prive)} · setoran modal {rp(r.setoran_modal)} · belanja barang {rp(r.belanja)} (masuk stok) · belanja peralatan {rp(r.belanja_modal)}.</p>
+          <p className="small muted" style={{ margin: 0 }}>Tidak termasuk laba: prive {rp(r.prive)} · setoran modal {rp(r.setoran_modal)} · belanja barang {rp(r.belanja)} (masuk stok{N(r.retur_beli) > 0 ? `, sudah dikurangi retur ke supplier ${rp(r.retur_beli)}` : ''}) · belanja peralatan {rp(r.belanja_modal)}.</p>
         </section>
 
         <section className="panel">
@@ -113,6 +114,16 @@ export default function LaporanToko() {
           <div className="list">{Object.entries(PAY).map(([k, l]) => <div className="li" key={k}><span>{l}</span><b>{rp(r.bayar[k])}</b></div>)}</div>
           {N(r.grosir) > 0 && <span className="small muted">Penjualan harga grosir: {rp(r.grosir)} ({Math.round((N(r.grosir) / Math.max(1, a.omzet)) * 100)}%)</span>}
         </section>
+
+        {(r.lokasi || []).length > 1 && (
+          <section className="panel">
+            <h3>Per lokasi</h3>
+            <div className="list">{r.lokasi.map((x) => (
+              <div className="li" key={x.name}><div className="main"><b className="small">{x.name}</b><span className="small muted">{angka(x.trx)} transaksi · laba kotor {rp(x.laba)}</span></div><b className="small">{rp(x.omzet)}</b></div>
+            ))}</div>
+            <span className="small muted">Penjualan sebelum retur, menurut lokasi tempat transaksi dicatat. Kas dan biaya tetap dihitung untuk seluruh bisnis.</span>
+          </section>
+        )}
 
         {r.harian.length > 1 && (
           <section className="panel">

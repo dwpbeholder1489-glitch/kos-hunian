@@ -10,8 +10,8 @@ import { canArea } from '@/lib/business';
 
 const TYPE = { aset: 'Aset', kewajiban: 'Kewajiban', ekuitas: 'Ekuitas', pendapatan: 'Pendapatan', beban: 'Beban' };
 const KIND = { posting: ['Otomatis', ''], koreksi: ['Koreksi', 'gold'], manual: ['Manual', 'void'] };
-const SRC = { sale: 'Penjualan', return: 'Retur', purchase: 'Belanja', debt_payment: 'Kasbon/utang', stock_move: 'Stok', expense: 'Pengeluaran', cash_entry: 'Kas', payment: 'Pembayaran sewa' };
-const srcHref = (t, id, retail) => ({ sale: `/struk/${id}`, return: '/penjualan', purchase: '/belanja', debt_payment: '/kas', stock_move: '/barang', expense: retail ? '/kas' : '/pengeluaran', cash_entry: '/kas', payment: '/pembayaran' }[t]);
+const SRC = { sale: 'Penjualan', return: 'Retur', purchase: 'Belanja', debt_payment: 'Kasbon/utang', stock_move: 'Stok', expense: 'Pengeluaran', cash_entry: 'Kas', payment: 'Pembayaran sewa', purchase_return: 'Retur ke supplier' };
+const srcHref = (t, id, retail) => ({ sale: `/struk/${id}`, return: '/penjualan', purchase: '/belanja', debt_payment: '/kas', stock_move: '/barang', expense: retail ? '/kas' : '/pengeluaran', cash_entry: '/kas', payment: '/pembayaran', purchase_return: '/belanja' }[t]);
 const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
 
 // Pembukuan (blueprint 5.1, 22): jurnal double-entry otomatis dari transaksi, laporan per bisnis atau per badan usaha

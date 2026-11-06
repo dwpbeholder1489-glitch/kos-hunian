@@ -5,7 +5,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Field, Loading, toast } from '@/components/ui';
 import { tgl, errMsg } from '@/lib/format';
-import { ROLES } from '@/lib/business';
+import { ROLES, multiLoc } from '@/lib/business';
 import { SITE_URL } from '@/lib/plan';
 
 // Karyawan: undang lewat email, atur peran, nonaktifkan, hapus. Izin tiap peran ditegakkan di database.
@@ -16,10 +16,15 @@ export default function Karyawan() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('');
   const [busy, setBusy] = useState(false);
-  const load = () => supabase.rpc('team_list', { p_kos: kosId }).then(({ data, error }) => {
-    if (error) return setErr(errMsg(error));
-    setD(data); setRole((r) => r || data.roles[1]);
-  });
+  const multi = multiLoc(kos);
+  const [mloc, setMloc] = useState({});   // user_id → lokasi yang ditetapkan
+  const load = () => {
+    if (multi) supabase.from('member_locations').select('user_id,branch_id,locked').eq('kos_id', kosId).then(({ data }) => setMloc(Object.fromEntries((data || []).filter((x) => x.locked).map((x) => [x.user_id, x.branch_id]))));
+    return supabase.rpc('team_list', { p_kos: kosId }).then(({ data, error }) => {
+      if (error) return setErr(errMsg(error));
+      setD(data); setRole((r) => r || data.roles[1]);
+    });
+  };
   useEffect(() => { setD(null); load(); }, [kosId]);
   if (err) return <div className="notice bad">{/team_list/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
@@ -84,8 +89,14 @@ export default function Karyawan() {
               <button className="sm" disabled={busy} onClick={() => call('team_update', { p_kos: kosId, p_user: m.user_id, p_role: m.role, p_active: !m.active }, m.active ? 'Dinonaktifkan' : 'Diaktifkan lagi')}>{m.active ? 'Nonaktifkan' : 'Aktifkan'}</button>
               <button className="sm ghost danger" disabled={busy} onClick={() => call('team_remove', { p_kos: kosId, p_user: m.user_id }, 'Email dihapus dari daftar', `Hapus ${m.email} dari ${kos.name}?\nAksesnya langsung tertutup. Riwayat transaksinya tetap tersimpan.`)}>Hapus</button>
             </div>
+            {multi && <label className="row small" style={{ flexWrap: 'nowrap' }}><span style={{ whiteSpace: 'nowrap' }}>📍 Lokasi kerja</span>
+              <select value={mloc[m.user_id] || ''} disabled={busy} onChange={(e) => call('member_location_set', { p_kos: kosId, p_user: m.user_id, p_branch: e.target.value || null }, e.target.value ? 'Lokasi kerja ditetapkan' : 'Karyawan bebas memilih lokasi')} aria-label={`Lokasi kerja ${m.email}`} style={{ flex: 1 }}>
+                <option value="">Bebas memilih</option>
+                {kos.locs.list.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select></label>}
           </div>
         ))}</div>}
+        {multi && <span className="small muted">Lokasi kerja yang ditetapkan tidak bisa diganti sendiri oleh karyawan: penjualan, belanja, dan perubahan stoknya selalu tercatat di lokasi itu.</span>}
         {inactive > 0 && <button className="ghost" disabled={busy} onClick={() => call('team_cleanup', { p_kos: kosId }, 'Daftar dibersihkan', `Hapus ${inactive} email nonaktif/kedaluwarsa sekaligus?`)}>Bersihkan {inactive} email nonaktif / kedaluwarsa</button>}
       </section>
 
