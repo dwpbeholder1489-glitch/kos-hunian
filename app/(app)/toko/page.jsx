@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
+import { RecHint } from '@/components/Rekomendasi';
 import { Tile, Loading } from '@/components/ui';
 import { rp, angka, today, tgl } from '@/lib/format';
 import { isLow } from '@/lib/retail';
@@ -27,6 +28,7 @@ export default function Toko() {
   return (
     <div className="stack">
       <div className="row between"><h2>{kos.name}</h2><span className="small muted">{tgl(today())}</span></div>
+      <RecHint />
       <div className="grid">
         <Tile label="Omzet hari ini" value={rp(omzet)} sub={`${sales.length} transaksi${retur ? ` · retur ${rp(retur)}` : ''}`} />
         <Tile label="Laba kotor hari ini" value={rp(laba)} sub="omzet − modal barang" />

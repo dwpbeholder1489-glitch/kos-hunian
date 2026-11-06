@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { ClosedBar } from '@/components/DataTutup';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -72,6 +73,7 @@ export default function AppLayout({ children }) {
       </header>
       {!path.startsWith('/langganan') && role === 'pemilik' && <PlanBar kos={kos} />}
       <AnnounceBanner />
+      <ClosedBar />
       <main className="wrap" key={kosId}>{kos.suspended_at ? (
         <div className="empty"><h2>Bisnis ini sedang ditangguhkan</h2><p className="muted">Alasan: {kos.suspend_reason || '—'}. Data Anda tetap tersimpan dan tidak dihapus.</p>
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
@@ -109,7 +111,7 @@ export default function AppLayout({ children }) {
             {list.map((k) => (
               <button key={k.id} className={k.id === kosId ? 'on' : ''} onClick={() => go(k)} aria-current={k.id === kosId ? 'true' : undefined}>
                 <span className="ic" aria-hidden="true">{typeOf(k).icon}</span>
-                <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}><b style={{ overflowWrap: 'anywhere' }}>{k.name}</b><span className="small muted">{typeOf(k).name}{k.my_role && k.my_role !== 'pemilik' ? ` · ${ROLES[k.my_role]?.name}` : ''}</span></span>
+                <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}><b style={{ overflowWrap: 'anywhere' }}>{k.name}</b><span className="small muted">{typeOf(k).name}{k.my_role && k.my_role !== 'pemilik' ? ` · ${ROLES[k.my_role]?.name}` : ''}{k.closed_at ? ' · ditutup (arsip)' : ''}</span></span>
                 {k.id === kosId && <span className="chip info">Dibuka</span>}
               </button>
             ))}

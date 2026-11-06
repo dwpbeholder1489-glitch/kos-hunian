@@ -11,6 +11,7 @@ import { Field, Loading, run, toast } from '@/components/ui';
 import { KIND, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { strukSample as strukPreview } from '@/lib/struk';
+import DataTutup from '@/components/DataTutup';
 
 export default function Pengaturan() {
   const router = useRouter();
@@ -97,6 +98,7 @@ export default function Pengaturan() {
         </div>
         <button onClick={addCat}>Tambah kategori</button>
       </section>
+      {canArea(kos, 'team') && <DataTutup />}
       <section className="panel"><h3>Akun</h3>
         <p className="small muted" style={{ margin: 0 }}>Masuk sebagai {user?.email}</p>
         {isOwner && kos.onboarding_emails !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={kos.onboarding_emails}

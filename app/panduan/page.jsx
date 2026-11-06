@@ -37,11 +37,11 @@ const MENUS = [
   ['Pengeluaran', 'Biaya kos (termasuk gaji pengelola) dan uang yang diambil pemilik'],
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
-  ['Pengaturan', 'Profil kos, kategori pengeluaran, tambah kos, keluar'],
+  ['Pengaturan', 'Profil kos, kategori pengeluaran, unduh semua data, tutup bisnis, keluar'],
   ['Karyawan', 'Undang pengelola/penjaga, atur peran, nonaktifkan, hapus'],
   ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan persetujuan'],
   ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan'],
-  ['Konfigurasi', 'Profil bisnis, modul aktif, cabang & gudang, riwayat'],
+  ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
   ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode'],
 ];
 
@@ -301,6 +301,19 @@ const PARTS = [
       <>Memindahkan barang (mis. gudang → toko): buka <b>Mutasi stok</b>, pilih <b>Dari</b> dan <b>Ke</b>, cari barang, isi jumlah, lalu <b>Pindahkan</b>. Riwayat mutasi mencatat nomor, asal–tujuan, waktu, dan siapa.</>,
       <>Pemilik bisa menetapkan lokasi kerja tiap karyawan di menu <b>Karyawan</b>; karyawan itu tidak bisa pindah lokasi sendiri dan hanya bisa mengirim barang dari lokasinya. Laporan toko menampilkan penjualan <b>per lokasi</b>.</>,
     ], <>Mutasi tidak mengubah total stok maupun harga modal. Stok yang dimutasi tidak boleh melebihi stok di lokasi asal. Lokasi yang masih ada stoknya tidak bisa dinonaktifkan. Kas, biaya, pengingat stok minimum, dan pembukuan tetap dihitung untuk seluruh bisnis (belum per lokasi).</>, null, null],
+    ['Saran untuk bisnis Anda', 'Konfigurasi › Saran (pemilik & pengelola)', [
+      <>Bila ada saran, di dashboard Toko/Dashboard kos muncul kotak <b>💡 N saran</b>. Ketuk untuk membuka <b>Konfigurasi › Saran</b>.</>,
+      <>Setiap saran menyebut <b>alasan</b> dengan angka dari data Anda (mis. "7 penjualan kasbon dalam 30 hari terakhir"), <b>manfaat</b>, <b>dampak</b>, dan <b>tingkat risiko</b>.</>,
+      <>Tekan <b>Terapkan</b> untuk menjalankannya (mengaktifkan modul, menyalakan otomatisasi, atau mewajibkan persetujuan), atau <b>Buka</b> untuk saran yang Anda kerjakan sendiri (mis. melengkapi harga modal, menutup buku).</>,
+      <>Tidak cocok? Tekan <b>Abaikan 30 hari</b> (alasan opsional). Semua keputusan tercatat di Riwayat.</>,
+    ], <>Saran hanya muncul bila datanya cukup kuat (mis. minimal beberapa kejadian dalam 30 hari), bukan dari satu kejadian. Tidak ada yang berubah sebelum Anda menekan Terapkan. Pengelola yang menerapkan saran modul akan mengirim permintaan ke pemilik. Saran ini dihitung dengan aturan tetap — bukan AI.</>, null, null],
+    ['Unduh semua data & tutup bisnis', 'Pengaturan › Data & penutupan bisnis (pemilik)', [
+      <>Tekan <b>Unduh semua data (.zip)</b>. File berisi satu CSV per tabel (dibuka di Excel, Numbers, atau Google Sheets) dan data.json untuk arsip. Di iPhone, file tersimpan di app <b>Files › Unduhan</b>.</>,
+      <>Usaha berhenti? Tekan <b>Tutup bisnis…</b>. Sistem memeriksa: shift yang belum ditutup, pesanan supplier yang belum selesai, persetujuan menunggu, pembayaran belum diverifikasi, penghuni aktif, dan <b>ekspor data dalam 7 hari terakhir</b> — semuanya harus beres dulu.</>,
+      <>Baca bagian <b>Perlu diketahui</b> (sisa kasbon/utang/tagihan, stok, periode buku, karyawan aktif) lalu centang <b>Saya mengerti</b>.</>,
+      <>Ketik nama bisnis persis sama, tulis alasan, lalu tekan <b>Tutup bisnis</b>.</>,
+      <>Bisnis yang ditutup menampilkan pita merah di semua halaman. Pemilik bisa menekan <b>Buka kembali</b> kapan saja (alasan wajib).</>,
+    ], <>Menutup bisnis tidak menghapus data apa pun: transaksi, laporan, dan pembukuan tetap bisa dilihat dan diunduh. Selama ditutup, semua orang (termasuk pemilik) tidak bisa mencatat apa pun, otomatisasi dimatikan, dan email harian/ringkasan untuk bisnis itu berhenti. Foto bukti transfer tidak ikut dalam file .zip.</>, null, null],
   ]],
 ];
 
@@ -345,7 +358,7 @@ export default function Panduan() {
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
-          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–40</a><br />Karyawan, kontak, shift, pengingat, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi</span></div>
+          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–42</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

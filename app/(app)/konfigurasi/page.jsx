@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import Rekomendasi from '@/components/Rekomendasi';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { tgl, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -13,7 +14,7 @@ import { GROUPS, LEGAL_KIND, PROFILE_Q } from '@/lib/modules';
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
 const ACT = {
   aktifkan_modul: 'Mengaktifkan modul', nonaktifkan_modul: 'Menonaktifkan modul', minta_persetujuan: 'Meminta persetujuan', tolak_persetujuan: 'Menolak permintaan',
-  konfigurasi_awal: 'Konfigurasi awal', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang',
+  konfigurasi_awal: 'Konfigurasi awal', rekomendasi_diterima: 'Menerapkan saran', rekomendasi_diabaikan: 'Mengabaikan saran', ekspor_data: 'Mengunduh semua data', tutup_bisnis: 'Menutup bisnis', buka_bisnis: 'Membuka kembali bisnis', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang',
 };
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 
@@ -51,7 +52,7 @@ export default function Konfigurasi() {
       <div className="row"><h2>Pusat konfigurasi</h2><PageHelp page="konfigurasi" /></div>
       <p className="small muted" style={{ margin: 0 }}>Atur profil, modul, dan struktur {kos.name}. Perubahan penting dicatat dan {owner ? 'langsung diterapkan setelah Anda konfirmasi' : 'menunggu persetujuan pemilik'}.</p>
       <div className="seg" style={{ overflowX: 'auto' }}>
-        {[['modul', 'Modul'], ['profil', 'Profil'], ['cabang', 'Cabang & gudang'], ['setuju', 'Persetujuan'], ['riwayat', 'Riwayat']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['modul', 'Modul'], ['saran', 'Saran'], ['profil', 'Profil'], ['cabang', 'Cabang & gudang'], ['setuju', 'Persetujuan'], ['riwayat', 'Riwayat']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
 
       {tab === 'modul' && <>
@@ -73,6 +74,7 @@ export default function Konfigurasi() {
         <span className="small muted">Menonaktifkan modul hanya menyembunyikan menunya dan menolak pemakaiannya di server — data lama tidak dihapus dan kembali saat diaktifkan lagi.</span>
       </>}
 
+      {tab === 'saran' && <Rekomendasi />}
       {tab === 'profil' && <ProfileTab kos={kos} owner={owner} onSaved={refresh} />}
       {tab === 'cabang' && <BranchTab kosId={kosId} owner={owner} branches={branches} onSaved={() => { load(); loadKos(); }} />}
 
