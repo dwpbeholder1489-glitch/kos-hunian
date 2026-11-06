@@ -25,8 +25,8 @@ export default function Berhenti() {
           </>
         ) : (
           <>
-            <b>Berhenti terima email arahan?</b>
-            <span className="small muted">Email arahan berisi langkah memakai PRASARA selama masa coba. Pengingat tagihan dan daftar tagih harian tetap berjalan.</span>
+            <b>Berhenti terima email arahan & info?</b>
+            <span className="small muted">Email arahan (langkah memakai PRASARA) dan email info fitur/tips akan berhenti. Pengingat tagihan, daftar tagih harian, dan pengumuman layanan penting tetap dikirim.</span>
             {state === 'gagal' && <div className="notice bad">Tautan tidak dikenali. Matikan lewat Pengaturan di aplikasi.</div>}
             <button className="primary" disabled={state === 'busy'} onClick={stop}>{state === 'busy' ? 'Memproses…' : 'Ya, berhenti'}</button>
           </>

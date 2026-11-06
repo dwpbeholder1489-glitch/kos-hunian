@@ -117,6 +117,12 @@ textarea{min-height:70px}
 .adm header.top .mark{background:#C9A45C;color:#0F1A2A}
 .adm input,.adm select,.adm textarea{background:#0F1A2A;color:var(--fg);border-color:var(--line)}
 .cols{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.announce{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--info-bg);color:var(--info)}
+.announce.layanan{background:var(--warn-bg);color:var(--warn)}
+.bubble{padding:10px 12px;border-radius:12px;max-width:92%;display:flex;flex-direction:column;gap:2px}
+.bubble.me{align-self:flex-end;background:var(--sunk)}
+.bubble.them{align-self:flex-start;background:var(--good-bg)}
+.bubble.note{align-self:flex-start;background:var(--gold-soft);border:1px dashed var(--gold)}
 .typecard{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:14px;min-height:72px;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;width:100%}
 .typecard:hover{border-color:var(--brand)}
 .typeicon{font-size:28px;line-height:1}

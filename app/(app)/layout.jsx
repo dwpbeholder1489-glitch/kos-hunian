@@ -5,6 +5,7 @@ import { useKos } from '@/components/KosProvider';
 import { tgl, today } from '@/lib/format';
 import { planOf, PLANS, BUSINESS } from '@/lib/plan';
 import NotifBell from '@/components/NotifBell';
+import AnnounceBanner from '@/components/AnnounceBanner';
 
 import { typeOf, pathAllowed, BUSINESS_TYPES } from '@/lib/business';
 
@@ -57,6 +58,7 @@ export default function AppLayout({ children }) {
         </div>
       </header>
       {!path.startsWith('/langganan') && kos.business_type !== 'retail' && <PlanBar kos={kos} />}
+      <AnnounceBanner />
       <main className="wrap" key={kosId}>{allowed ? children : (
         <div className="empty"><h2>Menu ini bukan untuk {type.name}</h2><p className="muted">{kos.name} adalah bisnis {type.name}. Pilih menu di atas, atau pindah bisnis lewat pilihan di kanan atas.</p><Link href={type.home}><button className="primary">Buka {type.tabs[0][1]}</button></Link></div>
       )}</main>

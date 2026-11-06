@@ -8,7 +8,7 @@ import { Loading, Empty, Field, run, toast } from '@/components/ui';
 import { rp, tgl, errMsg, waLink } from '@/lib/format';
 import { PLANS } from '@/lib/plan';
 import { ADMIN_TEMPLATES, fillAdmin } from '@/lib/adminTemplates';
-import { can, ACTION, TYPE_ICON } from '@/lib/admin';
+import { can, ACTION, TYPE_ICON, loadTemplates } from '@/lib/admin';
 import { health } from '@/lib/health';
 
 const RQ = { menunggu: ['Menunggu', 'gold'], disetujui: ['Disetujui', 'good'], ditolak: ['Ditolak', 'bad'] };
@@ -23,7 +23,8 @@ export default function CustomerDetail() {
   const [sig, setSig] = useState(null);
   const [err, setErr] = useState(null);
   const [note, setNote] = useState('');
-  const [tpl, setTpl] = useState(ADMIN_TEMPLATES[0][0]);
+  const [tpls, setTpls] = useState([]);
+  const [tpl, setTpl] = useState('');
   const [msg, setMsg] = useState('');
   const [ov, setOv] = useState({ action: 'tambah_coba', plan: 'standar', value: '14', reason: '' });
 
@@ -32,8 +33,8 @@ export default function CustomerDetail() {
     if (a.error) return setErr(errMsg(a.error));
     setC(a.data); setSig((b.data || []).find((x) => x.id === id) || null);
   };
-  useEffect(() => { if (can(adminMe, 'customers.view')) load(); }, [id, adminMe]);
-  useEffect(() => { if (c) setMsg(fillAdmin(ADMIN_TEMPLATES.find((t) => t[0] === tpl)[2], c.kos)); }, [tpl, c]);
+  useEffect(() => { if (can(adminMe, 'customers.view')) { load(); loadTemplates(supabase, ADMIN_TEMPLATES).then((t) => { setTpls(t); setTpl(String(t[0]?.id || '')); }); } }, [id, adminMe]);
+  useEffect(() => { const x = tpls.find((t) => String(t.id) === tpl); if (c && x) setMsg(fillAdmin(x.body, c.kos)); }, [tpl, c, tpls]);
   if (!can(adminMe, 'customers.view')) return <Empty title="Tidak punya izin melihat pelanggan" />;
   if (err) return <div className="notice bad">{err}</div>;
   if (!c) return <Loading />;
@@ -77,7 +78,7 @@ export default function CustomerDetail() {
       {can(adminMe, 'customers.message') && (
         <section className="panel">
           <h3>Chat cepat</h3>
-          <select value={tpl} onChange={(e) => setTpl(e.target.value)} aria-label="Template pesan">{ADMIN_TEMPLATES.map(([tid, name]) => <option key={tid} value={tid}>{name}</option>)}</select>
+          <select value={tpl} onChange={(e) => setTpl(e.target.value)} aria-label="Template pesan">{tpls.map((t) => <option key={t.id} value={String(t.id)}>{t.name}</option>)}</select>
           <textarea value={msg} onChange={(e) => setMsg(e.target.value)} style={{ minHeight: 110 }} aria-label="Isi pesan" />
           <div className="row">
             {k.contact_phone ? <a href={waLink(k.contact_phone, msg)} target="_blank" rel="noreferrer" onClick={() => record('kirim_wa')}><button className="primary">Buka WhatsApp</button></a> : <span className="small muted">Belum ada nomor WhatsApp.</span>}

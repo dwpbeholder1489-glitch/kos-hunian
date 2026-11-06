@@ -7,7 +7,10 @@ import { ROLE, can } from '@/lib/admin';
 const NAV = [
   ['/admin', 'Dashboard', 'dashboard.view'],
   ['/admin/pelanggan', 'Pelanggan', 'customers.view'],
+  ['/admin/tiket', 'Tiket', 'tickets.view'],
   ['/admin/langganan', 'Langganan & pembayaran', 'payments.view'],
+  ['/admin/pengumuman', 'Pengumuman', 'announce.manage'],
+  ['/admin/template', 'Template', 'templates.manage'],
   ['/admin/aktivitas', 'Catatan audit', 'audit.view'],
   ['/admin/staf', 'Staf & hak akses', 'staff.manage'],
 ];

@@ -160,9 +160,9 @@ const PARTS = [
     ['Pusat bantuan & email arahan', 'Tombol ? di pojok kanan atas', [
       <>Tekan tombol <b>?</b> di pojok kanan atas untuk membuka <b>Pusat bantuan</b>.</>,
       <>Ketik pertanyaan, misalnya <i>penghuni lama</i>, <i>kwitansi</i>, atau <i>prive</i>. Ketuk jawabannya, lalu <b>Buka menunya</b>.</>,
-      <>Belum terjawab? Tekan <b>Tanya via WhatsApp</b> di bagian bawah.</>,
+      <>Belum terjawab? Tekan <b>Laporkan masalah</b> di bagian <b>Tiket bantuan</b>: pilih jenis masalah, tulis judul dan ceritanya, lalu <b>Kirim</b>. Balasan tim muncul di sana dan dikirim ke email Anda. Bisa juga <b>Tanya via WhatsApp</b>.</>,
       <>Selama masa coba, PRASARA mengirim <b>email arahan</b> hanya untuk langkah yang belum Anda kerjakan, paling banyak satu email tiap 2 hari.</>,
-    ], <>Email arahan bisa dimatikan lewat tautan <b>Berhenti terima email arahan</b> di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan tidak ikut berhenti.</>, null, null],
+    ], <>Email arahan & info bisa dimatikan lewat tautan di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan dan pengumuman layanan penting tidak ikut berhenti. Pengumuman dari tim PRASARA juga tampil sebagai banner di atas aplikasi; tekan ✕ untuk menutupnya.</>, null, null],
     ['Notifikasi & ringkasan lewat email', 'Lonceng di kanan atas', [
       <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti hari ini: pembayaran menunggu diperiksa, tagihan telat, dan jatuh tempo hari ini.</>,
       <>Ketuk lonceng. Bagian <b>Perlu perhatian</b> juga menampilkan sewa yang akan berakhir, kamar tanpa harga, dan penghuni tanpa nomor WhatsApp. Ketuk untuk membuka menunya.</>,

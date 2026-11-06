@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useKos } from '@/components/KosProvider';
 import { HELP_CATS, searchHelp } from '@/lib/help';
 import { BUSINESS } from '@/lib/plan';
+import Tickets from '@/components/Tickets';
 
 export default function Bantuan() {
   const { kos } = useKos();
@@ -46,9 +47,10 @@ export default function Bantuan() {
           <div className="list">{hasil.filter((h) => h.cat === cat).map((h) => <Item key={h.id} h={h} />)}</div>
         </section>
       ))}
+      <Tickets />
       <section className="panel" style={{ textAlign: 'center', alignItems: 'center' }}>
         <b>Belum terjawab?</b>
-        <span className="small muted">Kirim pertanyaan lewat WhatsApp. Kami balas paling lambat 1×24 jam pada hari kerja.</span>
+        <span className="small muted">Buat tiket di atas, atau kirim pertanyaan lewat WhatsApp. Kami balas paling lambat 1×24 jam pada hari kerja.</span>
         <a href={wa} target="_blank" rel="noreferrer"><button className="primary">Tanya via WhatsApp</button></a>
         <Link href="/panduan" className="small">Baca panduan lengkap bergambar →</Link>
       </section>
