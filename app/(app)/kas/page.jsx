@@ -7,6 +7,8 @@ import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
+import LokasiBar from '@/components/LokasiBar';
+import { multiLoc } from '@/lib/business';
 
 const ACC = { kas: 'Kas (laci)', bank: 'Bank' };
 const OTHER = {
@@ -25,18 +27,20 @@ export default function Kas() {
   const [err, setErr] = useState(null);
   const [sheet, setSheet] = useState(null);
   const load = async () => {
-    const [l, e, c, p, cat] = await Promise.all([
+    const multi = multiLoc(kos);
+    const [l, e, c, p, cat, loc] = await Promise.all([
       supabase.rpc('retail_ledger', { p_kos: kosId }),
       supabase.from('expenses').select('*').eq('kos_id', kosId).order('date', { ascending: false }).order('created_at', { ascending: false }).limit(40),
       supabase.from('cash_entries').select('*').eq('kos_id', kosId).order('date', { ascending: false }).order('created_at', { ascending: false }).limit(40),
       supabase.from('debt_payments').select('*').eq('kos_id', kosId).order('date', { ascending: false }).order('created_at', { ascending: false }).limit(60),
       supabase.from('expense_categories').select('*').eq('kos_id', kosId).order('name'),
+      multi ? supabase.rpc('cash_by_location', { p_kos: kosId }) : Promise.resolve({ data: null }),
     ]);
     const x = l.error || e.error || c.error || p.error || cat.error;
     if (x) return setErr(errMsg(x));
-    setD({ led: l.data, expenses: e.data, cash: c.data, pays: p.data, cats: cat.data });
+    setD({ led: l.data, expenses: e.data, cash: c.data, pays: p.data, cats: cat.data, loc: loc.data });
   };
-  useEffect(() => { load(); }, [kosId, ver]);
+  useEffect(() => { load(); }, [kosId, ver, kos?.locs?.list?.length]);
   if (err) return <div className="notice bad">{err.includes('retail_ledger') || err.includes('debt_payments') || err.includes('account') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
   const { led } = d;
@@ -44,12 +48,17 @@ export default function Kas() {
   const totUtang = led.utang.reduce((a, x) => a + Number(x.sisa), 0);
   const catName = new Map(d.cats.map((c) => [c.id, c.name]));
   const done = () => { setSheet(null); load(); };
+  const multi = multiLoc(kos) && Array.isArray(d.loc);
+  const locName = (id) => kos.locs?.list?.find((b) => b.id === id)?.name || d.loc?.find((b) => b.id === id)?.name || '';
+  const at = (id) => (multi && id ? ` · ${locName(id)}` : '');
 
   // Riwayat catatan manual (penjualan & belanja ada di menunya sendiri)
   const feed = [
-    ...d.expenses.map((x) => ({ id: x.id, t: 'exp', date: x.date, at: x.created_at, label: catName.get(x.category_id) || 'Biaya', note: x.description, acc: x.account, amt: -Number(x.amount) })),
-    ...d.cash.map((x) => ({ id: x.id, t: 'cash', date: x.date, at: x.created_at, label: OTHER[x.kind]?.[0] || x.kind, note: x.description, acc: x.kind === 'setor_bank' ? 'kas → bank' : x.kind === 'tarik_bank' ? 'bank → kas' : x.account, amt: ['prive', 'bayar_pinjaman'].includes(x.kind) ? -Number(x.amount) : ['setor_bank', 'tarik_bank'].includes(x.kind) ? 0 : Number(x.amount), raw: Number(x.amount) })),
-    ...d.pays.filter((x) => x.status === 'selesai').map((x) => ({ id: x.id, t: 'pay', date: x.date, at: x.created_at, label: x.kind === 'piutang' ? 'Pelunasan kasbon' : 'Bayar utang supplier', note: x.note, acc: x.account, amt: x.kind === 'piutang' ? Number(x.amount) : -Number(x.amount), contact: x.contact_id })),
+    ...d.expenses.map((x) => ({ id: x.id, t: 'exp', date: x.date, at: x.created_at, label: catName.get(x.category_id) || 'Biaya', note: x.description, acc: (ACC[x.account] || x.account) + at(x.branch_id), amt: -Number(x.amount) })),
+    ...d.cash.map((x) => ({ id: x.id, t: 'cash', date: x.date, at: x.created_at, label: x.kind === 'pindah_kas' ? 'Pindah uang kas antar lokasi' : OTHER[x.kind]?.[0] || x.kind, note: x.description,
+      acc: x.kind === 'pindah_kas' ? `${locName(x.branch_id)} → ${locName(x.to_branch)}` : (x.kind === 'setor_bank' ? 'kas → bank' : x.kind === 'tarik_bank' ? 'bank → kas' : ACC[x.account] || x.account) + at(x.branch_id),
+      amt: ['prive', 'bayar_pinjaman'].includes(x.kind) ? -Number(x.amount) : ['setor_bank', 'tarik_bank', 'pindah_kas'].includes(x.kind) ? 0 : Number(x.amount), raw: Number(x.amount) })),
+    ...d.pays.filter((x) => x.status === 'selesai').map((x) => ({ id: x.id, t: 'pay', date: x.date, at: x.created_at, label: x.kind === 'piutang' ? 'Pelunasan kasbon' : 'Bayar utang supplier', note: x.note, acc: (ACC[x.account] || x.account) + at(x.branch_id), amt: x.kind === 'piutang' ? Number(x.amount) : -Number(x.amount), contact: x.contact_id })),
   ].sort((a, b) => (a.date === b.date ? String(b.at).localeCompare(String(a.at)) : b.date.localeCompare(a.date))).slice(0, 50);
 
   return (
@@ -61,6 +70,12 @@ export default function Kas() {
         <Tile label="Kasbon pelanggan" value={rp(totKasbon)} sub={`${led.kasbon.length} orang`} />
         <Tile label="Utang ke supplier" value={rp(totUtang)} sub={`${led.utang.length} supplier`} />
       </div>
+      <LokasiBar note="Biaya, uang masuk/keluar lain, dan pembayaran kasbon/utang dicatat di lokasi ini." />
+      {multi && tab === 'kas' && <section className="panel">
+        <div className="row between"><h3>Uang kas per lokasi</h3><button className="sm" onClick={() => setSheet({ t: 'move' })}>Pindahkan uang kas</button></div>
+        <div className="list">{d.loc.map((b) => <div className="li" key={b.id}><span className="small">{b.name}{b.is_main ? ' (utama)' : ''}{!b.active ? ' · nonaktif' : ''}</span><b className="small" style={{ color: Number(b.kas) < 0 ? 'var(--bad)' : undefined }}>{rp(b.kas)}</b></div>)}</div>
+        <span className="small muted">Uang laci di tiap lokasi menurut catatan (penjualan tunai, belanja tunai, biaya, kasbon, dan pindah kas). Bank tetap satu untuk seluruh bisnis.</span>
+      </section>}
       <div className="seg">{[['kas', 'Kas & bank'], ['kasbon', 'Kasbon pelanggan'], ['utang', 'Utang supplier']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
 
       {tab === 'kas' && <>
@@ -69,7 +84,7 @@ export default function Kas() {
         {feed.length === 0 ? <Empty title="Belum ada catatan kas" /> : (
           <section className="panel"><div className="list">{feed.map((f) => (
             <div className="li" key={f.t + f.id}>
-              <div className="main"><b className="small">{f.label}</b><span className="small muted">{tgl(f.date)} · {ACC[f.acc] || f.acc}{f.note ? ` · ${f.note}` : ''}</span></div>
+              <div className="main"><b className="small">{f.label}</b><span className="small muted">{tgl(f.date)} · {f.acc}{f.note ? ` · ${f.note}` : ''}</span></div>
               <div className="row" style={{ flexWrap: 'nowrap' }}>
                 <b className="small" style={{ color: f.amt < 0 ? 'var(--bad)' : f.amt > 0 ? 'var(--good)' : 'inherit' }}>{f.amt === 0 ? rp(f.raw) : (f.amt > 0 ? '+' : '−') + rp(Math.abs(f.amt))}</b>
                 <button className="sm ghost" aria-label="Hapus atau batalkan" onClick={() => setSheet({ t: 'del', f })}>✕</button>
@@ -102,6 +117,7 @@ export default function Kas() {
       {sheet?.t === 'exp' && <ExpenseForm kosId={kosId} cats={d.cats} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'cash' && <CashForm kosId={kosId} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'pay' && <PayForm kosId={kosId} c={sheet.c} kind={sheet.kind} onClose={() => setSheet(null)} onSaved={done} />}
+      {sheet?.t === 'move' && <MoveCash kosId={kosId} locs={d.loc.filter((b) => b.active)} cur={kos.locs?.current} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'del' && <DeleteEntry f={sheet.f} onClose={() => setSheet(null)} onSaved={done} />}
     </div>
   );
@@ -200,6 +216,33 @@ function DeleteEntry({ f, onClose, onSaved }) {
         <button className="danger" onClick={go} disabled={!reason.trim()}>Ya, batalkan</button>
       </> : <button className="danger" onClick={go}>Ya, hapus</button>}
       <button className="ghost" onClick={onClose}>Tidak jadi</button>
+    </Sheet>
+  );
+}
+
+// Pindah uang kas antar lokasi (mis. setoran laci cabang ke toko utama); total kas bisnis tidak berubah
+function MoveCash({ kosId, locs, cur, onClose, onSaved }) {
+  const [from, setFrom] = useState(cur || locs[0]?.id);
+  const [to, setTo] = useState('');
+  const [amt, setAmt] = useState('');
+  const [date, setDate] = useState(today());
+  const [note, setNote] = useState('');
+  const have = Number(locs.find((b) => b.id === from)?.kas || 0);
+  const a = parseRp(amt);
+  const save = async () => {
+    if (await run(() => supabase.rpc('cash_move', { p_kos: kosId, p_from: from, p_to: to, p_amount: a, p_date: date, p_note: note }), 'Uang kas dipindahkan', errMsg)) onSaved();
+  };
+  return (
+    <Sheet title="Pindahkan uang kas" onClose={onClose}>
+      <div className="row">
+        <Field label="Dari"><select value={from} onChange={(e) => setFrom(e.target.value)}>{locs.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>
+        <Field label="Ke"><select value={to} onChange={(e) => setTo(e.target.value)}><option value="">— pilih —</option>{locs.filter((b) => b.id !== from).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>
+      </div>
+      <span className="small muted">Kas tercatat di lokasi asal: {rp(have)}</span>
+      <Field label="Jumlah"><input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="Rp" /></Field>
+      <Field label="Tanggal"><input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. setoran laci cabang" /></Field>
+      <button className="primary" onClick={save} disabled={!to || !(a > 0) || a > have}>Pindahkan</button>
     </Sheet>
   );
 }

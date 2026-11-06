@@ -6,6 +6,7 @@ import { Tile, Loading, Empty, InvChip } from '@/components/ui';
 import Checklist from '@/components/Checklist';
 import { useKos } from '@/components/KosProvider';
 import { RecHint } from '@/components/Rekomendasi';
+import CrmHint from '@/components/CrmHint';
 import { rp, tgl, today, thisMonth, bulan, invTitle } from '@/lib/format';
 
 export default function Beranda() {
@@ -42,6 +43,7 @@ export default function Beranda() {
     <div className="stack">
       <Checklist d={d} kosId={kosId} />
       <div className="row"><h2>Ringkasan {bulan(ym)}</h2><PageHelp page="beranda" /></div>
+      <CrmHint />
       <RecHint />
       <div className="grid">
         <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn - cashOut - entOut)} sub={`Masuk ${rp(cashIn + entIn)} · keluar ${rp(cashOut + entOut)}`} />

@@ -68,7 +68,7 @@ export default function LaporanToko() {
     ['Selisih stok (opname/rusak)', N(r.selisih_stok)], ['Pemasukan lain', N(r.pendapatan_lain)], ['Laba bersih', a.bersih], [],
     ['Prive (bukan biaya)', N(r.prive)], ['Setoran modal', N(r.setoran_modal)], ['Belanja barang (bersih setelah retur)', N(r.belanja)], ['Retur ke supplier', N(r.retur_beli)], ['Belanja modal/peralatan', N(r.belanja_modal)], [],
     ['Produk', 'Terjual (satuan dasar)', 'Penjualan', 'Modal', 'Laba'], ...r.produk.map((p) => [p.name, N(p.qty), N(p.omzet), N(p.hpp), N(p.laba)]), [],
-    ...((r.lokasi || []).length > 1 ? [['Lokasi', 'Transaksi', 'Penjualan', 'Laba kotor'], ...r.lokasi.map((x) => [x.name, x.trx, N(x.omzet), N(x.laba)]), []] : []),
+    ...((r.lokasi || []).length > 1 ? [['Lokasi', 'Transaksi', 'Penjualan', 'Laba kotor', 'Biaya lokasi', 'Kontribusi'], ...r.lokasi.map((x) => [x.name, x.trx, N(x.omzet), N(x.laba), N(x.biaya), N(x.kontribusi)]), []] : []),
     ['Tanggal', 'Transaksi', 'Penjualan', 'Laba kotor'], ...r.harian.map((h) => [h.d, h.trx, N(h.omzet), N(h.laba)]),
   ]);
 
@@ -119,9 +119,9 @@ export default function LaporanToko() {
           <section className="panel">
             <h3>Per lokasi</h3>
             <div className="list">{r.lokasi.map((x) => (
-              <div className="li" key={x.name}><div className="main"><b className="small">{x.name}</b><span className="small muted">{angka(x.trx)} transaksi · laba kotor {rp(x.laba)}</span></div><b className="small">{rp(x.omzet)}</b></div>
+              <div className="li" key={x.name} style={{ alignItems: 'flex-start' }}><div className="main"><b className="small">{x.name}</b><span className="small muted">{angka(x.trx)} transaksi · laba kotor {rp(x.laba)}{x.biaya != null ? ` · biaya lokasi ${rp(x.biaya)}` : ''}</span>{x.kontribusi != null && <span className="small">Kontribusi <b style={{ color: Number(x.kontribusi) < 0 ? 'var(--bad)' : undefined }}>{rp(x.kontribusi)}</b></span>}</div><b className="small">{rp(x.omzet)}</b></div>
             ))}</div>
-            <span className="small muted">Penjualan sebelum retur, menurut lokasi tempat transaksi dicatat. Kas dan biaya tetap dihitung untuk seluruh bisnis.</span>
+            <span className="small muted">Penjualan sebelum retur menurut lokasi transaksi. Kontribusi = laba kotor − biaya operasional yang dicatat di lokasi itu (biaya bersama seperti gaji pemilik tidak dibagi otomatis).</span>
           </section>
         )}
 

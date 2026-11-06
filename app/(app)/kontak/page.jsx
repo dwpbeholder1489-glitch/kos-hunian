@@ -6,8 +6,9 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
+import CrmTimeline from '@/components/CrmTimeline';
 import { rp, tgl, errMsg, waLink } from '@/lib/format';
-import { canArea } from '@/lib/business';
+import { canArea, moduleOn } from '@/lib/business';
 
 const KIND = { pelanggan: 'Pelanggan', supplier: 'Supplier' };
 const ST = { batal: 'Batal', dipesan: 'Dipesan', sebagian: 'Sebagian' };
@@ -79,6 +80,10 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
       {!isNew && (c.archived_at
         ? <button onClick={restore}>Pulihkan dari arsip</button>
         : <button className="ghost danger" onClick={del}>Hapus {c.kind === 'supplier' ? 'supplier' : 'pelanggan'}</button>)}
+      {!isNew && c.kind === 'pelanggan' && !c.archived_at && moduleOn(kos, 'u_crm') && canArea(kos, 'sell,rent') && <>
+        <h3 style={{ margin: '8px 0 0' }}>Catatan & tindak lanjut</h3>
+        <CrmTimeline kosId={kosId} contact={c.id} />
+      </>}
       {!isNew && hist && <>
         <h3 style={{ margin: '8px 0 0' }}>Riwayat</h3>
         {hist.length === 0 ? <span className="small muted">Belum ada transaksi.</span> : <div className="list">{hist.map((h, i) => (

@@ -23,6 +23,7 @@ const MENUS_TOKO = [
   ['Penjualan & Shift kasir', 'Riwayat transaksi, retur, batal; buka/tutup laci'],
   ['Belanja', 'Pesan ke supplier, terima barang, retur ke supplier, utang supplier'],
   ['Mutasi stok', 'Pindahkan barang antar lokasi; pemilik: tambah gudang/cabang dari sini'],
+  ['Prospek & tindak lanjut', 'Calon pelanggan/penghuni, tahapan, catatan, jadwal hubungi lagi'],
   ['Kas & kasbon', 'Saldo kas/bank, biaya, kasbon pelanggan, utang'],
   ['Barang & stok', 'Barang, satuan, harga, barcode, label, tombol cepat'],
   ['Pelanggan & supplier', 'Kontak, sisa kasbon/utang, riwayat'],
@@ -299,8 +300,10 @@ const PARTS = [
       <>Begitu ada lebih dari satu lokasi, muncul kotak <b>📍 Lokasi kerja</b> di Kasir, Barang & stok, dan Belanja. Pilih lokasi tempat Anda bekerja: penjualan, belanja, hitung ulang stok, dan barang rusak tercatat di lokasi itu.</>,
       <>Barang & stok menampilkan stok <b>di sini</b> dan <b>total</b>; tombol <b>Stok</b> menunjukkan rincian per lokasi.</>,
       <>Memindahkan barang (mis. gudang → toko): buka <b>Mutasi stok</b>, pilih <b>Dari</b> dan <b>Ke</b>, cari barang, isi jumlah, lalu <b>Pindahkan</b>. Riwayat mutasi mencatat nomor, asal–tujuan, waktu, dan siapa.</>,
-      <>Pemilik bisa menetapkan lokasi kerja tiap karyawan di menu <b>Karyawan</b>; karyawan itu tidak bisa pindah lokasi sendiri dan hanya bisa mengirim barang dari lokasinya. Laporan toko menampilkan penjualan <b>per lokasi</b>.</>,
-    ], <>Mutasi tidak mengubah total stok maupun harga modal. Stok yang dimutasi tidak boleh melebihi stok di lokasi asal. Lokasi yang masih ada stoknya tidak bisa dinonaktifkan. Kas, biaya, pengingat stok minimum, dan pembukuan tetap dihitung untuk seluruh bisnis (belum per lokasi).</>, null, null],
+      <>Pemilik bisa menetapkan lokasi kerja tiap karyawan di menu <b>Karyawan</b>; karyawan itu tidak bisa pindah lokasi sendiri dan hanya bisa mengirim barang dari lokasinya.</>,
+      <>Uang kas juga per lokasi: <b>Kas & kasbon</b> menampilkan <b>Uang kas per lokasi</b>. Biaya, uang masuk/keluar lain, dan pembayaran kasbon/utang dicatat di lokasi kerja Anda. Setoran laci cabang ke toko utama: <b>Pindahkan uang kas</b>.</>,
+      <>Laporan toko › <b>Per lokasi</b>: penjualan, laba kotor, biaya lokasi, dan <b>kontribusi</b> (laba kotor − biaya operasional lokasi itu).</>,
+    ], <>Mutasi barang dan pindah kas tidak mengubah total stok, harga modal, maupun total kas bisnis. Jumlah yang dipindah tidak boleh melebihi yang tercatat di lokasi asal. Lokasi yang masih ada stoknya tidak bisa dinonaktifkan. Bank, pengingat stok minimum, dan pembukuan tetap satu untuk seluruh bisnis.</>, null, null],
     ['Saran untuk bisnis Anda', 'Konfigurasi › Saran (pemilik & pengelola)', [
       <>Bila ada saran, di dashboard Toko/Dashboard kos muncul kotak <b>💡 N saran</b>. Ketuk untuk membuka <b>Konfigurasi › Saran</b>.</>,
       <>Setiap saran menyebut <b>alasan</b> dengan angka dari data Anda (mis. "7 penjualan kasbon dalam 30 hari terakhir"), <b>manfaat</b>, <b>dampak</b>, dan <b>tingkat risiko</b>.</>,
@@ -314,6 +317,12 @@ const PARTS = [
       <>Ketik nama bisnis persis sama, tulis alasan, lalu tekan <b>Tutup bisnis</b>.</>,
       <>Bisnis yang ditutup menampilkan pita merah di semua halaman. Pemilik bisa menekan <b>Buka kembali</b> kapan saja (alasan wajib).</>,
     ], <>Menutup bisnis tidak menghapus data apa pun: transaksi, laporan, dan pembukuan tetap bisa dilihat dan diunduh. Selama ditutup, semua orang (termasuk pemilik) tidak bisa mencatat apa pun, otomatisasi dimatikan, dan email harian/ringkasan untuk bisnis itu berhenti. Foto bukti transfer tidak ikut dalam file Excel/PDF.</>, null, null],
+    ['Prospek & tindak lanjut', 'Lainnya › Prospek & tindak lanjut (toko) / Calon penghuni (kos)', [
+      <>Ada yang bertanya atau tertarik? Tekan <b>+ Prospek baru</b>: isi nama, No. HP, kebutuhan (mis. "ambil beras 5 karung/minggu" atau "kamar mandi dalam"), dari mana tahunya, dan perkiraan nilai bila ada.</>,
+      <>Ikuti tahapannya: <b>Baru → Dihubungi → Penawaran → Jadi</b> atau <b>Tidak jadi</b> (alasan wajib). Prospek toko yang <b>Jadi</b> otomatis masuk daftar pelanggan — dicocokkan lewat No. HP, bukan nama.</>,
+      <>Di setiap prospek: tulis <b>catatan</b> (WA, telepon, kunjungan, keluhan) dan <b>jadwalkan tindak lanjut</b> (Besok / 3 hari / 1 minggu). Pelanggan lama juga bisa diberi catatan & tindak lanjut dari menu Pelanggan & supplier.</>,
+      <>Tab <b>Tindak lanjut</b> berisi semua jadwal; yang jatuh hari ini atau terlewat berwarna merah dan muncul sebagai kotak <b>📞</b> di dashboard. Tekan <b>Kirim WA</b> lalu <b>Selesai</b>.</>,
+    ], <>Angka "Jadi (90 hari)" = prospek jadi ÷ (jadi + tidak jadi) yang ditutup 90 hari terakhir. Catatan tidak bisa dihapus agar riwayat utuh. Simpan seperlunya saja (nama, No. HP, kebutuhan); jangan mencatat data pribadi sensitif. Kasir dan penjaga juga bisa memakai menu ini.</>, null, null],
   ]],
 ];
 
@@ -358,7 +367,7 @@ export default function Panduan() {
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
-          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–42</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis</span></div>
+          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–43</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
