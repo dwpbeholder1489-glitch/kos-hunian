@@ -242,6 +242,7 @@ const PARTS = [
       <>Pilih tab <b>Pelanggan</b> atau <b>Supplier</b>. Angka merah = sisa kasbon pelanggan atau utang Anda ke supplier.</>,
       <>Ketuk nama untuk melihat <b>riwayat</b> penjualan, belanja, dan pelunasannya. Ketuk nomor penjualan untuk membuka struknya.</>,
       <>Ubah nama atau nomor WhatsApp, lalu <b>Simpan</b>. Tombol <b>+ Tambah</b> untuk kontak baru.</>,
+      <>Tidak dipakai lagi? Ketuk kontaknya › <b>Hapus</b>. Kontak yang belum pernah bertransaksi dihapus permanen; yang sudah punya riwayat <b>diarsipkan</b> agar laporan tetap benar — bisa dipulihkan lewat <b>Lihat arsip</b>. Sisa kasbon/utang harus lunas dulu.</>,
     ], <>Pelunasan tetap dicatat di <b>Kas & kasbon</b>. Struk toko memakai nama, alamat, No. WA, dan tulisan bawah struk dari <b>Pengaturan › Profil toko</b>.</>, null, null],
     ['Shift kasir', 'Menu Shift kasir (toko)', [
       <>Sebelum jualan, hitung uang di laci. Buka <b>Shift kasir</b>, isi <b>Uang awal di laci</b>, lalu <b>Buka shift</b>.</>,
