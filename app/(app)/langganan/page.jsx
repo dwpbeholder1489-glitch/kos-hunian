@@ -3,12 +3,13 @@ import PageHelp from '@/components/PageHelp';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
-import { Field, toast } from '@/components/ui';
+import { Field, Sheet, Loading, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg } from '@/lib/format';
-import { planOf, PLANS, FEATURES, BUSINESS, waTo } from '@/lib/plan';
+import { planOf, PLANS, FEATURES, BUSINESS, waTo, featureCell } from '@/lib/plan';
 
 const DUR = [1, 3, 6, 12];
-const REQ_ST = { menunggu: ['Menunggu diperiksa', 'gold'], disetujui: ['Aktif', 'good'], ditolak: ['Ditolak', 'bad'] };
+const REQ_ST = { menunggu: ['Menunggu diperiksa', 'gold'], disetujui: ['Lunas', 'good'], ditolak: ['Ditolak', 'bad'] };
+const KIND = { baru: 'Langganan baru', perpanjang: 'Perpanjangan', upgrade: 'Naik paket', downgrade: 'Turun paket' };
 
 function copy(text, label) {
   try { navigator.clipboard.writeText(text); toast(label + ' disalin'); } catch { toast('Tidak bisa menyalin otomatis'); }
@@ -17,30 +18,27 @@ function copy(text, label) {
 export default function Langganan() {
   const { kos, user, loadKos } = useKos();
   const p = planOf(kos);
-  const [plan, setPlan] = useState('standar');
+  const [plans, setPlans] = useState(null);
+  const [plan, setPlan] = useState(null);
   const [months, setMonths] = useState(1);
   const [method, setMethod] = useState('qris');
   const [note, setNote] = useState('');
   const [reqs, setReqs] = useState(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(null);
+  const [inv, setInv] = useState(null);
 
-  const loadReqs = () => supabase.from('plan_requests').select('*').eq('kos_id', kos.id).order('created_at', { ascending: false }).limit(10)
+  const loadReqs = () => supabase.from('plan_requests').select('*').eq('kos_id', kos.id).order('created_at', { ascending: false }).limit(24)
     .then(({ data }) => setReqs(data || []));
-  useEffect(() => { loadReqs(); loadKos(); }, [kos.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const total = PLANS[plan].price * months;
-  const pending = reqs?.find((r) => r.status === 'menunggu');
-
-  async function confirm() {
-    setBusy(true);
-    const { error } = await supabase.rpc('request_plan', { p_kos: kos.id, p_plan: plan, p_months: months, p_method: method, p_note: note });
-    setBusy(false);
-    if (error) return toast(errMsg(error));
-    const msg = `Halo, saya sudah membayar langganan PRASARA.\n\nBisnis: ${kos.name}\nAkun: ${user?.email}\nPaket: ${PLANS[plan].name} ${months} bulan\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
-    setSent(waTo(msg));
-    loadReqs();
-  }
+  useEffect(() => {
+    loadReqs(); loadKos();
+    // Harga & fitur dari database (bisa berubah lewat Management Center); cadangan: daftar bawaan
+    supabase.rpc('plan_quote', { p_kos: kos.id }).then(({ data, error }) => {
+      const list = !error && data?.length ? data : ['standar', 'pro'].map((k) => ({ key: k, name: PLANS[k].name, tagline: PLANS[k].tagline, price: PLANS[k].price, list_price: PLANS[k].price }));
+      setPlans(list);
+      setPlan((cur) => cur || (list.find((x) => x.key === kos.plan && !p.free) || list[0])?.key);
+    });
+  }, [kos.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (p.owner) return (
     <div className="stack">
@@ -53,6 +51,30 @@ export default function Langganan() {
       <p className="small muted" style={{ margin: 0 }}>Konfirmasi pembayaran dari pelanggan bisa diperiksa di menu Admin.</p>
     </div>
   );
+  if (!plans || !reqs) return <Loading />;
+
+  const sel = plans.find((x) => x.key === plan) || plans[0];
+  const total = (Number(sel?.price) || 0) * months;
+  const pending = reqs.find((r) => r.status === 'menunggu');
+  const active = !p.free && !p.trial && p.until;
+  const pname = (k) => plans.find((x) => x.key === k)?.name || PLANS[k]?.name || k;
+  const change = active && sel && sel.key !== kos.plan ? (Number(sel.price) >= Number(plans.find((x) => x.key === kos.plan)?.price || 0) ? 'upgrade' : 'downgrade') : null;
+  const typeRows = FEATURES.filter((f) => !f.soon && (f.group === 'umum' || f.group === (kos.business_type || 'properti')));
+
+  async function confirm() {
+    setBusy(true);
+    const { data: id, error } = await supabase.rpc('request_plan', { p_kos: kos.id, p_plan: sel.key, p_months: months, p_method: method, p_note: note });
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    const { data: r } = await supabase.from('plan_requests').select('number').eq('id', id).maybeSingle();
+    const msg = `Halo, saya sudah membayar langganan PRASARA.\n\nInvoice: ${r?.number || '-'}\nBisnis: ${kos.name}\nAkun: ${user?.email}\nPaket: ${sel.name} ${months} bulan\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
+    setSent(waTo(msg));
+    loadReqs();
+  }
+  const cancel = async (on) => {
+    if (on && !window.confirm(`Berhenti memperpanjang? Paket ${p.name} tetap aktif sampai ${tgl(p.until)}, lalu bisnis menjadi paket Gratis. Data tidak dihapus.`)) return;
+    if (await run(() => supabase.rpc('plan_cancel', { p_kos: kos.id, p_cancel: on }), on ? 'Tidak akan diperpanjang' : 'Langganan dilanjutkan', errMsg)) loadKos();
+  };
 
   return (
     <div className="stack">
@@ -61,20 +83,25 @@ export default function Langganan() {
       <section className="panel">
         <span className="label">Paket saat ini</span>
         <div className="row between">
-          <b style={{ fontSize: 20 }}>{p.trial ? 'Masa coba (semua fitur)' : PLANS[p.plan].name}</b>
-          {p.until && <span className="chip info">{p.trial ? 'Coba' : 'Aktif'} s.d. {tgl(p.until)}</span>}
+          <b style={{ fontSize: 20 }}>{p.trial ? `Masa coba (${p.name})` : p.name}</b>
+          {p.until && <span className={'chip ' + (p.grace ? 'bad' : 'info')}>{p.trial ? 'Coba' : p.grace ? 'Masa tenggang' : 'Aktif'} s.d. {tgl(p.until)}</span>}
         </div>
+        {p.grace && <div className="notice bad">Masa paket sudah habis. Fitur masih terbuka selama masa tenggang sampai {tgl(p.until)} — perpanjang agar tidak menjadi paket Gratis.</div>}
+        {p.next && <div className="notice">Turun ke paket <b>{p.next.name}</b> setelah paket sekarang berakhir, berlaku s.d. {tgl(p.next.until)}.</div>}
         <p className="small muted" style={{ margin: 0 }}>
-          {p.trial ? (kos.business_type === 'retail' ? 'Setelah masa coba, bisnis otomatis menjadi paket Gratis: maks 1 karyawan dan tanpa email pengingat pagi. Data tidak hilang.' : `Setelah masa coba, kos otomatis menjadi paket Gratis (maks ${BUSINESS.freeRoomLimit} kamar terisi). Data tidak hilang.`)
-            : p.plan === 'gratis' ? (kos.business_type === 'retail' ? 'Paket Gratis: semua fitur toko, maks 1 karyawan, tanpa email pengingat pagi.' : `Paket Gratis: maks ${BUSINESS.freeRoomLimit} kamar terisi, tanpa laporan lengkap, ekspor, dan kwitansi.`)
-              : 'Perpanjangan akan ditambahkan setelah masa aktif sekarang berakhir.'}
+          {p.trial ? 'Setelah masa coba, bisnis otomatis menjadi paket Gratis kecuali Anda berlangganan. Data tidak hilang.'
+            : p.free ? 'Paket Gratis. Pilih paket di bawah untuk membuka fitur lainnya.'
+              : p.cancel ? `Anda memilih berhenti memperpanjang. Paket tetap aktif sampai ${tgl(p.until)}.` : 'Perpanjangan ditambahkan setelah masa aktif sekarang berakhir.'}
         </p>
+        {active && !p.grace && (p.cancel
+          ? <button className="sm" onClick={() => cancel(false)}>Lanjutkan langganan</button>
+          : <button className="sm ghost" onClick={() => cancel(true)}>Berhenti memperpanjang</button>)}
       </section>
 
       {pending && !sent && (
         <div className="notice info">
-          Konfirmasi pembayaran {PLANS[pending.plan].name} {pending.months} bulan ({rp(pending.amount)}) sedang diperiksa. Paket aktif setelah disetujui, biasanya dalam 1×24 jam.
-          <div style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan PRASARA "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a></div>
+          Invoice {pending.number || ''} · {pname(pending.plan)} {pending.months} bulan ({rp(pending.amount)}) sedang diperiksa. Paket aktif setelah disetujui, biasanya dalam 1×24 jam pada hari kerja.
+          <div style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan PRASARA ${pending.number || ''} untuk "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a></div>
         </div>
       )}
 
@@ -85,23 +112,25 @@ export default function Langganan() {
           <a href={sent} target="_blank" rel="noreferrer"><button className="cta" style={{ width: '100%' }}>Kirim bukti via WhatsApp</button></a>
           <button className="ghost" onClick={() => setSent(null)}>Tutup</button>
         </section>
-      ) : !pending && (
+      ) : !pending && sel && (
         <>
           <section className="panel">
             <h3>1. Pilih paket</h3>
             <div className="grid">
-              {['standar', 'pro'].map((k) => (
-                <button key={k} className="tile" style={{ textAlign: 'left', cursor: 'pointer', borderColor: plan === k ? 'var(--gold)' : undefined, borderWidth: plan === k ? 2 : 1 }} onClick={() => setPlan(k)} aria-pressed={plan === k}>
-                  <span className="label">{PLANS[k].name}</span>
-                  <span className="v">{rp(PLANS[k].price)}<span className="small muted"> /bulan</span></span>
-                  <span className="s">{PLANS[k].tagline}</span>
+              {plans.map((x) => (
+                <button key={x.key} className="tile" style={{ textAlign: 'left', cursor: 'pointer', borderColor: plan === x.key ? 'var(--gold)' : undefined, borderWidth: plan === x.key ? 2 : 1 }} onClick={() => setPlan(x.key)} aria-pressed={plan === x.key}>
+                  <span className="label">{x.name}{active && x.key === kos.plan ? ' · paket Anda' : ''}</span>
+                  <span className="v">{rp(x.price)}<span className="small muted"> /bulan</span></span>
+                  {Number(x.price) < Number(x.list_price) && <span className="small" style={{ color: 'var(--good)' }}>Harga lama Anda tetap berlaku (harga baru {rp(x.list_price)})</span>}
+                  <span className="s">{x.tagline}</span>
                 </button>
               ))}
             </div>
             <ul className="lp-list small">
-              {FEATURES.filter((f) => f[plan] && !f.gratis && (f.group === 'umum' || f.group === (kos.business_type || 'properti'))).map((f) => <li key={f.label}>✓ {f.label}{f.soon && <span className="chip info" style={{ marginLeft: 6 }}>Segera</span>}</li>)}
-              {kos.business_type !== 'retail' ? <li>✓ Kamar tanpa batas + semua fitur Gratis</li> : <li>✓ Semua fitur toko di paket Gratis</li>}
+              {typeRows.map((f) => { const v = featureCell(f, sel); return v ? <li key={f.label}>✓ {f.label}{typeof v === 'string' ? ` — ${v}` : ''}</li> : null; })}
             </ul>
+            {change === 'upgrade' && <div className="notice">Naik paket berlaku sejak disetujui. Sisa hari paket {p.name} dihitung ulang sesuai perbandingan harga dan ditambahkan.</div>}
+            {change === 'downgrade' && <div className="notice">Turun paket berlaku setelah paket {p.name} berakhir ({tgl(p.until)}).</div>}
           </section>
 
           <section className="panel">
@@ -120,7 +149,7 @@ export default function Langganan() {
               <>
                 <img src={BUSINESS.qrisImage} alt="QRIS pembayaran PRASARA" className="qris" />
                 <p className="small muted" style={{ margin: 0, textAlign: 'center' }}>Scan dengan aplikasi bank atau e-wallet, lalu masukkan nominal <b>{rp(total)}</b>.</p>
-                <a href={BUSINESS.qrisImage} download="QRIS-Kos-Hunian.jpg" className="small" style={{ textAlign: 'center' }}>Simpan gambar QRIS</a>
+                <a href={BUSINESS.qrisImage} download="QRIS-PRASARA.jpg" className="small" style={{ textAlign: 'center' }}>Simpan gambar QRIS</a>
               </>
             ) : (
               <>
@@ -135,20 +164,39 @@ export default function Langganan() {
             <h3>4. Konfirmasi</h3>
             <Field label="Catatan (opsional)" hint="mis. nama pengirim di rekening atau aplikasi"><input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
             <button className="cta" onClick={confirm} disabled={busy}>{busy ? 'Menyimpan…' : 'Saya sudah bayar'}</button>
-            <p className="small muted" style={{ margin: 0 }}>Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam.</p>
+            <p className="small muted" style={{ margin: 0 }}>Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam pada hari kerja.</p>
           </section>
         </>
       )}
 
-      {reqs && reqs.length > 0 && (
-        <section className="panel"><h3>Riwayat</h3>
+      {reqs.length > 0 && (
+        <section className="panel"><h3>Riwayat tagihan</h3>
           <div className="list">{reqs.map((r) => (
-            <div className="li" key={r.id}>
-              <div className="main"><b>{PLANS[r.plan].name} · {r.months} bulan</b><span className="small muted">{tgl(r.created_at.slice(0, 10))} · {r.method === 'qris' ? 'QRIS' : 'Transfer'}</span></div>
+            <button key={r.id} className="li click" onClick={() => setInv(r)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}>
+              <div className="main"><b>{pname(r.plan)} · {r.months} bulan</b><span className="small muted">{r.number || '—'} · {tgl(r.created_at.slice(0, 10))}</span></div>
               <div style={{ textAlign: 'right' }}><div className="num">{rp(r.amount)}</div><span className={'chip ' + REQ_ST[r.status][1]}>{REQ_ST[r.status][0]}</span></div>
-            </div>
+            </button>
           ))}</div>
         </section>
+      )}
+
+      {inv && (
+        <Sheet title={`Invoice ${inv.number || ''}`} onClose={() => setInv(null)}>
+          <div className="panel" style={{ gap: 6 }}>
+            <div className="row between"><b>PRASARA</b><span className={'chip ' + REQ_ST[inv.status][1]}>{REQ_ST[inv.status][0]}</span></div>
+            <span className="small muted">Untuk: {kos.name} · {user?.email}</span>
+            <div className="list">
+              <div className="li"><span className="small">Nomor</span><b className="small">{inv.number || '—'}</b></div>
+              <div className="li"><span className="small">Tanggal</span><b className="small">{tgl(inv.created_at.slice(0, 10))}</b></div>
+              <div className="li"><span className="small">{KIND[inv.kind] || 'Langganan'}</span><b className="small">{pname(inv.plan)} × {inv.months} bulan</b></div>
+              {inv.unit_price && <div className="li"><span className="small">Harga per bulan</span><b className="small">{rp(inv.unit_price)}</b></div>}
+              <div className="li"><span className="small">Metode</span><b className="small">{inv.method === 'qris' ? 'QRIS' : 'Transfer bank'}</b></div>
+              <div className="li"><b>Total</b><b>{rp(inv.amount)}</b></div>
+              {inv.decided_at && <div className="li"><span className="small">{inv.status === 'disetujui' ? 'Dibayar & diaktifkan' : 'Diproses'}</span><b className="small">{tgl(inv.decided_at.slice(0, 10))}</b></div>}
+            </div>
+          </div>
+          <button className="noprint" onClick={() => window.print()}>Cetak / simpan PDF</button>
+        </Sheet>
       )}
     </div>
   );

@@ -5,7 +5,7 @@ import { useData } from '@/lib/useData';
 import { Loading, Tile } from '@/components/ui';
 import Locked from '@/components/Locked';
 import { useKos } from '@/components/KosProvider';
-import { hasPlan } from '@/lib/plan';
+import { hasFeature } from '@/lib/plan';
 import { rp, tgl, thisMonth, bulan, addMonthsYm, BLN, METHOD, ENTRY } from '@/lib/format';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma untuk Excel berbahasa Indonesia)
@@ -23,7 +23,7 @@ function downloadCsv(name, rows) {
 export default function Laporan() {
   const d = useData();
   const { kos } = useKos();
-  const full = hasPlan(kos, 'standar');
+  const full = hasFeature(kos, 'laporan_lengkap');
   const [ym, setYm] = useState(thisMonth());
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 

@@ -6,7 +6,7 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import Link from 'next/link';
 import { Sheet, Field, Loading, Empty, InvChip, PayChip, run, toast } from '@/components/ui';
-import { hasPlan } from '@/lib/plan';
+import { hasFeature } from '@/lib/plan';
 import { rp, tgl, today, parseRp, angka, invTitle, METHOD, errMsg } from '@/lib/format';
 
 const FILTERS = [['terbuka', 'Belum lunas'], ['menunggak', 'Menunggak'], ['lunas', 'Lunas'], ['semua', 'Semua']];
@@ -50,7 +50,7 @@ export default function Tagihan() {
 
 function InvDetail({ d, inv, go, onClose }) {
   const { bump, kos } = useKos();
-  const canReceipt = hasPlan(kos, 'standar');
+  const canReceipt = hasFeature(kos, 'kwitansi');
   if (!inv) return null;
   const pays = d.payments.filter((p) => p.invoice_id === inv.id);
   async function cancel() {

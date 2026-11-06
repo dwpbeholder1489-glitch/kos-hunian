@@ -4,14 +4,14 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { toast } from '@/components/ui';
 import Locked from '@/components/Locked';
-import { hasPlan } from '@/lib/plan';
+import { hasFeature } from '@/lib/plan';
 import { waLink, errMsg } from '@/lib/format';
 import { message } from '@/lib/templates';
 
 // Bagian "Portal penghuni" di detail penghuni: kirim / salin / ganti link pribadi
 export default function PortalBox({ occ, room }) {
   const { kos } = useKos();
-  const pro = hasPlan(kos, 'pro');
+  const pro = hasFeature(kos, 'portal_penghuni');
   const [token, setToken] = useState(null);
   const [busy, setBusy] = useState(false);
 

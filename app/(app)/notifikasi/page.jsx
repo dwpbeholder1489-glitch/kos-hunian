@@ -7,7 +7,7 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Loading, run, toast } from '@/components/ui';
 import { rp, tgl, today, bulan, errMsg } from '@/lib/format';
-import { hasPlan } from '@/lib/plan';
+import { hasFeature } from '@/lib/plan';
 
 const plusDays = (k, n) => { const d = new Date(k + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const prevMonth = (k) => { const [y, m] = k.split('-').map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`; };
@@ -67,7 +67,7 @@ export default function Notifikasi() {
   };
 
   const OPTS = [
-    ['daily_digest', 'Daftar tagih setiap pagi', 'Penghuni yang telat dan jatuh tempo 3 hari ke depan, dengan tombol Kirim WA. Hanya dikirim jika ada tagihan. Paket Standar.', !hasPlan(kos, 'standar')],
+    ['daily_digest', 'Daftar tagih setiap pagi', 'Penghuni yang telat dan jatuh tempo 3 hari ke depan, dengan tombol Kirim WA. Hanya dikirim jika ada tagihan. Paket Standar.', !hasFeature(kos, 'pengingat_email')],
     ['weekly_summary', 'Ringkasan mingguan (setiap Senin)', 'Pemasukan dan pengeluaran 7 hari terakhir, tagihan belum lunas, kamar terisi.'],
     ['monthly_summary', 'Ringkasan bulanan (setiap tanggal 1)', 'Pemasukan, biaya, laba bulan lalu, perbandingan dengan bulan sebelumnya, dan penghuni yang belum bayar.'],
     ['notify_email', 'Saat penghuni mengirim bukti transfer', 'Email langsung saat ada bukti baru dari portal penghuni.'],

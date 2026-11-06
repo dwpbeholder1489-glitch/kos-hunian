@@ -8,7 +8,7 @@ import NavIcon from '@/components/NavIcon';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import { useKos } from '@/components/KosProvider';
 import { tgl, today } from '@/lib/format';
-import { planOf, PLANS, BUSINESS } from '@/lib/plan';
+import { planOf, PLANS, BUSINESS, limitOf } from '@/lib/plan';
 import NotifBell from '@/components/NotifBell';
 import RetailBell from '@/components/RetailBell';
 import AnnounceBanner from '@/components/AnnounceBanner';
@@ -20,9 +20,11 @@ const SHORT = { '/barang': 'Barang', '/laporan-toko': 'Laporan', '/kas': 'Kas', 
 function PlanBar({ kos }) {
   const p = planOf(kos);
   if (p.owner) return null;
+  const lim = limitOf(kos, kos.business_type === 'retail' ? 'karyawan' : 'kamar_terisi');
   if (p.trial) return <Link href="/langganan" className="planbar trial">Masa coba semua fitur · {p.daysLeft} hari lagi · Lihat paket →</Link>;
-  if (p.plan === 'gratis') return <Link href="/langganan" className="planbar free">Paket Gratis{kos.business_type === 'retail' ? ' · maks 1 karyawan' : ` · maks ${BUSINESS.freeRoomLimit} kamar terisi`} · Upgrade →</Link>;
-  if (p.daysLeft <= 7) return <Link href="/langganan" className="planbar warn">Paket {PLANS[p.plan].name} berakhir {p.daysLeft === 0 ? 'hari ini' : `${p.daysLeft} hari lagi`} · Perpanjang →</Link>;
+  if (p.grace) return <Link href="/langganan" className="planbar warn">Paket {p.name} sudah habis · masa tenggang s.d. {tgl(p.until)} · Perpanjang →</Link>;
+  if (p.free || p.plan === 'gratis') return <Link href="/langganan" className="planbar free">Paket {p.name || 'Gratis'}{lim != null ? (kos.business_type === 'retail' ? ` · maks ${lim} karyawan` : ` · maks ${lim} kamar terisi`) : ''} · Upgrade →</Link>;
+  if (p.daysLeft != null && p.daysLeft <= 7 && !p.next) return <Link href="/langganan" className="planbar warn">Paket {p.name || PLANS[p.plan]?.name} berakhir {p.daysLeft === 0 ? 'hari ini' : `${p.daysLeft} hari lagi`} · {p.cancel ? 'Lihat paket' : 'Perpanjang'} →</Link>;
   return null;
 }
 

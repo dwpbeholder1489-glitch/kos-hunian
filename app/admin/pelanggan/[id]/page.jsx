@@ -28,6 +28,8 @@ export default function CustomerDetail() {
   const [msg, setMsg] = useState('');
   const [ov, setOv] = useState({ action: 'tambah_coba', plan: 'standar', value: '14', reason: '' });
   const [susp, setSusp] = useState('');
+  const [planList, setPlanList] = useState([{ key: 'standar', name: 'Standar' }, { key: 'pro', name: 'Pro' }]);
+  useEffect(() => { supabase.rpc('admin_plans').then(({ data }) => { const l = (data?.plans || []).filter((x) => !x.is_free); if (l.length) setPlanList(l); }); }, []);
   const [assist, setAssist] = useState(null);
 
   const load = async () => {
@@ -47,7 +49,7 @@ export default function CustomerDetail() {
   const addNote = async () => { if (await run(() => supabase.rpc('admin_add_note', { p_kos: id, p_body: note }), 'Catatan disimpan', errMsg)) { setNote(''); load(); } };
   const record = (action) => supabase.rpc('admin_record', { p_action: action, p_kos: id, p_detail: { template: tpl } });
   const override = async () => {
-    const label = ov.action === 'tambah_coba' ? `tambah masa coba ${ov.value} hari` : ov.action === 'beri_paket' ? `beri ${PLANS[ov.plan].name} ${ov.value} bulan` : 'jadikan Gratis';
+    const label = ov.action === 'tambah_coba' ? `tambah masa coba ${ov.value} hari` : ov.action === 'beri_paket' ? `beri ${planList.find((x) => x.key === ov.plan)?.name || ov.plan} ${ov.value} bulan` : 'jadikan Gratis';
     if (!confirm(`Yakin ${label} untuk "${k.name}"?\nAlasan: ${ov.reason}`)) return;
     if (await run(() => supabase.rpc('admin_override', { p_kos: id, p_action: ov.action, p_plan: ov.action === 'beri_paket' ? ov.plan : null, p_value: parseInt(ov.value, 10) || null, p_reason: ov.reason }), 'Akses diperbarui dan tercatat', errMsg)) { setOv({ ...ov, reason: '' }); load(); }
   };
@@ -74,7 +76,7 @@ export default function CustomerDetail() {
           <div className="li"><span className="muted small">No. WA bisnis</span><b className="small">{k.contact_phone || '—'}</b></div>
           <div className="li"><span className="muted small">Jenis</span><b className="small">{retail ? 'Retail & Grosir' : 'Properti & Sewa'}{c.counts.other_businesses > 0 ? ` · punya ${c.counts.other_businesses} bisnis lain` : ''}</b></div>
           <div className="li"><span className="muted small">Daftar</span><b className="small">{tgl(String(k.created_at).slice(0, 10))}</b></div>
-          <div className="li"><span className="muted small">Paket</span><b className="small">{PLANS[k.effective_plan]?.name}{k.paid_until ? ` · bayar s.d. ${tgl(k.paid_until)}` : k.trial_until ? ` · coba s.d. ${tgl(k.trial_until)}` : ''}</b></div>
+          <div className="li"><span className="muted small">Paket</span><b className="small">{planList.find((x) => x.key === k.effective_plan)?.name || PLANS[k.effective_plan]?.name || k.effective_plan}{k.paid_until ? ` · bayar s.d. ${tgl(k.paid_until)}` : k.trial_until ? ` · coba s.d. ${tgl(k.trial_until)}` : ''}</b></div>
           <div className="li"><span className="muted small">Ringkasan</span><b className="small">{retail ? `${c.counts.products} barang · ${c.counts.sales} penjualan · ${c.counts.purchases} belanja` : `${c.counts.rooms} kamar · ${c.counts.active_leases} terisi · ${c.counts.payments} pembayaran`}</b></div>
         </div>
       </section>
@@ -106,7 +108,7 @@ export default function CustomerDetail() {
           <p className="small muted" style={{ margin: 0 }}>Untuk kompensasi, uji coba, atau koreksi. Wajib alasan; tercatat di audit. Verifikasi pembayaran biasa lewat menu Langganan.</p>
           <div className="row">
             <Field label="Tindakan"><select value={ov.action} onChange={(e) => setOv({ ...ov, action: e.target.value })}><option value="tambah_coba">Tambah masa coba</option><option value="beri_paket">Beri paket</option><option value="jadikan_gratis">Jadikan Gratis</option></select></Field>
-            {ov.action === 'beri_paket' && <Field label="Paket"><select value={ov.plan} onChange={(e) => setOv({ ...ov, plan: e.target.value })}><option value="standar">Standar</option><option value="pro">Pro</option></select></Field>}
+            {ov.action === 'beri_paket' && <Field label="Paket"><select value={ov.plan} onChange={(e) => setOv({ ...ov, plan: e.target.value })}>{planList.map((x) => <option key={x.key} value={x.key}>{x.name}</option>)}</select></Field>}
             {ov.action !== 'jadikan_gratis' && <Field label={ov.action === 'tambah_coba' ? 'Hari' : 'Bulan'}><input inputMode="numeric" value={ov.value} onChange={(e) => setOv({ ...ov, value: e.target.value })} /></Field>}
           </div>
           <Field label="Alasan (wajib)"><input value={ov.reason} onChange={(e) => setOv({ ...ov, reason: e.target.value })} placeholder="mis. kompensasi gangguan 5 Nov" /></Field>
@@ -153,7 +155,7 @@ export default function CustomerDetail() {
       <section className="panel">
         <h3>Pembayaran langganan</h3>
         {c.requests.length === 0 ? <span className="small muted">Belum ada.</span> : <div className="list">{c.requests.map((r, i) => (
-          <div className="li" key={i}><span className="small">{PLANS[r.plan]?.name} {r.months} bln · {rp(r.amount)} · {tgl(String(r.created_at).slice(0, 10))}</span><span className={'chip ' + (RQ[r.status]?.[1] || '')}>{RQ[r.status]?.[0] || r.status}</span></div>
+          <div className="li" key={i}><span className="small">{PLANS[r.plan]?.name || r.plan} {r.months} bln · {rp(r.amount)} · {tgl(String(r.created_at).slice(0, 10))}</span><span className={'chip ' + (RQ[r.status]?.[1] || '')}>{RQ[r.status]?.[0] || r.status}</span></div>
         ))}</div>}
       </section>
 

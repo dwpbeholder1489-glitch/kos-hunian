@@ -10,6 +10,7 @@ import { PLANS } from '@/lib/plan';
 import { can, ACTION } from '@/lib/admin';
 
 const ST = { menunggu: ['Menunggu', 'gold'], disetujui: ['Disetujui', 'good'], ditolak: ['Ditolak', 'bad'] };
+const KIND = { baru: 'baru', perpanjang: 'perpanjangan', upgrade: 'naik paket', downgrade: 'turun paket' };
 
 // Verifikasi pembayaran langganan (manual: cocokkan dengan mutasi rekening/QRIS sebelum mengaktifkan)
 export default function Langganan() {
@@ -25,18 +26,21 @@ export default function Langganan() {
     setReqs(a.data); setKos(b.data);
   };
   useEffect(() => { if (can(adminMe, 'payments.view')) load(); }, [adminMe]);
-  useEffect(() => { if (tab === 'paket' && !hist) supabase.rpc('admin_log_list', { p_limit: 500 }).then(({ data }) => setHist((data || []).filter((l) => ['ubah_paket', 'override', 'setujui_pembayaran'].includes(l.action)))); }, [tab]);
+  useEffect(() => { if (tab === 'paket' && !hist) supabase.rpc('admin_log_list', { p_limit: 500 }).then(({ data }) => setHist((data || []).filter((l) => ['ubah_paket', 'override', 'setujui_pembayaran', 'batal_langganan', 'lanjut_langganan', 'ubah_harga', 'paket_baru'].includes(l.action)))); }, [tab]);
   if (!can(adminMe, 'payments.view')) return <Empty title="Tidak punya izin melihat pembayaran" />;
-  if (err) return <div className="notice bad">{/Khusus admin/.test(err) ? 'Saat ini verifikasi pembayaran khusus Super Admin.' : err}</div>;
+  if (err) return <div className="notice bad">{/admin_list/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!reqs) return <Loading />;
 
   const decide = async (r, ok) => {
-    if (!confirm(ok ? `Aktifkan ${PLANS[r.plan].name} ${r.months} bulan untuk "${r.kos_name}"?\nPastikan uang ${rp(r.amount)} SUDAH MASUK di mutasi rekening/QRIS.` : `Tolak permintaan dari "${r.kos_name}"?`)) return;
+    if (!confirm(ok ? `Aktifkan ${r.plan_name || r.plan} ${r.months} bulan (${r.number || ''}) untuk "${r.kos_name}"?\nPastikan uang ${rp(r.amount)} SUDAH MASUK di mutasi rekening/QRIS.` : `Tolak permintaan dari "${r.kos_name}"?`)) return;
     if (await run(() => supabase.rpc('admin_decide_request', { p_request: r.id, p_approve: ok }), ok ? 'Paket diaktifkan' : 'Permintaan ditolak', errMsg)) { load(); loadKos(); }
   };
   const pending = reqs.filter((r) => r.status === 'menunggu');
   const shown = tab === 'menunggu' ? pending : reqs;
-  const active = kos.filter((k) => k.paid_until && k.paid_until >= new Date().toISOString().slice(0, 10) && k.effective_plan !== 'gratis');
+  const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const active = kos.filter((k) => k.paid_until && (k.paid_until >= today || (k.next_until && k.next_until >= today)) && k.plan !== 'gratis');
+  const trials = kos.filter((k) => !(k.paid_until && k.paid_until >= today) && k.trial_until && k.trial_until >= today);
+  const cancels = kos.filter((k) => k.cancel_at_end);
 
   return (
     <div className="stack">
@@ -44,6 +48,8 @@ export default function Langganan() {
       <div className="grid">
         <Tile label="Menunggu verifikasi" value={pending.length} tone={pending.length ? 'bad' : ''} sub={pending.length ? `senilai ${rp(pending.reduce((s, r) => s + Number(r.amount), 0))}` : 'tidak ada'} />
         <Tile label="Langganan aktif" value={active.length} sub={`dari ${kos.length} bisnis`} />
+        <Tile label="Masa coba" value={trials.length} sub="belum berlangganan" />
+        <Tile label="Tidak diperpanjang" value={cancels.length} tone={cancels.length ? 'bad' : ''} sub="memilih berhenti" />
       </div>
       <div className="seg">{[['menunggu', `Menunggu (${pending.length})`], ['semua', 'Riwayat'], ['aktif', 'Langganan aktif'], ...(can(adminMe, 'audit.view') ? [['paket', 'Perubahan paket']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
       {!['aktif', 'paket'].includes(tab) && (shown.length === 0 ? <Empty title={tab === 'menunggu' ? 'Tidak ada pembayaran yang menunggu' : 'Belum ada pembayaran'} /> : (
@@ -52,7 +58,7 @@ export default function Langganan() {
             <div className="main">
               <b><Link href={`/admin/pelanggan/${r.kos_id}`} style={{ color: 'inherit' }}>{r.kos_name}</Link></b>
               <span className="small muted">{r.owner_email} · {tgl(r.created_at.slice(0, 10))}</span>
-              <span className="small">{PLANS[r.plan].name} {r.months} bulan · {r.method === 'qris' ? 'QRIS' : 'Transfer'}{r.note ? ` · "${r.note}"` : ''}</span>
+              <span className="small">{r.number ? `${r.number} · ` : ''}{r.plan_name || r.plan} {r.months} bulan{r.kind ? ` (${KIND[r.kind] || r.kind})` : ''} · {r.method === 'qris' ? 'QRIS' : 'Transfer'}{r.note ? ` · "${r.note}"` : ''}</span>
               {r.status === 'menunggu' && can(adminMe, 'payments.verify') && <div className="row" style={{ marginTop: 6 }}>
                 <button className="sm primary" onClick={() => decide(r, true)}>Uang masuk, aktifkan</button>
                 <button className="sm danger" onClick={() => decide(r, false)}>Tolak</button>
@@ -66,7 +72,7 @@ export default function Langganan() {
         <section className="panel"><div className="list">{active.sort((a, b) => a.paid_until.localeCompare(b.paid_until)).map((k) => (
           <Link key={k.id} href={`/admin/pelanggan/${k.id}`} className="li" style={{ color: 'inherit', textDecoration: 'none' }}>
             <div className="main"><b>{k.name}</b><span className="small muted">{k.owner_email}</span></div>
-            <div style={{ textAlign: 'right' }}><span className="chip good">{PLANS[k.effective_plan].name}</span><br /><span className="small muted">s.d. {tgl(k.paid_until)}</span></div>
+            <div style={{ textAlign: 'right' }}><span className="chip good">{k.plan_name || k.effective_plan}</span><br /><span className="small muted">s.d. {tgl(k.paid_until)}</span>{k.next_plan && <><br /><span className="small muted">lalu {k.next_plan} s.d. {tgl(k.next_until)}</span></>}{k.cancel_at_end && <><br /><span className="chip bad">Tidak diperpanjang</span></>}</div>
           </Link>
         ))}</div></section>
       ))}
@@ -76,7 +82,8 @@ export default function Langganan() {
           return (
             <div className="li" key={i} style={{ alignItems: 'flex-start' }}>
               <div className="main">
-                <b className="small"><Link href={`/admin/pelanggan/${l.kos_id}`} style={{ color: 'inherit' }}>{l.kos_name}</Link> · {ACTION[l.action] || l.action}</b>
+                <b className="small">{l.kos_id ? <Link href={`/admin/pelanggan/${l.kos_id}`} style={{ color: 'inherit' }}>{l.kos_name}</Link> : `Paket ${d.paket || ''}`} · {ACTION[l.action] || l.action}</b>
+                {d.harga_baru != null && <span className="small">{rp(d.harga_lama)} → {rp(d.harga_baru)} (versi {d.versi})</span>}
                 {d.sebelum && <span className="small">{pl(d.sebelum)} → {pl(d.sesudah)}</span>}
                 {d.alasan && <span className="small">Alasan: {d.alasan}</span>}
                 <span className="small muted">{l.actor_email || 'sistem'}</span>

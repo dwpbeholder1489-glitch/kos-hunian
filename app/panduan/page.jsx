@@ -143,11 +143,13 @@ const PARTS = [
   ]],
   ['D', 'Akun, langganan, dan portal penghuni', [
     ['Berlangganan', 'Langganan', [
-      <>Pilih paket <b>Standar</b> atau <b>Pro</b> dan durasinya.</>,
+      <>Pilih paket dan durasinya. Harga dan fitur tiap paket tampil di sana (harga per bisnis per bulan).</>,
       <>Bayar lewat <b>QRIS</b> atau <b>transfer bank</b> sesuai total.</>,
-      <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>.</>,
-      <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam.</>,
-    ], <>Kos baru mendapat {BUSINESS.trialDays} hari semua fitur. Setelah itu menjadi Gratis (maks {BUSINESS.freeRoomLimit} kamar terisi). <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
+      <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>. Setiap pembayaran mendapat <b>nomor invoice</b> (INV-…).</>,
+      <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam pada hari kerja. Invoice bisa dibuka & dicetak di <b>Riwayat tagihan</b>.</>,
+      <><b>Naik paket</b> berlaku sejak disetujui (sisa hari paket lama dihitung ulang dan ditambahkan). <b>Turun paket</b> berlaku setelah paket sekarang berakhir.</>,
+      <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi.</>,
+    ], <>Bisnis baru mendapat {BUSINESS.trialDays} hari semua fitur. Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
     ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
       <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,
       <><b>Info untuk penghuni</b>: nomor WhatsApp, cara bayar, dan peraturan kos (tampil di portal), serta pilihan email <b>notifikasi bukti transfer</b> dan <b>daftar tagih setiap pagi</b>.</>,

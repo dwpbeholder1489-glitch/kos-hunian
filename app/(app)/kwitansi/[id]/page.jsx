@@ -5,7 +5,7 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Loading, Empty } from '@/components/ui';
 import Locked from '@/components/Locked';
-import { hasPlan } from '@/lib/plan';
+import { hasFeature } from '@/lib/plan';
 import { rp, tgl, invTitle, METHOD, waLink } from '@/lib/format';
 
 const SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
@@ -26,7 +26,7 @@ export default function Kwitansi() {
   const { id } = useParams();
   const { kos } = useKos();
   const d = useData();
-  if (!hasPlan(kos, 'standar')) return <Locked need="standar" title="Kwitansi PDF" text="Cetak dan kirim kwitansi resmi ke penghuni dengan paket Standar." />;
+  if (!hasFeature(kos, 'kwitansi')) return <Locked need="standar" title="Kwitansi PDF" text="Cetak dan kirim kwitansi resmi ke penghuni dengan paket Standar." />;
   if (!d.ready) return <Loading />;
   const p = d.payments.find((x) => x.id === id);
   const inv = p && d.invById.get(p.invoice_id);

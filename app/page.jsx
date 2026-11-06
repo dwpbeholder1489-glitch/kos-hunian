@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import Icon from '@/components/landing/Icon';
 import HeroMulti, { KasirMock } from '@/components/landing/HeroMulti';
 import Showcase from '@/components/landing/Showcase';
-import { PLANS, FEATURES, FEATURE_GROUPS, BUSINESS } from '@/lib/plan';
+import { PLANS, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell } from '@/lib/plan';
 import { TESTIMONIALS } from '@/lib/testimonials';
 
 const TITLE = 'PRASARA — One Intelligence. Every Business.';
@@ -14,6 +14,19 @@ export const metadata = {
   openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'PRASARA', url: '/', images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' }] },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: ['/og.jpg'] },
 };
+
+export const revalidate = 300;
+
+// Paket & harga dari database (diatur di Management Center); cadangan: daftar bawaan
+async function getPlans() {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const r = await fetch(`${url}/rest/v1/rpc/plans_public`, { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: '{}', next: { revalidate: 300 } });
+    if (r.ok) { const d = await r.json(); if (Array.isArray(d) && d.length) return d; }
+  } catch {}
+  return ['gratis', 'standar', 'pro'].map((k) => ({ key: k, name: PLANS[k].name, tagline: PLANS[k].tagline, price: PLANS[k].price, is_free: k === 'gratis', active: true }));
+}
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
 const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi PRASARA.')}`;
@@ -85,7 +98,7 @@ const FAQ = [
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'PRASARA', applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web', description: DESC, inLanguage: 'id',
-  offers: ['gratis', 'standar', 'pro'].map((k) => ({ '@type': 'Offer', name: PLANS[k].name, price: PLANS[k].price, priceCurrency: 'IDR' })),
+  offers: ['gratis', 'standar', 'pro'].map((k) => ({ '@type': 'Offer', name: PLANS[k].name, price: PLANS[k].price, priceCurrency: 'IDR' })), // bawaan; harga terkini di halaman
 };
 
 function Badge({ t }) {
@@ -98,7 +111,12 @@ function Cell({ v }) {
   return <span className="ln-small">{v}</span>;
 }
 
-export default function Landing() {
+export default async function Landing() {
+  const plans = await getPlans();
+  const free = plans.find((x) => x.is_free);
+  const best = (plans.find((x) => x.key === 'standar') || plans.filter((x) => !x.is_free)[0])?.key;
+  const cardRows = (pl) => FEATURES.filter((f) => !f.soon).map((f) => [f, featureCell(f, pl)])
+    .filter(([f, v]) => v && (pl.is_free || typeof v === 'string' || !(free && featureCell(f, free) === true))).slice(0, 8);
   return (
     <div className="ln">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
@@ -223,27 +241,28 @@ export default function Landing() {
             <div className="ln-head"><span className="ln-kicker">Harga</span><h2 id="h-harga">Harga sederhana, per bisnis.</h2>
               <p>Setiap bisnis baru mendapat <b>{BUSINESS.trialDays} hari akses semua fitur</b>. Setelah itu otomatis menjadi paket Gratis kecuali Anda memilih berlangganan — tanpa tagihan kejutan, dan data tidak pernah dihapus.</p></div>
             <div className="ln-prices">
-              {['gratis', 'standar', 'pro'].map((k) => (
-                <div key={k} className={'ln-price' + (k === 'standar' ? ' best' : '')}>
-                  {k === 'standar' && <span className="ln-best">Paling sesuai untuk bisnis aktif</span>}
-                  <h3>{PLANS[k].name}</h3>
-                  <p className="ln-tag">{PLANS[k].tagline}</p>
-                  <div className="ln-amount">{rp(PLANS[k].price)}<span>{PLANS[k].price ? ' /bulan per bisnis' : ' selamanya'}</span></div>
-                  <ul>{FEATURES.filter((f) => f[k] && !f.soon && (k === 'gratis' || !f.gratis || typeof f[k] === 'string')).slice(0, 8).map((f) => (
-                    <li key={f.label}><Icon name="check" size={17} /><span>{f.label}{typeof f[k] === 'string' ? ` — ${f[k]}` : ''}</span></li>
+              {plans.map((pl) => (
+                <div key={pl.key} className={'ln-price' + (pl.key === best ? ' best' : '')}>
+                  {pl.key === best && <span className="ln-best">Paling sesuai untuk bisnis aktif</span>}
+                  <h3>{pl.name}</h3>
+                  <p className="ln-tag">{pl.tagline}</p>
+                  <div className="ln-amount">{rp(Number(pl.price))}<span>{Number(pl.price) ? ' /bulan' : ' selamanya'}</span><span className="per">{Number(pl.price) ? 'per bisnis' : 'tanpa batas waktu'}</span></div>
+                  {!pl.is_free && free && <p className="ln-small" style={{ margin: '-4px 0 6px' }}>Semua fitur {free.name}, ditambah:</p>}
+                  <ul>{cardRows(pl).map(([f, v]) => (
+                    <li key={f.label}><Icon name="check" size={17} /><span>{f.label}{typeof v === 'string' ? ` — ${v}` : ''}</span></li>
                   ))}</ul>
-                  <Link href={START} className={'ln-btn ' + (k === 'standar' ? 'ln-btn-primary' : 'ln-btn-outline')}>{k === 'gratis' ? 'Mulai gratis' : `Coba ${PLANS[k].name} ${BUSINESS.trialDays} hari`}</Link>
+                  <Link href={START} className={'ln-btn ' + (pl.key === best ? 'ln-btn-primary' : 'ln-btn-outline')}>{pl.is_free ? 'Mulai gratis' : `Coba ${pl.name} ${BUSINESS.trialDays} hari`}</Link>
                 </div>
               ))}
             </div>
             <details className="ln-compare">
               <summary>Bandingkan semua fitur</summary>
               <div className="ln-table-wrap"><table>
-                <thead><tr><th>Fitur</th><th>Gratis</th><th>Standar</th><th>Pro</th></tr></thead>
+                <thead><tr><th>Fitur</th>{plans.map((pl) => <th key={pl.key}>{pl.name}</th>)}</tr></thead>
                 <tbody>{FEATURE_GROUPS.map(([g, name]) => [
-                  <tr key={g} className="ln-groupsep"><td colSpan={4}>{name}</td></tr>,
+                  <tr key={g} className="ln-groupsep"><td colSpan={plans.length + 1}>{name}</td></tr>,
                   ...FEATURES.filter((f) => f.group === g).map((f) => (
-                    <tr key={f.label}><td>{f.label}{f.soon && <> <Badge t="Segera hadir" /></>}</td><td><Cell v={f.gratis} /></td><td><Cell v={f.standar} /></td><td><Cell v={f.pro} /></td></tr>
+                    <tr key={f.label}><td>{f.label}{f.soon && <> <Badge t="Segera hadir" /></>}</td>{plans.map((pl) => <td key={pl.key}><Cell v={f.soon ? (f[pl.key] ? 'Segera' : false) : featureCell(f, pl)} /></td>)}</tr>
                   )),
                 ])}</tbody>
               </table></div>

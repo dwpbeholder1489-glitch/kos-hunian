@@ -730,3 +730,5 @@ nav.tabs{display:none}
   .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
   main.wrap:has(.cartbar){padding-bottom:calc(170px + env(safe-area-inset-bottom))}
 }
+.ln-compare tr.ln-groupsep td{display:table-cell;padding-left:10px;text-align:left}
+.ln-amount .per{display:block;font-size:13px;font-weight:600;color:var(--ln-muted)}

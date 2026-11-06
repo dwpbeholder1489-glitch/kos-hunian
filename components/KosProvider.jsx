@@ -34,8 +34,11 @@ export default function KosProvider({ children }) {
     let data = null, error = null;
     for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
     if (error) { setList([]); return []; }
-    const roles = await supabase.rpc('my_roles').then((r) => r.data || {}, () => ({}));
-    data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik' }));
+    const [roles, ents] = await Promise.all([
+      supabase.rpc('my_roles').then((r) => r.data || {}, () => ({})),
+      supabase.rpc('my_entitlements').then((r) => r.data || {}, () => ({})), // paket, fitur & batas dari database
+    ]);
+    data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null }));
     setList(data);
     let saved = null;
     try { saved = localStorage.getItem(KEY); } catch {}

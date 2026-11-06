@@ -6,7 +6,7 @@ import PageHelp from '@/components/PageHelp';
 import Locked from '@/components/Locked';
 import { Loading, Empty, Tile } from '@/components/ui';
 import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from '@/lib/format';
-import { hasPlan } from '@/lib/plan';
+import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma)
@@ -59,7 +59,7 @@ export default function LaporanToko() {
   const prods = [...r.produk].sort((x, y) => N(y[sort]) - N(x[sort])).slice(0, 10);
   const maxP = Math.max(1, ...prods.map((p) => Math.abs(N(p[sort]))));
   const maxD = Math.max(1, ...r.harian.map((h) => N(h.omzet)));
-  const canExport = hasPlan(kos, 'standar');
+  const canExport = hasFeature(kos, 'ekspor');
 
   const exportCsv = () => downloadCsv(`laporan-toko-${kos.name}-${ym}.csv`, [
     ['Laporan', kos.name, bulan(ym)], [],

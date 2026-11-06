@@ -24,7 +24,7 @@ export default function Aktivitas() {
   const det = (r) => {
     const d = r.detail || {};
     if (r.action === 'ubah_paket') return `${PLANS[d.sebelum?.paket]?.name || d.sebelum?.paket} → ${PLANS[d.sesudah?.paket]?.name || d.sesudah?.paket}${d.sesudah?.bayar_sampai ? ` s.d. ${tgl(d.sesudah.bayar_sampai)}` : ''}`;
-    if (r.action.endsWith('_pembayaran')) return `${PLANS[d.paket]?.name} ${d.bulan} bln · ${rp(d.jumlah)}`;
+    if (r.action.endsWith('_pembayaran')) return `${PLANS[d.paket]?.name || d.paket} ${d.bulan} bln · ${rp(d.jumlah)}`;
     if (r.action === 'override') return `${d.tindakan}${d.paket ? ' ' + d.paket : ''}${d.nilai ? ' ' + d.nilai : ''} — ${d.alasan}`;
     if (r.action === 'ubah_staf') return `${d.email}: ${d.sebelum ? `${ROLE[d.sebelum.peran]}${d.sebelum.aktif ? '' : ' (nonaktif)'} → ` : ''}${ROLE[d.sesudah?.peran]}${d.sesudah?.aktif ? '' : ' (nonaktif)'}`;
     return '';
