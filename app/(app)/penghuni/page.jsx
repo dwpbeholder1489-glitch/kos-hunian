@@ -1,5 +1,6 @@
 'use client';
 import PortalBox from '@/components/PortalBox';
+import { moduleOn } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -76,7 +77,7 @@ function OccDetail({ d, occ, go, onClose }) {
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
       </dl>
       {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
-      <PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />
+      {moduleOn(kos, 'p_portal') && <PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />}
       {kos.owner_id === user?.id && <Link href="/pengaturan#pesan" className="small" style={{ textAlign: 'center' }}>Ubah teks pesan WhatsApp</Link>}
       <section className="panel"><span className="label">Tagihan terakhir</span>
         {invs.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Belum ada tagihan.</p> : (

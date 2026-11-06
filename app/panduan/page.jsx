@@ -38,6 +38,7 @@ const MENUS = [
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
   ['Pengaturan', 'Profil kos, kategori pengeluaran, tambah kos, keluar'],
   ['Karyawan', 'Undang pengelola/penjaga, atur peran, nonaktifkan, hapus'],
+  ['Konfigurasi', 'Profil bisnis, modul aktif, cabang & gudang, persetujuan, riwayat'],
 ];
 
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
@@ -46,8 +47,8 @@ const PARTS = [
     ['Daftar dan buat kos', 'Halaman depan › Mulai Gratis 30 Hari', [
       <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Gratis 30 Hari</b>, isi email dan kata sandi, lalu <b>Buat akun</b>.</>,
       <>Buka email Anda dan ketuk tautan konfirmasi.</>,
-      <>Masuk, lalu isi <b>Nama kos</b>, <b>Jumlah kamar</b>, dan <b>Awalan kode</b>.</>,
-      <>Tekan <b>Buat kos</b>. Kamar A01, A02, … dibuat otomatis.</>,
+      <>Masuk, pilih jenis bisnis (kos = <b>Properti & Sewa</b>), lalu isi <b>Nama kos</b>, <b>Jumlah kamar</b>, dan <b>Awalan kode</b>.</>,
+      <>Jawab beberapa pertanyaan singkat tentang usaha Anda (boleh dilewati), tinjau <b>modul yang disarankan</b> beserta alasannya, lalu tekan <b>Setujui & buat bisnis</b>. Kamar A01, A02, … dibuat otomatis.</>,
     ], 'Tidak menerima email konfirmasi? Periksa folder Spam atau Promosi.', null, <ScrSignup />],
     ['Kenali tombol Panduan', 'Semua menu', [
       <>Di sebelah judul setiap menu ada tombol kecil <b>? Panduan</b>.</>,
@@ -259,6 +260,13 @@ const PARTS = [
       <>Tekan <b>+</b> pada barang untuk jumlah label, lalu <b>Cetak</b> (printer biasa atau simpan PDF). Tempel di rak atau kemasan ulang.</>,
       <>Di Kasir, scan label itu dengan <b>📷 Pindai</b> atau scanner Bluetooth — barang langsung masuk keranjang.</>,
     ], <>Pertama kali memakai kamera, izinkan akses kamera untuk situs PRASARA. Coba scan satu label dulu sebelum mencetak banyak.</>, null, null],
+    ['Pusat konfigurasi', 'Lainnya › Konfigurasi (pemilik & pengelola)', [
+      <>Tab <b>Modul</b>: lihat modul aktif, yang bisa diaktifkan, dan yang segera hadir. Ketuk modul untuk melihat fungsinya, menu, data yang dipakai, modul yang dibutuhkan, dan paketnya.</>,
+      <>Tekan <b>Aktifkan</b> atau <b>Nonaktifkan</b> (wajib alasan). Modul nonaktif: menunya hilang dan pemakaiannya ditolak server, tetapi <b>data lama tidak dihapus</b>.</>,
+      <>Pengelola hanya bisa <b>meminta</b>; pemilik menyetujui di tab <b>Persetujuan</b>.</>,
+      <>Tab <b>Profil</b>: kelompok bisnis, karakteristik usaha, dan <b>badan usaha</b> (perorangan, CV, PT…). Tab <b>Cabang & gudang</b>: daftar lokasi (khusus pemilik).</>,
+      <>Tab <b>Riwayat</b>: semua perubahan — siapa, kapan, alasan, dan tingkat risikonya.</>,
+    ], <>Modul inti (mis. Kasir, Barang, Tagihan) selalu aktif. Modul yang masih punya transaksi terbuka (shift belum ditutup, pesanan belum diterima) tidak bisa dinonaktifkan sebelum diselesaikan. Cabang & gudang saat ini dicatat sebagai struktur; stok per cabang segera hadir.</>, null, null],
   ]],
 ];
 
@@ -303,7 +311,7 @@ export default function Panduan() {
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
-          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–35</a><br />Karyawan, kontak, shift, pengingat, label</span></div>
+          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–36</a><br />Karyawan, kontak, shift, pengingat, label, konfigurasi</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

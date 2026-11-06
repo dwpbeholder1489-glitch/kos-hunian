@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { Field } from '@/components/ui';
 import { errMsg } from '@/lib/format';
 import { BUSINESS_TYPES } from '@/lib/business';
+import { PROFILE_Q, recommend } from '@/lib/modules';
 
 // Tambah bisnis: pilih jenis dulu, lalu isi data sesuai jenisnya
 export default function Mulai() {
@@ -18,6 +19,21 @@ export default function Mulai() {
   const [prefix, setPrefix] = useState('A');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [mods, setMods] = useState(null);      // katalog modul jenis ini
+  const [pick, setPick] = useState(null);      // Set kode modul opsional yang disetujui
+  const [touched, setTouched] = useState(false);
+  useEffect(() => {
+    if (!type) return;
+    setMods(null); setPick(null); setTouched(false); setAnswers({});
+    supabase.from('modules').select('*').contains('applies_to', [type]).order('sort').then(({ data }) => setMods(data || []));
+  }, [type]);
+  const recs = useMemo(() => (type ? recommend(type, answers) : {}), [type, answers]);
+  const optional = (mods || []).filter((m) => !m.core && m.status === 'available');
+  // pilihan awal mengikuti rekomendasi; bila belum menjawab apa pun, semua modul opsional aktif
+  const chosen = pick || new Set(Object.keys(recs).length ? Object.keys(recs) : optional.map((m) => m.code));
+  const toggle = (c) => { const n = new Set(chosen); n.has(c) ? n.delete(c) : n.add(c); setPick(n); setTouched(true); };
+  const answer = (k, v) => { setAnswers({ ...answers, [k]: v }); if (!touched) setPick(null); };
 
   if (!session) return null;
   const first = !list || list.length === 0;
@@ -31,6 +47,7 @@ export default function Mulai() {
     setBusy(true);
     const { data, error } = await supabase.rpc('create_business', { p_type: type, p_name: name, p_address: addr, p_room_count: n, p_prefix: prefix || 'A' });
     if (error) { setErr(errMsg(error)); setBusy(false); return; }
+    if (mods && mods.length) await supabase.rpc('business_modules_init', { p_kos: data, p_codes: [...chosen] }); // pemilik menyetujui modul awal
     await loadKos();
     pickKos(data);
     router.replace(type === 'properti' ? '/kamar' : BUSINESS_TYPES[type].home);
@@ -70,8 +87,32 @@ export default function Mulai() {
             <Field label="Awalan kode" hint="A → A01, A02, …"><input value={prefix} maxLength={3} onChange={(e) => setPrefix(e.target.value.toUpperCase())} /></Field>
           </div>
         )}
+        {mods && mods.length > 0 && <>
+          <div className="panel" style={{ gap: 10 }}>
+            <b>Ceritakan usaha Anda (opsional)</b>
+            <span className="small muted">Dipakai untuk menyarankan modul. Bisa diubah kapan saja di Pusat konfigurasi.</span>
+            {PROFILE_Q.filter((q) => !q.only || q.only === type).map((q) => (
+              <Field key={q.key} label={q.label}><select value={answers[q.key] || ''} onChange={(e) => answer(q.key, e.target.value)}><option value="">— lewati —</option>{q.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+            ))}
+          </div>
+          <div className="panel" style={{ gap: 10 }}>
+            <b>Tinjau modul yang akan diaktifkan</b>
+            <span className="small muted">Selalu aktif: {mods.filter((m) => m.core).map((m) => m.name).join(', ')}.</span>
+            {optional.map((m) => (
+              <label key={m.code} className="row" style={{ alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+                <input type="checkbox" style={{ width: 22, minHeight: 22, marginTop: 2 }} checked={chosen.has(m.code)} onChange={() => toggle(m.code)} />
+                <span className="stack" style={{ gap: 2 }}>
+                  <b className="small">{m.name}{m.entitlement && <span className="chip info" style={{ marginLeft: 6 }}>Paket berbayar</span>}</b>
+                  <span className="small muted">{m.description}</span>
+                  {recs[m.code] && <span className="small" style={{ color: 'var(--good)' }}>Disarankan: {recs[m.code].join('; ')}</span>}
+                </span>
+              </label>
+            ))}
+            <span className="small muted">Modul berbayar bisa dipakai selama masa coba; setelahnya mengikuti paket. Modul bisa diaktifkan/nonaktifkan nanti tanpa kehilangan data.</span>
+          </div>
+        </>}
         {err && <div className="notice bad">{err}</div>}
-        <button className="cta" disabled={busy}>{busy ? 'Menyiapkan…' : 'Buat bisnis'}</button>
+        <button className="cta" disabled={busy}>{busy ? 'Menyiapkan…' : 'Setujui & buat bisnis'}</button>
         <button type="button" className="ghost" onClick={() => setType(null)}>← Pilih jenis lain</button>
       </form>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
+import { moduleOn } from '@/lib/business';
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -26,7 +27,7 @@ function useProducts(kosId, ver) {
 }
 
 export default function Barang() {
-  const { kosId, ver } = useKos();
+  const { kosId, ver, kos } = useKos();
   const { d, err, reload } = useProducts(kosId, ver);
   const [q, setQ] = useState('');
   const [f, setF] = useState('aktif');
@@ -45,7 +46,7 @@ export default function Barang() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Barang & stok</h2><PageHelp page="barang" /></div><div className="row"><Link href="/label"><button className="sm">Cetak label</button></Link><button className="primary" onClick={() => setEdit('new')}>+ Tambah barang</button></div></div>
+      <div className="row between"><div className="row"><h2>Barang & stok</h2><PageHelp page="barang" /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}<button className="primary" onClick={() => setEdit('new')}>+ Tambah barang</button></div></div>
       <div className="grid">
         <Tile label="Barang aktif" value={angka(active.length)} />
         <Tile label="Nilai stok (harga modal)" value={rp(value)} sub={active.some((p) => !(p.cost > 0)) ? 'ada barang tanpa harga modal' : null} />

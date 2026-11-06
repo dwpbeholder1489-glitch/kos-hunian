@@ -13,7 +13,7 @@ import NotifBell from '@/components/NotifBell';
 import RetailBell from '@/components/RetailBell';
 import AnnounceBanner from '@/components/AnnounceBanner';
 
-import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, primaryTabs } from '@/lib/business';
+import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, primaryTabs, pathModuleOff, moduleOn } from '@/lib/business';
 
 const SHORT = { '/barang': 'Barang', '/laporan-toko': 'Laporan', '/kas': 'Kas', '/kontak': 'Kontak', '/shift': 'Shift', '/beranda': 'Beranda' };
 
@@ -59,7 +59,7 @@ export default function AppLayout({ children }) {
               <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
             <div className="right">
-              {kos.business_type !== 'retail' ? canArea(kos, 'rent') && <NotifBell /> : canArea(kos, 'stock,finance') && <RetailBell />}
+              {kos.business_type !== 'retail' ? canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') && <NotifBell /> : canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') && <RetailBell />}
               <Link href="/bantuan" className="helpbtn" aria-label="Pusat bantuan" title="Bantuan">?</Link>
             </div>
           </div>
@@ -77,7 +77,9 @@ export default function AppLayout({ children }) {
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka dengan mengetuk nama bisnis di kiri atas.</span>}</div>
-      ) : allowed ? children : pathOfType(kos, path) ? (
+      ) : allowed ? children : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
+        <div className="empty"><h2>Modul ini sedang nonaktif</h2><p className="muted">Data lamanya tetap tersimpan. Pemilik atau pengelola bisa mengaktifkannya lagi di Pusat konfigurasi.</p>{canArea(kos, 'settings') && <Link href="/konfigurasi"><button className="primary">Buka Pusat konfigurasi</button></Link>}</div>
+      ) : pathOfType(kos, path) ? (
         <div className="empty"><h2>Menu ini tidak termasuk tugas Anda</h2><p className="muted">Anda masuk sebagai {ROLES[role]?.name || role} di {kos.name}. Hubungi pemilik bila perlu akses.</p>{own[0] && <Link href={homeOf(kos)}><button className="primary">Buka {own[0][1]}</button></Link>}</div>
       ) : (
         <div className="empty"><h2>Menu ini bukan untuk {type.name}</h2><p className="muted">{kos.name} adalah bisnis {type.name}. Pilih menu lain, atau pindah bisnis dengan mengetuk nama bisnis di kiri atas.</p><Link href={homeOf(kos)}><button className="primary">Buka menu utama</button></Link></div>
