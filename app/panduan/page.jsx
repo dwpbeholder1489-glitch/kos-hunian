@@ -176,6 +176,14 @@ const PARTS = [
       <>Pindah bisnis lewat pilihan di <b>kanan atas</b>. Halaman <b>Bisnis saya</b> menampilkan ringkasan semua bisnis bulan ini.</>,
     ], <>Pembukuan setiap bisnis terpisah: transaksi toko tidak akan masuk ke laporan kos, dan sebaliknya.</>, null, null],
   ]],
+  ['E', 'Retail & Grosir (toko)', [
+    ['Barang, satuan, dan stok', 'Menu Barang & stok', [
+      <>Buka bisnis toko Anda (pilihan di kanan atas), lalu menu <b>Barang & stok</b>. Tekan <b>+ Tambah barang</b>.</>,
+      <>Isi nama, <b>satuan terkecil</b> (pcs, bungkus, kg) dan <b>harga modal</b> per satuan itu, lalu stok sekarang.</>,
+      <>Di <b>Satuan jual & harga</b>, isi harga eceran dan grosir. Tekan <b>+ Tambah satuan</b> untuk dus/pak/renteng beserta isinya (mis. dus isi 40).</>,
+      <>Untuk menghitung ulang atau mencatat barang rusak, tekan <b>Stok</b> di samping barang, pilih alasannya, isi jumlah, lalu <b>Simpan</b>.</>,
+    ], <>Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Muncul tanda merah jika harga eceran di bawah modal.</>, null, null],
+  ]],
 ];
 
 const RULES = [
@@ -206,6 +214,7 @@ export default function Panduan() {
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
+          <div><b>Toko</b><span><a href="#bagian-E">Langkah 25</a><br />Barang, satuan, stok</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
