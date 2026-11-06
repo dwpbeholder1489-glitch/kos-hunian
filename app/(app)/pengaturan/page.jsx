@@ -90,7 +90,7 @@ export default function Pengaturan() {
         {isOwner && kos.onboarding_emails !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={kos.onboarding_emails}
           onChange={async (e) => { const v = e.target.checked; if (await run(() => supabase.from('kos').update({ onboarding_emails: v }).eq('id', kos.id), v ? 'Email arahan dinyalakan' : 'Email arahan dimatikan', errMsg)) loadKos(); }} /> Email arahan dari PRASARA selama masa coba (paling banyak 1 email tiap 2 hari)</label>}
         <div className="row">
-          <button onClick={() => router.push('/mulai')}>+ Tambah kos lain</button>
+          <button onClick={() => router.push('/mulai')}>+ Tambah bisnis lain</button>
           <button className="danger" onClick={logout}>Keluar</button>
         </div>
       </section>

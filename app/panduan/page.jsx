@@ -169,6 +169,12 @@ const PARTS = [
       <>Di <b>Pengaturan email</b>, pilih yang ingin diterima: daftar tagih setiap pagi, <b>ringkasan mingguan</b> (Senin), dan <b>ringkasan bulanan</b> (tanggal 1).</>,
       <>Tekan <b>Kirim contoh ringkasan</b> untuk melihat isinya di email Anda.</>,
     ], <>Ringkasan bulanan menyala otomatis, ringkasan mingguan mati sampai Anda menyalakannya. Semua angka berasal dari data yang Anda catat — sama dengan menu Laporan.</>, null, null],
+    ['Banyak bisnis dalam satu akun', 'Menu Bisnis saya', [
+      <>Buka <b>Bisnis saya</b>, tekan <b>+ Tambah bisnis</b>.</>,
+      <>Pilih jenisnya: <b>Properti & Sewa</b> (kos, kontrakan) atau <b>Retail & Grosir</b> (toko — modulnya sedang dibangun).</>,
+      <>Isi nama dan alamat, lalu <b>Buat bisnis</b>. Menu di atas menyesuaikan jenis bisnis.</>,
+      <>Pindah bisnis lewat pilihan di <b>kanan atas</b>. Halaman <b>Bisnis saya</b> menampilkan ringkasan semua bisnis bulan ini.</>,
+    ], <>Pembukuan setiap bisnis terpisah: transaksi toko tidak akan masuk ke laporan kos, dan sebaliknya.</>, null, null],
   ]],
 ];
 
@@ -199,7 +205,7 @@ export default function Panduan() {
           <div><b>Persiapan</b><span><a href="#bagian-A">Langkah 1–5</a><br />Daftar, kamar, penghuni</span></div>
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
-          <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–23</a><br />Langganan, portal, pengingat</span></div>
+          <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

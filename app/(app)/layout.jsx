@@ -6,11 +6,7 @@ import { tgl, today } from '@/lib/format';
 import { planOf, PLANS, BUSINESS } from '@/lib/plan';
 import NotifBell from '@/components/NotifBell';
 
-const TABS = [
-  ['/beranda', 'Dashboard'], ['/kamar', 'Kamar'], ['/penghuni', 'Penghuni'], ['/tagihan', 'Tagihan'],
-  ['/pembayaran', 'Pembayaran'], ['/pengeluaran', 'Pengeluaran'], ['/laporan', 'Laporan'],
-  ['/langganan', 'Langganan'], ['/pengaturan', 'Pengaturan'],
-];
+import { typeOf, pathAllowed, BUSINESS_TYPES } from '@/lib/business';
 
 function PlanBar({ kos }) {
   const p = planOf(kos);
@@ -29,7 +25,9 @@ export default function AppLayout({ children }) {
   if (!session || !list || !kos) {
     return <main className="wrap"><p className="muted">Membuka buku kos…</p></main>;
   }
-  const tabs = isAdmin ? [...TABS, ['/admin', 'Admin']] : TABS;
+  const type = typeOf(kos);
+  const tabs = isAdmin ? [...type.tabs, ['/admin', 'Admin']] : type.tabs;
+  const allowed = pathAllowed(kos, path);
 
   return (
     <>
@@ -38,16 +36,16 @@ export default function AppLayout({ children }) {
           <div className="brandrow">
             <div className="brand">
               <span className="mark">P</span>
-              <div><h1>{kos.name}</h1><small>Manage Smarter. Live Better.</small></div>
+              <div><h1>{kos.name}</h1><small>{type.icon} {type.name}</small></div>
             </div>
             <div className="right">
             {list.length > 1 ? (
-              <select className="kossel" value={kosId} onChange={(e) => (e.target.value === '+' ? router.push('/mulai') : pickKos(e.target.value))} aria-label="Pilih kos">
-                {list.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
-                <option value="+">+ Tambah kos</option>
+              <select className="kossel" value={kosId} onChange={(e) => { const v = e.target.value; if (v === '+') return router.push('/mulai'); pickKos(v); const k = list.find((x) => x.id === v); router.push(typeOf(k).home); }} aria-label="Pilih bisnis">
+                {list.map((k) => <option key={k.id} value={k.id}>{typeOf(k).icon} {k.name}</option>)}
+                <option value="+">+ Tambah bisnis</option>
               </select>
             ) : <span className="small" style={{ opacity: 0.85 }}>{tgl(today())}</span>}
-            <NotifBell />
+            {kos.business_type !== 'retail' && <NotifBell />}
             <Link href="/bantuan" className="helpbtn" aria-label="Pusat bantuan" title="Bantuan">?</Link>
             </div>
           </div>
@@ -58,8 +56,10 @@ export default function AppLayout({ children }) {
           </nav>
         </div>
       </header>
-      {!path.startsWith('/langganan') && <PlanBar kos={kos} />}
-      <main className="wrap" key={kosId}>{children}</main>
+      {!path.startsWith('/langganan') && kos.business_type !== 'retail' && <PlanBar kos={kos} />}
+      <main className="wrap" key={kosId}>{allowed ? children : (
+        <div className="empty"><h2>Menu ini bukan untuk {type.name}</h2><p className="muted">{kos.name} adalah bisnis {type.name}. Pilih menu di atas, atau pindah bisnis lewat pilihan di kanan atas.</p><Link href={type.home}><button className="primary">Buka {type.tabs[0][1]}</button></Link></div>
+      )}</main>
     </>
   );
 }
