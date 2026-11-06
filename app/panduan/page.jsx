@@ -24,6 +24,7 @@ const MENUS_TOKO = [
   ['Belanja', 'Pesan ke supplier, terima barang, retur ke supplier, utang supplier'],
   ['Mutasi stok', 'Pindahkan barang antar lokasi; pemilik: tambah gudang/cabang dari sini'],
   ['Prospek & tindak lanjut', 'Calon pelanggan/penghuni, tahapan, catatan, jadwal hubungi lagi'],
+  ['Halaman bisnis', 'Tautan publik: profil, katalog/kamar, formulir permintaan'],
   ['Kas & kasbon', 'Saldo kas/bank, biaya, kasbon pelanggan, utang'],
   ['Barang & stok', 'Barang, satuan, harga, barcode, label, tombol cepat'],
   ['Pelanggan & supplier', 'Kontak, sisa kasbon/utang, riwayat'],
@@ -323,6 +324,13 @@ const PARTS = [
       <>Di setiap prospek: tulis <b>catatan</b> (WA, telepon, kunjungan, keluhan) dan <b>jadwalkan tindak lanjut</b> (Besok / 3 hari / 1 minggu). Pelanggan lama juga bisa diberi catatan & tindak lanjut dari menu Pelanggan & supplier.</>,
       <>Tab <b>Tindak lanjut</b> berisi semua jadwal; yang jatuh hari ini atau terlewat berwarna merah dan muncul sebagai kotak <b>📞</b> di dashboard. Tekan <b>Kirim WA</b> lalu <b>Selesai</b>.</>,
     ], <>Angka "Jadi (90 hari)" = prospek jadi ÷ (jadi + tidak jadi) yang ditutup 90 hari terakhir. Catatan tidak bisa dihapus agar riwayat utuh. Simpan seperlunya saja (nama, No. HP, kebutuhan); jangan mencatat data pribadi sensitif. Kasir dan penjaga juga bisa memakai menu ini.</>, null, null],
+    ['Halaman bisnis untuk pelanggan', 'Lainnya › Halaman bisnis (pemilik)', [
+      <>Isi <b>alamat halaman</b> (mis. toko-subur), kalimat singkat, tentang, alamat, jam buka, dan No. WhatsApp untuk pelanggan.</>,
+      <>Pilih yang ditampilkan: toko — <b>barang cepat (★)</b> atau <b>semua barang aktif</b>; kos — <b>kamar yang tersedia</b>. Centang <b>Tampilkan harga jual</b> bila ingin harganya terlihat.</>,
+      <>Tekan <b>Terbitkan</b>. Baca daftar yang akan terlihat publik, lalu setujui. Setelah terbit: <b>Salin tautan</b> atau <b>Bagikan ke WhatsApp</b> (status WA, grup, bio Instagram).</>,
+      <>Pelanggan membuka tautan tanpa memasang aplikasi, memilih barang/kamar, mengisi nama & WhatsApp, menyetujui dihubungi, lalu <b>Kirim permintaan</b>. Mereka mendapat nomor permintaan (mis. PRM-261107-001).</>,
+      <>Permintaan masuk ke <b>Prospek & tindak lanjut</b> (tahap Baru, label nomor permintaan) dan muncul kotak <b>📨</b> di dashboard; email ke Anda bila dicentang. Hubungi lewat WA, konfirmasi harga & stok, lalu catat penjualannya di Kasir seperti biasa.</>,
+    ], <>Yang TIDAK pernah tampil: harga modal, laba, stok persis (hanya Tersedia/Habis), data pelanggan, dan catatan staf. Permintaan bukan penjualan final dan tidak mengubah stok, kas, atau jurnal. Spam dibatasi otomatis (terlalu cepat/terlalu sering dari satu perangkat ditolak). Tekan <b>Sembunyikan halaman</b> kapan saja; bisnis yang ditutup otomatis tidak tampil. Pembayaran online dan pesanan langsung jadi belum tersedia.</>, null, null],
   ]],
 ];
 
@@ -367,7 +375,7 @@ export default function Panduan() {
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
-          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–43</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek</span></div>
+          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–44</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek, halaman bisnis</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

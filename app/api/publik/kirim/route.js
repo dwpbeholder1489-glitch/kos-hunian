@@ -1,0 +1,46 @@
+// Kiriman formulir halaman bisnis publik → fungsi database public_submit (kunci rahasia, hanya dari server).
+// Pembatasan per perangkat memakai hash alamat IP (IP asli tidak disimpan). Pemilik diberi tahu lewat email bila diaktifkan.
+import { createHash } from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+import { sendMail, mailConfigured } from '@/lib/mailer';
+
+export const dynamic = 'force-dynamic';
+const json = (b, s = 200) => Response.json(b, { status: s });
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+export async function POST(req) {
+  const key = process.env.SUPABASE_SECRET_KEY;
+  if (!key) return json({ ok: false, error: 'Layanan formulir belum dikonfigurasi.' }, 503);
+  let b;
+  try { b = await req.json(); } catch { return json({ ok: false, error: 'Permintaan tidak valid' }, 400); }
+  if (b.website) return json({ ok: true, number: null }); // jebakan bot: pura-pura berhasil
+  const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || req.headers.get('x-real-ip') || 'tanpa-ip';
+  const ipHash = createHash('sha256').update(ip + '|' + key.slice(-16)).digest('hex').slice(0, 32);
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const items = Array.isArray(b.items) ? b.items.slice(0, 30).map((x) => ({ id: String(x.id || ''), unit: String(x.unit || ''), qty: Number(x.qty) || 0 })) : [];
+  const { data, error } = await sb.rpc('public_submit', {
+    p_slug: String(b.slug || '').slice(0, 40), p_name: String(b.name || '').slice(0, 80), p_phone: String(b.phone || '').slice(0, 20),
+    p_message: String(b.message || '').slice(0, 500), p_items: items, p_consent: b.consent === true, p_ip_hash: ipHash, p_elapsed: Math.min(Number(b.elapsed) || 0, 100000),
+  });
+  if (error) { console.error('[publik] gagal', error.message); return json({ ok: false, error: 'Gagal menyimpan. Coba lagi nanti.' }, 500); }
+  if (!data?.ok) return json({ ok: false, error: data?.error || 'Gagal mengirim' }, 400);
+  if (!data.duplicate) {
+    try {
+      if (mailConfigured()) {
+        const [{ data: kos }, { data: pg }] = await Promise.all([
+          sb.from('kos').select('name, owner_id').eq('id', data.kos_id).single(),
+          sb.from('public_pages').select('email_notify').eq('kos_id', data.kos_id).single(),
+        ]);
+        const { data: owner } = pg?.email_notify ? await sb.auth.admin.getUserById(kos.owner_id) : { data: null };
+        const to = owner?.user?.email;
+        if (to) {
+          const link = `${new URL(req.url).origin}/crm`;
+          await sendMail({ to, subject: `Permintaan baru ${data.number} dari halaman ${kos.name}`,
+            text: `Ada permintaan baru dari halaman bisnis ${kos.name}.\nNama: ${b.name}\nWhatsApp: ${b.phone}\nPesan: ${b.message || '-'}\n\nBuka ${link} (Prospek & tindak lanjut) untuk menindaklanjuti.`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:520px;color:#1A1D21"><p>Ada permintaan baru <b>${esc(data.number)}</b> dari halaman bisnis <b>${esc(kos.name)}</b>.</p><p>Nama: <b>${esc(b.name)}</b><br>WhatsApp: <b>${esc(b.phone)}</b><br>Pesan: ${esc(b.message || '-')}${items.length ? `<br>Barang/kamar dipilih: ${items.length}` : ''}</p><p><a href="${link}" style="display:inline-block;background:#B88A2E;color:#1D2A21;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:10px">Buka Prospek & tindak lanjut</a></p><p style="font-size:12px;color:#5A675F">Email ini dikirim otomatis oleh PRASARA. Matikan di menu Halaman bisnis.</p></div>` });
+        }
+      }
+    } catch (e) { console.error('[publik] email gagal', e); }
+  }
+  return json({ ok: true, number: data.number });
+}

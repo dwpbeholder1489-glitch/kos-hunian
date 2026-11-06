@@ -52,7 +52,7 @@ export default function KosProvider({ children }) {
 
   useEffect(() => {
     if (session === undefined) return;
-    if (path.startsWith('/p/') || path.startsWith('/berhenti/')) return; // portal penghuni & tautan berhenti email tidak memakai akun
+    if (path.startsWith('/p/') || path.startsWith('/berhenti/') || path.startsWith('/b/')) return; // portal penghuni, tautan berhenti email, dan halaman bisnis publik tidak memakai akun
     if (!session) { setList(null); if (!PUBLIC.includes(path)) router.replace('/masuk'); return; }
     loadKos();
   }, [session, loadKos, path, router]);
@@ -69,7 +69,7 @@ export default function KosProvider({ children }) {
 
   useEffect(() => {
     if (!session || !list || list.length > 0 || adminMe === undefined) return;
-    if (['/', '/panduan'].includes(path) || path.startsWith('/p/') || path.startsWith('/berhenti/') || path.startsWith('/admin')) return;
+    if (['/', '/panduan'].includes(path) || path.startsWith('/p/') || path.startsWith('/b/') || path.startsWith('/berhenti/') || path.startsWith('/admin')) return;
     // Staf PRASARA tanpa bisnis sendiri langsung ke Management Center, bukan ke "buat bisnis"
     if (adminMe) router.replace('/admin'); else if (path !== '/mulai') router.replace('/mulai');
   }, [session, list, path, router, adminMe]);

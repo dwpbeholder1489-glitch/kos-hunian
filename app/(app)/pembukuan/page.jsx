@@ -130,6 +130,16 @@ function Laporan({ d, period }) {
       </div>
       {selisih === 0 ? <span className="chip good">Seimbang: aset = kewajiban + ekuitas</span> : <div className="notice bad">Tidak seimbang, selisih {rp(selisih)}. Hubungi bantuan.</div>}
     </section>
+    {Array.isArray(d.per_lokasi) && d.per_lokasi.length > 0 && <section className="panel">
+      <h3>Laba rugi per lokasi · {period}</h3>
+      <div className="list">{d.per_lokasi.map((x) => (
+        <div className="li" key={x.lokasi} style={{ alignItems: 'flex-start' }}>
+          <div className="main"><b className="small">{x.lokasi}</b><span className="small muted">pendapatan {rp(x.pendapatan || 0)} · HPP {rp(x.hpp || 0)} · beban {rp(x.beban || 0)}</span></div>
+          <b className="small" style={{ color: Number(x.laba) < 0 ? 'var(--bad)' : undefined }}>{rp(x.laba || 0)}</b>
+        </div>
+      ))}</div>
+      <span className="small muted">Lokasi diambil dari transaksi asal tiap jurnal (penjualan, belanja, biaya, stok). "Bersama / tanpa lokasi" = jurnal manual, pembayaran sewa, dan transaksi tanpa lokasi; tidak dibagi otomatis.</span>
+    </section>}
     {d.recon?.length > 0 && <section className="panel">
       <h3>Cek kecocokan dengan catatan toko</h3>
       <span className="small muted">Saldo buku besar dibandingkan dengan angka di menu Kas, kasbon/utang, dan nilai stok saat ini. Selisih tidak diubah otomatis.</span>
