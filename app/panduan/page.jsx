@@ -41,6 +41,7 @@ const MENUS = [
   ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan persetujuan'],
   ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan'],
   ['Konfigurasi', 'Profil bisnis, modul aktif, cabang & gudang, riwayat'],
+  ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode'],
 ];
 
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
@@ -283,6 +284,14 @@ const PARTS = [
       <>Hasilnya muncul di <b>Pemberitahuan</b> (dan email untuk resep tertentu). Tekan <b>Jalankan sekarang</b> untuk mencoba.</>,
       <>Buka <b>Riwayat jalan</b> untuk melihat kapan berjalan, hasilnya, atau kesalahannya.</>,
     ], <>Otomatisasi tidak pernah mengubah data sendiri: tindakan yang mengubah data (mis. membuat pesanan) masuk ke Persetujuan. Paling banyak sekali sehari, tidak membuat pesanan ganda, dan dijeda otomatis setelah 3 kali gagal. WhatsApp otomatis belum tersedia — pesan WA disiapkan untuk dikirim dengan satu ketukan.</>, null, null],
+    ['Pembukuan', 'Lainnya › Pembukuan (pemilik & pengelola)', [
+      <>Tidak perlu mencatat dua kali: setiap penjualan, retur, belanja, kas, kasbon/utang, perubahan stok, pengeluaran, dan pembayaran sewa yang terverifikasi otomatis menjadi <b>jurnal</b> (debit & kredit seimbang). Jurnal diposting saat halaman dibuka dan setiap pagi.</>,
+      <>Tab <b>Laporan</b>: <b>Laba rugi</b> (pendapatan, HPP, beban) untuk bulan terpilih atau sejak awal tahun, dan <b>Neraca</b> (aset = kewajiban + ekuitas) per akhir bulan. Kotak di atasnya menunjukkan cakupan, waktu dibuat, basis pencatatan, dan status <b>Lengkap/Belum lengkap</b> beserta sebabnya.</>,
+      <>Toko: <b>Cek kecocokan</b> membandingkan saldo buku dengan menu Kas, kasbon, utang, dan nilai stok. Selisih ditampilkan, tidak diubah diam-diam.</>,
+      <>Tab <b>Buku besar</b>: pilih akun (mis. Kas) untuk melihat setiap mutasi dan saldonya; ketuk <b>lihat …</b> untuk membuka transaksi asalnya. Tab <b>Jurnal</b>: semua jurnal beserta baris debit/kreditnya.</>,
+      <>Punya beberapa bisnis dalam satu badan usaha (atur di Konfigurasi › Profil)? Pilih <b>Seluruh badan usaha</b> untuk laporan gabungan bisnis-bisnis itu. Badan usaha berbeda tidak pernah digabung.</>,
+      <>Tab <b>Periode & manual</b> (pemilik): <b>Tutup</b> bulan yang sudah diperiksa (alasan wajib, tercatat). <b>Jurnal manual</b> untuk penyesuaian, mis. saldo awal rekening bank: debit Bank, kredit Ekuitas saldo awal.</>,
+    ], <>Jurnal tidak bisa dihapus atau diubah. Bila penjualan/belanja dibatalkan atau diubah, sistem membuat <b>jurnal pembalikan/koreksi</b>; untuk bulan yang sudah ditutup, koreksinya dicatat di bulan berjalan. Kos dicatat saat uang diterima (basis kas), toko saat transaksi terjadi — gabungan berbeda basis hanya indikasi, bukan konsolidasi resmi. Pajak & penyusutan otomatis belum tersedia.</>, null, null],
   ]],
 ];
 

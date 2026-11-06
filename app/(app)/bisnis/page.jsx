@@ -12,7 +12,7 @@ import { LEGAL_KIND } from '@/lib/modules';
 
 const BASIS = { kas: 'dicatat saat uang diterima (basis kas)', penjualan: 'dicatat saat penjualan terjadi, termasuk kasbon' };
 const ACT = { aktifkan_modul: 'mengaktifkan modul', nonaktifkan_modul: 'menonaktifkan modul', minta_persetujuan: 'meminta persetujuan', tolak_persetujuan: 'menolak permintaan',
-  konfigurasi_awal: 'konfigurasi awal', arsip_kontak: 'mengarsipkan kontak', hapus_kontak: 'menghapus kontak', pulihkan_kontak: 'memulihkan kontak', ubah_profil: 'mengubah profil', tambah_cabang: 'menambah cabang/gudang', ubah_cabang: 'mengubah cabang/gudang' };
+  konfigurasi_awal: 'konfigurasi awal', jurnal_manual: 'membuat jurnal manual', tutup_periode: 'menutup periode buku', buka_periode: 'membuka kembali periode buku', arsip_kontak: 'mengarsipkan kontak', hapus_kontak: 'menghapus kontak', pulihkan_kontak: 'memulihkan kontak', ubah_profil: 'mengubah profil', tambah_cabang: 'menambah cabang/gudang', ubah_cabang: 'mengubah cabang/gudang' };
 const jam = (ts) => new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
 const shift = (ym, n) => { const [y, m] = ym.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + n, 1)); return d.toISOString().slice(0, 7); };
 const sum = (xs, k) => xs.reduce((s, b) => s + (Number(b[k]) || 0), 0);
