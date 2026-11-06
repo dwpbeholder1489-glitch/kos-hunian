@@ -42,12 +42,12 @@ Kunci *anon/publishable* memang aman dipakai di aplikasi. **Jangan** pernah mema
 3. Buka bagian **Environment Variables**, tambahkan dua baris:
    - `NEXT_PUBLIC_SUPABASE_URL` = Project URL dari langkah 2
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon key dari langkah 2
-4. Klik **Deploy**. Tunggu 1–3 menit sampai muncul alamat seperti `prasara.vercel.app`.
+4. Klik **Deploy**. Tunggu 1–3 menit sampai muncul alamat seperti `prasara-id.vercel.app`.
 
 ### 4. Sambungkan login ke alamat aplikasi
 Di Supabase: **Authentication → URL Configuration**
-- **Site URL**: alamat Vercel Anda, mis. `https://prasara.vercel.app`
-- **Redirect URLs**: tambahkan `https://prasara.vercel.app/**`
+- **Site URL**: alamat Vercel Anda, mis. `https://prasara-id.vercel.app`
+- **Redirect URLs**: tambahkan `https://prasara-id.vercel.app/**`
 
 Tanpa langkah ini, tautan konfirmasi di email pendaftaran akan mengarah ke alamat yang salah.
 
