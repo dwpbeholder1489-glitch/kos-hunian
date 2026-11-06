@@ -54,7 +54,7 @@ export default function Barang() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Barang & stok</h2><PageHelp page="barang" /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}<button className="primary" onClick={() => setEdit('new')}>+ Tambah barang</button></div></div>
+      <div className="row between"><div className="row"><h2>Barang & stok</h2><PageHelp page="barang" /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}<button className="primary" onClick={() => setEdit('new')}>+ Tambah barang</button></div></div>
       <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
       <div className="grid">
         <Tile label="Barang aktif" value={angka(active.length)} />

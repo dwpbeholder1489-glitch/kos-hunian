@@ -22,7 +22,7 @@ const MENUS_TOKO = [
   ['Kasir', 'Jual eceran/grosir, tombol barang cepat, scan barcode, struk'],
   ['Penjualan & Shift kasir', 'Riwayat transaksi, retur, batal; buka/tutup laci'],
   ['Belanja', 'Pesan ke supplier, terima barang, retur ke supplier, utang supplier'],
-  ['Mutasi stok', 'Pindahkan barang antar lokasi (muncul bila ada cabang/gudang)'],
+  ['Mutasi stok', 'Pindahkan barang antar lokasi; pemilik: tambah gudang/cabang dari sini'],
   ['Kas & kasbon', 'Saldo kas/bank, biaya, kasbon pelanggan, utang'],
   ['Barang & stok', 'Barang, satuan, harga, barcode, label, tombol cepat'],
   ['Pelanggan & supplier', 'Kontak, sisa kasbon/utang, riwayat'],
@@ -295,7 +295,7 @@ const PARTS = [
       <>Tab <b>Periode & manual</b> (pemilik): <b>Tutup</b> bulan yang sudah diperiksa (alasan wajib, tercatat). <b>Jurnal manual</b> untuk penyesuaian, mis. saldo awal rekening bank: debit Bank, kredit Ekuitas saldo awal.</>,
     ], <>Jurnal tidak bisa dihapus atau diubah. Bila penjualan/belanja dibatalkan atau diubah, sistem membuat <b>jurnal pembalikan/koreksi</b>; untuk bulan yang sudah ditutup, koreksinya dicatat di bulan berjalan. Kos dicatat saat uang diterima (basis kas), toko saat transaksi terjadi — gabungan berbeda basis hanya indikasi, bukan konsolidasi resmi. Pajak & penyusutan otomatis belum tersedia.</>, null, null],
     ['Stok per lokasi & mutasi', 'Konfigurasi › Cabang & gudang, lalu menu Mutasi stok (toko)', [
-      <>Pemilik menambah cabang atau gudang di <b>Konfigurasi › Cabang & gudang › + Tambah</b>. Lokasi yang sudah ada otomatis bernama <b>Lokasi utama</b> (boleh diganti namanya) dan semua stok lama ada di sana.</>,
+      <>Pemilik membuka <b>Lainnya › Mutasi stok</b> › <b>+ Tambah gudang / cabang</b> (atau Konfigurasi › Cabang & gudang › + Tambah). Lokasi yang sudah ada otomatis bernama <b>Lokasi utama</b> (boleh diganti namanya) dan semua stok lama ada di sana.</>,
       <>Begitu ada lebih dari satu lokasi, muncul kotak <b>📍 Lokasi kerja</b> di Kasir, Barang & stok, dan Belanja. Pilih lokasi tempat Anda bekerja: penjualan, belanja, hitung ulang stok, dan barang rusak tercatat di lokasi itu.</>,
       <>Barang & stok menampilkan stok <b>di sini</b> dan <b>total</b>; tombol <b>Stok</b> menunjukkan rincian per lokasi.</>,
       <>Memindahkan barang (mis. gudang → toko): buka <b>Mutasi stok</b>, pilih <b>Dari</b> dan <b>Ke</b>, cari barang, isi jumlah, lalu <b>Pindahkan</b>. Riwayat mutasi mencatat nomor, asal–tujuan, waktu, dan siapa.</>,

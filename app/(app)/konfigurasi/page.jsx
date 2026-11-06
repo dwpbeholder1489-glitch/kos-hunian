@@ -22,6 +22,7 @@ export default function Konfigurasi() {
   const { kos, kosId, loadKos, ver } = useKos();
   const owner = canArea(kos, 'team');
   const [tab, setTab] = useState('modul');
+  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (t) setTab(t); } catch {} }, []);  // mis. /konfigurasi?tab=cabang dari Mutasi stok
   const [cat, setCat] = useState(null);
   const [reqs, setReqs] = useState([]);
   const [hist, setHist] = useState(null);

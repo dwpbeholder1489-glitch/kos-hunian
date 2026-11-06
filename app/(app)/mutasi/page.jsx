@@ -38,7 +38,14 @@ export default function Mutasi() {
   };
   useEffect(() => { load(); }, [kosId, ver]);
   useEffect(() => { setFrom(kos?.locs?.current || ''); }, [kos?.locs?.current]);
-  if (!multiLoc(kos)) return <Empty title="Hanya satu lokasi" text="Mutasi stok dipakai bila bisnis punya lebih dari satu lokasi. Tambahkan cabang atau gudang di Konfigurasi › Cabang & gudang."><Link href="/konfigurasi"><button className="primary">Buka Konfigurasi</button></Link></Empty>;
+  if (!multiLoc(kos)) return (
+    <div className="stack">
+      <div className="row"><h2>Mutasi stok</h2><PageHelp page="mutasi" /></div>
+      <Empty title="Baru ada satu lokasi" text="Mutasi stok untuk memindahkan barang antar lokasi, mis. dari gudang ke toko. Tambahkan dulu gudang atau cabang Anda; setelah itu menu ini, pilihan 📍 Lokasi kerja, dan stok per lokasi langsung aktif.">
+        <Link href="/konfigurasi?tab=cabang"><button className="primary">+ Tambah gudang / cabang</button></Link>
+      </Empty>
+    </div>
+  );
   if (err) return <div className="notice bad">{/stock_transfers|stock_levels/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
