@@ -1,4 +1,5 @@
 'use client';
+import { withApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -193,7 +194,8 @@ function Detail({ b, supplier, onClose, onChanged }) {
   const left = (l) => Math.max(0, Number(l.qty) - Number(l.qty_received));
   const startRecv = () => setRecv(Object.fromEntries(lines.map((l) => [l.id, { qty: String(left(l)).replace('.', ','), price: angka(l.price) }])));
   const doVoid = async () => {
-    if (await run(() => supabase.rpc('purchase_void', { p_purchase: b.id, p_reason: reason }), Number(b.total) > 0 ? 'Belanja dibatalkan, stok dikurangi lagi' : 'Pesanan dibatalkan', errMsg)) onChanged();
+    if (await withApproval(() => supabase.rpc('purchase_void', { p_purchase: b.id, p_reason: reason }), Number(b.total) > 0 ? 'Belanja dibatalkan, stok dikurangi lagi' : 'Pesanan dibatalkan',
+      { kos: b.kos_id, action: 'batal_belanja', payload: { purchase_id: b.id }, reason })) onChanged();
   };
   const receive = async (close) => {
     const items = recv ? lines.map((l) => ({ line_id: l.id, qty: qtyNum(recv[l.id].qty) || 0, price: parseRp(recv[l.id].price) })).filter((x) => x.qty > 0) : [];

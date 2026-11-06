@@ -1,4 +1,5 @@
 'use client';
+import { withApproval } from '@/lib/approval';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
 import { moduleOn } from '@/lib/business';
@@ -195,7 +196,8 @@ function StockSheet({ p, units, onClose, onSaved }) {
     if (!isFinite(base) || (reason !== 'koreksi' && base < 0) || (reason !== 'opname' && base === 0)) return toast('Isi jumlahnya.');
     if (reason === 'opname' && delta === 0) { toast('Tidak ada selisih.'); return onClose(); }
     setBusy(true);
-    const ok = await run(() => supabase.rpc('stock_adjust', { p_product: p.id, p_reason: reason, p_qty: base, p_note: note }), `Stok ${p.name} ${delta > 0 ? '+' : ''}${angka(delta)} ${p.base_unit}`, errMsg);
+    const ok = await withApproval(() => supabase.rpc('stock_adjust', { p_product: p.id, p_reason: reason, p_qty: base, p_note: note }), `Stok ${p.name} ${delta > 0 ? '+' : ''}${angka(delta)} ${p.base_unit}`,
+      { kos: p.kos_id, action: 'penyesuaian_stok', payload: { product_id: p.id, reason, qty: base, note }, reason: note || reason });
     setBusy(false);
     if (ok) onSaved();
   };

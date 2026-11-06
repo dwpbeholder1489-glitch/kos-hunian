@@ -1,4 +1,5 @@
 'use client';
+import { withApproval, requestApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -82,12 +83,17 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
     const items = lines.map((l) => ({ line_id: l.id, qty: qtyNum(ret.qty[l.id] || '') || 0 })).filter((x) => x.qty > 0);
     if (!items.length) return toast('Isi jumlah barang yang dikembalikan.');
     setBusy(true);
-    const ok = await run(() => supabase.rpc('sale_return_create', { p_id: ret.id, p_sale: s.id, p_lines: items, p_refund: ret.refund, p_reason: ret.reason }), 'Retur tercatat, stok bertambah', errMsg);
+    const req = { kos: s.kos_id, action: 'retur_penjualan', payload: { sale_id: s.id, lines: items, refund: ret.refund }, reason: ret.reason };
+    const res = !fin ? ((await requestApproval(req)) ? 'diminta' : false)
+      : await withApproval(() => supabase.rpc('sale_return_create', { p_id: ret.id, p_sale: s.id, p_lines: items, p_refund: ret.refund, p_reason: ret.reason }), 'Retur tercatat, stok bertambah', req);
     setBusy(false);
-    if (ok) { setRet(null); loadDetail(); onReturned?.(); }
+    if (res) { setRet(null); loadDetail(); onReturned?.(); }
   };
   const doVoid = async () => {
-    if (await run(() => supabase.rpc('sale_void', { p_sale: s.id, p_reason: reason }), 'Transaksi dibatalkan, stok dikembalikan', errMsg)) onChanged();
+    const req = { kos: s.kos_id, action: 'batal_penjualan', payload: { sale_id: s.id }, reason };
+    const res = !fin ? ((await requestApproval(req)) ? 'diminta' : false)
+      : await withApproval(() => supabase.rpc('sale_void', { p_sale: s.id, p_reason: reason }), 'Transaksi dibatalkan, stok dikembalikan', req);
+    if (res) onChanged();
   };
   return (
     <Sheet title={s.number} onClose={onClose}>
@@ -105,16 +111,16 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
       {fin && <div className="row between small muted"><span>Laba kotor</span><span>{rp(Number(s.total) - Number(s.cost_total))}</span></div>}
       {s.cashier && <span className="small muted">Kasir: {s.cashier}</span>}
       <Link href={`/struk/${s.id}`}><button className="primary" style={{ width: '100%' }}>Lihat / kirim struk</button></Link>
-      {s.status === 'selesai' && fin && !voiding && lines && lines.some((l) => left(l) > 0) && (!ret ? <button onClick={() => setRet({ id: uid(), qty: {}, refund: s.pay_method === 'kasbon' ? 'kasbon' : s.pay_method, reason: '' })}>Retur barang (dikembalikan pelanggan)</button> : <>
+      {s.status === 'selesai' && !voiding && lines && lines.some((l) => left(l) > 0) && (!ret ? <button onClick={() => setRet({ id: uid(), qty: {}, refund: s.pay_method === 'kasbon' ? 'kasbon' : s.pay_method, reason: '' })}>{fin ? 'Retur barang (dikembalikan pelanggan)' : 'Minta retur barang'}</button> : <>
         <span className="small muted">Isi jumlah yang dikembalikan di setiap barang di atas. Stok bertambah lagi.</span>
         <div className="seg">{Object.entries(REFUND).filter(([k]) => k !== 'kasbon' || s.pay_method === 'kasbon').map(([k, l]) => <button key={k} className={ret.refund === k ? 'on' : ''} onClick={() => setRet({ ...ret, refund: k })}>{l}</button>)}</div>
         <Field label="Alasan retur"><input value={ret.reason} onChange={(e) => setRet({ ...ret, reason: e.target.value })} placeholder="mis. kemasan rusak, salah ambil" /></Field>
         <div className="row between"><b>{ret.refund === 'kasbon' ? 'Kasbon berkurang' : 'Uang dikembalikan'}</b><b>{rp(Math.round(retTotal))}</b></div>
-        <div className="row"><button className="primary" onClick={doReturn} disabled={busy || !ret.reason.trim() || retTotal <= 0}>Simpan retur</button><button className="ghost" onClick={() => setRet(null)}>Batal</button></div>
+        <div className="row"><button className="primary" onClick={doReturn} disabled={busy || !ret.reason.trim() || retTotal <= 0}>{fin ? 'Simpan retur' : 'Kirim permintaan retur'}</button><button className="ghost" onClick={() => setRet(null)}>Batal</button></div>
       </>)}
-      {s.status === 'selesai' && fin && !ret && rets.length === 0 && (!voiding ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding(true)}>Batalkan transaksi</button> : <>
+      {s.status === 'selesai' && !ret && rets.length === 0 && (!voiding ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding(true)}>{fin ? 'Batalkan transaksi' : 'Minta pembatalan'}</button> : <>
         <Field label="Alasan pembatalan"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. salah input, barang dikembalikan" /></Field>
-        <button className="danger" onClick={doVoid} disabled={!reason.trim()}>Ya, batalkan & kembalikan stok</button>
+        <button className="danger" onClick={doVoid} disabled={!reason.trim()}>{fin ? 'Ya, batalkan & kembalikan stok' : 'Kirim permintaan ke pemilik'}</button>
       </>)}
     </Sheet>
   );

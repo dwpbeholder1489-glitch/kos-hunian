@@ -13,7 +13,7 @@ import { GROUPS, LEGAL_KIND, PROFILE_Q } from '@/lib/modules';
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
 const ACT = {
   aktifkan_modul: 'Mengaktifkan modul', nonaktifkan_modul: 'Menonaktifkan modul', minta_persetujuan: 'Meminta persetujuan', tolak_persetujuan: 'Menolak permintaan',
-  konfigurasi_awal: 'Konfigurasi awal', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang',
+  konfigurasi_awal: 'Konfigurasi awal', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang',
 };
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 
@@ -50,7 +50,7 @@ export default function Konfigurasi() {
       <div className="row"><h2>Pusat konfigurasi</h2><PageHelp page="konfigurasi" /></div>
       <p className="small muted" style={{ margin: 0 }}>Atur profil, modul, dan struktur {kos.name}. Perubahan penting dicatat dan {owner ? 'langsung diterapkan setelah Anda konfirmasi' : 'menunggu persetujuan pemilik'}.</p>
       <div className="seg" style={{ overflowX: 'auto' }}>
-        {[['modul', 'Modul'], ['profil', 'Profil'], ['cabang', 'Cabang & gudang'], ['setuju', `Persetujuan${pending.length ? ` (${pending.length})` : ''}`], ['riwayat', 'Riwayat']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['modul', 'Modul'], ['profil', 'Profil'], ['cabang', 'Cabang & gudang'], ['setuju', 'Persetujuan'], ['riwayat', 'Riwayat']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
 
       {tab === 'modul' && <>
@@ -75,21 +75,15 @@ export default function Konfigurasi() {
       {tab === 'profil' && <ProfileTab kos={kos} owner={owner} onSaved={refresh} />}
       {tab === 'cabang' && <BranchTab kosId={kosId} owner={owner} branches={branches} onSaved={load} />}
 
-      {tab === 'setuju' && (pending.length === 0 && reqs.length === 0 ? <Empty title="Tidak ada permintaan" text="Permintaan dari pengelola untuk mengaktifkan/menonaktifkan modul muncul di sini." /> : (
-        <section className="panel"><div className="list">{reqs.map((r) => (
-          <div className="li" key={r.id} style={{ alignItems: 'flex-start' }}>
-            <div className="main">
-              <b className="small">{r.action === 'aktifkan' ? 'Aktifkan' : 'Nonaktifkan'} {name(r.module_code)}</b>
-              <span className="small muted">{r.requested_by} · {when(r.created_at)}{r.reason ? ` · "${r.reason}"` : ''}</span>
-              {r.status === 'menunggu' && owner && <div className="row" style={{ marginTop: 6 }}>
-                <button className="sm primary" onClick={async () => { if (await run(() => supabase.rpc('config_decide', { p_request: r.id, p_approve: true }), 'Disetujui dan diterapkan', errMsg)) refresh(); }}>Setujui</button>
-                <button className="sm danger" onClick={async () => { if (await run(() => supabase.rpc('config_decide', { p_request: r.id, p_approve: false }), 'Ditolak', errMsg)) load(); }}>Tolak</button>
-              </div>}
-            </div>
-            <span className={'chip ' + (r.status === 'menunggu' ? 'gold' : r.status === 'disetujui' ? 'good' : 'void')}>{r.status}</span>
-          </div>
-        ))}</div></section>
-      ))}
+      {tab === 'setuju' && (
+        <section className="panel">
+          <span className="small">Semua permintaan persetujuan (termasuk perubahan modul) kini ada di menu <b>Persetujuan</b>.</span>
+          <Link href="/persetujuan"><button className="primary">Buka Persetujuan</button></Link>
+          {reqs.length > 0 && <details><summary className="small">Permintaan lama ({reqs.length})</summary><div className="list">{reqs.map((r) => (
+            <div className="li" key={r.id}><span className="small">{r.action === 'aktifkan' ? 'Aktifkan' : 'Nonaktifkan'} {name(r.module_code)} · {r.requested_by}</span><span className="chip void">{r.status}</span></div>
+          ))}</div></details>}
+        </section>
+      )}
 
       {tab === 'riwayat' && (!hist?.length ? <Empty title="Belum ada perubahan" /> : (
         <section className="panel"><div className="list">{hist.map((h) => (

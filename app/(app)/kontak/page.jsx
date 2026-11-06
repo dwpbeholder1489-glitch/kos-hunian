@@ -1,4 +1,5 @@
 'use client';
+import { withApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -61,10 +62,8 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
   const del = async () => {
     const used = Number(c.trx) > 0;
     if (!window.confirm(used ? `Hapus ${c.name}?\nKarena sudah punya riwayat transaksi, kontak ini akan DIARSIPKAN: hilang dari daftar dan pilihan, tetapi riwayat & laporan tetap utuh. Bisa dipulihkan.` : `Hapus ${c.name} permanen?`)) return;
-    const { data, error } = await supabase.rpc('contact_delete', { p_id: c.id });
-    if (error) return run(async () => { throw error; }, null, errMsg);
-    toast(data === 'diarsipkan' ? 'Kontak diarsipkan' : 'Kontak dihapus');
-    onSaved();
+    if (await withApproval(() => supabase.rpc('contact_delete', { p_id: c.id }), used ? 'Kontak diarsipkan' : 'Kontak dihapus',
+      { kos: kosId, action: 'hapus_kontak', payload: { contact_id: c.id } })) onSaved();
   };
   const restore = async () => { if (await run(() => supabase.rpc('contact_restore', { p_id: c.id }), 'Kontak dipulihkan', errMsg)) onSaved(); };
   return (

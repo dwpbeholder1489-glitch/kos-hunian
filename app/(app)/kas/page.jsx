@@ -1,4 +1,5 @@
 'use client';
+import { withApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -180,11 +181,15 @@ function PayForm({ kosId, c, kind, onClose, onSaved }) {
 }
 
 function DeleteEntry({ f, onClose, onSaved }) {
+  const { kosId } = useKos();
   const [reason, setReason] = useState('');
   const go = async () => {
-    const fn = f.t === 'pay' ? () => supabase.rpc('debt_payment_void', { p_payment: f.id, p_reason: reason })
-      : () => supabase.from(f.t === 'exp' ? 'expenses' : 'cash_entries').delete().eq('id', f.id);
-    if (await run(fn, f.t === 'pay' ? 'Pembayaran dibatalkan' : 'Catatan dihapus', errMsg)) onSaved();
+    if (f.t === 'pay') {
+      if (await withApproval(() => supabase.rpc('debt_payment_void', { p_payment: f.id, p_reason: reason }), 'Pembayaran dibatalkan',
+        { kos: kosId, action: 'batal_pelunasan', payload: { payment_id: f.id }, reason })) onSaved();
+      return;
+    }
+    if (await run(() => supabase.from(f.t === 'exp' ? 'expenses' : 'cash_entries').delete().eq('id', f.id), 'Catatan dihapus', errMsg)) onSaved();
   };
   return (
     <Sheet title={f.t === 'pay' ? 'Batalkan pembayaran?' : 'Hapus catatan?'} onClose={onClose}>
