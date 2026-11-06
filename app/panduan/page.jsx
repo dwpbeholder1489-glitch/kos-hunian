@@ -308,12 +308,12 @@ const PARTS = [
       <>Tidak cocok? Tekan <b>Abaikan 30 hari</b> (alasan opsional). Semua keputusan tercatat di Riwayat.</>,
     ], <>Saran hanya muncul bila datanya cukup kuat (mis. minimal beberapa kejadian dalam 30 hari), bukan dari satu kejadian. Tidak ada yang berubah sebelum Anda menekan Terapkan. Pengelola yang menerapkan saran modul akan mengirim permintaan ke pemilik. Saran ini dihitung dengan aturan tetap — bukan AI.</>, null, null],
     ['Unduh semua data & tutup bisnis', 'Pengaturan › Data & penutupan bisnis (pemilik)', [
-      <>Tekan <b>Unduh semua data (.zip)</b>. File berisi satu CSV per tabel (dibuka di Excel, Numbers, atau Google Sheets) dan data.json untuk arsip. Di iPhone, file tersimpan di app <b>Files › Unduhan</b>.</>,
+      <>Tekan <b>Unduh Excel</b> (satu lembar per jenis data: barang, penjualan, belanja, kas, jurnal, dll. — bisa difilter dan dijumlah) atau <b>Unduh PDF</b> (laporan berhalaman, siap dibaca, dicetak, atau dikirim). Di iPhone, file tersimpan di app <b>Files › Unduhan</b> dan bisa dibuka langsung.</>,
       <>Usaha berhenti? Tekan <b>Tutup bisnis…</b>. Sistem memeriksa: shift yang belum ditutup, pesanan supplier yang belum selesai, persetujuan menunggu, pembayaran belum diverifikasi, penghuni aktif, dan <b>ekspor data dalam 7 hari terakhir</b> — semuanya harus beres dulu.</>,
       <>Baca bagian <b>Perlu diketahui</b> (sisa kasbon/utang/tagihan, stok, periode buku, karyawan aktif) lalu centang <b>Saya mengerti</b>.</>,
       <>Ketik nama bisnis persis sama, tulis alasan, lalu tekan <b>Tutup bisnis</b>.</>,
       <>Bisnis yang ditutup menampilkan pita merah di semua halaman. Pemilik bisa menekan <b>Buka kembali</b> kapan saja (alasan wajib).</>,
-    ], <>Menutup bisnis tidak menghapus data apa pun: transaksi, laporan, dan pembukuan tetap bisa dilihat dan diunduh. Selama ditutup, semua orang (termasuk pemilik) tidak bisa mencatat apa pun, otomatisasi dimatikan, dan email harian/ringkasan untuk bisnis itu berhenti. Foto bukti transfer tidak ikut dalam file .zip.</>, null, null],
+    ], <>Menutup bisnis tidak menghapus data apa pun: transaksi, laporan, dan pembukuan tetap bisa dilihat dan diunduh. Selama ditutup, semua orang (termasuk pemilik) tidak bisa mencatat apa pun, otomatisasi dimatikan, dan email harian/ringkasan untuk bisnis itu berhenti. Foto bukti transfer tidak ikut dalam file Excel/PDF.</>, null, null],
   ]],
 ];
 
