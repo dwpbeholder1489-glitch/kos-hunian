@@ -59,7 +59,7 @@ export default function Kasir() {
     const p = u ? d.products.find((x) => x.id === u.product_id) : d.products.find((x) => (x.sku || '').toLowerCase() === c);
     if (!p) { toast(`Kode ${code} belum terdaftar. Tambahkan di Barang & stok.`); return false; }
     const unit = u || unitsOf(p, d.units)[0];
-    if (!(unitPrice(unit, tier) > 0)) { toast(`Harga ${unit.name} ${p.name} belum diisi.`); return false; }
+    if (!(unitPrice(unit, tier) > 0)) { toast(`Harga ${unit.name} ${p.name} belum diisi.`); return null; }
     add(p, unit); setQ(''); return true;
   };
   const switchTier = (t) => {
