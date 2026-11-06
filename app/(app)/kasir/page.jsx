@@ -83,6 +83,16 @@ export default function Kasir() {
         <input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari nama, kode, atau scan barcode" aria-label="Cari barang" style={{ flex: 1 }} />
         <ScanButton onCode={byCode} />
       </div>
+      {!q.trim() && (() => {
+        const fav = d.products.filter((p) => p.favorite);
+        return fav.length > 0 ? (
+          <div className="quickgrid" aria-label="Tombol barang cepat">{fav.map((p) => {
+            const u = unitsOf(p, d.units)[0];
+            const pr = u ? unitPrice(u, tier) : 0;
+            return <button key={p.id} className="quick" onClick={() => u && add(p, u)} disabled={!(pr > 0)}><b>{p.name}</b><span>{u?.name} · {pr > 0 ? rp(pr) : 'harga kosong'}</span></button>;
+          })}</div>
+        ) : <span className="small muted">Tip: beri tanda ☆ di Barang & stok untuk barang yang sering dijual — muncul sebagai tombol cepat di sini.</span>;
+      })()}
       {shown.length === 0 ? <Empty title="Barang tidak ditemukan" /> : (
         <div className="stack" style={{ gap: 10 }}>{shown.map((p) => {
           const us = unitsOf(p, d.units);

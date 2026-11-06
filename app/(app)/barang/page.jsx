@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -44,7 +45,7 @@ export default function Barang() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Barang & stok</h2><PageHelp page="barang" /></div><button className="primary" onClick={() => setEdit('new')}>+ Tambah barang</button></div>
+      <div className="row between"><div className="row"><h2>Barang & stok</h2><PageHelp page="barang" /></div><div className="row"><Link href="/label"><button className="sm">Cetak label</button></Link><button className="primary" onClick={() => setEdit('new')}>+ Tambah barang</button></div></div>
       <div className="grid">
         <Tile label="Barang aktif" value={angka(active.length)} />
         <Tile label="Nilai stok (harga modal)" value={rp(value)} sub={active.some((p) => !(p.cost > 0)) ? 'ada barang tanpa harga modal' : null} />
@@ -67,10 +68,14 @@ export default function Barang() {
             <div className="li" key={p.id} style={{ alignItems: 'flex-start' }}>
               <div className="main">
                 <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}</b>
+                {p.sku && <span className="small muted">Kode {p.sku}</span>}
                 <span className="small">Stok <b>{stockText(p.stock, us, p.base_unit)}</b> · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>
                 <span className="small muted">{us.map((u) => `${u.name}${u.qty > 1 ? ` (${angka(u.qty)})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
               </div>
               <div className="row" style={{ flexWrap: 'nowrap' }}>
+                {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
+                  onClick={async () => { if (await run(() => supabase.rpc('product_set_favorite', { p_product: p.id, p_on: !p.favorite }), p.favorite ? 'Dihapus dari tombol cepat' : 'Jadi tombol cepat di Kasir', errMsg)) reload(); }}
+                  style={{ fontSize: 18, color: p.favorite ? 'var(--gold, #C9A227)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}
                 <button className="sm" onClick={() => setAdj(p)}>Stok</button>
                 <button className="sm ghost" onClick={() => setEdit(p)}>Ubah</button>
               </div>
