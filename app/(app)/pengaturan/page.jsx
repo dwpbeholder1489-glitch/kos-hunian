@@ -9,6 +9,8 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Field, Loading, run, toast } from '@/components/ui';
 import { KIND, errMsg } from '@/lib/format';
+import { canArea } from '@/lib/business';
+import { strukSample as strukPreview } from '@/lib/struk';
 
 export default function Pengaturan() {
   const router = useRouter();
@@ -24,12 +26,17 @@ export default function Pengaturan() {
   const [sending, setSending] = useState(false);
   const [cName, setCName] = useState('');
   const [cKind, setCKind] = useState('operasional');
+  const [footer, setFooter] = useState(kos?.receipt_footer || '');
   if (!d.ready || !kos) return <Loading />;
   const isOwner = kos.owner_id === user?.id;
+  const canEdit = canArea(kos, 'settings'); // pemilik & pengelola
+  const retail = kos.business_type === 'retail';
+  const noun = retail ? 'toko' : 'kos';
 
   async function saveKos() {
-    if (!name.trim()) return run(() => { throw new Error('Nama kos wajib diisi.'); });
-    if (await run(() => supabase.from('kos').update({ name: name.trim(), address: addr.trim() || null }).eq('id', kos.id), 'Profil kos disimpan', errMsg)) loadKos();
+    if (!name.trim()) return run(() => { throw new Error(`Nama ${noun} wajib diisi.`); });
+    const extra = retail ? { contact_phone: phone.trim() || null, ...(kos.receipt_footer !== undefined ? { receipt_footer: footer.trim() || null } : {}) } : {};
+    if (await run(() => supabase.from('kos').update({ name: name.trim(), address: addr.trim() || null, ...extra }).eq('id', kos.id), `Profil ${noun} disimpan`, errMsg)) loadKos();
   }
   async function sendNow() {
     setSending(true);
@@ -57,25 +64,30 @@ export default function Pengaturan() {
   return (
     <div className="stack">
       <div className="row"><h2>Pengaturan</h2><PageHelp page="pengaturan" /></div>
-      <section className="panel"><h3>Profil kos</h3>
-        <Field label="Nama kos"><input value={name} onChange={(e) => setName(e.target.value)} disabled={!isOwner} /></Field>
-        <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} disabled={!isOwner} /></Field>
-        {isOwner && <button className="primary" onClick={saveKos}>Simpan</button>}
+      <section className="panel"><h3>Profil {noun}</h3>
+        <Field label={`Nama ${noun}`}><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} /></Field>
+        <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} disabled={!canEdit} /></Field>
+        {retail && <>
+          <Field label="No. WhatsApp toko" hint="tampil di struk"><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08…" disabled={!canEdit} /></Field>
+          {kos.receipt_footer !== undefined && <Field label="Tulisan di bawah struk" hint="maks 200 huruf"><textarea value={footer} maxLength={200} onChange={(e) => setFooter(e.target.value)} placeholder={'Terima kasih\nBarang yang sudah dibeli tidak dapat ditukar'} disabled={!canEdit} /></Field>}
+          <pre className="struk" style={{ margin: 0 }}>{strukPreview({ ...kos, name: name || kos.name, address: addr, contact_phone: phone, receipt_footer: footer })}</pre>
+        </>}
+        {canEdit && <button className="primary" onClick={saveKos}>Simpan</button>}
       </section>
-      {isOwner && <section className="panel"><h3>Info untuk penghuni</h3>
+      {canEdit && !retail && <section className="panel"><h3>Info untuk penghuni</h3>
         <p className="small muted" style={{ margin: 0 }}>Tampil di portal penghuni dan dipakai asisten untuk menjawab pertanyaan. Kosongkan jika belum ada.</p>
         <Field label="No. WhatsApp pengelola"><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08…" /></Field>
         <Field label="Cara bayar" hint="Nomor rekening, e-wallet, atau QRIS, dan batas waktu bayar"><textarea value={payInfo} onChange={(e) => setPayInfo(e.target.value)} placeholder={'Transfer ke BRI 1234-5678 a.n. Nama Pemilik\nPaling lambat tanggal jatuh tempo'} /></Field>
         <Field label="Peraturan kos" hint="Jam malam, tamu, kebersihan, parkir, dll."><textarea value={rules} onChange={(e) => setRules(e.target.value)} placeholder={'Jam malam 22.00\nTamu lawan jenis hanya di ruang tamu'} style={{ minHeight: 110 }} /></Field>
-        {kos.notify_email !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={notify} onChange={(e) => setNotify(e.target.checked)} /> Kirim email ke {user?.email} saat penghuni mengirim bukti transfer</label>}
-        {kos.daily_digest !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={digest} onChange={(e) => setDigest(e.target.checked)} /> Kirim daftar tagih setiap pagi ke {user?.email} (paket Standar)</label>}
+        {isOwner && kos.notify_email !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={notify} onChange={(e) => setNotify(e.target.checked)} /> Kirim email ke {user?.email} saat penghuni mengirim bukti transfer</label>}
+        {isOwner && kos.daily_digest !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={digest} onChange={(e) => setDigest(e.target.checked)} /> Kirim daftar tagih setiap pagi ke {user?.email} (paket Standar)</label>}
         <button className="primary" onClick={saveInfo}>Simpan info</button>
         <a href="/notifikasi" className="small">Atur ringkasan mingguan & bulanan di menu Notifikasi (lonceng) →</a>
         {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}
       </section>}
-      {isOwner && <QrisBox kosId={kos.id} />}
-      {isOwner && kos.wa_reminder_tpl !== undefined && <TemplateBox kos={kos} onSaved={loadKos} />}
-      <section className="panel"><h3>Kategori pengeluaran</h3>
+      {canEdit && !retail && <QrisBox kosId={kos.id} />}
+      {canEdit && !retail && kos.wa_reminder_tpl !== undefined && <TemplateBox kos={kos} onSaved={loadKos} />}
+      <section className="panel"><h3>{retail ? 'Jenis biaya' : 'Kategori pengeluaran'}</h3>
         <div className="list">{d.categories.map((c) => (
           <div className="li" key={c.id}><div className="main"><b>{c.name}</b><span className="small muted">{KIND[c.kind]}</span></div><button className="sm ghost danger" onClick={() => delCat(c)}>Hapus</button></div>
         ))}</div>

@@ -216,13 +216,18 @@ const PARTS = [
       <>Paket Standar: <b>Unduh Excel</b> dan <b>Cetak / PDF</b>.</>,
     ], <>Kalau muncul peringatan harga modal kosong, isi modalnya di Barang & stok — tanpa modal, laba barang itu terlihat terlalu tinggi.</>, null, null],
   ]],
-  ['F', 'Karyawan', [
+  ['F', 'Karyawan & kontak', [
     ['Mengundang & mengatur karyawan', 'Menu Karyawan (khusus pemilik)', [
       <>Buka <b>Karyawan</b>, isi <b>email karyawan</b>, pilih <b>peran</b>, lalu <b>Undang</b>. Toko: Pengelola, Kasir, Staf gudang. Kos: Pengelola, Penjaga.</>,
       <>Tekan <b>Kirim cara masuk via WA</b>. Karyawan membuka PRASARA › <b>Masuk</b> › <b>Daftar</b> dengan email itu, lalu konfirmasi email. Saat masuk, ia langsung berada di bisnis Anda — tidak perlu membuat bisnis.</>,
       <>Karyawan hanya melihat menu perannya. Kasir tidak melihat harga modal, laba, kas, dan laporan; penjualan yang ia lihat hanya miliknya sendiri. Setiap penjualan mencatat nama kasirnya.</>,
       <>Ganti peran lewat pilihan di daftar. <b>Nonaktifkan</b> untuk menutup akses sementara; <b>Hapus</b> untuk membuang emailnya dari daftar. Tombol <b>Bersihkan</b> menghapus semua email nonaktif dan undangan kedaluwarsa sekaligus.</>,
     ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Standar 3, Pro tanpa batas. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun.</>, null, null],
+    ['Pelanggan & supplier', 'Menu Pelanggan & supplier (toko)', [
+      <>Pilih tab <b>Pelanggan</b> atau <b>Supplier</b>. Angka merah = sisa kasbon pelanggan atau utang Anda ke supplier.</>,
+      <>Ketuk nama untuk melihat <b>riwayat</b> penjualan, belanja, dan pelunasannya. Ketuk nomor penjualan untuk membuka struknya.</>,
+      <>Ubah nama atau nomor WhatsApp, lalu <b>Simpan</b>. Tombol <b>+ Tambah</b> untuk kontak baru.</>,
+    ], <>Pelunasan tetap dicatat di <b>Kas & kasbon</b>. Struk toko memakai nama, alamat, No. WA, dan tulisan bawah struk dari <b>Pengaturan › Profil toko</b>.</>, null, null],
   ]],
 ];
 

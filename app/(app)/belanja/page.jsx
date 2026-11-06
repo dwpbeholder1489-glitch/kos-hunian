@@ -186,7 +186,9 @@ function Detail({ b, supplier, onClose, onChanged }) {
   const [reason, setReason] = useState('');
   const [recv, setRecv] = useState(null);   // {line_id: {qty, price}}
   const [busy, setBusy] = useState(false);
+  const [by, setBy] = useState(null);
   useEffect(() => { supabase.from('purchase_lines').select('*').eq('purchase_id', b.id).then(({ data }) => setLines(data || [])); }, [b.id]);
+  useEffect(() => { if (b.created_by) supabase.rpc('member_names', { p_kos: b.kos_id }).then(({ data }) => setBy(data?.[b.created_by] || 'karyawan lama')); }, [b.id]);
   const open = b.status === 'dipesan' || b.status === 'sebagian';
   const left = (l) => Math.max(0, Number(l.qty) - Number(l.qty_received));
   const startRecv = () => setRecv(Object.fromEntries(lines.map((l) => [l.id, { qty: String(left(l)).replace('.', ','), price: angka(l.price) }])));
@@ -206,6 +208,7 @@ function Detail({ b, supplier, onClose, onChanged }) {
       <span className="small muted">{tgl(b.purchase_date)} · {supplier || 'Tanpa supplier'} · {BUY[b.pay_method]}{b.due_date ? ` · jatuh tempo ${tgl(b.due_date)}` : ''}{b.expected_date && open ? ` · perkiraan datang ${tgl(b.expected_date)}` : ''}</span>
       {ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ alignSelf: 'flex-start' }}>{ST[b.status][0]}</span>}
       {b.note && <span className="small">Catatan: {b.note}</span>}
+      {by && <span className="small muted">Dicatat oleh {by}</span>}
       {b.status === 'batal' && <div className="notice bad">Dibatalkan: {b.void_reason}</div>}
       {!lines ? <Loading /> : <div className="list">{lines.map((l) => (
         <div className="li" key={l.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
