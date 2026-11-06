@@ -184,7 +184,8 @@ const PARTS = [
       <>Isi nama, <b>satuan terkecil</b> (pcs, bungkus, kg) dan <b>harga modal</b> per satuan itu, lalu stok sekarang.</>,
       <>Di <b>Satuan jual & harga</b>, isi harga eceran dan grosir. Tekan <b>+ Tambah satuan</b> untuk dus/pak/renteng beserta isinya (mis. dus isi 40).</>,
       <>Untuk menghitung ulang atau mencatat barang rusak, tekan <b>Stok</b> di samping barang, pilih alasannya, isi jumlah, lalu <b>Simpan</b>.</>,
-    ], <>Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Muncul tanda merah jika harga eceran di bawah modal.</>, null, null],
+      <>Opsional: isi <b>Kode barang</b> dan <b>Barcode</b> tiap satuan (angka di bawah garis-garis kemasan). Di Kasir, scan barcode atau ketik kodenya lalu Enter — barang langsung masuk keranjang.</>,
+    ], <>Scanner barcode Bluetooth/USB bekerja di iPhone maupun Android. Tombol kamera 📷 Pindai hanya muncul di HP yang mendukung (umumnya Android/Chrome). Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Muncul tanda merah jika harga eceran di bawah modal.</>, null, null],
     ['Jualan di kasir', 'Menu Kasir', [
       <>Buka <b>Kasir</b>. Pilih <b>Eceran</b> atau <b>Grosir</b> di kanan atas — harga mengikuti pilihan ini.</>,
       <>Cari barang, lalu ketuk tombol satuannya (mis. <b>pcs · Rp 3.500</b> atau <b>dus · Rp 125.000</b>). Ketuk lagi untuk menambah jumlah.</>,
@@ -234,6 +235,11 @@ const PARTS = [
       <>Selesai jaga: hitung uang di laci, isi jumlahnya, lalu <b>Tutup shift</b>. Hasilnya <b>Pas</b>, <b>Lebih</b>, atau <b>Kurang</b>.</>,
       <>Pemilik melihat riwayat shift semua kasir beserta selisihnya.</>,
     ], <>Shift tidak wajib. Selisih hanya dicatat, tidak mengubah saldo Kas. Uang laci yang dipakai untuk biaya tetap dicatat di Kas & kasbon.</>, null, null],
+    ['Pengingat toko', 'Lonceng di kanan atas (toko)', [
+      <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti: stok habis atau menipis, pesanan yang lewat perkiraan datang, kasbon pelanggan dan utang supplier yang jatuh tempo dalam 3 hari.</>,
+      <>Ketuk lonceng. Tekan <b>Ingatkan WA</b> untuk kasbon, atau <b>Pesan / belanja barang</b> untuk stok.</>,
+      <>Pemilik bisa menyalakan <b>email pengingat setiap pagi</b> pukul 07.00 di halaman itu (paket Standar).</>,
+    ], <>Stok menipis memakai <b>peringatan stok minimum</b> yang diisi di setiap barang. Email hanya dikirim bila ada yang perlu ditindaklanjuti.</>, null, null],
   ]],
 ];
 

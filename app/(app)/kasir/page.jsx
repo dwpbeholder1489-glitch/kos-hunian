@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { ScanButton } from '@/components/BarcodeScan';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -36,7 +37,8 @@ export default function Kasir() {
   const shown = useMemo(() => {
     if (!d) return [];
     const w = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return d.products.filter((p) => w.every((x) => p.name.toLowerCase().includes(x))).slice(0, 40);
+    const codes = (p) => [p.sku, ...d.units.filter((u) => u.product_id === p.id).map((u) => u.barcode)].filter(Boolean).map((x) => x.toLowerCase());
+    return d.products.filter((p) => w.every((x) => p.name.toLowerCase().includes(x)) || (w.length === 1 && codes(p).some((c) => c === w[0] || c.startsWith(w[0])))).slice(0, 40);
   }, [d, q]);
 
   if (err) return <div className="notice bad">{err.includes('kasir_catalog') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
@@ -48,6 +50,17 @@ export default function Kasir() {
     if (ex) setCart(cart.map((c) => (c.key === key ? { ...c, qty: Math.round((c.qty + 1) * 1000) / 1000 } : c)));
     else setCart([...cart, { key, product_id: p.id, name: p.name, unit: u.name, unit_qty: Number(u.qty), qty: 1, price: unitPrice(u, tier), auto: true }]);
     toast(`+1 ${u.name} ${p.name}`);
+  };
+  // Scanner barcode (Bluetooth/USB mengetik kode lalu Enter) atau kamera: barcode cocok → langsung masuk keranjang
+  const byCode = (code) => {
+    const c = String(code || '').trim().toLowerCase();
+    if (!c) return false;
+    const u = d.units.find((x) => (x.barcode || '').toLowerCase() === c);
+    const p = u ? d.products.find((x) => x.id === u.product_id) : d.products.find((x) => (x.sku || '').toLowerCase() === c);
+    if (!p) { toast(`Kode ${code} belum terdaftar. Tambahkan di Barang & stok.`); return false; }
+    const unit = u || unitsOf(p, d.units)[0];
+    if (!(unitPrice(unit, tier) > 0)) { toast(`Harga ${unit.name} ${p.name} belum diisi.`); return false; }
+    add(p, unit); setQ(''); return true;
   };
   const switchTier = (t) => {
     setTier(t);
@@ -66,7 +79,10 @@ export default function Kasir() {
         <div className="seg">{[['ecer', 'Eceran'], ['grosir', 'Grosir']].map(([k, l]) => <button key={k} className={tier === k ? 'on' : ''} onClick={() => switchTier(k)} aria-pressed={tier === k}>{l}</button>)}</div>
       </div>
       {shift !== undefined && <Link href="/shift" className="small">{shift ? `Shift berjalan · seharusnya di laci ${rp(shift.summary.expected)} · Tutup shift →` : 'Belum buka shift · Buka shift (hitung uang laci) →'}</Link>}
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari barang" aria-label="Cari barang" />
+      <div className="row" style={{ flexWrap: 'nowrap' }}>
+        <input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari nama, kode, atau scan barcode" aria-label="Cari barang" style={{ flex: 1 }} />
+        <ScanButton onCode={byCode} />
+      </div>
       {shown.length === 0 ? <Empty title="Barang tidak ditemukan" /> : (
         <div className="stack" style={{ gap: 10 }}>{shown.map((p) => {
           const us = unitsOf(p, d.units);

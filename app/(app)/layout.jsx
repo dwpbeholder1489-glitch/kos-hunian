@@ -5,9 +5,10 @@ import { useKos } from '@/components/KosProvider';
 import { tgl, today } from '@/lib/format';
 import { planOf, PLANS, BUSINESS } from '@/lib/plan';
 import NotifBell from '@/components/NotifBell';
+import RetailBell from '@/components/RetailBell';
 import AnnounceBanner from '@/components/AnnounceBanner';
 
-import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES } from '@/lib/business';
+import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea } from '@/lib/business';
 
 function PlanBar({ kos }) {
   const p = planOf(kos);
@@ -48,7 +49,7 @@ export default function AppLayout({ children }) {
                 <option value="+">+ Tambah bisnis</option>
               </select>
             ) : <span className="small" style={{ opacity: 0.85 }}>{tgl(today())}</span>}
-            {kos.business_type !== 'retail' && <NotifBell />}
+            {kos.business_type !== 'retail' ? canArea(kos, 'rent') && <NotifBell /> : canArea(kos, 'stock,finance') && <RetailBell />}
             <Link href="/bantuan" className="helpbtn" aria-label="Pusat bantuan" title="Bantuan">?</Link>
             </div>
           </div>

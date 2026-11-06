@@ -1,4 +1,5 @@
 'use client';
+import { ScanButton } from '@/components/BarcodeScan';
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -38,7 +39,8 @@ export default function Barang() {
   const value = active.reduce((s, p) => s + Math.max(0, Number(p.stock)) * Number(p.cost), 0);
   const term = q.trim().toLowerCase();
   const shown = d.products.filter((p) => (f === 'arsip' ? !p.active : p.active) && (f !== 'menipis' || isLow(p))
-    && (!term || term.split(/\s+/).every((w) => p.name.toLowerCase().includes(w))));
+    && (!term || term.split(/\s+/).every((w) => p.name.toLowerCase().includes(w)) || (p.sku || '').toLowerCase() === term
+      || d.units.some((u) => u.product_id === p.id && (u.barcode || '').toLowerCase() === term)));
 
   return (
     <div className="stack">
@@ -49,7 +51,7 @@ export default function Barang() {
         <Tile label="Stok menipis" value={angka(low.length)} tone={low.length ? 'bad' : ''} sub="di bawah batas minimum" />
       </div>
       {d.products.length > 0 && <>
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama barang" aria-label="Cari barang" />
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kode, atau barcode" aria-label="Cari barang" />
         <div className="seg">
           {[['aktif', `Semua (${active.length})`], ['menipis', `Menipis (${low.length})`], ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
         </div>
@@ -91,20 +93,21 @@ function ProductForm({ kosId, p, units, onClose, onSaved }) {
   const [cost, setCost] = useState(money(p?.cost));
   const [min, setMin] = useState(p && Number(p.min_stock) > 0 ? String(Number(p.min_stock)) : '');
   const [stock, setStock] = useState('');
-  const [rows, setRows] = useState(units.length ? units.map((u) => ({ name: u.name, qty: String(Number(u.qty)), price_retail: money(u.price_retail), price_wholesale: money(u.price_wholesale) })) : [{ ...blankUnit(), qty: '1' }]);
+  const [rows, setRows] = useState(units.length ? units.map((u) => ({ name: u.name, qty: String(Number(u.qty)), price_retail: money(u.price_retail), price_wholesale: money(u.price_wholesale), barcode: u.barcode || '' })) : [{ ...blankUnit(), qty: '1' }]);
+  const [sku, setSku] = useState(p?.sku || '');
   const [busy, setBusy] = useState(false);
   const set = (i, k, v) => setRows(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
   const costN = parseRp(cost);
 
   const save = async () => {
     if (!name.trim()) return toast('Isi nama barang.');
-    const us = rows.map((r, i) => ({ name: i === 0 ? base : r.name.trim(), qty: i === 0 ? 1 : qtyNum(r.qty), price_retail: parseRp(r.price_retail), price_wholesale: parseRp(r.price_wholesale) }));
+    const us = rows.map((r, i) => ({ name: i === 0 ? base : r.name.trim(), qty: i === 0 ? 1 : qtyNum(r.qty), price_retail: parseRp(r.price_retail), price_wholesale: parseRp(r.price_wholesale), barcode: (r.barcode || '').trim() || null }));
     const bad = us.slice(1).find((u) => !u.name || !(u.qty > 1));
     if (bad) return toast(`Isi nama dan isi (lebih dari 1 ${base}) untuk setiap satuan tambahan.`);
     const st = stock.trim() ? qtyNum(stock) : 0;
     if (!p && !(st >= 0)) return toast('Stok awal tidak valid.');
     setBusy(true);
-    const ok = await run(() => supabase.rpc('product_save', { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: base, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st }), p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
+    const ok = await run(() => supabase.rpc('product_save', { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: base, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null }), p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
     setBusy(false);
     if (ok) onSaved();
   };
@@ -115,6 +118,7 @@ function ProductForm({ kosId, p, units, onClose, onSaved }) {
   return (
     <Sheet title={p ? 'Ubah barang' : 'Tambah barang'} onClose={onClose}>
       <Field label="Nama barang"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Minyak goreng 2L" /></Field>
+      <Field label="Kode barang (opsional)" hint="kode sendiri, mis. MG-2L"><input value={sku} maxLength={40} autoCapitalize="characters" onChange={(e) => setSku(e.target.value)} /></Field>
       <div className="row">
         <Field label="Satuan terkecil" hint="pcs / bungkus / kg / liter"><input value={base} maxLength={20} onChange={(e) => setBase(e.target.value)} /></Field>
         <Field label={`Harga modal per ${base || 'satuan'}`} hint="harga beli rata-rata"><input inputMode="numeric" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="mis. 2800" /></Field>
@@ -138,6 +142,10 @@ function ProductForm({ kosId, p, units, onClose, onSaved }) {
             <div className="row">
               <Field label="Harga eceran"><input inputMode="numeric" value={r.price_retail} onChange={(e) => set(i, 'price_retail', e.target.value)} /></Field>
               <Field label="Harga grosir"><input inputMode="numeric" value={r.price_wholesale} onChange={(e) => set(i, 'price_wholesale', e.target.value)} /></Field>
+            </div>
+            <div className="row" style={{ alignItems: 'flex-end' }}>
+              <Field label={`Barcode ${i === 0 ? base : r.name || 'satuan'} (opsional)`}><input inputMode="numeric" value={r.barcode || ''} maxLength={40} onChange={(e) => set(i, 'barcode', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} placeholder="scan atau ketik angka di kemasan" /></Field>
+              <ScanButton onCode={(c) => set(i, 'barcode', c)} />
             </div>
             {under && <p className="small" style={{ margin: 0, color: 'var(--bad)' }}>Harga eceran di bawah modal ({rp(costN * qn)} per {i === 0 ? base : r.name || 'satuan'}).</p>}
             {i > 0 && <button className="sm ghost" onClick={() => setRows(rows.filter((_, j) => j !== i))}>Hapus satuan ini</button>}

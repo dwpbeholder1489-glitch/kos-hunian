@@ -8,7 +8,7 @@ import { tgl, errMsg } from '@/lib/format';
 import { can } from '@/lib/admin';
 
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
-const PART = { reminders: 'Pengingat', onboarding: 'Pendampingan', summaries: 'Ringkasan' };
+const PART = { reminders: 'Pengingat', onboarding: 'Pendampingan', summaries: 'Ringkasan', toko: 'Pengingat toko' };
 const TBL = { bisnis: 'Bisnis', transaksi_toko: 'Transaksi toko', tagihan_kos: 'Tagihan kos', pembayaran_kos: 'Pembayaran kos', tiket: 'Tiket' };
 
 // Status sistem: kesehatan layanan tanpa menampilkan rahasia apa pun
