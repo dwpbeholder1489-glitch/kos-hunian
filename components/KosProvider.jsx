@@ -6,7 +6,8 @@ import { supabase, configured } from '@/lib/supabase';
 const Ctx = createContext(null);
 export const useKos = () => useContext(Ctx);
 
-const KEY = 'koshunian.kos';
+const KEY = 'prasara.kos';
+const OLD_KEY = 'koshunian.kos'; // nama lama, dibaca sekali agar bisnis terakhir yang dipilih tetap diingat
 const PUBLIC = ['/', '/masuk', '/panduan'];
 
 export default function KosProvider({ children }) {
@@ -44,7 +45,7 @@ export default function KosProvider({ children }) {
     data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null, locs: locs[k.id] || null }));
     setList(data);
     let saved = null;
-    try { saved = localStorage.getItem(KEY); } catch {}
+    try { saved = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch {}
     const pick = data.find((k) => k.id === saved) || data[0] || null;
     setKosId(pick?.id || null);
     return data;

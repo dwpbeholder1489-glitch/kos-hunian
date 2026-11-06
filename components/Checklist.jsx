@@ -6,9 +6,9 @@ import { useKos } from '@/components/KosProvider';
 // Daftar "Mulai di sini" untuk pengguna baru — tercentang otomatis dari data, bisa disembunyikan
 export default function Checklist({ d, kosId }) {
   const { kos } = useKos();
-  const key = 'koshunian.checklist.' + kosId;
+  const key = 'prasara.checklist.' + kosId;
   const [hidden, setHidden] = useState(true);
-  useEffect(() => { try { setHidden(localStorage.getItem(key) === '1'); } catch { setHidden(false); } }, [key]);
+  useEffect(() => { try { setHidden((localStorage.getItem(key) ?? localStorage.getItem('koshunian.checklist.' + kosId)) === '1'); } catch { setHidden(false); } }, [key]); // baca juga kunci lama
 
   const steps = [
     ['Isi harga sewa kamar', 'Kamar → ketuk kamar → Ubah data kamar', '/kamar', d.rooms.some((r) => r.rent > 0)],

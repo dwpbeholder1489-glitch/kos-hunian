@@ -23,7 +23,7 @@ Pakai browser Chrome di HP. Kalau tampilan situs terlalu kecil atau tombol tidak
 > Cara termudah dari HP: sambungkan repo ini di Supabase → Integrations → GitHub (Working directory `.`, Deploy to production ON, branch `main`). Skema di `supabase/migrations` terpasang otomatis. Langkah manual di bawah hanya cadangan.
 
 1. Buka **supabase.com** → *Start your project* → daftar dengan akun GitHub.
-2. *New project*. Isi nama `kos-hunian`, buat **Database Password** (simpan baik-baik), Region pilih **Southeast Asia (Singapore)**. Klik *Create*. Tunggu ±2 menit.
+2. *New project*. Isi nama `prasara`, buat **Database Password** (simpan baik-baik), Region pilih **Southeast Asia (Singapore)**. Klik *Create*. Tunggu ±2 menit.
 3. Di menu kiri buka **SQL Editor** → *New query*.
 4. Buka file pertama di `supabase/migrations/` di GitHub repo ini → tombol **Raw** → tekan lama → *Pilih semua* → *Salin*.
 5. Tempel di SQL Editor Supabase → **Run**. Harus muncul *Success. No rows returned*.
@@ -38,16 +38,16 @@ Kunci *anon/publishable* memang aman dipakai di aplikasi. **Jangan** pernah mema
 
 ### 3. Online-kan di Vercel
 1. Buka **vercel.com** → *Sign up* → *Continue with GitHub*.
-2. *Add New… → Project* → pilih repo **kos-hunian** → *Import*.
+2. *Add New… → Project* → pilih repo aplikasi ini → *Import*.
 3. Buka bagian **Environment Variables**, tambahkan dua baris:
    - `NEXT_PUBLIC_SUPABASE_URL` = Project URL dari langkah 2
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon key dari langkah 2
-4. Klik **Deploy**. Tunggu 1–3 menit sampai muncul alamat seperti `kos-hunian-xxx.vercel.app`.
+4. Klik **Deploy**. Tunggu 1–3 menit sampai muncul alamat seperti `prasara.vercel.app`.
 
 ### 4. Sambungkan login ke alamat aplikasi
 Di Supabase: **Authentication → URL Configuration**
-- **Site URL**: alamat Vercel Anda, mis. `https://kos-hunian-xxx.vercel.app`
-- **Redirect URLs**: tambahkan `https://kos-hunian-xxx.vercel.app/**`
+- **Site URL**: alamat Vercel Anda, mis. `https://prasara.vercel.app`
+- **Redirect URLs**: tambahkan `https://prasara.vercel.app/**`
 
 Tanpa langkah ini, tautan konfirmasi di email pendaftaran akan mengarah ke alamat yang salah.
 
