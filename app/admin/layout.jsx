@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useKos } from '@/components/KosProvider';
 import { ROLE, can } from '@/lib/admin';
 import MfaGate from '@/components/MfaGate';
+import { supabase } from '@/lib/supabase';
 
 const NAV = [
   ['/admin', 'Dashboard', 'dashboard.view'],
@@ -19,7 +20,7 @@ const NAV = [
 
 // Management Center: area terpisah dari aplikasi pelanggan, menu sesuai izin peran
 export default function AdminLayout({ children }) {
-  const { session, adminMe } = useKos();
+  const { session, adminMe, list } = useKos();
   const path = usePathname();
   if (session === undefined || (session && adminMe === undefined)) return <div className="adm"><main className="wrap" style={{ padding: 24 }}><p className="muted">Memeriksa hak akses…</p></main></div>;
   if (!session) return null;
@@ -39,7 +40,8 @@ export default function AdminLayout({ children }) {
         <div className="wrap">
           <div className="brandrow">
             <div className="brand"><span className="mark">P</span><div><h1>Management Center</h1><small>PRASARA · {ROLE[adminMe.role] || adminMe.role}</small></div></div>
-            <Link href="/beranda" className="small" style={{ color: 'var(--brand-fg)', opacity: 0.85 }}>← Aplikasi</Link>
+            {list?.length > 0 ? <Link href="/beranda" className="small" style={{ color: 'var(--brand-fg)', opacity: 0.85 }}>← Aplikasi</Link>
+              : <button className="ghost sm" style={{ color: 'var(--brand-fg)' }} onClick={() => supabase.auth.signOut()}>Keluar</button>}
           </div>
           <nav className="tabs" aria-label="Menu admin">
             {nav.map(([href, label]) => <Link key={href} href={href} className={active(href) ? 'on' : ''} aria-current={active(href) ? 'page' : undefined}>{label}</Link>)}

@@ -1,4 +1,5 @@
 'use client';
+import PageHelp from '@/components/PageHelp';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -21,7 +22,7 @@ export default function Staf() {
   const save = async (e, r, a) => { if (await run(() => supabase.rpc('admin_staff_save', { p_email: e, p_role: r, p_active: a }), 'Staf diperbarui', errMsg)) { setEmail(''); load(); } };
   return (
     <div className="stack">
-      <h2>Staf & hak akses</h2>
+      <div className="row"><h2>Staf & hak akses</h2><PageHelp page="admin-staf" /></div>
       <section className="panel">
         <h3>Tambah staf</h3>
         <p className="small muted" style={{ margin: 0 }}>Staf masuk dengan email yang sama di halaman Masuk (daftar dulu bila belum punya akun). Mereka tidak bisa melihat data penghuni atau pelanggan toko.</p>

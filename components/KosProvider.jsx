@@ -57,8 +57,11 @@ export default function KosProvider({ children }) {
   }, [session]);
 
   useEffect(() => {
-    if (session && list && list.length === 0 && !['/mulai', '/', '/panduan'].includes(path) && !path.startsWith('/p/') && !path.startsWith('/berhenti/') && !path.startsWith('/admin')) router.replace('/mulai');
-  }, [session, list, path, router]);
+    if (!session || !list || list.length > 0 || adminMe === undefined) return;
+    if (['/', '/panduan'].includes(path) || path.startsWith('/p/') || path.startsWith('/berhenti/') || path.startsWith('/admin')) return;
+    // Staf PRASARA tanpa bisnis sendiri langsung ke Management Center, bukan ke "buat bisnis"
+    if (adminMe) router.replace('/admin'); else if (path !== '/mulai') router.replace('/mulai');
+  }, [session, list, path, router, adminMe]);
 
   const pickKos = (id) => { setKosId(id); try { localStorage.setItem(KEY, id); } catch {} setVer((v) => v + 1); };
   const bump = () => setVer((v) => v + 1);
