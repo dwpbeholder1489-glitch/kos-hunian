@@ -7,19 +7,19 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Loading, Tile } from '@/components/ui';
 import { rp, bulan, today, errMsg } from '@/lib/format';
-import { typeOf } from '@/lib/business';
+import { typeOf, homeOf } from '@/lib/business';
 import { PLANS } from '@/lib/plan';
 
 // Ringkasan semua bisnis dalam satu akun. Angka tiap bisnis dihitung terpisah, tidak dijumlahkan lintas jenis usaha.
 export default function Bisnis() {
-  const { kosId, pickKos, ver } = useKos();
+  const { kosId, pickKos, ver, list } = useKos();
   const router = useRouter();
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
   useEffect(() => { supabase.rpc('owner_overview').then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data || []))); }, [ver]);
   if (err) return <div className="notice bad">{err.includes('owner_overview') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!rows) return <Loading />;
-  const open = (b) => { pickKos(b.id); router.push(typeOf(b).home); };
+  const open = (b) => { pickKos(b.id); router.push(homeOf(list?.find((x) => x.id === b.id) || b)); };
   const props = rows.filter((b) => b.business_type === 'properti');
   return (
     <div className="stack">

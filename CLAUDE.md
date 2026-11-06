@@ -10,3 +10,4 @@ PRASARA: platform bisnis multi-usaha, berawal dari SaaS manajemen kos (Next.js A
 - Perubahan database: tambahkan file baru di `supabase/migrations/` (jangan ubah migrasi lama); Supabase memasang otomatis lewat integrasi GitHub saat push ke `main`.
 - Uji migrasi di PostgreSQL lokal sebelum push (pgcrypto ada di skema `extensions` di Supabase — jangan pakai fungsinya tanpa prefiks).
 - Push ke `main` = langsung online (Vercel).
+- Peran karyawan: RLS memakai `member_can(kos_id, 'area')`; RPC memeriksa `member_in('area', p_kos)` (area: sell, stock, finance, rent, team; lihat migrasi `20261106200000_karyawan.sql`). `is_member` = anggota peran apa pun — jangan dipakai untuk data uang/stok. `ALTER FUNCTION ... SET` variabel kustom ditolak di Supabase (bukan superuser).

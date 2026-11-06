@@ -26,6 +26,7 @@ const MENUS = [
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
   ['Pengaturan', 'Profil kos, kategori pengeluaran, tambah kos, keluar'],
+  ['Karyawan', 'Undang pengelola/penjaga, atur peran, nonaktifkan, hapus'],
 ];
 
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
@@ -215,6 +216,14 @@ const PARTS = [
       <>Paket Standar: <b>Unduh Excel</b> dan <b>Cetak / PDF</b>.</>,
     ], <>Kalau muncul peringatan harga modal kosong, isi modalnya di Barang & stok — tanpa modal, laba barang itu terlihat terlalu tinggi.</>, null, null],
   ]],
+  ['F', 'Karyawan', [
+    ['Mengundang & mengatur karyawan', 'Menu Karyawan (khusus pemilik)', [
+      <>Buka <b>Karyawan</b>, isi <b>email karyawan</b>, pilih <b>peran</b>, lalu <b>Undang</b>. Toko: Pengelola, Kasir, Staf gudang. Kos: Pengelola, Penjaga.</>,
+      <>Tekan <b>Kirim cara masuk via WA</b>. Karyawan membuka PRASARA › <b>Masuk</b> › <b>Daftar</b> dengan email itu, lalu konfirmasi email. Saat masuk, ia langsung berada di bisnis Anda — tidak perlu membuat bisnis.</>,
+      <>Karyawan hanya melihat menu perannya. Kasir tidak melihat harga modal, laba, kas, dan laporan; penjualan yang ia lihat hanya miliknya sendiri. Setiap penjualan mencatat nama kasirnya.</>,
+      <>Ganti peran lewat pilihan di daftar. <b>Nonaktifkan</b> untuk menutup akses sementara; <b>Hapus</b> untuk membuang emailnya dari daftar. Tombol <b>Bersihkan</b> menghapus semua email nonaktif dan undangan kedaluwarsa sekaligus.</>,
+    ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Standar 3, Pro tanpa batas. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun.</>, null, null],
+  ]],
 ];
 
 const RULES = [
@@ -233,7 +242,7 @@ export default function Panduan() {
         <h1>Panduan PRASARA</h1>
         <p className="muted" style={{ margin: 0 }}>Langkah demi langkah memakai aplikasi pengelolaan kos: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, dan kwitansi.</p>
 
-        <h2 style={{ color: 'var(--brand-2)' }}>Sembilan menu di bagian atas aplikasi</h2>
+        <h2 style={{ color: 'var(--brand-2)' }}>Menu di bagian atas aplikasi (kos)</h2>
         <div className="panel" style={{ padding: 0, overflowX: 'auto' }}>
           <table className="g-table"><thead><tr><th>Menu</th><th>Dipakai untuk</th></tr></thead>
             <tbody>{MENUS.map(([m, t]) => <tr key={m}><td><b>{m}</b></td><td>{t}</td></tr>)}</tbody></table>

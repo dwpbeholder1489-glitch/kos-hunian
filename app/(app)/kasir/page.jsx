@@ -21,14 +21,10 @@ export default function Kasir() {
   const [done, setDone] = useState(null);
 
   const load = async () => {
-    const [p, u, c] = await Promise.all([
-      supabase.from('products').select('*').eq('kos_id', kosId).eq('active', true).order('name'),
-      supabase.from('product_units').select('*').eq('kos_id', kosId),
-      supabase.from('contacts').select('*').eq('kos_id', kosId).eq('kind', 'pelanggan').order('name'),
-    ]);
-    const e = p.error || u.error || c.error;
-    if (e) return setErr(errMsg(e));
-    setD({ products: p.data, units: u.data, contacts: c.data });
+    // katalog kasir dari database tanpa harga modal (aman untuk karyawan kasir)
+    const { data, error } = await supabase.rpc('kasir_catalog', { p_kos: kosId });
+    if (error) return setErr(errMsg(error));
+    setD({ products: data.products, units: data.units, contacts: data.customers });
   };
   useEffect(() => { load(); }, [kosId, ver]);
   // Keranjang disimpan di HP ini supaya tidak hilang saat pindah menu
@@ -41,7 +37,7 @@ export default function Kasir() {
     return d.products.filter((p) => w.every((x) => p.name.toLowerCase().includes(x))).slice(0, 40);
   }, [d, q]);
 
-  if (err) return <div className="notice bad">{err.includes('contacts') || err.includes('sales') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
+  if (err) return <div className="notice bad">{err.includes('kasir_catalog') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
   const add = (p, u) => {

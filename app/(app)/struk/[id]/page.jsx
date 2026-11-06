@@ -15,14 +15,9 @@ export default function Struk() {
   const [err, setErr] = useState(null);
   useEffect(() => {
     (async () => {
-      const s = await supabase.from('sales').select('*').eq('id', id).maybeSingle();
-      if (s.error) return setErr(errMsg(s.error));
-      if (!s.data) return setD({ missing: true });
-      const [l, c] = await Promise.all([
-        supabase.from('sale_lines').select('*').eq('sale_id', id),
-        s.data.contact_id ? supabase.from('contacts').select('*').eq('id', s.data.contact_id).maybeSingle() : Promise.resolve({ data: null }),
-      ]);
-      setD({ s: s.data, lines: l.data || [], contact: c.data });
+      const { data, error } = await supabase.rpc('sale_detail', { p_sale: id });
+      if (error) return /tidak ditemukan/i.test(error.message) ? setD({ missing: true }) : setErr(errMsg(error));
+      setD({ s: data.sale, lines: data.lines || [], contact: data.contact });
     })();
   }, [id]);
   if (err) return <div className="notice bad">{err}</div>;

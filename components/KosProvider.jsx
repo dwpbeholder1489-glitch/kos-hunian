@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase, configured } from '@/lib/supabase';
 
@@ -25,12 +25,17 @@ export default function KosProvider({ children }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  const accepted = useRef(false);
   const loadKos = useCallback(async () => {
+    // undangan karyawan untuk email ini otomatis diterima saat masuk
+    if (!accepted.current) { accepted.current = true; await supabase.rpc('accept_invites').then(() => {}, () => {}); }
     // coba kolom terlengkap dulu; kalau database belum diperbarui, turun ke kolom yang lebih sedikit
     const COLS = ['id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary,business_type,suspended_at,suspend_reason', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary,business_type', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin', 'id,name,address,owner_id,plan,trial_until,paid_until', 'id,name,address,owner_id'];
     let data = null, error = null;
     for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
     if (error) { setList([]); return []; }
+    const roles = await supabase.rpc('my_roles').then((r) => r.data || {}, () => ({}));
+    data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik' }));
     setList(data);
     let saved = null;
     try { saved = localStorage.getItem(KEY); } catch {}

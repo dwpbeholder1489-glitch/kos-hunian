@@ -7,7 +7,7 @@ import { planOf, PLANS, BUSINESS } from '@/lib/plan';
 import NotifBell from '@/components/NotifBell';
 import AnnounceBanner from '@/components/AnnounceBanner';
 
-import { typeOf, pathAllowed, BUSINESS_TYPES } from '@/lib/business';
+import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES } from '@/lib/business';
 
 function PlanBar({ kos }) {
   const p = planOf(kos);
@@ -27,7 +27,9 @@ export default function AppLayout({ children }) {
     return <main className="wrap"><p className="muted">Membuka buku kos…</p></main>;
   }
   const type = typeOf(kos);
-  const tabs = isAdmin ? [...type.tabs, ['/admin', 'Admin']] : type.tabs;
+  const own = tabsFor(kos);
+  const tabs = isAdmin ? [...own, ['/admin', 'Admin']] : own;
+  const role = roleOf(kos);
   const allowed = pathAllowed(kos, path);
 
   return (
@@ -37,11 +39,11 @@ export default function AppLayout({ children }) {
           <div className="brandrow">
             <div className="brand">
               <span className="mark">P</span>
-              <div><h1>{kos.name}</h1><small>{type.icon} {type.name}</small></div>
+              <div><h1>{kos.name}</h1><small>{type.icon} {type.name}{role !== 'pemilik' ? ` · ${ROLES[role]?.name || role}` : ''}</small></div>
             </div>
             <div className="right">
             {list.length > 1 ? (
-              <select className="kossel" value={kosId} onChange={(e) => { const v = e.target.value; if (v === '+') return router.push('/mulai'); pickKos(v); const k = list.find((x) => x.id === v); router.push(typeOf(k).home); }} aria-label="Pilih bisnis">
+              <select className="kossel" value={kosId} onChange={(e) => { const v = e.target.value; if (v === '+') return router.push('/mulai'); pickKos(v); const k = list.find((x) => x.id === v); router.push(homeOf(k)); }} aria-label="Pilih bisnis">
                 {list.map((k) => <option key={k.id} value={k.id}>{typeOf(k).icon} {k.name}</option>)}
                 <option value="+">+ Tambah bisnis</option>
               </select>
@@ -57,15 +59,17 @@ export default function AppLayout({ children }) {
           </nav>
         </div>
       </header>
-      {!path.startsWith('/langganan') && kos.business_type !== 'retail' && <PlanBar kos={kos} />}
+      {!path.startsWith('/langganan') && kos.business_type !== 'retail' && role === 'pemilik' && <PlanBar kos={kos} />}
       <AnnounceBanner />
       <main className="wrap" key={kosId}>{kos.suspended_at ? (
         <div className="empty"><h2>Bisnis ini sedang ditangguhkan</h2><p className="muted">Alasan: {kos.suspend_reason || '—'}. Data Anda tetap tersimpan dan tidak dihapus.</p>
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka lewat pilihan di kanan atas.</span>}</div>
-      ) : allowed ? children : (
-        <div className="empty"><h2>Menu ini bukan untuk {type.name}</h2><p className="muted">{kos.name} adalah bisnis {type.name}. Pilih menu di atas, atau pindah bisnis lewat pilihan di kanan atas.</p><Link href={type.home}><button className="primary">Buka {type.tabs[0][1]}</button></Link></div>
+      ) : allowed ? children : pathOfType(kos, path) ? (
+        <div className="empty"><h2>Menu ini tidak termasuk tugas Anda</h2><p className="muted">Anda masuk sebagai {ROLES[role]?.name || role} di {kos.name}. Hubungi pemilik bila perlu akses.</p>{own[0] && <Link href={homeOf(kos)}><button className="primary">Buka {own[0][1]}</button></Link>}</div>
+      ) : (
+        <div className="empty"><h2>Menu ini bukan untuk {type.name}</h2><p className="muted">{kos.name} adalah bisnis {type.name}. Pilih menu di atas, atau pindah bisnis lewat pilihan di kanan atas.</p><Link href={homeOf(kos)}><button className="primary">Buka menu utama</button></Link></div>
       )}</main>
     </>
   );
