@@ -161,6 +161,7 @@ const PARTS = [
       <>Tekan tombol <b>?</b> di pojok kanan atas untuk membuka <b>Pusat bantuan</b>.</>,
       <>Ketik pertanyaan, misalnya <i>penghuni lama</i>, <i>kwitansi</i>, atau <i>prive</i>. Ketuk jawabannya, lalu <b>Buka menunya</b>.</>,
       <>Belum terjawab? Tekan <b>Laporkan masalah</b> di bagian <b>Tiket bantuan</b>: pilih jenis masalah, tulis judul dan ceritanya, lalu <b>Kirim</b>. Balasan tim muncul di sana dan dikirim ke email Anda. Bisa juga <b>Tanya via WhatsApp</b>.</>,
+      <>Bila tim perlu memeriksa, pemilik bisa menekan <b>Izinkan selama 24 jam</b>. Tim hanya melihat ringkasan angka (tanpa nama/nomor penghuni atau pelanggan), tidak bisa mengubah data, dan setiap pembukaan tercatat di sana. <b>Cabut izin sekarang</b> kapan saja.</>,
       <>Selama masa coba, PRASARA mengirim <b>email arahan</b> hanya untuk langkah yang belum Anda kerjakan, paling banyak satu email tiap 2 hari.</>,
     ], <>Email arahan & info bisa dimatikan lewat tautan di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan dan pengumuman layanan penting tidak ikut berhenti. Pengumuman dari tim PRASARA juga tampil sebagai banner di atas aplikasi; tekan ✕ untuk menutupnya.</>, null, null],
     ['Notifikasi & ringkasan lewat email', 'Lonceng di kanan atas', [

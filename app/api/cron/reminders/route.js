@@ -3,6 +3,7 @@
 import { runReminders } from '@/lib/reminders';
 import { runOnboarding } from '@/lib/onboarding';
 import { runSummaries } from '@/lib/summaries';
+import { adminDb } from '@/lib/reminders';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -15,5 +16,6 @@ export async function GET(req) {
   const [reminders, onboarding, summaries] = await Promise.all([safe(runReminders({ origin })), safe(runOnboarding({ origin })), safe(runSummaries({ origin }))]);
   const res = { ok: reminders.ok && onboarding.ok && summaries.ok, reminders, onboarding, summaries };
   console.log('[cron daily]', JSON.stringify(res));
+  try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });
 }

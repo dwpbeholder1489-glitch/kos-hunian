@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useKos } from '@/components/KosProvider';
 import { ROLE, can } from '@/lib/admin';
+import MfaGate from '@/components/MfaGate';
 
 const NAV = [
   ['/admin', 'Dashboard', 'dashboard.view'],
@@ -13,6 +14,7 @@ const NAV = [
   ['/admin/template', 'Template', 'templates.manage'],
   ['/admin/aktivitas', 'Catatan audit', 'audit.view'],
   ['/admin/staf', 'Staf & hak akses', 'staff.manage'],
+  ['/admin/sistem', 'Status sistem', 'system.view'],
 ];
 
 // Management Center: area terpisah dari aplikasi pelanggan, menu sesuai izin peran
@@ -28,7 +30,8 @@ export default function AdminLayout({ children }) {
       </main></div>
     );
   }
-  const nav = NAV.filter(([, , perm]) => can(adminMe, perm));
+  if (adminMe.needs_code) return <div className="adm"><main className="wrap">{<MfaGate />}</main></div>;
+  const nav = [...NAV.filter(([, , perm]) => can(adminMe, perm)), ['/admin/keamanan', 'Keamanan akun']];
   const active = (href) => (href === '/admin' ? path === '/admin' : path.startsWith(href));
   return (
     <div className="adm">

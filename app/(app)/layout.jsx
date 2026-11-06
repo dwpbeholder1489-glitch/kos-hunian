@@ -59,7 +59,12 @@ export default function AppLayout({ children }) {
       </header>
       {!path.startsWith('/langganan') && kos.business_type !== 'retail' && <PlanBar kos={kos} />}
       <AnnounceBanner />
-      <main className="wrap" key={kosId}>{allowed ? children : (
+      <main className="wrap" key={kosId}>{kos.suspended_at ? (
+        <div className="empty"><h2>Bisnis ini sedang ditangguhkan</h2><p className="muted">Alasan: {kos.suspend_reason || '—'}. Data Anda tetap tersimpan dan tidak dihapus.</p>
+          <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
+          <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
+          {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka lewat pilihan di kanan atas.</span>}</div>
+      ) : allowed ? children : (
         <div className="empty"><h2>Menu ini bukan untuk {type.name}</h2><p className="muted">{kos.name} adalah bisnis {type.name}. Pilih menu di atas, atau pindah bisnis lewat pilihan di kanan atas.</p><Link href={type.home}><button className="primary">Buka {type.tabs[0][1]}</button></Link></div>
       )}</main>
     </>

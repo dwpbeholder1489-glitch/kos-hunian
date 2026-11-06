@@ -5,6 +5,7 @@ import { useKos } from '@/components/KosProvider';
 import { HELP_CATS, searchHelp } from '@/lib/help';
 import { BUSINESS } from '@/lib/plan';
 import Tickets from '@/components/Tickets';
+import SupportAccess from '@/components/SupportAccess';
 
 export default function Bantuan() {
   const { kos } = useKos();
@@ -48,6 +49,7 @@ export default function Bantuan() {
         </section>
       ))}
       <Tickets />
+      <SupportAccess />
       <section className="panel" style={{ textAlign: 'center', alignItems: 'center' }}>
         <b>Belum terjawab?</b>
         <span className="small muted">Buat tiket di atas, atau kirim pertanyaan lewat WhatsApp. Kami balas paling lambat 1×24 jam pada hari kerja.</span>

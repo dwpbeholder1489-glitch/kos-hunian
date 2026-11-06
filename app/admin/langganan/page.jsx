@@ -7,7 +7,7 @@ import PageHelp from '@/components/PageHelp';
 import { Loading, Empty, Tile, run } from '@/components/ui';
 import { rp, tgl, errMsg } from '@/lib/format';
 import { PLANS } from '@/lib/plan';
-import { can } from '@/lib/admin';
+import { can, ACTION } from '@/lib/admin';
 
 const ST = { menunggu: ['Menunggu', 'gold'], disetujui: ['Disetujui', 'good'], ditolak: ['Ditolak', 'bad'] };
 
@@ -18,12 +18,14 @@ export default function Langganan() {
   const [kos, setKos] = useState(null);
   const [tab, setTab] = useState('menunggu');
   const [err, setErr] = useState(null);
+  const [hist, setHist] = useState(null);
   const load = async () => {
     const [a, b] = await Promise.all([supabase.rpc('admin_list_requests'), supabase.rpc('admin_list_kos')]);
     if (a.error || b.error) return setErr(errMsg(a.error || b.error));
     setReqs(a.data); setKos(b.data);
   };
   useEffect(() => { if (can(adminMe, 'payments.view')) load(); }, [adminMe]);
+  useEffect(() => { if (tab === 'paket' && !hist) supabase.rpc('admin_log_list', { p_limit: 500 }).then(({ data }) => setHist((data || []).filter((l) => ['ubah_paket', 'override', 'setujui_pembayaran'].includes(l.action)))); }, [tab]);
   if (!can(adminMe, 'payments.view')) return <Empty title="Tidak punya izin melihat pembayaran" />;
   if (err) return <div className="notice bad">{/Khusus admin/.test(err) ? 'Saat ini verifikasi pembayaran khusus Super Admin.' : err}</div>;
   if (!reqs) return <Loading />;
@@ -43,8 +45,8 @@ export default function Langganan() {
         <Tile label="Menunggu verifikasi" value={pending.length} tone={pending.length ? 'bad' : ''} sub={pending.length ? `senilai ${rp(pending.reduce((s, r) => s + Number(r.amount), 0))}` : 'tidak ada'} />
         <Tile label="Langganan aktif" value={active.length} sub={`dari ${kos.length} bisnis`} />
       </div>
-      <div className="seg">{[['menunggu', `Menunggu (${pending.length})`], ['semua', 'Riwayat'], ['aktif', 'Langganan aktif']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
-      {tab !== 'aktif' && (shown.length === 0 ? <Empty title={tab === 'menunggu' ? 'Tidak ada pembayaran yang menunggu' : 'Belum ada pembayaran'} /> : (
+      <div className="seg">{[['menunggu', `Menunggu (${pending.length})`], ['semua', 'Riwayat'], ['aktif', 'Langganan aktif'], ...(can(adminMe, 'audit.view') ? [['paket', 'Perubahan paket']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
+      {!['aktif', 'paket'].includes(tab) && (shown.length === 0 ? <Empty title={tab === 'menunggu' ? 'Tidak ada pembayaran yang menunggu' : 'Belum ada pembayaran'} /> : (
         <section className="panel"><div className="list">{shown.map((r) => (
           <div className="li" key={r.id} style={{ alignItems: 'flex-start' }}>
             <div className="main">
@@ -67,6 +69,22 @@ export default function Langganan() {
             <div style={{ textAlign: 'right' }}><span className="chip good">{PLANS[k.effective_plan].name}</span><br /><span className="small muted">s.d. {tgl(k.paid_until)}</span></div>
           </Link>
         ))}</div></section>
+      ))}
+      {tab === 'paket' && (!hist ? <Loading /> : hist.length === 0 ? <Empty title="Belum ada perubahan paket" /> : (
+        <section className="panel"><div className="list">{hist.map((l, i) => {
+          const d = l.detail || {}; const pl = (x) => (x ? `${PLANS[x.paket]?.name || x.paket}${x.bayar_sampai ? ` s.d. ${tgl(x.bayar_sampai)}` : x.coba_sampai ? ` (coba s.d. ${tgl(x.coba_sampai)})` : ''}` : '');
+          return (
+            <div className="li" key={i} style={{ alignItems: 'flex-start' }}>
+              <div className="main">
+                <b className="small"><Link href={`/admin/pelanggan/${l.kos_id}`} style={{ color: 'inherit' }}>{l.kos_name}</Link> · {ACTION[l.action] || l.action}</b>
+                {d.sebelum && <span className="small">{pl(d.sebelum)} → {pl(d.sesudah)}</span>}
+                {d.alasan && <span className="small">Alasan: {d.alasan}</span>}
+                <span className="small muted">{l.actor_email || 'sistem'}</span>
+              </div>
+              <span className="small muted" style={{ whiteSpace: 'nowrap' }}>{tgl(String(l.created_at).slice(0, 10))}</span>
+            </div>
+          );
+        })}</div></section>
       ))}
       <p className="small muted" style={{ margin: 0 }}>Perpanjangan manual, kompensasi, atau tambah masa coba: buka profil pelanggan › Override akses (wajib alasan).</p>
     </div>

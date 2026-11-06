@@ -27,6 +27,8 @@ export default function CustomerDetail() {
   const [tpl, setTpl] = useState('');
   const [msg, setMsg] = useState('');
   const [ov, setOv] = useState({ action: 'tambah_coba', plan: 'standar', value: '14', reason: '' });
+  const [susp, setSusp] = useState('');
+  const [assist, setAssist] = useState(null);
 
   const load = async () => {
     const [a, b] = await Promise.all([supabase.rpc('admin_customer', { p_kos: id }), supabase.rpc('admin_customers')]);
@@ -50,11 +52,22 @@ export default function CustomerDetail() {
     if (await run(() => supabase.rpc('admin_override', { p_kos: id, p_action: ov.action, p_plan: ov.action === 'beri_paket' ? ov.plan : null, p_value: parseInt(ov.value, 10) || null, p_reason: ov.reason }), 'Akses diperbarui dan tercatat', errMsg)) { setOv({ ...ov, reason: '' }); load(); }
   };
 
+  const suspend = async (on) => {
+    if (!confirm(on ? `Tangguhkan "${k.name}"? Pemilik & anggota tidak bisa membuka data sampai diaktifkan lagi.\nAlasan: ${susp}` : `Aktifkan lagi "${k.name}"?`)) return;
+    if (await run(() => supabase.rpc('admin_suspend', { p_kos: id, p_suspend: on, p_reason: on ? susp : null }), on ? 'Akun ditangguhkan' : 'Akun aktif lagi', errMsg)) { setSusp(''); load(); }
+  };
+  const openAssist = async () => {
+    const { data, error } = await supabase.rpc('admin_assist', { p_kos: id });
+    if (error) return setAssist({ error: errMsg(error) });
+    setAssist(data); load();
+  };
+
   return (
     <div className="stack">
       <Link href="/admin/pelanggan" className="small">← Semua pelanggan</Link>
       <div className="row between"><h2>{TYPE_ICON[k.business_type]} {k.name}</h2>{h && <span className={'chip ' + h.tone}>{h.score != null ? `Skor ${h.score} · ${h.label}` : h.label}</span>}</div>
 
+      {k.suspended_at && <div className="notice bad">Ditangguhkan sejak {tgl(String(k.suspended_at).slice(0, 10))}{k.suspend_reason ? ` — ${k.suspend_reason}` : ''}</div>}
       <section className="panel">
         <div className="list">
           <div className="li"><span className="muted small">Pemilik</span><b className="small">{k.owner_email}</b></div>
@@ -98,6 +111,28 @@ export default function CustomerDetail() {
           </div>
           <Field label="Alasan (wajib)"><input value={ov.reason} onChange={(e) => setOv({ ...ov, reason: e.target.value })} placeholder="mis. kompensasi gangguan 5 Nov" /></Field>
           <button onClick={override} disabled={ov.reason.trim().length < 5}>Terapkan</button>
+        </section>
+      )}
+
+      {can(adminMe, 'customers.assist') && (
+        <section className="panel">
+          <h3>Akses bantuan (lihat saja)</h3>
+          <p className="small muted" style={{ margin: 0 }}>Ringkasan angka untuk mendiagnosis masalah — tanpa nama, nomor, atau data pribadi penghuni/pelanggan toko, dan tidak bisa mengubah apa pun. Hanya bisa dibuka bila pemilik memberi izin dari Pusat bantuan. Setiap pembukaan tercatat dan terlihat oleh pemilik.</p>
+          {c.access_until ? <span className="chip good">Izin aktif s.d. {when(c.access_until)}</span> : <span className="chip">Belum ada izin dari pemilik</span>}
+          <button onClick={openAssist}>Buka ringkasan diagnostik</button>
+          {assist?.error && <div className="notice bad">{assist.error}</div>}
+          {assist?.data && <div className="list">{Object.entries(assist.data).map(([l, v]) => <div className="li" key={l}><span className="small">{l}</span><b className="small">{v == null ? '—' : /Saldo/.test(l) ? rp(v) : /terakhir/.test(l) ? when(v) : v}</b></div>)}</div>}
+        </section>
+      )}
+
+      {can(adminMe, 'customers.suspend') && (
+        <section className="panel">
+          <h3>{k.suspended_at ? 'Aktifkan lagi' : 'Tangguhkan akun'}</h3>
+          {k.suspended_at ? <button className="primary" onClick={() => suspend(false)}>Aktifkan lagi</button> : <>
+            <p className="small muted" style={{ margin: 0 }}>Untuk pelanggaran ketentuan atau permintaan pemilik. Data tidak dihapus; pemilik melihat pesan dan tombol menghubungi kami.</p>
+            <input value={susp} onChange={(e) => setSusp(e.target.value)} placeholder="Alasan (wajib, terlihat oleh pemilik)" aria-label="Alasan penangguhan" />
+            <button className="danger" onClick={() => suspend(true)} disabled={susp.trim().length < 5}>Tangguhkan</button>
+          </>}
         </section>
       )}
 
