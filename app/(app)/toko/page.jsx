@@ -36,7 +36,7 @@ export default function Toko() {
       ) : <Link href="/kasir"><button className="cta" style={{ width: '100%' }}>Buka Kasir</button></Link>}
       <section className="panel">
         <h3>Sedang dibangun</h3>
-        <p className="small muted" style={{ margin: 0 }}>Menyusul bertahap: kas & bank, pelunasan kasbon, utang supplier · laporan laba bulanan.</p>
+        <p className="small muted" style={{ margin: 0 }}>Menyusul: laporan laba rugi bulanan & ekspor.</p>
       </section>
     </div>
   );

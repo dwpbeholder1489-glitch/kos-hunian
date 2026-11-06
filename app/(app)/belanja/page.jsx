@@ -43,7 +43,7 @@ export default function Belanja() {
       <div className="row between"><div className="row"><h2>Belanja</h2><PageHelp page="belanja" /></div><button className="primary" onClick={() => setForm(true)} disabled={!d.products.length}>+ Belanja</button></div>
       <div className="grid">
         <Tile label="Belanja bulan ini" value={rp(thisMonth.reduce((a, b) => a + Number(b.total), 0))} sub={`${thisMonth.length} nota`} />
-        <Tile label="Belanja utang bulan ini" value={rp(thisMonth.filter((b) => b.pay_method === 'utang').reduce((a, b) => a + Number(b.total), 0))} sub="pelunasan di menu Kas (menyusul)" />
+        <Tile label="Belanja utang bulan ini" value={rp(thisMonth.filter((b) => b.pay_method === 'utang').reduce((a, b) => a + Number(b.total), 0))} sub="pelunasan di menu Kas & kasbon" />
       </div>
       {!d.products.length ? (
         <Empty title="Belum ada barang" text="Tambahkan barangnya dulu di Barang & stok, lalu catat belanjanya di sini."><Link href="/barang"><button className="primary">Buka Barang & stok</button></Link></Empty>
