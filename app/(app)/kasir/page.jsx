@@ -19,6 +19,8 @@ export default function Kasir() {
   const [cart, setCart] = useState([]);
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(null);
+  const [shift, setShift] = useState(undefined);
+  useEffect(() => { supabase.rpc('shift_current', { p_kos: kosId }).then(({ data, error }) => setShift(error ? undefined : data)); }, [kosId, ver, done]);
 
   const load = async () => {
     // katalog kasir dari database tanpa harga modal (aman untuk karyawan kasir)
@@ -63,6 +65,7 @@ export default function Kasir() {
       <div className="row between"><div className="row"><h2>Kasir</h2><PageHelp page="kasir" /></div>
         <div className="seg">{[['ecer', 'Eceran'], ['grosir', 'Grosir']].map(([k, l]) => <button key={k} className={tier === k ? 'on' : ''} onClick={() => switchTier(k)} aria-pressed={tier === k}>{l}</button>)}</div>
       </div>
+      {shift !== undefined && <Link href="/shift" className="small">{shift ? `Shift berjalan · seharusnya di laci ${rp(shift.summary.expected)} · Tutup shift →` : 'Belum buka shift · Buka shift (hitung uang laci) →'}</Link>}
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari barang" aria-label="Cari barang" />
       {shown.length === 0 ? <Empty title="Barang tidak ditemukan" /> : (
         <div className="stack" style={{ gap: 10 }}>{shown.map((p) => {

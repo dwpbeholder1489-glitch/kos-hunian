@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { Sheet, Field, Loading, Empty, Tile, run } from '@/components/ui';
+import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg } from '@/lib/format';
-import { PAY, jam } from '@/lib/retail';
+import { PAY, jam, qtyNum, uid } from '@/lib/retail';
+
+const REFUND = { tunai: 'Uang tunai dari laci', transfer: 'Transfer balik', kasbon: 'Potong kasbon' };
 import { canArea } from '@/lib/business';
 
 const shift = (k, n) => { const d = new Date(k + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -60,16 +62,30 @@ export default function Penjualan() {
           ))}</div></section>
         )}
       </>}
-      {open && <Detail fin={fin} s={open} contact={contacts.get(open.contact_id)} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
+      {open && <Detail fin={fin} onReturned={load} s={open} contact={contacts.get(open.contact_id)} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
     </div>
   );
 }
 
-function Detail({ s, contact, onClose, onChanged, fin }) {
+function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
   const [lines, setLines] = useState(null);
+  const [rets, setRets] = useState([]);
   const [voiding, setVoiding] = useState(false);
   const [reason, setReason] = useState('');
-  useEffect(() => { supabase.rpc('sale_detail', { p_sale: s.id }).then(({ data }) => setLines(data?.lines || [])); }, [s.id]);
+  const [ret, setRet] = useState(null); // {qty: {line_id: '1'}, refund, reason}
+  const [busy, setBusy] = useState(false);
+  const loadDetail = () => supabase.rpc('sale_detail', { p_sale: s.id }).then(({ data }) => { setLines(data?.lines || []); setRets(data?.returns || []); });
+  useEffect(() => { loadDetail(); }, [s.id]);
+  const left = (l) => Number(l.qty) - Number(l.returned || 0);
+  const retTotal = ret && lines ? lines.reduce((a, l) => a + (qtyNum(ret.qty[l.id] || '') || 0) * Number(l.price) * (Number(s.subtotal) > 0 ? Number(s.total) / Number(s.subtotal) : 1), 0) : 0;
+  const doReturn = async () => {
+    const items = lines.map((l) => ({ line_id: l.id, qty: qtyNum(ret.qty[l.id] || '') || 0 })).filter((x) => x.qty > 0);
+    if (!items.length) return toast('Isi jumlah barang yang dikembalikan.');
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('sale_return_create', { p_id: ret.id, p_sale: s.id, p_lines: items, p_refund: ret.refund, p_reason: ret.reason }), 'Retur tercatat, stok bertambah', errMsg);
+    setBusy(false);
+    if (ok) { setRet(null); loadDetail(); onReturned?.(); }
+  };
   const doVoid = async () => {
     if (await run(() => supabase.rpc('sale_void', { p_sale: s.id, p_reason: reason }), 'Transaksi dibatalkan, stok dikembalikan', errMsg)) onChanged();
   };
@@ -78,14 +94,25 @@ function Detail({ s, contact, onClose, onChanged, fin }) {
       <span className="small muted">{tgl(s.sale_date)} {jam(s.sold_at)} · {PAY[s.pay_method]}{contact ? ` · ${contact}` : ''}{s.tier === 'grosir' ? ' · harga grosir' : ''}</span>
       {s.status === 'batal' && <div className="notice bad">Dibatalkan: {s.void_reason}</div>}
       {!lines ? <Loading /> : <div className="list">{lines.map((l) => (
-        <div className="li" key={l.id}><div className="main"><b className="small">{l.name}</b><span className="small muted">{angka(l.qty)} {l.unit} × {rp(l.price)}</span></div><b className="small">{rp(l.line_total)}</b></div>
+        <div className="li" key={l.id} style={{ flexWrap: 'wrap' }}>
+          <div className="main"><b className="small">{l.name}</b><span className="small muted">{angka(l.qty)} {l.unit} × {rp(l.price)}{Number(l.returned) > 0 ? ` · diretur ${angka(l.returned)}` : ''}</span></div><b className="small">{rp(l.line_total)}</b>
+          {ret && left(l) > 0 && <Field label={`Kembali (maks ${angka(left(l))} ${l.unit})`}><input inputMode="decimal" value={ret.qty[l.id] || ''} onChange={(e) => setRet({ ...ret, qty: { ...ret.qty, [l.id]: e.target.value } })} placeholder="0" /></Field>}
+        </div>
       ))}</div>}
+      {rets.length > 0 && <div className="notice">{rets.map((r) => <div key={r.number} className="small">{r.number} · {tgl(r.date)} · {r.items?.map((i) => `${angka(i.qty)} ${i.unit} ${i.name}`).join(', ')} · {REFUND[r.refund_method]} {rp(r.total)} — {r.reason}</div>)}</div>}
       {Number(s.discount) > 0 && <div className="row between"><span>Diskon</span><span>−{rp(s.discount)}</span></div>}
       <div className="row between"><b>Total</b><b>{rp(s.total)}</b></div>
       {fin && <div className="row between small muted"><span>Laba kotor</span><span>{rp(Number(s.total) - Number(s.cost_total))}</span></div>}
       {s.cashier && <span className="small muted">Kasir: {s.cashier}</span>}
       <Link href={`/struk/${s.id}`}><button className="primary" style={{ width: '100%' }}>Lihat / kirim struk</button></Link>
-      {s.status === 'selesai' && fin && (!voiding ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding(true)}>Batalkan transaksi</button> : <>
+      {s.status === 'selesai' && fin && !voiding && lines && lines.some((l) => left(l) > 0) && (!ret ? <button onClick={() => setRet({ id: uid(), qty: {}, refund: s.pay_method === 'kasbon' ? 'kasbon' : s.pay_method, reason: '' })}>Retur barang (dikembalikan pelanggan)</button> : <>
+        <span className="small muted">Isi jumlah yang dikembalikan di setiap barang di atas. Stok bertambah lagi.</span>
+        <div className="seg">{Object.entries(REFUND).filter(([k]) => k !== 'kasbon' || s.pay_method === 'kasbon').map(([k, l]) => <button key={k} className={ret.refund === k ? 'on' : ''} onClick={() => setRet({ ...ret, refund: k })}>{l}</button>)}</div>
+        <Field label="Alasan retur"><input value={ret.reason} onChange={(e) => setRet({ ...ret, reason: e.target.value })} placeholder="mis. kemasan rusak, salah ambil" /></Field>
+        <div className="row between"><b>{ret.refund === 'kasbon' ? 'Kasbon berkurang' : 'Uang dikembalikan'}</b><b>{rp(Math.round(retTotal))}</b></div>
+        <div className="row"><button className="primary" onClick={doReturn} disabled={busy || !ret.reason.trim() || retTotal <= 0}>Simpan retur</button><button className="ghost" onClick={() => setRet(null)}>Batal</button></div>
+      </>)}
+      {s.status === 'selesai' && fin && !ret && rets.length === 0 && (!voiding ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding(true)}>Batalkan transaksi</button> : <>
         <Field label="Alasan pembatalan"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. salah input, barang dikembalikan" /></Field>
         <button className="danger" onClick={doVoid} disabled={!reason.trim()}>Ya, batalkan & kembalikan stok</button>
       </>)}

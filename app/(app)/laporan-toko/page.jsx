@@ -94,7 +94,9 @@ export default function LaporanToko() {
         <section className="panel">
           <h3>Laba rugi</h3>
           <div className="list">
-            <Row l="Penjualan (setelah diskon)" v={a.omzet} />
+            {N(r.retur) > 0 && <Row l="Penjualan (setelah diskon)" v={a.omzet + N(r.retur)} />}
+            {N(r.retur) > 0 && <Row l={`Retur (${r.retur_n}×)`} v={-N(r.retur)} sub />}
+            <Row l={N(r.retur) > 0 ? 'Penjualan bersih' : 'Penjualan (setelah diskon)'} v={a.omzet} />
             <Row l="Modal barang terjual" v={-a.hpp} />
             <Row l="Laba kotor" v={a.kotor} bold />
             <Row l="Biaya operasional" v={-N(r.biaya)} />
