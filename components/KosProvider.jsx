@@ -46,13 +46,18 @@ export default function KosProvider({ children }) {
     loadKos();
   }, [session, loadKos, path, router]);
 
+  // Staf PRASARA (Super Admin, Support, dll.): peran & izin dari database
+  const [adminMe, setAdminMe] = useState(undefined); // undefined = sedang dicek
   useEffect(() => {
-    if (!session) { setIsAdmin(false); return; }
-    supabase.rpc('is_admin').then(({ data }) => setIsAdmin(Boolean(data)));
+    if (!session) { setIsAdmin(false); setAdminMe(null); return; }
+    supabase.rpc('admin_me').then(({ data, error }) => {
+      if (error) return supabase.rpc('is_admin').then((r) => { setIsAdmin(Boolean(r.data)); setAdminMe(r.data ? { role: 'super_admin', perms: [] } : null); });
+      setAdminMe(data || null); setIsAdmin(Boolean(data));
+    });
   }, [session]);
 
   useEffect(() => {
-    if (session && list && list.length === 0 && !['/mulai', '/', '/panduan'].includes(path) && !path.startsWith('/p/') && !path.startsWith('/berhenti/')) router.replace('/mulai');
+    if (session && list && list.length === 0 && !['/mulai', '/', '/panduan'].includes(path) && !path.startsWith('/p/') && !path.startsWith('/berhenti/') && !path.startsWith('/admin')) router.replace('/mulai');
   }, [session, list, path, router]);
 
   const pickKos = (id) => { setKosId(id); try { localStorage.setItem(KEY, id); } catch {} setVer((v) => v + 1); };
@@ -60,7 +65,7 @@ export default function KosProvider({ children }) {
   const kos = list?.find((k) => k.id === kosId) || null;
 
   return (
-    <Ctx.Provider value={{ session, user: session?.user || null, list, kos, kosId, pickKos, loadKos, ver, bump, isAdmin }}>
+    <Ctx.Provider value={{ session, user: session?.user || null, list, kos, kosId, pickKos, loadKos, ver, bump, isAdmin, adminMe }}>
       {children}
     </Ctx.Provider>
   );

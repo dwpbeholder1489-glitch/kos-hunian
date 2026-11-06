@@ -109,6 +109,14 @@ textarea{min-height:70px}
 .dbar small{font-size:9px;color:var(--muted)}
 .pbar{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
 .pbar span{display:block;height:100%;background:var(--brand)}
+/* Management Center: tema gelap navy sesuai blueprint */
+.adm{--bg:#0F1A2A;--surface:#16243A;--sunk:#0B1422;--line:#24364F;--fg:#E9EEF5;--muted:#9DAABB;--brand:#0B1422;--brand-2:#C9A45C;--brand-fg:#E9EEF5;
+  --gold:#C9A45C;--gold-soft:#3A3020;--gold-fg:#E2C27F;--good:#5FC08F;--good-bg:#15301F;--warn:#F0C060;--warn-bg:#3A2D10;--bad:#E88A80;--bad-bg:#3D1A17;--info:#8CC6EA;--info-bg:#132B3A;
+  background:var(--bg);color:var(--fg);min-height:100vh;color-scheme:dark}
+.adm button.primary,.adm .cta{background:#C9A45C;border-color:#C9A45C;color:#0F1A2A}
+.adm header.top .mark{background:#C9A45C;color:#0F1A2A}
+.adm input,.adm select,.adm textarea{background:#0F1A2A;color:var(--fg);border-color:var(--line)}
+.cols{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .typecard{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:14px;min-height:72px;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;width:100%}
 .typecard:hover{border-color:var(--brand)}
 .typeicon{font-size:28px;line-height:1}

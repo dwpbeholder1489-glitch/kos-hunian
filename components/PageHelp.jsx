@@ -20,8 +20,8 @@ export default function PageHelp({ page }) {
             <div className="notice"><div className="label" style={{ color: 'inherit', marginBottom: 4 }}>Perhatian</div>
               <ul style={{ margin: 0, paddingLeft: 18, fontWeight: 500 }}>{h.warn.map((w) => <li key={w}>{w}</li>)}</ul></div>
           )}
-          <Link href={`/panduan#langkah-${h.step}`} className="small">Lihat panduan lengkap dengan gambar →</Link>
-          <Link href="/bantuan" className="small">Masih bingung? Cari di Pusat bantuan atau tanya via WhatsApp →</Link>
+          {h.step && <Link href={`/panduan#langkah-${h.step}`} className="small">Lihat panduan lengkap dengan gambar →</Link>}
+          {!h.admin && <Link href="/bantuan" className="small">Masih bingung? Cari di Pusat bantuan atau tanya via WhatsApp →</Link>}
           <button className="primary" onClick={() => setOpen(false)}>Mengerti</button>
         </Sheet>
       )}
