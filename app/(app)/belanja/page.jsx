@@ -9,6 +9,7 @@ import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 
 const BUY = { tunai: 'Tunai', transfer: 'Transfer', utang: 'Utang ke supplier' };
+const ST = { dipesan: ['Dipesan', 'gold'], sebagian: ['Diterima sebagian', 'info'], batal: ['Batal', 'void'] };
 
 // Belanja ke supplier: menambah stok dan menghitung ulang harga modal rata-rata
 export default function Belanja() {
@@ -35,8 +36,9 @@ export default function Belanja() {
 
   const sup = new Map(d.suppliers.map((s) => [s.id, s.name]));
   const month = today().slice(0, 7);
-  const ok = d.purchases.filter((b) => b.status === 'selesai');
+  const ok = d.purchases.filter((b) => b.status === 'selesai' || b.status === 'sebagian');
   const thisMonth = ok.filter((b) => b.purchase_date.startsWith(month));
+  const waiting = d.purchases.filter((b) => b.status === 'dipesan' || b.status === 'sebagian');
 
   return (
     <div className="stack">
@@ -44,6 +46,7 @@ export default function Belanja() {
       <div className="grid">
         <Tile label="Belanja bulan ini" value={rp(thisMonth.reduce((a, b) => a + Number(b.total), 0))} sub={`${thisMonth.length} nota`} />
         <Tile label="Belanja utang bulan ini" value={rp(thisMonth.filter((b) => b.pay_method === 'utang').reduce((a, b) => a + Number(b.total), 0))} sub="pelunasan di menu Kas & kasbon" />
+        <Tile label="Pesanan belum datang" value={angka(waiting.length)} tone={waiting.length ? 'gold' : ''} sub={waiting.length ? `senilai ${rp(waiting.reduce((a, b) => a + Number(b.order_total ?? b.total) - Number(b.total), 0))}` : 'tidak ada'} />
       </div>
       {!d.products.length ? (
         <Empty title="Belum ada barang" text="Tambahkan barangnya dulu di Barang & stok, lalu catat belanjanya di sini."><Link href="/barang"><button className="primary">Buka Barang & stok</button></Link></Empty>
@@ -52,13 +55,13 @@ export default function Belanja() {
       ) : (
         <section className="panel"><div className="list">{d.purchases.map((b) => (
           <button className="li click" key={b.id} onClick={() => setOpen(b)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' }}>
-            <div className="main"><b>{sup.get(b.contact_id) || 'Tanpa supplier'}{b.status === 'batal' && <span className="chip void" style={{ marginLeft: 6 }}>Batal</span>}</b>
-              <span className="small muted">{tgl(b.purchase_date)} · {b.number} · {BUY[b.pay_method]}</span></div>
-            <b style={{ textDecoration: b.status === 'batal' ? 'line-through' : 'none' }}>{rp(b.total)}</b>
+            <div className="main"><b>{sup.get(b.contact_id) || 'Tanpa supplier'}{ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ marginLeft: 6 }}>{ST[b.status][0]}</span>}</b>
+              <span className="small muted">{tgl(b.purchase_date)} · {b.number} · {BUY[b.pay_method]}{b.status === 'dipesan' && b.expected_date ? ` · datang ${tgl(b.expected_date)}` : ''}</span></div>
+            <b style={{ textDecoration: b.status === 'batal' ? 'line-through' : 'none' }}>{rp(b.status === 'dipesan' ? b.order_total : b.total)}</b>
           </button>
         ))}</div></section>
       )}
-      {form && <PurchaseForm kosId={kosId} d={d} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); toast(`${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
+      {form && <PurchaseForm kosId={kosId} d={d} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
       {open && <Detail b={open} supplier={sup.get(open.contact_id)} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
     </div>
   );
@@ -73,6 +76,8 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
   const [method, setMethod] = useState('tunai');
   const [due, setDue] = useState('');
   const [note, setNote] = useState('');
+  const [mode, setMode] = useState('terima');
+  const [expected, setExpected] = useState('');
   const [busy, setBusy] = useState(false);
   const [txId] = useState(uid);
 
@@ -111,11 +116,14 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
         sid = data; setSupplier(data);
       }
       if (method === 'utang' && !sid) { toast('Pilih supplier atau isi nama supplier baru untuk belanja utang.'); setBusy(false); return; }
-      const { data, error } = await supabase.rpc('purchase_create', {
+      const args = {
         p_id: txId, p_kos: kosId, p_date: date, p_contact: sid,
         p_lines: lines.map((l) => ({ product_id: l.product_id, unit: l.unit, qty: qtyNum(l.qty), price: parseRp(l.price) })),
         p_method: method, p_due: method === 'utang' && due ? due : null, p_note: note,
-      });
+      };
+      const { data, error } = mode === 'pesan'
+        ? await supabase.rpc('purchase_order_create', { ...args, p_expected: expected || null })
+        : await supabase.rpc('purchase_create', args);
       if (error) throw error;
       onSaved(data);
     } catch (e) { toast(errMsg(e)); }
@@ -123,9 +131,11 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
   };
 
   return (
-    <Sheet title="Catat belanja" onClose={onClose}>
+    <Sheet title={mode === 'pesan' ? 'Buat pesanan ke supplier' : 'Catat belanja'} onClose={onClose}>
+      <div className="seg">{[['terima', 'Barang sudah diterima'], ['pesan', 'Pesan dulu (belum datang)']].map(([k, l]) => <button key={k} className={mode === k ? 'on' : ''} onClick={() => setMode(k)} aria-pressed={mode === k}>{l}</button>)}</div>
+      {mode === 'pesan' && <p className="small muted" style={{ margin: 0 }}>Stok belum bertambah. Saat barang datang, buka pesanan ini lalu tekan <b>Terima barang</b>.</p>}
       <div className="row">
-        <Field label="Tanggal"><input type="date" max={today()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+        <Field label={mode === 'pesan' ? 'Tanggal pesan' : 'Tanggal'}><input type="date" max={today()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>
         <Field label="Supplier"><select value={supplier} onChange={(e) => setSupplier(e.target.value)}><option value="">— tanpa / baru —</option>{d.suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
       </div>
       {!supplier && <Field label="Nama supplier baru (opsional)"><input value={newSup} onChange={(e) => setNewSup(e.target.value)} placeholder="mis. CV Sumber Rejeki" /></Field>}
@@ -147,7 +157,7 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
               <Field label="Satuan"><select value={l.unit} onChange={(e) => { const nu = us.find((x) => x.name === e.target.value); const s = suggest(p, nu); set(l.key, { unit: e.target.value, price: s > 0 ? angka(s) : '' }); }}>{us.map((x) => <option key={x.name} value={x.name}>{x.name}{x.qty > 1 ? ` (${angka(x.qty)} ${p.base_unit})` : ''}</option>)}</select></Field>
               <Field label={`Harga beli per ${l.unit}`}><input inputMode="numeric" value={l.price} onChange={(e) => set(l.key, { price: e.target.value })} /></Field>
             </div>
-            {qn > 0 && pr > 0 && <span className="small muted">{rp(qn * pr)} · stok +{angka(base)} {p.base_unit} · modal {rp(p.cost)} → <b>{rp(newCost)}</b>/{p.base_unit}</span>}
+            {qn > 0 && pr > 0 && (mode === 'pesan' ? <span className="small muted">{rp(qn * pr)} · stok bertambah saat diterima</span> : <span className="small muted">{rp(qn * pr)} · stok +{angka(base)} {p.base_unit} · modal {rp(p.cost)} → <b>{rp(newCost)}</b>/{p.base_unit}</span>)}
           </div>
         );
       })}
@@ -161,9 +171,11 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
 
       <div className="row between" style={{ fontSize: 20 }}><b>Total</b><b>{rp(total)}</b></div>
       <div className="seg">{Object.entries(BUY).map(([k, l]) => <button key={k} className={method === k ? 'on' : ''} onClick={() => setMethod(k)} aria-pressed={method === k}>{l}</button>)}</div>
+      {mode === 'pesan' && <Field label="Perkiraan datang (opsional)"><input type="date" min={date} value={expected} onChange={(e) => setExpected(e.target.value)} /></Field>}
+      {mode === 'pesan' && method !== 'utang' && <p className="small muted" style={{ margin: 0 }}>Uang keluar dari {method === 'tunai' ? 'kas' : 'bank'} sesuai nilai barang yang diterima.</p>}
       {method === 'utang' && <Field label="Jatuh tempo (opsional)"><input type="date" value={due} onChange={(e) => setDue(e.target.value)} /></Field>}
       <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. no. nota supplier" /></Field>
-      <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : `Simpan belanja · ${rp(total)}`}</button>
+      <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : mode === 'pesan' ? `Simpan pesanan · ${rp(total)}` : `Simpan belanja · ${rp(total)}`}</button>
     </Sheet>
   );
 }
@@ -172,20 +184,50 @@ function Detail({ b, supplier, onClose, onChanged }) {
   const [lines, setLines] = useState(null);
   const [voiding, setVoiding] = useState(false);
   const [reason, setReason] = useState('');
+  const [recv, setRecv] = useState(null);   // {line_id: {qty, price}}
+  const [busy, setBusy] = useState(false);
   useEffect(() => { supabase.from('purchase_lines').select('*').eq('purchase_id', b.id).then(({ data }) => setLines(data || [])); }, [b.id]);
+  const open = b.status === 'dipesan' || b.status === 'sebagian';
+  const left = (l) => Math.max(0, Number(l.qty) - Number(l.qty_received));
+  const startRecv = () => setRecv(Object.fromEntries(lines.map((l) => [l.id, { qty: String(left(l)).replace('.', ','), price: angka(l.price) }])));
   const doVoid = async () => {
-    if (await run(() => supabase.rpc('purchase_void', { p_purchase: b.id, p_reason: reason }), 'Belanja dibatalkan, stok dikurangi lagi', errMsg)) onChanged();
+    if (await run(() => supabase.rpc('purchase_void', { p_purchase: b.id, p_reason: reason }), Number(b.total) > 0 ? 'Belanja dibatalkan, stok dikurangi lagi' : 'Pesanan dibatalkan', errMsg)) onChanged();
+  };
+  const receive = async (close) => {
+    const items = recv ? lines.map((l) => ({ line_id: l.id, qty: qtyNum(recv[l.id].qty) || 0, price: parseRp(recv[l.id].price) })).filter((x) => x.qty > 0) : [];
+    if (!close && !items.length) return toast('Isi jumlah barang yang diterima.');
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('purchase_receive', { p_purchase: b.id, p_lines: items, p_date: null, p_close: close }), close && !items.length ? 'Pesanan ditutup' : 'Barang diterima, stok bertambah', errMsg);
+    setBusy(false);
+    if (ok) onChanged();
   };
   return (
     <Sheet title={b.number} onClose={onClose}>
-      <span className="small muted">{tgl(b.purchase_date)} · {supplier || 'Tanpa supplier'} · {BUY[b.pay_method]}{b.due_date ? ` · jatuh tempo ${tgl(b.due_date)}` : ''}</span>
+      <span className="small muted">{tgl(b.purchase_date)} · {supplier || 'Tanpa supplier'} · {BUY[b.pay_method]}{b.due_date ? ` · jatuh tempo ${tgl(b.due_date)}` : ''}{b.expected_date && open ? ` · perkiraan datang ${tgl(b.expected_date)}` : ''}</span>
+      {ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ alignSelf: 'flex-start' }}>{ST[b.status][0]}</span>}
       {b.note && <span className="small">Catatan: {b.note}</span>}
       {b.status === 'batal' && <div className="notice bad">Dibatalkan: {b.void_reason}</div>}
       {!lines ? <Loading /> : <div className="list">{lines.map((l) => (
-        <div className="li" key={l.id}><div className="main"><b className="small">{l.name}</b><span className="small muted">{angka(l.qty)} {l.unit} × {rp(l.price)}</span></div><b className="small">{rp(l.line_total)}</b></div>
+        <div className="li" key={l.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
+          <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{l.name}</b><b className="small">{rp(Number(l.line_total) || Number(l.qty) * Number(l.price))}</b></div>
+          <span className="small muted">dipesan {angka(l.qty)} {l.unit} × {rp(l.price)}{Number(l.qty_received) !== Number(l.qty) || open ? ` · diterima ${angka(l.qty_received)}` : ''}{open && left(l) > 0 ? ` · kurang ${angka(left(l))}` : ''}</span>
+          {recv && <div className="row">
+            <Field label={`Diterima sekarang (${l.unit})`}><input inputMode="decimal" value={recv[l.id].qty} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], qty: e.target.value } })} /></Field>
+            <Field label={`Harga per ${l.unit}`}><input inputMode="numeric" value={recv[l.id].price} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], price: e.target.value } })} /></Field>
+          </div>}
+        </div>
       ))}</div>}
-      <div className="row between"><b>Total</b><b>{rp(b.total)}</b></div>
-      {b.status === 'selesai' && (!voiding ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding(true)}>Batalkan belanja</button> : <>
+      <div className="row between"><b>{open ? 'Sudah diterima' : 'Total'}</b><b>{rp(b.total)}</b></div>
+      {open && <div className="row between small muted"><span>Nilai pesanan</span><span>{rp(b.order_total)}</span></div>}
+      {open && lines && (!recv ? <>
+        <button className="cta" onClick={startRecv}>Terima barang</button>
+        <button className="ghost" onClick={() => receive(true)} disabled={busy}>{Number(b.total) > 0 ? 'Tutup pesanan (sisa tidak dikirim)' : 'Batalkan pesanan (tidak jadi)'}</button>
+      </> : <>
+        <p className="small muted" style={{ margin: 0 }}>Isi jumlah yang benar-benar datang. Kosongkan atau isi 0 untuk barang yang belum datang.</p>
+        <button className="cta" onClick={() => receive(false)} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan penerimaan'}</button>
+        <button className="ghost" onClick={() => receive(true)} disabled={busy}>Simpan & tutup pesanan</button>
+      </>)}
+      {Number(b.total) > 0 && b.status !== 'batal' && (!voiding ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding(true)}>Batalkan belanja</button> : <>
         <Field label="Alasan pembatalan"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. salah input, barang diretur" /></Field>
         <button className="danger" onClick={doVoid} disabled={!reason.trim()}>Ya, batalkan & kurangi stok</button>
       </>)}

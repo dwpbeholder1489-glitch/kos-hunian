@@ -45,6 +45,7 @@ h3{margin:0;font-size:15px;font-weight:800}
 .tile.hero{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
 .tile.hero .label,.tile.hero .s{color:var(--brand-fg);opacity:.85}
 .tile.bad .v{color:var(--bad)}
+.tile.gold .v{color:var(--gold-fg)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .list{display:flex;flex-direction:column}
 .li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);min-width:0}

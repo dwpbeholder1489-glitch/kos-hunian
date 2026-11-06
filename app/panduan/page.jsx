@@ -195,6 +195,12 @@ const PARTS = [
       <>Di bawah setiap barang terlihat stok yang bertambah dan <b>harga modal baru</b> (rata-rata dengan stok lama).</>,
       <>Pilih <b>Tunai</b>, <b>Transfer</b>, atau <b>Utang ke supplier</b> (wajib ada supplier), lalu <b>Simpan belanja</b>.</>,
     ], <>Harga beli terakhir terisi otomatis. Belanja yang salah dibatalkan dari daftar Belanja: stok dikurangi lagi dan harga modal dikembalikan.</>, null, null],
+    ['Pesan dulu, terima kemudian', 'Menu Belanja › Pesan dulu', [
+      <>Saat memesan ke supplier tetapi barang belum datang: <b>+ Belanja</b> › pilih <b>Pesan dulu (belum datang)</b>, isi barang dan harga, lalu <b>Simpan pesanan</b>. Stok belum bertambah.</>,
+      <>Pesanan tampil berlabel <b>Dipesan</b>. Kotak <b>Pesanan belum datang</b> menunjukkan jumlahnya.</>,
+      <>Saat barang datang, ketuk pesanannya › <b>Terima barang</b>. Isi jumlah yang benar-benar datang (boleh sebagian) dan harga bila berubah, lalu <b>Simpan penerimaan</b>.</>,
+      <>Sisa yang tidak akan dikirim: <b>Tutup pesanan</b>. Pesanan yang tidak jadi sama sekali: <b>Batalkan pesanan</b>.</>,
+    ], <>Stok, harga modal, kas, dan utang ke supplier hanya dihitung dari barang yang sudah diterima.</>, null, null],
     ['Kas, biaya, dan kasbon', 'Menu Kas & kasbon', [
       <>Pertama kali: tekan <b>+ Uang masuk/keluar lain</b> › <b>Setor modal</b>, isi jumlah uang di laci sekarang (dan di bank, pilih Bank).</>,
       <>Biaya toko (listrik, gaji, bensin): <b>+ Biaya</b>, pilih jenis, jumlah, dan dibayar dari kas atau bank. Uang diambil untuk pribadi: pilih <b>Prive</b>.</>,
@@ -238,7 +244,7 @@ export default function Panduan() {
           <div><b>Setiap bulan</b><span><a href="#bagian-B">Langkah 6–13</a><br />Tagihan, bayar, pengingat, biaya</span></div>
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
-          <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–29</a><br />Barang, kasir, belanja, kas, laporan</span></div>
+          <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
