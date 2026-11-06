@@ -51,7 +51,7 @@ export default function Kwitansi() {
 
       <section className="panel" style={{ gap: 16 }}>
         <div className="row between" style={{ alignItems: 'flex-start' }}>
-          <div className="brand"><span className="mark">KH</span><div><b style={{ fontSize: 18 }}>{kos.name}</b>{kos.address && <div className="small muted">{kos.address}</div>}</div></div>
+          <div className="brand"><span className="mark">P</span><div><b style={{ fontSize: 18 }}>{kos.name}</b>{kos.address && <div className="small muted">{kos.address}</div>}</div></div>
           <div style={{ textAlign: 'right' }}><div style={{ fontFamily: 'var(--display)', fontSize: 28, lineHeight: 1 }}>Kwitansi</div><div className="small muted">No. {no}</div></div>
         </div>
         <dl className="kv" style={{ fontSize: 15 }}>
@@ -71,7 +71,7 @@ export default function Kwitansi() {
           <dt>Sisa tagihan</dt><dd>{inv.outstanding > 0 ? rp(inv.outstanding) : 'Lunas'}</dd>
         </dl>
         <div className="row between" style={{ alignItems: 'flex-end', marginTop: 12 }}>
-          <span className="small muted">Dibuat dengan Kos Hunian</span>
+          <span className="small muted">Dibuat dengan PRASARA</span>
           <div style={{ textAlign: 'center', minWidth: 160 }}>
             <div className="small muted">{tgl(p.paid_at)}</div>
             <div style={{ height: 56 }} />

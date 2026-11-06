@@ -1,6 +1,6 @@
-# Kos Hunian — catatan untuk Claude
+# PRASARA (dulu Kos Hunian) — catatan untuk Claude
 
-SaaS manajemen kos (Next.js App Router + Supabase + Vercel). Pemilik: Dewo, mengerjakan dari HP — semua instruksi ke pengguna harus bisa dilakukan dari HP, dalam Bahasa Indonesia.
+PRASARA: platform bisnis multi-usaha, berawal dari SaaS manajemen kos (Next.js App Router + Supabase + Vercel). Pemilik: Dewo, mengerjakan dari HP — semua instruksi ke pengguna harus bisa dilakukan dari HP, dalam Bahasa Indonesia.
 
 ## Aturan tetap
 - **Setiap perubahan/fitur baru WAJIB ikut memperbarui panduan**, dalam commit yang sama:

@@ -37,7 +37,7 @@ export default function AppLayout({ children }) {
         <div className="wrap">
           <div className="brandrow">
             <div className="brand">
-              <span className="mark">KH</span>
+              <span className="mark">P</span>
               <div><h1>{kos.name}</h1><small>Manage Smarter. Live Better.</small></div>
             </div>
             <div className="right">

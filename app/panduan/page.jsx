@@ -1,18 +1,18 @@
 import Link from 'next/link';
 import LandingNav from '@/components/LandingNav';
-import { BUSINESS } from '@/lib/plan';
+import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
   ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal,
 } from '@/components/demo/Screens';
 
 export const metadata = {
-  title: 'Panduan Kos Hunian — Langkah demi Langkah',
-  description: 'Panduan lengkap memakai Kos Hunian: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, kwitansi, dan langganan.',
-  openGraph: { title: 'Panduan Kos Hunian — Langkah demi Langkah', description: 'Cara memakai Kos Hunian dari daftar sampai laporan, lengkap dengan gambar.', url: '/panduan', images: [{ url: '/og.jpg', width: 1200, height: 630 }] },
+  title: 'Panduan PRASARA — Langkah demi Langkah',
+  description: 'Panduan lengkap memakai PRASARA: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, kwitansi, dan langganan.',
+  openGraph: { title: 'Panduan PRASARA — Langkah demi Langkah', description: 'Cara memakai PRASARA dari daftar sampai laporan, lengkap dengan gambar.', url: '/panduan', images: [{ url: '/og.jpg', width: 1200, height: 630 }] },
 };
 
-const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi Kos Hunian.')}`;
+const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi PRASARA.')}`;
 const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Standar</span>;
 const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</span>;
 
@@ -32,7 +32,7 @@ const MENUS = [
 const PARTS = [
   ['A', 'Persiapan (sekali saja)', [
     ['Daftar dan buat kos', 'Halaman depan › Mulai Gratis 30 Hari', [
-      <>Buka <b>kos-hunian.vercel.app</b>, tekan <b>Mulai Gratis 30 Hari</b>, isi email dan kata sandi, lalu <b>Buat akun</b>.</>,
+      <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Gratis 30 Hari</b>, isi email dan kata sandi, lalu <b>Buat akun</b>.</>,
       <>Buka email Anda dan ketuk tautan konfirmasi.</>,
       <>Masuk, lalu isi <b>Nama kos</b>, <b>Jumlah kamar</b>, dan <b>Awalan kode</b>.</>,
       <>Tekan <b>Buat kos</b>. Kamar A01, A02, … dibuat otomatis.</>,
@@ -161,7 +161,7 @@ const PARTS = [
       <>Tekan tombol <b>?</b> di pojok kanan atas untuk membuka <b>Pusat bantuan</b>.</>,
       <>Ketik pertanyaan, misalnya <i>penghuni lama</i>, <i>kwitansi</i>, atau <i>prive</i>. Ketuk jawabannya, lalu <b>Buka menunya</b>.</>,
       <>Belum terjawab? Tekan <b>Tanya via WhatsApp</b> di bagian bawah.</>,
-      <>Selama masa coba, Kos Hunian mengirim <b>email arahan</b> hanya untuk langkah yang belum Anda kerjakan, paling banyak satu email tiap 2 hari.</>,
+      <>Selama masa coba, PRASARA mengirim <b>email arahan</b> hanya untuk langkah yang belum Anda kerjakan, paling banyak satu email tiap 2 hari.</>,
     ], <>Email arahan bisa dimatikan lewat tautan <b>Berhenti terima email arahan</b> di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan tidak ikut berhenti.</>, null, null],
     ['Notifikasi & ringkasan lewat email', 'Lonceng di kanan atas', [
       <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti hari ini: pembayaran menunggu diperiksa, tagihan telat, dan jatuh tempo hari ini.</>,
@@ -185,7 +185,7 @@ export default function Panduan() {
     <div className="lp">
       <LandingNav />
       <div className="guide">
-        <h1>Panduan Kos Hunian</h1>
+        <h1>Panduan PRASARA</h1>
         <p className="muted" style={{ margin: 0 }}>Langkah demi langkah memakai aplikasi pengelolaan kos: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, dan kwitansi.</p>
 
         <h2 style={{ color: 'var(--brand-2)' }}>Sembilan menu di bagian atas aplikasi</h2>

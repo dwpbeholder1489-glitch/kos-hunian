@@ -1,4 +1,4 @@
-# Kos Hunian
+# PRASARA (dulu Kos Hunian)
 
 **Manage Smarter. Live Better.** Aplikasi web pengelolaan kos untuk banyak pemilik kos: setiap akun punya data kosnya sendiri yang terpisah dan aman.
 

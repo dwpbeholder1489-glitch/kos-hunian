@@ -19,7 +19,7 @@ export default function LandingNav() {
   return (
     <header className="ln-nav">
       <div className="ln-wrap ln-nav-in">
-        <Link href="/" className="ln-logo" aria-label="Kos Hunian, beranda"><span className="ln-logo-mark">KH</span><b>Kos Hunian</b></Link>
+        <Link href="/" className="ln-logo" aria-label="PRASARA, beranda"><span className="ln-logo-mark">P</span><b>PRASARA</b></Link>
         <nav className="ln-nav-links" aria-label="Navigasi utama">
           {LINKS.map(([h, l]) => <a key={l} href={h}>{l}</a>)}
         </nav>

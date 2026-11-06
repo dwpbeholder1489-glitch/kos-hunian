@@ -13,7 +13,7 @@ export const MONTH_SHORT = `${BLN[M]} ${Y}`;
 export const d = (day, back = 0) => { const p = prev(back); return `${day} ${BLN[p.m]}`; };
 export const dFull = (day, back = 0) => { const p = prev(back); return `${day} ${BLN[p.m]} ${p.y}`; };
 
-export const KOS = { name: 'Kos Hunian', address: 'Jl. Contoh No. 7, Majalengka' };
+export const KOS = { name: 'Kos Melati', address: 'Jl. Contoh No. 7, Majalengka' };
 
 // kode, harga, status, penghuni, tanggal jatuh tempo, tunggakan
 export const ROOMS = [

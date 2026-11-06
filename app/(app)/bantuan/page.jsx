@@ -10,7 +10,7 @@ export default function Bantuan() {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
   const hasil = useMemo(() => searchHelp(q), [q]);
-  const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim Kos Hunian, saya pemilik ${kos?.name || 'kos'}. Saya butuh bantuan: `)}`;
+  const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, saya pemilik ${kos?.name || 'kos'}. Saya butuh bantuan: `)}`;
 
   const Item = ({ h }) => (
     <div className="li" style={{ flexDirection: 'column', alignItems: 'stretch' }}>

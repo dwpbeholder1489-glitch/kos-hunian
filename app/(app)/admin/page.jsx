@@ -24,7 +24,7 @@ export default function Admin() {
   }
   useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
 
-  if (!isAdmin) return <Empty title="Khusus admin" text="Halaman ini hanya untuk pengelola aplikasi Kos Hunian." />;
+  if (!isAdmin) return <Empty title="Khusus admin" text="Halaman ini hanya untuk pengelola aplikasi PRASARA." />;
   if (err) return <div className="notice bad">{err}</div>;
   if (!kos) return <Loading />;
 
@@ -44,7 +44,7 @@ export default function Admin() {
 
   return (
     <div className="stack">
-      <h2>Admin Kos Hunian</h2>
+      <h2>Admin PRASARA</h2>
       <div className="grid">
         <Tile tone="hero" label="Pendapatan bulanan" value={rp(mrr)} sub={`${paying.length} kos berlangganan`} />
         <Tile label="Total kos terdaftar" value={kos.length} sub={`${kos.filter((k) => k.trial_until && k.effective_plan === 'pro' && !k.paid_until).length} sedang masa coba`} />
@@ -187,7 +187,7 @@ function Customer({ row, onClose }) {
           {k.contact_phone
             ? <a href={waLink(k.contact_phone, msg)} target="_blank" rel="noreferrer" onClick={() => record('kirim_wa')}><button className="primary">Buka WhatsApp</button></a>
             : <span className="small muted">Pelanggan belum mengisi nomor WhatsApp.</span>}
-          <a href={`mailto:${k.owner_email}?subject=${encodeURIComponent('Kos Hunian · ' + k.name)}&body=${encodeURIComponent(msg)}`} onClick={() => record('kirim_email')}><button>Kirim email</button></a>
+          <a href={`mailto:${k.owner_email}?subject=${encodeURIComponent('PRASARA · ' + k.name)}&body=${encodeURIComponent(msg)}`} onClick={() => record('kirim_email')}><button>Kirim email</button></a>
         </div>
 
         <span className="label">Catatan internal (tidak terlihat pelanggan)</span>

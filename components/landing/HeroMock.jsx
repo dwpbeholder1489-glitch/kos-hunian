@@ -1,3 +1,4 @@
+import { SITE_HOST } from '@/lib/plan';
 // Mockup hero: tampilan Dashboard aplikasi asli (versi lebar) + HP dengan peta kamar. Data contoh.
 import { ScrRooms } from '@/components/demo/Screens';
 import { rp, KOS, ROOMS, INVOICES, CASH_IN, CASH_OUT, FILLED, RENTABLE, ARREARS, BILLED, MONTH } from '@/components/demo/sample';
@@ -8,12 +9,12 @@ export default function HeroMock() {
   const debtors = ROOMS.filter((r) => r.debt > 0);
   const upcoming = INVOICES.filter((i) => i.state === 'belum');
   return (
-    <div className="ln-mock" aria-label="Contoh tampilan Dashboard Kos Hunian dengan data contoh">
+    <div className="ln-mock" aria-label="Contoh tampilan Dashboard PRASARA dengan data contoh">
       <div className="ln-browser">
-        <div className="ln-browser-bar"><i /><i /><i /><span>kos-hunian.vercel.app/beranda</span></div>
+        <div className="ln-browser-bar"><i /><i /><i /><span>{SITE_HOST}/beranda</span></div>
         <div className="ln-app">
           <div className="ln-app-top">
-            <div className="ln-app-brand"><span className="mark">KH</span><b>{KOS.name}</b></div>
+            <div className="ln-app-brand"><span className="mark">P</span><b>{KOS.name}</b></div>
             <div className="ln-app-tabs">{TABS.map((t, i) => <span key={t} className={i === 0 ? 'on' : ''}>{t}</span>)}</div>
           </div>
           <div className="ln-app-body">

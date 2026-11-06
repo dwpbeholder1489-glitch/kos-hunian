@@ -11,7 +11,7 @@ export function Phone({ tab, children, bare }) {
     <div className="mini" aria-label={`Contoh tampilan ${tab || ''}`}>
       {!bare && (
         <div className="mini-top">
-          <div className="mini-brand"><span className="mark">KH</span><b>{KOS.name}</b><span className="mini-help">?</span></div>
+          <div className="mini-brand"><span className="mark">P</span><b>{KOS.name}</b><span className="mini-help">?</span></div>
           <div className="mini-tabs">{TABS.map((t) => <span key={t} className={t === tab ? 'on' : ''}>{t}</span>)}</div>
         </div>
       )}
@@ -70,7 +70,7 @@ export function ScrSignup() {
   return (
     <Phone bare>
       <p className="mini-hello">Daftarkan kos Anda</p>
-      <F label="Nama kos" value="Kos Hunian" />
+      <F label="Nama kos" value="Kos Melati" />
       <F label="Alamat (opsional)" value={KOS.address} />
       <div className="row"><F label="Jumlah kamar" value="10" /><F label="Awalan kode" value="A" hint="A → A01, A02, …" /></div>
       <span className="mini-btn cta">Buat kos</span>
@@ -266,7 +266,7 @@ export function ScrReceipt() {
   return (
     <Phone bare>
       <div className="row between" style={{ alignItems: 'flex-start' }}>
-        <div className="brand"><span className="mark">KH</span><div><b>{KOS.name}</b><div className="small muted">{KOS.address}</div></div></div>
+        <div className="brand"><span className="mark">P</span><div><b>{KOS.name}</b><div className="small muted">{KOS.address}</div></div></div>
         <div style={{ textAlign: 'right' }}><div style={{ fontFamily: 'var(--display)', fontSize: 22, lineHeight: 1 }}>Kwitansi</div><div className="small muted">No. KW-A01-7F3C</div></div>
       </div>
       <dl className="kv"><dt>Telah terima dari</dt><dd>Rina Lestari</dd><dt>Kamar</dt><dd>A01</dd><dt>Untuk</dt><dd>Sewa {d(5)} – {d(4, -1)}</dd><dt>Metode</dt><dd>Transfer bank</dd></dl>
@@ -301,7 +301,7 @@ export function ScrPortal() {
   return (
     <div className="mini" aria-label="Contoh portal penghuni">
       <div className="mini-top">
-        <div className="mini-brand"><span className="mark">KH</span><b>{KOS.name}</b><span className="mini-help" style={{ width: 'auto', padding: '0 8px', borderRadius: 99 }}>Hubungi</span></div>
+        <div className="mini-brand"><span className="mark">P</span><b>{KOS.name}</b><span className="mini-help" style={{ width: 'auto', padding: '0 8px', borderRadius: 99 }}>Hubungi</span></div>
         <div className="mini-tabs"><span>Tagihan</span><span>Riwayat</span><span>Info kos</span><span className="on">Tanya asisten</span></div>
       </div>
       <div className="mini-body">

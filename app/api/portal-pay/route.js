@@ -55,7 +55,7 @@ async function notifyOwner(paymentId, origin) {
         ${attachments.length ? '<p style="margin:16px 0 6px;font-size:13px;color:#5A675F">Foto bukti:</p><img src="cid:bukti" style="max-width:100%;border:1px solid #DEDACB;border-radius:8px">' : '<p style="margin:16px 0 0;font-size:13px;color:#8A5A00">Penghuni tidak melampirkan foto bukti.</p>'}
         <p style="margin:18px 0 8px;font-size:14px">Cocokkan dengan mutasi rekening, lalu verifikasi di aplikasi:</p>
         <a href="${link}" style="display:inline-block;background:#B88A2E;color:#1D2A21;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:10px">Buka menu Pembayaran</a>
-        <p style="margin:18px 0 0;font-size:12px;color:#5A675F">Email ini dikirim otomatis oleh Kos Hunian. Matikan di Pengaturan › Info untuk penghuni.</p>
+        <p style="margin:18px 0 0;font-size:12px;color:#5A675F">Email ini dikirim otomatis oleh PRASARA. Matikan di Pengaturan › Info untuk penghuni.</p>
       </div></div>`,
     attachments,
   });

@@ -37,7 +37,7 @@ export default function Langganan() {
     const { error } = await supabase.rpc('request_plan', { p_kos: kos.id, p_plan: plan, p_months: months, p_method: method, p_note: note });
     setBusy(false);
     if (error) return toast(errMsg(error));
-    const msg = `Halo, saya sudah membayar langganan Kos Hunian.\n\nKos: ${kos.name}\nAkun: ${user?.email}\nPaket: ${PLANS[plan].name} ${months} bulan\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
+    const msg = `Halo, saya sudah membayar langganan PRASARA.\n\nKos: ${kos.name}\nAkun: ${user?.email}\nPaket: ${PLANS[plan].name} ${months} bulan\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
     setSent(waTo(msg));
     loadReqs();
   }
@@ -48,7 +48,7 @@ export default function Langganan() {
       <section className="panel">
         <span className="label">Paket saat ini</span>
         <b style={{ fontSize: 20 }}>Pro · Pemilik aplikasi 👑</b>
-        <p className="small muted" style={{ margin: 0 }}>Kos ini milik akun admin Kos Hunian, jadi semua fitur aktif selamanya tanpa langganan dan tanpa batas kamar.</p>
+        <p className="small muted" style={{ margin: 0 }}>Kos ini milik akun admin PRASARA, jadi semua fitur aktif selamanya tanpa langganan dan tanpa batas kamar.</p>
       </section>
       <p className="small muted" style={{ margin: 0 }}>Konfirmasi pembayaran dari pelanggan bisa diperiksa di menu Admin.</p>
     </div>
@@ -74,7 +74,7 @@ export default function Langganan() {
       {pending && !sent && (
         <div className="notice info">
           Konfirmasi pembayaran {PLANS[pending.plan].name} {pending.months} bulan ({rp(pending.amount)}) sedang diperiksa. Paket aktif setelah disetujui, biasanya dalam 1×24 jam.
-          <div style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan Kos Hunian untuk kos "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a></div>
+          <div style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan PRASARA untuk kos "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a></div>
         </div>
       )}
 
@@ -118,7 +118,7 @@ export default function Langganan() {
             </div>
             {method === 'qris' ? (
               <>
-                <img src={BUSINESS.qrisImage} alt="QRIS pembayaran Kos Hunian" className="qris" />
+                <img src={BUSINESS.qrisImage} alt="QRIS pembayaran PRASARA" className="qris" />
                 <p className="small muted" style={{ margin: 0, textAlign: 'center' }}>Scan dengan aplikasi bank atau e-wallet, lalu masukkan nominal <b>{rp(total)}</b>.</p>
                 <a href={BUSINESS.qrisImage} download="QRIS-Kos-Hunian.jpg" className="small" style={{ textAlign: 'center' }}>Simpan gambar QRIS</a>
               </>

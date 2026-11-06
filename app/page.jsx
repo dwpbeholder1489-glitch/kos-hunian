@@ -8,17 +8,17 @@ import { PLANS, FEATURES, BUSINESS } from '@/lib/plan';
 import { TESTIMONIALS } from '@/lib/testimonials';
 import { rp as rpDemo, CASH_IN, CASH_OUT, ROOMS } from '@/components/demo/sample';
 
-const TITLE = 'Kos Hunian — Aplikasi Pengelolaan Kos Online untuk Pemilik Kos';
-const DESC = 'Kelola kamar, penghuni, tagihan, pembayaran, dan laporan keuangan kos dengan mudah. Coba Kos Hunian gratis selama 30 hari.';
+const TITLE = 'PRASARA — Aplikasi Pengelolaan Kos Online untuk Pemilik Kos';
+const DESC = 'Kelola kamar, penghuni, tagihan, pembayaran, dan laporan keuangan kos dengan mudah. Coba PRASARA gratis selama 30 hari.';
 export const metadata = {
   title: TITLE,
   description: DESC,
-  openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'Kos Hunian', url: '/', images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Kos Hunian — aplikasi pengelolaan kos' }] },
+  openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'PRASARA', url: '/', images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan kos' }] },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: ['/og.jpg'] },
 };
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
-const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi Kos Hunian.')}`;
+const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi PRASARA.')}`;
 const START = '/masuk?daftar=1';
 
 const PROBLEMS = [
@@ -61,25 +61,25 @@ const STEPS = [
 const TRUST = [
   ['database', 'Data setiap pemilik terpisah', 'Pemisahan data dijaga langsung di tingkat database. Pemilik kos lain tidak dapat melihat data Anda.'],
   ['link', 'Penghuni hanya melihat miliknya', 'Link portal bersifat pribadi, hanya menampilkan tagihan penghuni itu, dan bisa diganti kapan saja.'],
-  ['globe', 'Akses lewat browser', 'Tidak perlu memasang aplikasi. Koneksi ke Kos Hunian selalu terenkripsi (HTTPS).'],
+  ['globe', 'Akses lewat browser', 'Tidak perlu memasang aplikasi. Koneksi ke PRASARA selalu terenkripsi (HTTPS).'],
   ['phone', 'HP dan laptop', 'Dirancang untuk dipakai dari HP, tetap nyaman di laptop. Data selalu sama di semua perangkat.'],
   ['lock', 'Data tetap milik Anda', 'Berhenti berlangganan tidak menghapus data. Laporan bisa diekspor ke Excel (Standar).'],
   ['headset', 'Bantuan langsung', `Ada pertanyaan atau kendala? Hubungi kami lewat WhatsApp ${BUSINESS.whatsappDisplay}.`],
 ];
 
 const FAQ = [
-  ['Apakah harus memasang aplikasi?', 'Tidak. Kos Hunian dibuka lewat browser di HP atau laptop. Agar terasa seperti aplikasi, tambahkan ke layar utama HP: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
+  ['Apakah harus memasang aplikasi?', 'Tidak. PRASARA dibuka lewat browser di HP atau laptop. Agar terasa seperti aplikasi, tambahkan ke layar utama HP: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
   ['Bagaimana cara mencoba gratis?', `Daftar dengan email, lalu isi nama kos dan jumlah kamar. Setiap kos baru mendapat ${BUSINESS.trialDays} hari akses ke semua fitur tanpa kartu kredit. Setelah itu kos otomatis menjadi paket Gratis (maksimal ${BUSINESS.freeRoomLimit} kamar terisi), kecuali Anda berlangganan.`],
   ['Bagaimana cara membayar langganan?', 'Buka menu Langganan di aplikasi, pilih paket dan durasi, lalu bayar lewat QRIS atau transfer bank. Tekan "Saya sudah bayar" dan kirim bukti lewat WhatsApp. Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam.'],
   ['Apakah data saya aman?', 'Data setiap pemilik dipisahkan di tingkat database sehingga pemilik lain tidak bisa melihatnya, dan koneksi ke aplikasi selalu terenkripsi. Penghuni hanya bisa melihat tagihannya sendiri lewat link pribadi yang bisa Anda ganti kapan saja.'],
   ['Apa yang terjadi jika berhenti berlangganan?', `Data tidak dihapus. Kos kembali ke paket Gratis: fitur berbayar terkunci, dan penghuni baru tidak bisa ditambahkan jika sudah ada ${BUSINESS.freeRoomLimit} kamar terisi. Begitu berlangganan lagi, semuanya terbuka kembali.`],
   ['Bagaimana kalau saya bingung setelah mendaftar?', `Dashboard langsung menampilkan daftar "Mulai di sini" berisi 4 langkah awal, setiap menu punya tombol "? Panduan", dan panduan bergambar bisa dibuka kapan saja. Jika masih ada kendala, hubungi kami lewat WhatsApp ${BUSINESS.whatsappDisplay}.`],
-  ['Apakah bisa digunakan melalui HP?', 'Bisa. Kos Hunian dirancang untuk dipakai dari HP — mulai dari mencatat pembayaran, mengirim pengingat WhatsApp, sampai melihat laporan.'],
+  ['Apakah bisa digunakan melalui HP?', 'Bisa. PRASARA dirancang untuk dipakai dari HP — mulai dari mencatat pembayaran, mengirim pengingat WhatsApp, sampai melihat laporan.'],
   ['Bagaimana jika memiliki banyak kamar?', 'Paket Standar dan Pro tidak membatasi jumlah kamar. Harga berlaku per kos, dan satu akun bisa mengelola beberapa kos sekaligus.'],
 ];
 
 const jsonLd = {
-  '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'Kos Hunian', applicationCategory: 'BusinessApplication',
+  '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'PRASARA', applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web', description: DESC, inLanguage: 'id',
   offers: ['gratis', 'standar', 'pro'].map((k) => ({ '@type': 'Offer', name: PLANS[k].name, price: PLANS[k].price, priceCurrency: 'IDR' })),
 };
@@ -135,7 +135,7 @@ export default function Landing() {
         <section className="ln-sec ln-sec-alt" id="fitur" aria-labelledby="h-fitur">
           <div className="ln-wrap">
             <div className="ln-head"><span className="ln-kicker">Solusinya</span><h2 id="h-fitur">Semua urusan kos, dalam satu kendali.</h2>
-              <p>Dari kamar kosong sampai laba bersih — Kos Hunian mencatat, menghitung, dan mengingatkan untuk Anda.</p></div>
+              <p>Dari kamar kosong sampai laba bersih — PRASARA mencatat, menghitung, dan mengingatkan untuk Anda.</p></div>
             <div className="ln-groups">
               {GROUPS.map(([ic, g, items]) => (
                 <div key={g} className="ln-group">
@@ -174,7 +174,7 @@ export default function Landing() {
             <div>
               <span className="ln-kicker">Asisten AI</span>
               <h2 id="h-ai">Punya pertanyaan tentang bisnis kos Anda? Tinggal tanyakan.</h2>
-              <p className="ln-p">Asisten AI Kos Hunian khusus untuk urusan kos. Ia hanya menjawab berdasarkan data yang tercatat di aplikasi dan sesuai hak akses — penghuni hanya bisa menanyakan tagihannya sendiri. Pertanyaan di luar urusan kos ditolak dengan sopan.</p>
+              <p className="ln-p">Asisten AI PRASARA khusus untuk urusan kos. Ia hanya menjawab berdasarkan data yang tercatat di aplikasi dan sesuai hak akses — penghuni hanya bisa menanyakan tagihannya sendiri. Pertanyaan di luar urusan kos ditolak dengan sopan.</p>
               <div className="ln-ai-cards">
                 <div className="ln-ai-card"><div className="ln-feat-t">Asisten untuk penghuni <Badge t="Pro" /></div><p>Di portal penghuni: tagihan, cara bayar, jatuh tempo, peraturan, dan kamar kosong.</p></div>
                 <div className="ln-ai-card"><div className="ln-feat-t">Asisten untuk pemilik <Badge t="Segera hadir" /></div>
@@ -184,7 +184,7 @@ export default function Landing() {
               </div>
             </div>
             <div className="ln-chat" aria-label="Pratinjau percakapan asisten pemilik dengan data contoh">
-              <div className="ln-chat-h"><span className="ln-ico-wrap sm"><Icon name="sparkles" size={18} /></span><b>Asisten Kos Hunian</b><Badge t="Segera hadir" /></div>
+              <div className="ln-chat-h"><span className="ln-ico-wrap sm"><Icon name="sparkles" size={18} /></span><b>Asisten PRASARA</b><Badge t="Segera hadir" /></div>
               <div className="ln-bub me">Berapa keuntungan bersih bulan ini?</div>
               <div className="ln-bub">Pendapatan bulan ini {rpDemo(CASH_IN)} dan biaya operasional {rpDemo(CASH_OUT)}, jadi laba operasional {rpDemo(CASH_IN - CASH_OUT)}.</div>
               <div className="ln-bub me">Siapa saja yang belum membayar?</div>
@@ -278,7 +278,7 @@ export default function Landing() {
       <footer className="ln-foot">
         <div className="ln-wrap ln-foot-in">
           <div>
-            <div className="ln-logo"><span className="ln-logo-mark">KH</span><b>Kos Hunian</b></div>
+            <div className="ln-logo"><span className="ln-logo-mark">P</span><b>PRASARA</b></div>
             <p>Kos tetap berjalan. Anda tetap tenang.</p>
           </div>
           <nav aria-label="Tautan footer">
@@ -286,7 +286,7 @@ export default function Landing() {
             <a href={WA} target="_blank" rel="noreferrer">WhatsApp {BUSINESS.whatsappDisplay}</a>
           </nav>
         </div>
-        <div className="ln-wrap ln-copy">© {new Date().getFullYear()} Kos Hunian</div>
+        <div className="ln-wrap ln-copy">© {new Date().getFullYear()} PRASARA</div>
       </footer>
     </div>
   );

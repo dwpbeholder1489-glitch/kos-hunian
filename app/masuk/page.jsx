@@ -20,7 +20,7 @@ export default function Masuk() {
   if (!configured) {
     return (
       <div className="auth">
-        <p className="hello">Kos Hunian</p>
+        <p className="hello">PRASARA</p>
         <div className="notice bad">Aplikasi belum terhubung ke database. Isi NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_ANON_KEY di pengaturan Environment Variables Vercel, lalu deploy ulang.</div>
       </div>
     );
@@ -45,7 +45,7 @@ export default function Masuk() {
 
   return (
     <div className="auth">
-      <a href="/" className="brand" style={{ textDecoration: 'none', color: 'inherit' }}><span className="mark">KH</span><div><b>Kos Hunian</b><div className="small muted">Manage Smarter. Live Better.</div></div></a>
+      <a href="/" className="brand" style={{ textDecoration: 'none', color: 'inherit' }}><span className="mark">P</span><div><b>PRASARA</b><div className="small muted">One Intelligence. Every Business.</div></div></a>
       <p className="hello">{mode === 'masuk' ? 'Selamat datang kembali' : 'Kelola kos jadi lebih rapi'}</p>
       <p className="muted" style={{ margin: 0 }}>Kamar, penghuni, tagihan, dan keuangan kos dalam satu aplikasi.</p>
       <div className="seg">

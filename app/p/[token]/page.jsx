@@ -53,7 +53,7 @@ export default function Portal() {
       <header className="top">
         <div className="wrap" style={{ paddingBottom: 0 }}>
           <div className="brandrow">
-            <div className="brand"><span className="mark">KH</span><div><h1>{p.kos.name}</h1><small>Portal penghuni</small></div></div>
+            <div className="brand"><span className="mark">P</span><div><h1>{p.kos.name}</h1><small>Portal penghuni</small></div></div>
             {p.kos.contact_phone && <a className="helpbtn" style={{ width: 'auto', padding: '0 12px', borderRadius: 999, fontSize: 13 }} href={waLink(p.kos.contact_phone, `Halo, saya ${p.occupant.name}${p.lease ? ' kamar ' + p.lease.room : ''}.`)} target="_blank" rel="noreferrer">Hubungi</a>}
           </div>
           <nav className="tabs">

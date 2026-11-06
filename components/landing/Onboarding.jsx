@@ -6,7 +6,7 @@ import Icon from './Icon';
 import Reveal from './Reveal';
 import { BUSINESS } from '@/lib/plan';
 
-const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin dibantu memulai Kos Hunian.')}`;
+const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin dibantu memulai PRASARA.')}`;
 
 const BENEFITS = [
   ['compass', 'Dipandu dari awal', 'Setelah mendaftar, Dashboard menampilkan daftar "Mulai di sini": isi harga kamar, masukkan penghuni, catat pembayaran, dan catat pengeluaran. Setiap langkah tercentang otomatis.'],
@@ -19,7 +19,7 @@ const BENEFITS = [
 
 // [judul, isi, dibantu oleh]
 const STAGES = [
-  ['Daftar dan mulai', 'Buat akun Kos Hunian dengan email.', 'Kurang dari 1 menit'],
+  ['Daftar dan mulai', 'Buat akun PRASARA dengan email.', 'Kurang dari 1 menit'],
   ['Kenali kos Anda', 'Masukkan nama kos, jumlah kamar, dan harga sewa.', 'Kamar dibuat otomatis'],
   ['Mulai mengelola', 'Catat penghuni dan pembayaran pertama.', 'Daftar "Mulai di sini"'],
   ['Pahami keuangan', 'Lihat pemasukan, pengeluaran, dan laba di Laporan.', 'Tombol "? Panduan"'],
@@ -76,8 +76,8 @@ export default function Onboarding() {
           </div>
           <div className="ln-assure-cta">
             <span className="ln-assure-badge">Gratis mencoba selama {BUSINESS.trialDays} hari</span>
-            <p>Kenali cara baru mengelola kos. Mulai dari langkah sederhana, pelajari manfaatnya, lalu putuskan apakah Kos Hunian cocok untuk kebutuhan Anda.</p>
-            <Link href="/masuk?daftar=1" className="ln-btn ln-btn-primary ln-btn-lg">Mulai Coba Kos Hunian <Icon name="arrow" size={18} /></Link>
+            <p>Kenali cara baru mengelola kos. Mulai dari langkah sederhana, pelajari manfaatnya, lalu putuskan apakah PRASARA cocok untuk kebutuhan Anda.</p>
+            <Link href="/masuk?daftar=1" className="ln-btn ln-btn-primary ln-btn-lg">Mulai Coba PRASARA <Icon name="arrow" size={18} /></Link>
             <div className="ln-assure-links">
               <Link href="/panduan" className="ln-textlink">Lihat panduan bergambar</Link>
               <a href={WA} target="_blank" rel="noreferrer" className="ln-textlink"><Icon name="message" size={16} />Tanya lewat WhatsApp</a>

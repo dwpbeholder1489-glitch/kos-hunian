@@ -38,7 +38,7 @@ export default function Mulai() {
       <p className="hello">{first ? 'Daftarkan kos Anda' : 'Tambah kos baru'}</p>
       <p className="muted" style={{ margin: 0 }}>Kamar dibuat otomatis dengan kode berurutan (mis. A01–A10). Harga sewa diisi nanti per kamar.</p>
       <form className="stack" onSubmit={submit}>
-        <Field label="Nama kos"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Kos Hunian" /></Field>
+        <Field label="Nama kos"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Kos Melati" /></Field>
         <Field label="Alamat (opsional)"><input value={addr} onChange={(e) => setAddr(e.target.value)} /></Field>
         <div className="row">
           <Field label="Jumlah kamar"><input inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} /></Field>

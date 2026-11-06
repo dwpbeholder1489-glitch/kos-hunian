@@ -11,7 +11,7 @@ export const DEMO_PORTAL = {
   locked: false, demo: true,
   today: `${ym(0)}-${p2(now.getDate())}`,
   kos: {
-    name: 'Kos Hunian', address: 'Jl. Contoh No. 7, Majalengka', contact_phone: '081222206149',
+    name: 'Kos Melati', address: 'Jl. Contoh No. 7, Majalengka', contact_phone: '081222206149',
     payment_info: 'Transfer ke Bank Contoh 123-456-7890 a.n. Pemilik Kos\nAtau QRIS di meja depan\nPaling lambat tanggal jatuh tempo',
     house_rules: 'Jam malam pukul 22.00\nTamu menginap wajib lapor pengelola\nJaga kebersihan dapur bersama\nParkir motor di area belakang',
   },

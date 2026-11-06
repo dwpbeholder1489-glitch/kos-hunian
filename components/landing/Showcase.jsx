@@ -33,7 +33,7 @@ export default function Showcase() {
         </div>
         <div className="ln-show-screen"><Scr /></div>
       </div>
-      <p className="ln-note">Tampilan diambil dari aplikasi Kos Hunian dengan data contoh.</p>
+      <p className="ln-note">Tampilan diambil dari aplikasi PRASARA dengan data contoh.</p>
     </div>
   );
 }
