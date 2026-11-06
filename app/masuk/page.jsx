@@ -46,8 +46,8 @@ export default function Masuk() {
   return (
     <div className="auth">
       <a href="/" className="brand" style={{ textDecoration: 'none', color: 'inherit' }}><span className="mark">P</span><div><b>PRASARA</b><div className="small muted">One Intelligence. Every Business.</div></div></a>
-      <p className="hello">{mode === 'masuk' ? 'Selamat datang kembali' : 'Kelola kos jadi lebih rapi'}</p>
-      <p className="muted" style={{ margin: 0 }}>Kamar, penghuni, tagihan, dan keuangan kos dalam satu aplikasi.</p>
+      <p className="hello">{mode === 'masuk' ? 'Selamat datang kembali' : 'Kelola bisnis jadi lebih rapi'}</p>
+      <p className="muted" style={{ margin: 0 }}>Kos, toko, dan usaha Anda lainnya dalam satu aplikasi. Karyawan yang diundang: daftar dengan email undangan.</p>
       <div className="seg">
         <button className={mode === 'masuk' ? 'on' : ''} onClick={() => setMode('masuk')}>Masuk</button>
         <button className={mode === 'daftar' ? 'on' : ''} onClick={() => setMode('daftar')}>Daftar baru</button>

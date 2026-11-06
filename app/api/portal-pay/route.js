@@ -47,8 +47,8 @@ async function notifyOwner(paymentId, origin) {
     to,
     subject: `Bukti transfer ${rp(pay.amount)} dari ${occ?.name || 'penghuni'} (${room?.code || ''}) · ${kos.name}`,
     text: `Ada konfirmasi pembayaran baru di ${kos.name}.\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nCocokkan dengan mutasi rekening Anda, lalu buka ${link} dan tekan "Uang sudah masuk" atau "Tolak".`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:520px;color:#17261F">
-      <div style="background:#1D4A37;color:#F7F5EE;padding:14px 18px;border-radius:12px 12px 0 0"><b style="font-size:18px">${esc(kos.name)}</b><br><span style="opacity:.8;font-size:13px">Konfirmasi pembayaran dari portal penghuni</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:520px;color:#1A1D21">
+      <div style="background:#13233A;color:#F7F4EE;padding:14px 18px;border-radius:12px 12px 0 0"><b style="font-size:18px">${esc(kos.name)}</b><br><span style="opacity:.8;font-size:13px">Konfirmasi pembayaran dari portal penghuni</span></div>
       <div style="border:1px solid #DEDACB;border-top:0;border-radius:0 0 12px 12px;padding:18px">
         <p style="margin:0 0 12px">Ada bukti transfer baru yang perlu Anda periksa:</p>
         <table style="width:100%;border-collapse:collapse;font-size:14px">${rows.map(([k, v]) => `<tr><td style="padding:6px 0;color:#5A675F">${esc(k)}</td><td style="padding:6px 0;text-align:right;font-weight:bold">${esc(v)}</td></tr>`).join('')}</table>

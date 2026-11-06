@@ -16,6 +16,17 @@ const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, 
 const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Standar</span>;
 const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</span>;
 
+// Menu toko (Retail & Grosir)
+const MENUS_TOKO = [
+  ['Toko', 'Ringkasan hari ini: penjualan, laba kotor, stok menipis'],
+  ['Kasir', 'Jual eceran/grosir, tombol barang cepat, scan barcode, struk'],
+  ['Penjualan & Shift kasir', 'Riwayat transaksi, retur, batal; buka/tutup laci'],
+  ['Belanja', 'Pesan ke supplier, terima barang, utang supplier'],
+  ['Kas & kasbon', 'Saldo kas/bank, biaya, kasbon pelanggan, utang'],
+  ['Barang & stok', 'Barang, satuan, harga, barcode, label, tombol cepat'],
+  ['Pelanggan & supplier', 'Kontak, sisa kasbon/utang, riwayat'],
+  ['Laporan', 'Laba, barang terlaris dan tidak laku'],
+];
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
   ['Kamar', 'Peta kamar, harga sewa, fasilitas, dan memasukkan penghuni'],
@@ -143,7 +154,7 @@ const PARTS = [
       <><b>Teks pesan WhatsApp</b>: ubah kata-kata pesan pengingat tagihan dan pesan link portal. Ketuk kata berwarna seperti <b>{'{nama}'}</b> atau <b>{'{total}'}</b> untuk menyisipkan data penghuni otomatis; lihat <b>Contoh pesan</b> sebelum menyimpan. <b>Pakai teks bawaan</b> mengembalikan teks awal.</>,
       <><b>QRIS kos</b>: unggah screenshot QRIS dari aplikasi bank/merchant agar penghuni bisa scan dari portal. Uji dengan satu pembayaran kecil setelah mengganti.</>,
       <>Tambah kategori pengeluaran sesuai kebutuhan.</>,
-      <>Punya kos lain? <b>+ Tambah kos lain</b>, lalu pindah lewat pilihan di pojok kanan atas.</>,
+      <>Punya kos lain? <b>+ Tambah kos lain</b>, lalu pindah dengan mengetuk nama bisnis di kiri atas.</>,
       <>Pasang di layar utama HP: Safari › <b>Bagikan</b> › <b>Tambah ke Layar Utama</b>; Chrome › <b>⋮</b> › <b>Tambahkan ke layar utama</b>.</>,
     ], null, null, null],
     ['Portal penghuni & asisten 24 jam', 'Penghuni › ketuk penghuni › Portal penghuni', [
@@ -175,12 +186,12 @@ const PARTS = [
       <>Buka <b>Bisnis saya</b>, tekan <b>+ Tambah bisnis</b>.</>,
       <>Pilih jenisnya: <b>Properti & Sewa</b> (kos, kontrakan) atau <b>Retail & Grosir</b> (toko: kasir, stok, belanja, kasbon).</>,
       <>Isi nama dan alamat, lalu <b>Buat bisnis</b>. Menu di atas menyesuaikan jenis bisnis.</>,
-      <>Pindah bisnis lewat pilihan di <b>kanan atas</b>. Halaman <b>Bisnis saya</b> menampilkan ringkasan semua bisnis bulan ini.</>,
+      <>Pindah bisnis dengan <b>mengetuk nama bisnis di kiri atas</b>. Halaman <b>Bisnis saya</b> menampilkan ringkasan semua bisnis bulan ini.</>,
     ], <>Pembukuan setiap bisnis terpisah: transaksi toko tidak akan masuk ke laporan kos, dan sebaliknya.</>, null, null],
   ]],
   ['E', 'Retail & Grosir (toko)', [
     ['Barang, satuan, dan stok', 'Menu Barang & stok', [
-      <>Buka bisnis toko Anda (pilihan di kanan atas), lalu menu <b>Barang & stok</b>. Tekan <b>+ Tambah barang</b>.</>,
+      <>Buka bisnis toko Anda (ketuk nama bisnis di kiri atas), lalu menu <b>Barang & stok</b>. Tekan <b>+ Tambah barang</b>.</>,
       <>Isi nama, <b>satuan terkecil</b> (pcs, bungkus, kg) dan <b>harga modal</b> per satuan itu, lalu stok sekarang.</>,
       <>Di <b>Satuan jual & harga</b>, isi harga eceran dan grosir. Tekan <b>+ Tambah satuan</b> untuk dus/pak/renteng beserta isinya (mis. dus isi 40).</>,
       <>Untuk menghitung ulang atau mencatat barang rusak, tekan <b>Stok</b> di samping barang, pilih alasannya, isi jumlah, lalu <b>Simpan</b>.</>,
@@ -263,12 +274,24 @@ export default function Panduan() {
       <LandingNav />
       <div className="guide">
         <h1>Panduan PRASARA</h1>
-        <p className="muted" style={{ margin: 0 }}>Langkah demi langkah memakai aplikasi pengelolaan kos: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, dan kwitansi.</p>
+        <p className="muted" style={{ margin: 0 }}>Langkah demi langkah memakai PRASARA untuk kos (kamar, penghuni, tagihan, pembayaran, laporan) dan toko (kasir, stok, belanja, kas, laporan), termasuk karyawan.</p>
 
-        <h2 style={{ color: 'var(--brand-2)' }}>Menu di bagian atas aplikasi (kos)</h2>
+        <h2 style={{ color: 'var(--brand-2)' }}>Cara berpindah menu</h2>
+        <ul style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <li>Di HP, <b>4 menu utama ada di bawah layar</b>. Menu lain ada di <b>Lainnya</b> (•••), bersama Bantuan, pilihan <b>Tampilan</b> (Ikuti HP / Terang / Gelap), dan Keluar.</li>
+          <li>Di laptop, semua menu tampil di bagian atas.</li>
+          <li><b>Ketuk nama bisnis di kiri atas</b> untuk pindah bisnis atau menambah bisnis baru.</li>
+          <li>Karyawan hanya melihat menu sesuai perannya.</li>
+        </ul>
+        <h2 style={{ color: 'var(--brand-2)' }}>Menu kos (Properti & Sewa)</h2>
         <div className="panel" style={{ padding: 0, overflowX: 'auto' }}>
           <table className="g-table"><thead><tr><th>Menu</th><th>Dipakai untuk</th></tr></thead>
             <tbody>{MENUS.map(([m, t]) => <tr key={m}><td><b>{m}</b></td><td>{t}</td></tr>)}</tbody></table>
+        </div>
+        <h2 style={{ color: 'var(--brand-2)' }}>Menu toko (Retail & Grosir)</h2>
+        <div className="panel" style={{ padding: 0, overflowX: 'auto' }}>
+          <table className="g-table"><thead><tr><th>Menu</th><th>Dipakai untuk</th></tr></thead>
+            <tbody>{MENUS_TOKO.map(([m, t]) => <tr key={m}><td><b>{m}</b></td><td>{t}</td></tr>)}</tbody></table>
         </div>
 
         <h2 style={{ color: 'var(--brand-2)' }}>Urutan panduan</h2>
@@ -278,6 +301,7 @@ export default function Panduan() {
           <div><b>Pengecekan</b><span><a href="#bagian-C">Langkah 14–17</a><br />Dashboard, laporan, kwitansi</span></div>
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
+          <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–35</a><br />Karyawan, kontak, shift, pengingat, label</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

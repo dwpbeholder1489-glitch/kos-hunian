@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useKos } from '@/components/KosProvider';
 import Icon from '@/components/landing/Icon';
 
-const LINKS = [['/#', 'Beranda'], ['/#fitur', 'Fitur'], ['/#cara-kerja', 'Cara Kerja'], ['/#harga', 'Harga'], ['/#faq', 'FAQ']];
+const LINKS = [['/#solusi', 'Solusi'], ['/#fitur', 'Fitur'], ['/#demo', 'Demo'], ['/#harga', 'Harga'], ['/#faq', 'FAQ']];
 
 export default function LandingNav() {
   const { session } = useKos();
@@ -25,7 +25,7 @@ export default function LandingNav() {
         </nav>
         <div className="ln-nav-cta">
           {session ? (
-            <Link href="/beranda" className="ln-btn ln-btn-primary ln-btn-sm">Buka aplikasi</Link>
+            <Link href="/buka" className="ln-btn ln-btn-primary ln-btn-sm">Buka aplikasi</Link>
           ) : (
             <>
               <Link href="/masuk" className="ln-btn ln-btn-ghost ln-btn-sm ln-hide-xs">Masuk</Link>

@@ -11,7 +11,7 @@ const TABS = [
   ['tagihan', 'Tagihan', ScrInvoices, 'Tagihan terbit sendiri', 'Tagihan sewa bulanan dibuat otomatis 7 hari sebelum jatuh tempo, lengkap dengan status bayarnya.', ['Belum bayar, dibayar sebagian, menunggak, atau lunas', 'Tagihan tambahan: listrik, laundry, denda, deposit', 'Kwitansi PDF untuk setiap pembayaran (Standar)']],
   ['pembayaran', 'Pembayaran', ScrVerify, 'Pembayaran tercatat rapi', 'Catat tunai, transfer, atau QRIS — termasuk bayar sebagian. Sisa tagihan dihitung otomatis.', ['Verifikasi pembayaran sebelum dihitung lunas', 'Bukti transfer dari penghuni masuk ke satu tempat', 'Total uang masuk per bulan']],
   ['laporan', 'Laporan', ScrReport, 'Tahu untung bersih kos', 'Laba rugi bulanan memisahkan pendapatan, biaya operasional, belanja modal, dan uang yang diambil pemilik.', ['Tren 6 bulan dan pendapatan per kamar (Standar)', 'Ekspor Excel dan simpan PDF (Standar)', 'Berbasis kas: dihitung saat uang benar-benar diterima']],
-  ['portal', 'Portal & AI', ScrPortal, 'Penghuni melayani dirinya sendiri', 'Setiap penghuni mendapat link pribadi untuk melihat tagihan, mengirim bukti transfer, dan bertanya ke asisten AI soal kos.', ['Tanpa daftar atau login bagi penghuni', 'Penghuni hanya melihat tagihannya sendiri', 'Asisten hanya menjawab urusan kos (Pro)']],
+  ['portal', 'Portal', ScrPortal, 'Penghuni melayani dirinya sendiri', 'Setiap penghuni mendapat link pribadi untuk melihat tagihan dan mengirim bukti transfer (Pro).', ['Tanpa daftar atau login bagi penghuni', 'Penghuni hanya melihat tagihannya sendiri', 'Link bisa diganti kapan saja']],
 ];
 
 export default function Showcase() {

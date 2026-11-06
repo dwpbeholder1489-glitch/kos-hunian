@@ -37,7 +37,7 @@ export default function Langganan() {
     const { error } = await supabase.rpc('request_plan', { p_kos: kos.id, p_plan: plan, p_months: months, p_method: method, p_note: note });
     setBusy(false);
     if (error) return toast(errMsg(error));
-    const msg = `Halo, saya sudah membayar langganan PRASARA.\n\nKos: ${kos.name}\nAkun: ${user?.email}\nPaket: ${PLANS[plan].name} ${months} bulan\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
+    const msg = `Halo, saya sudah membayar langganan PRASARA.\n\nBisnis: ${kos.name}\nAkun: ${user?.email}\nPaket: ${PLANS[plan].name} ${months} bulan\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
     setSent(waTo(msg));
     loadReqs();
   }
@@ -48,7 +48,7 @@ export default function Langganan() {
       <section className="panel">
         <span className="label">Paket saat ini</span>
         <b style={{ fontSize: 20 }}>Pro · Pemilik aplikasi 👑</b>
-        <p className="small muted" style={{ margin: 0 }}>Kos ini milik akun admin PRASARA, jadi semua fitur aktif selamanya tanpa langganan dan tanpa batas kamar.</p>
+        <p className="small muted" style={{ margin: 0 }}>Bisnis ini milik akun admin PRASARA, jadi semua fitur aktif selamanya tanpa langganan.</p>
       </section>
       <p className="small muted" style={{ margin: 0 }}>Konfirmasi pembayaran dari pelanggan bisa diperiksa di menu Admin.</p>
     </div>
@@ -65,8 +65,8 @@ export default function Langganan() {
           {p.until && <span className="chip info">{p.trial ? 'Coba' : 'Aktif'} s.d. {tgl(p.until)}</span>}
         </div>
         <p className="small muted" style={{ margin: 0 }}>
-          {p.trial ? `Setelah masa coba, kos otomatis menjadi paket Gratis (maks ${BUSINESS.freeRoomLimit} kamar terisi). Data tidak hilang.`
-            : p.plan === 'gratis' ? `Paket Gratis: maks ${BUSINESS.freeRoomLimit} kamar terisi, tanpa laporan lengkap, ekspor, dan kwitansi.`
+          {p.trial ? (kos.business_type === 'retail' ? 'Setelah masa coba, bisnis otomatis menjadi paket Gratis: maks 1 karyawan dan tanpa email pengingat pagi. Data tidak hilang.' : `Setelah masa coba, kos otomatis menjadi paket Gratis (maks ${BUSINESS.freeRoomLimit} kamar terisi). Data tidak hilang.`)
+            : p.plan === 'gratis' ? (kos.business_type === 'retail' ? 'Paket Gratis: semua fitur toko, maks 1 karyawan, tanpa email pengingat pagi.' : `Paket Gratis: maks ${BUSINESS.freeRoomLimit} kamar terisi, tanpa laporan lengkap, ekspor, dan kwitansi.`)
               : 'Perpanjangan akan ditambahkan setelah masa aktif sekarang berakhir.'}
         </p>
       </section>
@@ -74,7 +74,7 @@ export default function Langganan() {
       {pending && !sent && (
         <div className="notice info">
           Konfirmasi pembayaran {PLANS[pending.plan].name} {pending.months} bulan ({rp(pending.amount)}) sedang diperiksa. Paket aktif setelah disetujui, biasanya dalam 1×24 jam.
-          <div style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan PRASARA untuk kos "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a></div>
+          <div style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan PRASARA "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a></div>
         </div>
       )}
 
@@ -99,8 +99,8 @@ export default function Langganan() {
               ))}
             </div>
             <ul className="lp-list small">
-              {FEATURES.filter((f) => f[plan] && !f.gratis).map((f) => <li key={f.label}>✓ {f.label}{f.soon && <span className="chip info" style={{ marginLeft: 6 }}>Segera</span>}</li>)}
-              <li>✓ Kamar tanpa batas + semua fitur Gratis</li>
+              {FEATURES.filter((f) => f[plan] && !f.gratis && (f.group === 'umum' || f.group === (kos.business_type || 'properti'))).map((f) => <li key={f.label}>✓ {f.label}{f.soon && <span className="chip info" style={{ marginLeft: 6 }}>Segera</span>}</li>)}
+              {kos.business_type !== 'retail' ? <li>✓ Kamar tanpa batas + semua fitur Gratis</li> : <li>✓ Semua fitur toko di paket Gratis</li>}
             </ul>
           </section>
 
