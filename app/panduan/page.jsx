@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -348,20 +348,20 @@ const PARTS = [
     ], <>Yang TIDAK pernah tampil: harga modal, laba, stok persis (hanya Tersedia/Habis), data pelanggan, dan catatan staf. Permintaan bukan penjualan final dan tidak mengubah stok, kas, atau jurnal. Spam dibatasi otomatis (terlalu cepat/terlalu sering dari satu perangkat ditolak). Tekan <b>Sembunyikan halaman</b> kapan saja; bisnis yang ditutup otomatis tidak tampil. Pembayaran online dan pesanan langsung jadi belum tersedia.</>, null, null],
   ]],
   ['G', 'Jasa & Laundry', [
-    ['Buat bisnis laundry, atur layanan & tahap', 'Ketuk nama bisnis › + Tambah bisnis › Jasa & Laundry; lalu Lainnya › Layanan & tahap', [
-      <>Pilih jenis <b>Jasa & Laundry</b>, isi nama usaha, lalu pilih contoh awal: <b>Laundry</b> (tahap Cuci → Kering → Setrika → Cek kualitas → Kemas, layanan kiloan & satuan dengan harga contoh) atau <b>Jasa umum</b> (jahit, servis, cetak; layanan diisi sendiri).</>,
-      <>Buka <b>Layanan & tahap</b>. Ketuk layanan untuk mengubah <b>harga per kg/pcs</b>, <b>minimal</b> (mis. 3 kg — 2 kg tetap dihitung 3 kg), dan <b>lama pengerjaan</b> (jam) yang dipakai untuk janji selesai otomatis. <b>+ Layanan</b> untuk menambah.</>,
+    ['Buat bisnis laundry, atur layanan & tahap', 'Ketuk nama bisnis › + Tambah bisnis › Laundry & Jasa Rumah Tangga; lalu Lainnya › Layanan & tahap', [
+      <>Pilih kategori <b>Laundry & Jasa Rumah Tangga</b> (subkategori Laundry), pilih layanan yang Anda sediakan, jam operasional, dan antar jemput. Lengkapi <b>harga & estimasi</b> tiap layanan dan wilayah/biaya/jadwal antar jemput di <b>Pusat Konfirmasi</b> (Langkah 64), lalu aktifkan.</>,
+      <>Buka <b>Layanan & tahap</b>. Ketuk layanan untuk mengubah <b>harga per kg/pcs</b>, <b>minimal</b> (mis. 3 kg — 2 kg tetap dihitung 3 kg), <b>lama pengerjaan</b> (jam), <b>deskripsi</b>, <b>persyaratan</b> (mis. pakaian luntur dipisah), info tambahan, dan <b>Tersedia / Tidak tersedia sementara</b>. <b>+ Layanan</b> untuk menambah.</>,
       <>Di <b>Tahap proses</b>, ganti nama, urutkan dengan ↑ ↓, nonaktifkan, atau <b>+ Tahap</b>, lalu <b>Simpan tahap</b>.</>,
-    ], <>Harga contoh hanya contoh — sesuaikan dulu sebelum menerima pesanan. Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan. Setiap perubahan harga & tahap tercatat di Konfigurasi › Riwayat.</>, null, null],
+    ], <>Harga tidak pernah diisi otomatis. Deskripsi & persyaratan tampil di halaman bisnis; layanan yang tidak tersedia tidak bisa dipilih. Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan. Setiap perubahan harga & tahap tercatat di Konfigurasi › Riwayat.</>, null, null],
     ['Terima pesanan & beri nota', 'Pesanan › + Pesanan baru', [
       <>Cari pelanggan lama (nama / No. HP) atau isi nama & No. WhatsApp pelanggan baru — tersimpan otomatis, dicocokkan lewat nomor.</>,
       <>Ketuk layanan (mis. <b>+ Cuci kering setrika</b>), isi berat/jumlah dan catatan (mis. "3 kemeja putih"). Total dihitung otomatis termasuk minimal.</>,
-      <>Bila perlu: centang <b>Dijemput</b>/<b>Diantar</b> (alamat & ongkos), isi <b>diskon</b>, dan ubah <b>janji selesai</b>.</>,
+      <>Bila perlu: centang <b>Dijemput</b>/<b>Diantar</b>, pilih <b>Wilayah</b> (ongkos terisi otomatis), alamat, dan tanggal/jam jemput-antar (Langkah 65); isi <b>diskon</b>, dan ubah <b>janji selesai</b>.</>,
       <>Isi <b>Bayar sekarang</b> untuk DP atau tekan <b>Lunas sekarang</b>; kosongkan bila bayar saat ambil. Tekan <b>Simpan pesanan</b>.</>,
       <>Di detail pesanan tekan <b>Nota</b> untuk mencetak (printer struk 58 mm) atau <b>Kirim via WhatsApp</b>, atau tombol <b>WA: diterima</b>.</>,
     ], <>Harga dihitung ulang oleh server dari daftar layanan — kasir tidak bisa mengubah harga satuan; potongan lewat diskon yang tercatat. Tekan Simpan dua kali tidak membuat pesanan dobel. Pesan WhatsApp dikirim manual dari HP Anda (bukan otomatis).</>, null, <ScrPesanan />],
     ['Kerjakan pesanan per tahap', 'Pesanan (pemilik, kasir, Petugas proses)', [
-      <>Papan pesanan bisa disaring: <b>Semua aktif</b>, <b>Diterima</b>, per tahap (Cuci, Setrika, …), <b>Siap</b>, <b>Antar-jemput</b>, <b>Terlambat</b>, <b>Selesai & batal</b>; atau cari nomor/nama/No. HP.</>,
+      <>Papan pesanan bisa disaring: <b>Semua aktif</b>, <b>Diterima</b>, per tahap (Cuci, Setrika, …), <b>Siap</b>, <b>Menunggu jemput</b>, <b>Dalam pengantaran</b>, <b>Terlambat</b>, <b>Selesai & batal</b>; atau cari nomor/nama/No. HP.</>,
       <>Ketuk pesanan › tombol <b>→ [tahap berikutnya]</b> (mis. → Kering) setiap kali pekerjaan pindah tahap. Setelah tahap terakhir: <b>→ Siap</b>. Bisa juga <b>Langsung siap</b>.</>,
       <>Salah tekan? <b>Mundur</b> (alasan wajib). Semua perpindahan tercatat di <b>Riwayat</b> beserta waktu dan siapa.</>,
       <>Karyawan bagian produksi undang sebagai <b>Petugas proses</b> (menu Karyawan): hanya bisa memindahkan tahap & mencatat keluhan, tidak melihat uang dan tidak bisa menyerahkan pesanan.</>,
@@ -469,6 +469,14 @@ const PARTS = [
       <>Tekan <b>Tinjau seluruh konfigurasi & aktifkan</b>: lihat apa yang akan aktif dan yang tidak, lalu <b>Aktifkan</b>. Menu operasional langsung terbuka; halaman bisnis tetap draf sampai Anda terbitkan sendiri (Langkah 44).</>,
     ], <>Selama draf, transaksi (pesanan, penjualan, tagihan) ditolak server. Harga, kapasitas, dan jumlah karyawan tidak pernah diisi otomatis. Yang tidak disetujui tidak diaktifkan. Setelah aktif, bagian yang Anda setujui di sini langsung diterapkan; semua keputusan tercatat di Konfigurasi › Riwayat. Belum siap? <b>Tunda setup</b> atau <b>Tolak draf</b> (datanya tetap tersimpan). Asisten AI untuk mengisi draf: segera hadir.</>, 'warn', <ScrKonfirmasi />],
   ]],
+  ['L', 'Laundry lanjutan: antar jemput', [
+    ['Antar jemput: wilayah, jadwal & status', 'Lainnya › Antar jemput', [
+      <>Pemilik: buka tab <b>Wilayah & jadwal</b>. <b>+ Wilayah</b> untuk tiap kecamatan/perumahan yang dilayani beserta biayanya; <b>+ Jam</b> untuk pilihan jam (Jemput / Antar / keduanya) dan kapasitas per hari bila perlu. Isian dari Pusat Konfirmasi sudah terbawa.</>,
+      <>Tab <b>Jemput</b>: daftar cucian yang harus dijemput, dikelompokkan <b>Terlewat / Hari ini / Besok / Belum dijadwalkan</b>. Ketuk <b>Peta</b> untuk membuka alamat, <b>WA</b> untuk mengabari pelanggan, <b>Jadwal</b> untuk mengatur tanggal & jam, lalu <b>Sudah dijemput</b>.</>,
+      <>Tab <b>Antar</b>: pesanan siap yang harus diantar. Tekan <b>Berangkat antar</b> (status jadi <b>Dalam pengantaran</b>), lalu <b>Sudah diterima pelanggan</b> — pesanan selesai.</>,
+      <>Gagal jemput/antar (pelanggan tidak di rumah)? Tekan <b>Gagal</b>, tulis alasannya, lalu jadwalkan ulang.</>,
+    ], <>Pesanan yang dijemput baru bisa diproses setelah <b>Sudah dijemput</b>. Hanya wilayah di daftar yang bisa dipilih — alamat di luar wilayah tidak dianggap terlayani. Petugas proses bisa menjemput/mengantar dan melihat No. HP pelanggan antar jemput, tetapi hanya bisa menyerahkan pesanan yang sudah lunas; penagihan oleh kasir/pemilik. Pembayaran tetap terpisah: pesanan tidak otomatis lunas. Semua langkah tercatat di Riwayat pesanan.</>, 'warn', <ScrAntar />],
+  ]],
 ];
 
 const RULES = [
@@ -524,6 +532,7 @@ export default function Panduan() {
           <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–54</a><br />Deposit, keluhan & perbaikan, meteran listrik/air, booking kamar</span></div>
           <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
+          <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65</a><br />Wilayah, biaya, jadwal, jemput & antar</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

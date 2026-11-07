@@ -53,6 +53,10 @@ begin
       ('setup_activate', format('select public.setup_activate(%L)', k)),
       ('setup_business_action', format('select public.setup_business_action(%L, ''tolak'', ''uji isolasi'')', k)),
       ('setup_add_service', format('select public.setup_add_service(%L, ''{"name":"uji"}'')', k)),
+      ('svc_logistics', format('select public.svc_logistics(%L)', k)),
+      ('svc_dashboard', format('select public.svc_dashboard(%L)', k)),
+      ('svc_zone_save', format('select public.svc_zone_save(%L, null, ''{"name":"uji isolasi"}'')', k)),
+      ('svc_slot_save', format('select public.svc_slot_save(%L, null, ''{"label":"08-10"}'')', k)),
       ('bb_people', format('select public.bb_people(%L)', k)),
       ('booking_create', format('select public.booking_create(gen_random_uuid(), %L, ''{"name":"uji"}'')', k)),
       ('meter_record', format('select public.meter_record(%L, (select id from public.utility_types where kos_id = %L limit 1), current_date, current_date, ''[]'')', k, k))

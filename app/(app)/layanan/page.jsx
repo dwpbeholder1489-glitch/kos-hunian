@@ -47,7 +47,7 @@ export default function Layanan() {
           <h3>{g}</h3>
           <div className="list">{svc.filter((s) => (s.category || 'Lainnya') === g).map((s) => (
             <button key={s.id} className="li click" disabled={!can} onClick={() => setEdit(s)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', opacity: s.active ? 1 : 0.55 }}>
-              <div className="main"><b className="small">{s.name}{!s.active && ' (nonaktif)'}</b><span className="small muted">{Number(s.min_qty) > 0 ? `minimal ${angka(s.min_qty)} ${s.unit} · ` : ''}selesai ±{s.hours} jam</span></div>
+              <div className="main"><b className="small">{s.name}{!s.active && ' (tidak tersedia)'}</b><span className="small muted">{Number(s.min_qty) > 0 ? `minimal ${angka(s.min_qty)} ${s.unit} · ` : ''}selesai ±{s.hours} jam{s.description ? ` · ${s.description}` : ''}</span>{s.requirements && <span className="small muted">Syarat: {s.requirements}</span>}</div>
               <b className="small">{rp(s.price)}/{s.unit}</b>
             </button>
           ))}</div>
@@ -78,7 +78,7 @@ export default function Layanan() {
 }
 
 function ServiceForm({ kosId, s, cats, onClose, onSaved }) {
-  const [f, setF] = useState({ name: s.name || '', category: s.category || cats[0] || 'Kiloan', unit: s.unit || 'kg', price: s.price ? String(Math.round(s.price)) : '', min_qty: s.min_qty ? String(Number(s.min_qty)) : '', hours: String(s.hours || 48), active: s.active !== false });
+  const [f, setF] = useState({ name: s.name || '', category: s.category || cats[0] || 'Kiloan', unit: s.unit || 'kg', price: s.price ? String(Math.round(s.price)) : '', min_qty: s.min_qty ? String(Number(s.min_qty)) : '', hours: String(s.hours || 48), active: s.active !== false, description: s.description || '', requirements: s.requirements || '', info: s.info || '' });
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setF({ ...f, [k]: v });
   const save = async () => {
@@ -105,7 +105,11 @@ function ServiceForm({ kosId, s, cats, onClose, onSaved }) {
         <Field label={`Minimal (${f.unit})`} hint="mis. 3 kg; kosongkan bila tidak ada"><input inputMode="decimal" value={f.min_qty} onChange={(e) => set('min_qty', e.target.value)} /></Field>
       </div>
       <Field label="Lama pengerjaan (jam)" hint="untuk janji selesai otomatis, mis. 48 = 2 hari, 6 = kilat"><input inputMode="numeric" value={f.hours} onChange={(e) => set('hours', e.target.value)} /></Field>
-      {s.id && <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={f.active} onChange={(e) => set('active', e.target.checked)} />Aktif (bisa dipilih saat menerima pesanan)</label>}
+      <Field label="Deskripsi (opsional)" hint="tampil di halaman bisnis"><input value={f.description} maxLength={300} onChange={(e) => set('description', e.target.value)} placeholder="mis. cuci, kering, lipat rapi" /></Field>
+      <Field label="Persyaratan (opsional)"><input value={f.requirements} maxLength={300} onChange={(e) => set('requirements', e.target.value)} placeholder="mis. pakaian luntur dipisah, tidak menerima kulit" /></Field>
+      <Field label="Info tambahan (opsional)"><input value={f.info} maxLength={300} onChange={(e) => set('info', e.target.value)} placeholder="mis. pewangi bisa dipilih" /></Field>
+      {s.id && <div className="seg">{[[true, 'Tersedia'], [false, 'Tidak tersedia sementara']].map(([k, l]) => <button key={l} className={f.active === k ? 'on' : ''} onClick={() => set('active', k)}>{l}</button>)}</div>}
+      {s.id && <span className="small muted">Layanan yang tidak tersedia tidak bisa dipilih saat menerima pesanan dan tidak tampil di halaman bisnis.</span>}
       <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
     </Sheet>
   );

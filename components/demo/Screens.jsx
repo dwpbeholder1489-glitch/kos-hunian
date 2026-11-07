@@ -493,3 +493,19 @@ export function ScrKonfirmasi() {
     </Phone>
   );
 }
+
+export function ScrAntar() {
+  const R = [['Ibu Contoh', 'PSN-001 · Laundry kiloan 4 kg', 'Kec. Contoh · Jl. Mawar 3', '08.00–10.00', 'Dijadwalkan'], ['Bapak Contoh', 'PSN-002 · Cuci & setrika 3 kg', 'Perum Contoh · Blok B2', '08.00–10.00', 'Belum dijadwalkan']];
+  return (
+    <Phone tab="Antar jemput" tabs={['Dashboard', 'Pesanan', 'Antar jemput', 'Laporan']} name="Laundry Contoh">
+      <Title>Antar jemput</Title>
+      <div className="seg"><button className="on">Jemput (2)</button><button>Antar (1)</button></div>
+      <div className="panel"><b className="small">Hari ini (2)</b><div className="list">{R.map(([n, o, a, j, st]) => (
+        <div className="li" key={n} style={{ display: 'block' }}><div className="row between"><span className="small"><b>{n}</b> · {o}</span><span className="chip info">{st}</span></div>
+          <span className="small">📍 {a} · <u>Peta</u></span><br /><span className="small muted">{j}</span>
+          <div className="row" style={{ gap: 4, marginTop: 4 }}><span className="mini-btn">Sudah dijemput</span><span className="mini-btn ghost">Jadwal</span><span className="mini-btn ghost">WA</span></div></div>
+      ))}</div></div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

@@ -90,7 +90,7 @@ function Editor({ it, onSave, onClose, owner }) {
         <Field label="Harga sewa per bulan (Rp)" hint="Berlaku untuk semua kamar; bisa dibedakan per kamar setelah aktif"><input inputMode="numeric" value={v.price} onChange={(e) => set('price', e.target.value.replace(/\D/g, ''))} /></Field>
       </>}
       {it.input === 'delivery' && <>
-        <Field label="Wilayah yang dilayani" hint="Wilayah lain tidak dianggap terlayani"><input value={v.areas} maxLength={300} onChange={(e) => set('areas', e.target.value)} placeholder="mis. Kec. Majalengka, Cigasong" /></Field>
+        <Field label="Wilayah yang dilayani" hint="Pisahkan dengan koma; wilayah lain tidak dianggap terlayani"><input value={v.areas} maxLength={300} onChange={(e) => set('areas', e.target.value)} placeholder="mis. Kec. Majalengka, Cigasong" /></Field>
         <Field label="Biaya antar jemput (Rp)" hint="Isi 0 bila gratis"><input inputMode="numeric" value={v.fee} onChange={(e) => set('fee', e.target.value.replace(/\D/g, ''))} /></Field>
         <Field label="Jadwal jemput & antar"><input value={v.schedule} maxLength={200} onChange={(e) => set('schedule', e.target.value)} placeholder="mis. Jemput 08–10, antar 16–19" /></Field>
       </>}

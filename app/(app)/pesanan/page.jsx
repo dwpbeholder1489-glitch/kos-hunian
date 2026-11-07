@@ -10,7 +10,8 @@ import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp, waLink } from '@/lib/format';
 import { withApproval } from '@/lib/approval';
 import { uid, qtyNum } from '@/lib/retail';
-import { STATUS, COMPLAINT, PAYM, waktu, hari, sisa, stageLabel, late, linesText, waText, toLocalInput, fromLocalInput } from '@/lib/jasa';
+import { STATUS, COMPLAINT, PAYM, waktu, hari, sisa, stageLabel, late, linesText, waText, toLocalInput, fromLocalInput, waitPickup, onTheWay, PICKUP, DELIVERY, tgl2, mapsLink } from '@/lib/jasa';
+import { moduleOn } from '@/lib/business';
 
 // Pesanan jasa (blueprint 5.3 Laundry): terima → tahap proses → siap → diambil/diantar, dengan DP/lunas, nota, keluhan
 export default function Pesanan() {
@@ -30,17 +31,18 @@ export default function Pesanan() {
   const act = d.orders.filter((o) => !['selesai', 'batal'].includes(o.status));
   const chips = [
     ['aktif', `Semua aktif (${act.length})`],
-    ['diterima', `Diterima (${act.filter((o) => o.status === 'diterima').length})`],
+    ['diterima', `Diterima (${act.filter((o) => o.status === 'diterima' && !waitPickup(o)).length})`],
     ...d.stages.map((s) => [s.id, `${s.name} (${act.filter((o) => o.stage_id === s.id).length})`]),
-    ['siap', `Siap (${act.filter((o) => o.status === 'siap').length})`],
-    ['antar', `Antar-jemput (${act.filter((o) => o.deliver || o.pickup).length})`],
+    ['siap', `Siap (${act.filter((o) => o.status === 'siap' && !onTheWay(o)).length})`],
+    ['jemput', `Menunggu jemput (${act.filter(waitPickup).length})`],
+    ['pengantaran', `Dalam pengantaran (${act.filter(onTheWay).length})`],
     ['terlambat', `Terlambat (${act.filter(late).length})`],
     ['tutup', 'Selesai & batal (30 hari)'],
   ];
   const term = q.trim().toLowerCase();
   const shown = d.orders.filter((o) => {
-    const okF = f === 'aktif' ? act.includes(o) : f === 'tutup' ? !act.includes(o) : f === 'antar' ? act.includes(o) && (o.deliver || o.pickup)
-      : f === 'terlambat' ? late(o) : ['diterima', 'siap'].includes(f) ? o.status === f : o.stage_id === f;
+    const okF = f === 'aktif' ? act.includes(o) : f === 'tutup' ? !act.includes(o) : f === 'jemput' ? waitPickup(o) : f === 'pengantaran' ? onTheWay(o)
+      : f === 'terlambat' ? late(o) : f === 'diterima' ? o.status === 'diterima' && !waitPickup(o) : f === 'siap' ? o.status === 'siap' && !onTheWay(o) : o.stage_id === f;
     return okF && (!term || [o.number, o.customer_name, o.customer_phone].some((x) => (x || '').toLowerCase().includes(term)));
   });
   const cur = open && d.orders.find((o) => o.id === open);
@@ -54,9 +56,9 @@ export default function Pesanan() {
         <section className="panel"><div className="list">{shown.map((o) => (
           <button key={o.id} className="li click" onClick={() => setOpen(o.id)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
             <div className="main"><b className="small">{o.customer_name} <span className="muted">· {o.number}</span></b>
-              <span className="small muted">{linesText(o.lines)}{o.deliver ? ' · 🛵 antar' : ''}{o.pickup ? ' · jemput' : ''}{o.rework_of ? ` · cuci ulang ${o.rework_of}` : ''}</span>
+              <span className="small muted">{linesText(o.lines)}{o.pickup ? ` · jemput${o.pickup_date && waitPickup(o) ? ` ${tgl2(o.pickup_date)}${o.pickup_slot ? ' ' + o.pickup_slot : ''}` : ''}` : ''}{o.deliver ? ' · 🛵 antar' : ''}{o.rework_of ? ` · cuci ulang ${o.rework_of}` : ''}</span>
               <span className="small" style={{ color: late(o) ? 'var(--bad)' : 'var(--muted)' }}>{['selesai', 'batal'].includes(o.status) ? waktu(o.completed_at || o.received_at) : `Janji ${hari(o.due_at)}${late(o) ? ' · terlambat' : ''}`}{money && o.total != null && sisa(o) > 0 && o.status !== 'batal' ? ` · sisa ${rp(sisa(o))}` : ''}{o.open_complaints > 0 ? ' · ⚠ keluhan' : ''}</span></div>
-            <span className={'chip ' + (STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>
+            <span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>
           </button>
         ))}</div></section>
       )}
@@ -67,6 +69,15 @@ export default function Pesanan() {
 }
 
 function NewOrder({ kosId, onClose, onSaved }) {
+  const { kos } = useKos();
+  const logi = moduleOn(kos, 'j_antar');
+  const [zones, setZones] = useState([]);
+  const [slots, setSlots] = useState([]);
+  const [zoneId, setZoneId] = useState('');
+  const [pDate, setPDate] = useState('');
+  const [pSlot, setPSlot] = useState('');
+  const [dDate, setDDate] = useState('');
+  const [dSlot, setDSlot] = useState('');
   const [svc, setSvc] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [cq, setCq] = useState('');
@@ -87,6 +98,10 @@ function NewOrder({ kosId, onClose, onSaved }) {
   const [id] = useState(uid);
   useEffect(() => {
     supabase.from('svc_services').select('*').eq('kos_id', kosId).eq('active', true).order('sort').then(({ data }) => setSvc(data || []));
+    if (logi) {
+      supabase.from('svc_zones').select('*').eq('kos_id', kosId).eq('active', true).order('sort').then(({ data }) => setZones(data || []));
+      supabase.from('svc_slots').select('*').eq('kos_id', kosId).eq('active', true).order('sort').then(({ data }) => setSlots(data || []));
+    }
     supabase.from('contacts').select('id,name,phone').eq('kos_id', kosId).eq('kind', 'pelanggan').is('archived_at', null).order('name').limit(500).then(({ data }) => setContacts(data || []));
   }, [kosId]);
   const priced = lines.map((l) => { const s = svc?.find((x) => x.id === l.service_id); const qn = qtyNum(l.qty) || 0; const cq2 = Math.max(qn, Number(s?.min_qty || 0)); return { ...l, s, qn, cq: cq2, total: cq2 * Number(s?.price || 0) }; });
@@ -103,11 +118,14 @@ function NewOrder({ kosId, onClose, onSaved }) {
     if (!cust && name.trim().length < 2) return toast('Isi nama pelanggan.');
     if (!priced.length || priced.some((l) => !(l.qn > 0))) return toast('Isi jumlah (kg/pcs) setiap layanan.');
     if ((parseRp(pay) || 0) > total) return toast('Pembayaran awal melebihi total.');
+    if ((deliver || pickup) && zones.length && !zoneId) return toast('Pilih wilayah antar jemput. Alamat di luar wilayah yang dilayani tidak bisa dijemput/diantar.');
+    if ((deliver || pickup) && addr.trim().length < 5) return toast('Isi alamat untuk antar jemput.');
     setBusy(true);
     const { data, error } = await supabase.rpc('svc_order_create', { p_id: id, p_kos: kosId, p: {
       contact_id: cust?.id || null, name: cust ? cust.name : name, phone: cust ? cust.phone : phone,
       lines: priced.map((l) => ({ service_id: l.service_id, qty: l.qn, note: l.note })), discount: parseRp(disc) || 0,
       deliver, pickup, address: addr, delivery_fee: deliver || pickup ? parseRp(fee) || 0 : 0, due_at: fromLocalInput(due), note,
+      ...(deliver || pickup ? { zone_id: zoneId, pickup_date: pickup ? pDate || null : null, pickup_slot: pickup ? pSlot : null, delivery_date: deliver ? dDate || null : null, delivery_slot: deliver ? dSlot : null } : {}),
       payment: (parseRp(pay) || 0) > 0 ? { amount: parseRp(pay), method } : null } });
     setBusy(false);
     if (error) return toast(errMsg(error));
@@ -137,14 +155,28 @@ function NewOrder({ kosId, onClose, onSaved }) {
           <span className="small muted">{rp(l.s?.price)}/{l.s?.unit}{Number(l.s?.min_qty) > 0 ? ` · minimal ${angka(l.s.min_qty)} ${l.s.unit}` : ''}{l.qn > 0 ? ` · dihitung ${angka(l.cq)} ${l.s?.unit} = ${rp(l.total)}` : ''}</span>
         </div>
       ))}
-      <div className="row">
+      {logi && <div className="row">
         <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pickup} onChange={(e) => setPickup(e.target.checked)} />Dijemput</label>
         <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={deliver} onChange={(e) => setDeliver(e.target.checked)} />Diantar</label>
-      </div>
-      {(deliver || pickup) && <div className="row">
-        <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} maxLength={200} /></Field>
-        <Field label="Ongkos antar-jemput"><input inputMode="numeric" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" /></Field>
       </div>}
+      {logi && (deliver || pickup) && <>
+        {zones.length > 0 ? <Field label="Wilayah" hint="hanya wilayah yang dilayani"><select value={zoneId} onChange={(e) => { const z = zones.find((x) => x.id === e.target.value); setZoneId(e.target.value); if (z) setFee(String(Math.round(z.fee))); }}>
+          <option value="">— pilih wilayah —</option>{zones.map((z) => <option key={z.id} value={z.id}>{z.name} · {Number(z.fee) > 0 ? rp(z.fee) : 'gratis'}</option>)}</select></Field>
+          : <span className="small muted">Wilayah layanan belum diatur (menu Antar jemput › Wilayah & jadwal).</span>}
+        <div className="row">
+          <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} maxLength={200} placeholder="jalan, nomor, patokan" /></Field>
+          <Field label="Ongkos antar-jemput"><input inputMode="numeric" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" /></Field>
+        </div>
+        {pickup && <div className="row">
+          <Field label="Tanggal jemput (opsional)"><input type="date" value={pDate} onChange={(e) => setPDate(e.target.value)} /></Field>
+          <Field label="Jam jemput"><select value={pSlot} onChange={(e) => setPSlot(e.target.value)}><option value="">—</option>{slots.filter((s) => s.kind !== 'antar').map((s) => <option key={s.id} value={s.label}>{s.label}</option>)}</select></Field>
+        </div>}
+        {deliver && <div className="row">
+          <Field label="Tanggal antar (opsional)"><input type="date" value={dDate} onChange={(e) => setDDate(e.target.value)} /></Field>
+          <Field label="Jam antar"><select value={dSlot} onChange={(e) => setDSlot(e.target.value)}><option value="">—</option>{slots.filter((s) => s.kind !== 'jemput').map((s) => <option key={s.id} value={s.label}>{s.label}</option>)}</select></Field>
+        </div>}
+        {pickup && <span className="small muted">Pesanan yang dijemput baru bisa diproses setelah ditandai <b>Sudah dijemput</b>.</span>}
+      </>}
       <div className="row">
         <Field label="Diskon (opsional)"><input inputMode="numeric" value={disc} onChange={(e) => setDisc(e.target.value)} placeholder="0" /></Field>
         <Field label="Janji selesai" hint={autoDue && !due ? `otomatis ${hari(autoDue)} (${hours} jam)` : null}><input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} /></Field>
@@ -201,8 +233,14 @@ function Detail({ o, d, kos, onClose, onChanged }) {
   const paid = Number(o.paid || 0);
   return (
     <Sheet title={`${o.number} · ${o.customer_name}`} onClose={onClose}>
-      <div className="row"><span className={'chip ' + (STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>{late(o) && <span className="chip bad">Terlambat</span>}{o.rework_of && <span className="chip gold">Cuci ulang {o.rework_of}</span>}</div>
-      <span className="small muted">Diterima {waktu(o.received_at)} · janji {waktu(o.due_at)}{o.deliver ? ` · diantar${o.address ? ` ke ${o.address}` : ''}` : ''}{o.pickup ? ' · dijemput' : ''}</span>
+      <div className="row"><span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>{late(o) && <span className="chip bad">Terlambat</span>}{o.rework_of && <span className="chip gold">Cuci ulang {o.rework_of}</span>}</div>
+      <span className="small muted">Diterima {waktu(o.received_at)} · janji {waktu(o.due_at)}</span>
+      {(o.pickup || o.deliver) && <div className="unitbox" style={{ gap: 4 }}>
+        <span className="small" style={{ overflowWrap: 'anywhere' }}>📍 {o.zone_name ? `${o.zone_name} · ` : ''}{o.address || 'Alamat belum diisi'}{o.address && <> · <a href={mapsLink(o.address)} target="_blank" rel="noreferrer">Peta</a></>}{!money && o.logi_phone ? <> · <a href={waLink(o.logi_phone, `Halo ${o.customer_name}, dari ${kos.name}.`)} target="_blank" rel="noreferrer">WA</a></> : ''}</span>
+        {o.pickup && <span className="small">Jemput: <b>{PICKUP[o.pickup_status] || '—'}</b>{o.pickup_date ? ` · ${tgl2(o.pickup_date)}${o.pickup_slot ? ' ' + o.pickup_slot : ''}` : ''}</span>}
+        {o.deliver && <span className="small">Antar: <b>{DELIVERY[o.delivery_status] || '—'}</b>{o.delivery_date ? ` · ${tgl2(o.delivery_date)}${o.delivery_slot ? ' ' + o.delivery_slot : ''}` : ''}</span>}
+        {moduleOn(kos, 'j_antar') && !['selesai', 'batal'].includes(o.status) && <Link href="/antar" className="small">Atur jadwal di Antar jemput →</Link>}
+      </div>}
       {o.note && <span className="small">Catatan: {o.note}</span>}
       <div className="list">{(o.lines || []).map((l, i) => (
         <div className="li" key={i}><span className="small">{l.name} · {angka(l.qty)} {l.unit}{Number(l.charge_qty) > Number(l.qty) ? ` (dihitung ${angka(l.charge_qty)})` : ''}{l.note ? ` · ${l.note}` : ''}</span>{money && <b className="small">{rp(l.line_total)}</b>}</div>
@@ -218,7 +256,9 @@ function Detail({ o, d, kos, onClose, onChanged }) {
 
       {/* tindakan tahap */}
       {!['selesai', 'batal'].includes(o.status) && <div className="row">
-        {o.status !== 'siap' && <button className="primary" disabled={busy} onClick={() => move('next')}>→ {nextName || 'Siap'}</button>}
+        {waitPickup(o) && <button className="primary" disabled={busy} onClick={async () => { setBusy(true); const { error } = await supabase.rpc('svc_pickup', { p_order: o.id, p_action: 'dijemput', p_note: null }); setBusy(false); if (error) return toast(errMsg(error)); toast('Sudah dijemput'); refresh(); }}>Sudah dijemput</button>}
+        {o.status !== 'siap' && !waitPickup(o) && <button className="primary" disabled={busy} onClick={() => move('next')}>→ {nextName || 'Siap'}</button>}
+        {o.status === 'siap' && o.deliver && !onTheWay(o) && <button className="sm" disabled={busy} onClick={async () => { setBusy(true); const { error } = await supabase.rpc('svc_delivery', { p_order: o.id, p_action: 'berangkat', p_note: null }); setBusy(false); if (error) return toast(errMsg(error)); toast('Dalam pengantaran'); refresh(); }}>Berangkat antar</button>}
         {o.status === 'proses' && <button className="sm" disabled={busy} onClick={() => move('siap')}>Langsung siap</button>}
         {o.status !== 'diterima' && <button className="sm ghost" disabled={busy} onClick={() => move('prev')}>Mundur</button>}
         {o.status === 'siap' && money && <button className="primary" disabled={busy} onClick={() => move('selesai')}>{o.deliver ? 'Sudah diantar' : 'Sudah diambil'}</button>}
