@@ -215,10 +215,11 @@ const PARTS = [
     ['Barang, satuan, dan stok', 'Menu Barang & stok', [
       <>Buka bisnis toko Anda (ketuk nama bisnis di kiri atas), lalu menu <b>Barang & stok</b>. Tekan <b>+ Tambah barang</b>.</>,
       <>Isi nama, <b>satuan terkecil</b> (pcs, bungkus, kg) dan <b>harga modal</b> per satuan itu, lalu stok sekarang.</>,
-      <>Di <b>Satuan jual & harga</b>, isi harga eceran dan grosir. Tekan <b>+ Tambah satuan</b> untuk dus/pak/renteng beserta isinya (mis. dus isi 40).</>,
+      <>Di <b>Satuan jual & harga</b>, isi harga eceran dan grosir. Tekan <b>+ Tambah satuan</b> untuk dus/pak/renteng beserta isinya (mis. dus isi 40). Di bawah tiap satuan tampil hitungannya, mis. "1 dus = 40 pcs · modal Rp 112.000 · untung Rp 8.000".</>,
+      <>Barang <b>curah</b> dijual sebagian (minyak/gula/beras per kg): satuan terkecil <b>kg</b>, harga modal per kg, lalu ketuk <b>+ ¼ kg</b> / <b>+ ½ kg</b> — isinya terisi otomatis (0,25 / 0,5). Nama seperti "250 gram" juga dihitung otomatis menjadi 0,25 kg.</>,
       <>Untuk menghitung ulang atau mencatat barang rusak, tekan <b>Stok</b> di samping barang, pilih alasannya, isi jumlah, lalu <b>Simpan</b>.</>,
       <>Opsional: isi <b>Kode barang</b> dan <b>Barcode</b> tiap satuan (angka di bawah garis-garis kemasan). Di Kasir, scan barcode atau ketik kodenya lalu Enter — barang langsung masuk keranjang.</>,
-    ], <>Scanner barcode Bluetooth/USB bekerja di iPhone maupun Android. Tombol kamera 📷 Pindai bisa dipakai di iPhone dan Android (izinkan akses kamera). Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Muncul tanda merah jika harga eceran di bawah modal.</>, null, null],
+    ], <>Scanner barcode Bluetooth/USB bekerja di iPhone maupun Android. Tombol kamera 📷 Pindai bisa dipakai di iPhone dan Android (izinkan akses kamera). Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Muncul tanda merah jika harga eceran di bawah modal, jika nama satuan sama dengan satuan terkecil, atau jika isinya tidak cocok (mis. "250 gram" diisi 250 padahal satuan terkecil kg) — lengkap dengan tombol <b>Pakai 0,25</b> untuk membetulkannya. Kode barang hanya penanda sendiri, bukan tempat satuan.</>, null, null],
     ['Jualan di kasir', 'Menu Kasir', [
       <>Buka <b>Kasir</b>. Pilih <b>Eceran</b> atau <b>Grosir</b> di kanan atas — harga mengikuti pilihan ini.</>,
       <>Cari barang, lalu ketuk tombol satuannya (mis. <b>pcs · Rp 3.500</b> atau <b>dus · Rp 125.000</b>). Ketuk lagi untuk menambah jumlah.</>,

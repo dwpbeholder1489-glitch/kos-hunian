@@ -10,12 +10,13 @@ import PageHelp from '@/components/PageHelp';
 import { Field, Loading, Sheet, toast } from '@/components/ui';
 import { rp, angka, errMsg } from '@/lib/format';
 import { waktu } from '@/lib/jasa';
+import { isiNum } from '@/lib/units';
 import { SETUP_STATUS, homeOf } from '@/lib/business';
 
 const ST = SETUP_STATUS;
 const ITEM_ST = { ...ST, draft: ['Disiapkan sistem', 'void'], active: ['Aktif', 'good'] };
 const SECTIONS = [['info', 'Profil & informasi bisnis'], ['layanan', 'Layanan'], ['alur', 'Alur kerja'], ['modul', 'Modul & menu'], ['portal', 'Portal pelanggan']];
-const UNITS = ['kg', 'pcs', 'pasang', 'paket', 'pesanan', 'm²', 'jam'];
+const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
 const num = (v) => (v === '' || v == null ? null : Number(String(v).replace(/\./g, '').replace(',', '.')));
 
 // Ringkasan isi item untuk ditampilkan
@@ -50,7 +51,7 @@ function Editor({ it, onSave, onClose, owner }) {
   const [busy, setBusy] = useState(false);
   const set = (k, val) => setV({ ...v, [k]: val });
   const out = () => {
-    if (it.input === 'service') return { ...v, price: num(v.price), hours: num(v.hours), min_qty: num(v.min_qty) || 0 };
+    if (it.input === 'service') return { ...v, price: num(v.price), hours: num(v.hours), min_qty: isiNum(v.min_qty) || 0 };
     if (it.input === 'rooms') return { ...v, count: num(v.count), price: num(v.price) };
     if (it.input === 'delivery') return { ...v, fee: num(v.fee) };
     if (it.input === 'number') return { v: num(v.v) };

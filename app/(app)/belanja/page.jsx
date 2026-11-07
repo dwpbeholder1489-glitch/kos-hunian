@@ -163,7 +163,7 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
             <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{p.name}</b><button className="sm ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))}>Hapus</button></div>
             <div className="row">
               <Field label="Jumlah"><input inputMode="decimal" value={l.qty} onChange={(e) => set(l.key, { qty: e.target.value })} /></Field>
-              <Field label="Satuan"><select value={l.unit} onChange={(e) => { const nu = us.find((x) => x.name === e.target.value); const s = suggest(p, nu); set(l.key, { unit: e.target.value, price: s > 0 ? angka(s) : '' }); }}>{us.map((x) => <option key={x.name} value={x.name}>{x.name}{x.qty > 1 ? ` (${angka(x.qty)} ${p.base_unit})` : ''}</option>)}</select></Field>
+              <Field label="Satuan"><select value={l.unit} onChange={(e) => { const nu = us.find((x) => x.name === e.target.value); const s = suggest(p, nu); set(l.key, { unit: e.target.value, price: s > 0 ? angka(s) : '' }); }}>{us.map((x) => <option key={x.name} value={x.name}>{x.name}{Number(x.qty) !== 1 ? ` (${angka(x.qty)} ${p.base_unit})` : ''}</option>)}</select></Field>
               <Field label={`Harga beli per ${l.unit}`}><input inputMode="numeric" value={l.price} onChange={(e) => set(l.key, { price: e.target.value })} /></Field>
             </div>
             {qn > 0 && pr > 0 && (mode === 'pesan' ? <span className="small muted">{rp(qn * pr)} · stok bertambah saat diterima</span> : <span className="small muted">{rp(qn * pr)} · stok +{angka(base)} {p.base_unit} · modal {rp(p.cost)} → <b>{rp(newCost)}</b>/{p.base_unit}</span>)}

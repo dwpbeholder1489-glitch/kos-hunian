@@ -6,6 +6,8 @@ import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp } from '@/lib/format';
 import { qtyNum } from '@/lib/retail';
+
+const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
 import { canArea } from '@/lib/business';
 
 // Katalog layanan (harga, minimal, lama pengerjaan) & tahap proses yang bisa diatur — dasar "Configure Many"
@@ -81,6 +83,7 @@ function ServiceForm({ kosId, s, cats, onClose, onSaved }) {
   const set = (k, v) => setF({ ...f, [k]: v });
   const save = async () => {
     if (f.name.trim().length < 2) return toast('Isi nama layanan.');
+    if (!f.unit.trim()) return toast('Isi satuan.');
     if (!(parseRp(f.price) >= 0) || f.price === '') return toast('Isi harga.');
     setBusy(true);
     const { error } = await supabase.rpc('svc_service_save', { p_kos: kosId, p_id: s.id || null, p: { ...f, price: parseRp(f.price), min_qty: qtyNum(f.min_qty) || 0, hours: parseInt(f.hours, 10) || 48 } });
@@ -93,11 +96,12 @@ function ServiceForm({ kosId, s, cats, onClose, onSaved }) {
       <Field label="Nama layanan"><input value={f.name} onChange={(e) => set('name', e.target.value)} maxLength={80} placeholder="mis. Cuci kering setrika" /></Field>
       <div className="row">
         <Field label="Kelompok"><input value={f.category} onChange={(e) => set('category', e.target.value)} maxLength={40} list="svc-cats" /></Field>
-        <Field label="Satuan"><select value={f.unit} onChange={(e) => set('unit', e.target.value)}>{['kg', 'pcs', 'pasang', 'meter', 'set', 'paket'].map((u) => <option key={u}>{u}</option>)}</select></Field>
+        <Field label="Satuan"><select value={UNITS.includes(f.unit) ? f.unit : '__'} onChange={(e) => set('unit', e.target.value === '__' ? '' : e.target.value)}>{UNITS.map((u) => <option key={u}>{u}</option>)}<option value="__">lainnya…</option></select></Field>
       </div>
       <datalist id="svc-cats">{cats.map((c) => <option key={c} value={c} />)}</datalist>
       <div className="row">
-        <Field label={`Harga per ${f.unit}`}><input inputMode="numeric" value={f.price} onChange={(e) => set('price', e.target.value)} /></Field>
+        {!UNITS.includes(f.unit) && <Field label="Satuan lain"><input value={f.unit} maxLength={20} placeholder="mis. lembar" onChange={(e) => set('unit', e.target.value)} /></Field>}
+        <Field label={`Harga per ${f.unit || 'satuan'}`}><input inputMode="numeric" value={f.price} onChange={(e) => set('price', e.target.value)} /></Field>
         <Field label={`Minimal (${f.unit})`} hint="mis. 3 kg; kosongkan bila tidak ada"><input inputMode="decimal" value={f.min_qty} onChange={(e) => set('min_qty', e.target.value)} /></Field>
       </div>
       <Field label="Lama pengerjaan (jam)" hint="untuk janji selesai otomatis, mis. 48 = 2 hari, 6 = kilat"><input inputMode="numeric" value={f.hours} onChange={(e) => set('hours', e.target.value)} /></Field>
