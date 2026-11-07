@@ -60,10 +60,10 @@ export default function Pesanan() {
       {shown.length === 0 ? <Empty title="Tidak ada pesanan di sini" text={money ? (T.kul ? 'Tekan + Pesanan baru saat pelanggan memesan.' : 'Tekan + Pesanan baru saat pelanggan menyerahkan cucian.') : 'Pesanan yang perlu dikerjakan akan muncul di sini.'} /> : (
         <section className="panel"><div className="list">{shown.map((o) => (
           <button key={o.id} className="li click" onClick={() => setOpen(o.id)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
-            <div className="main"><b className="small">{o.customer_name} <span className="muted">· {o.number}</span></b>
-              <span className="small muted">{linesText(o.lines)}{o.pickup ? ` · jemput${o.pickup_date && waitPickup(o) ? ` ${tgl2(o.pickup_date)}${o.pickup_slot ? ' ' + o.pickup_slot : ''}` : ''}` : ''}{o.deliver ? ' · 🛵 antar' : ''}{dineText(o) ? ` · ${dineText(o)}` : ''}{o.rework_of ? ` · ${T.rework.toLowerCase()} ${o.rework_of}` : ''}</span>
+            <div className="main"><b className="small">{o.customer_name}</b>
+              <span className="small muted"><span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> · {linesText(o.lines)}{o.pickup ? ` · jemput${o.pickup_date && waitPickup(o) ? ` ${tgl2(o.pickup_date)}${o.pickup_slot ? ' ' + o.pickup_slot : ''}` : ''}` : ''}{o.deliver ? ' · 🛵 antar' : ''}{dineText(o) ? ` · ${dineText(o)}` : ''}{o.rework_of ? ` · ${T.rework.toLowerCase()} ${o.rework_of}` : ''}</span>
               <span className="small" style={{ color: late(o) ? 'var(--bad)' : 'var(--muted)' }}>{['selesai', 'batal'].includes(o.status) ? waktu(o.completed_at || o.received_at) : `Janji ${hari(o.due_at)}${late(o) ? ' · terlambat' : ''}`}{money && o.total != null && sisa(o) > 0 && o.status !== 'batal' ? ` · sisa ${rp(sisa(o))}` : ''}{o.open_complaints > 0 ? ' · ⚠ keluhan' : ''}</span></div>
-            <span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>
+            <span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o, true)}</span>
           </button>
         ))}</div></section>
       )}

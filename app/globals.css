@@ -24,6 +24,7 @@
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums}
+:where(a){color:var(--info);text-underline-offset:2px}
 .wrap{max-width:1040px;margin:0 auto;padding-inline:16px}
 header.top{background:var(--brand);color:var(--brand-fg);position:sticky;top:0;z-index:5}
 header.top .wrap{display:flex;flex-direction:column;gap:6px;padding-top:12px}
@@ -822,3 +823,5 @@ input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date
 
 .quick .listthumb{width:100%!important;height:56px!important;margin-bottom:4px}
 .quickini{display:grid;place-items:center;width:100%;height:56px;margin-bottom:4px;border-radius:8px;background:var(--sunk);color:var(--muted)!important;font-weight:800;font-size:20px!important}
+/* angka uang di ujung baris daftar tidak dipatah ke dua baris */
+.li > b:last-child,.li .num,.li > .chip:last-child{white-space:nowrap}

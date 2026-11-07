@@ -48,7 +48,7 @@ export default function JasaHome() {
       <div className="list">{rows.slice(0, 6).map((o) => (
         <Link key={o.id} href="/pesanan" className="li" style={{ textDecoration: 'none', color: 'inherit' }}>
           <span className="small"><b>{o.customer_name}</b> · {o.number}<br /><span className="muted">{o.status === 'siap' ? (o.address || stageLabel(o)) : `janji ${hari(o.due_at)}`}</span></span>
-          <span className={'chip ' + (tone || STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>
+          <span className={'chip ' + (tone || STATUS[o.status]?.[1] || '')}>{stageLabel(o, true)}</span>
         </Link>
       ))}</div>
       {rows.length > 6 && <Link href="/pesanan" className="small">Lihat semua →</Link>}

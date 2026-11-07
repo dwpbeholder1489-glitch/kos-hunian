@@ -366,7 +366,7 @@ const PARTS = [
       <>Di detail pesanan tekan <b>Nota</b> untuk mencetak (printer struk 58 mm) atau <b>Kirim via WhatsApp</b>, atau tombol <b>WA: diterima</b>.</>,
     ], <>Harga dihitung ulang oleh server dari daftar layanan — kasir tidak bisa mengubah harga satuan; potongan lewat diskon yang tercatat. Tekan Simpan dua kali tidak membuat pesanan dobel. Pesan WhatsApp dikirim manual dari HP Anda (bukan otomatis).</>, null, <ScrPesanan />],
     ['Kerjakan pesanan per tahap', 'Pesanan (pemilik, kasir, Petugas proses)', [
-      <>Papan pesanan bisa disaring: <b>Semua aktif</b>, <b>Diterima</b>, per tahap (Cuci, Setrika, …), <b>Siap</b>, <b>Menunggu jemput</b>, <b>Dalam pengantaran</b>, <b>Terlambat</b>, <b>Selesai & batal</b>; atau cari nomor/nama/No. HP.</>,
+      <>Papan pesanan bisa disaring: <b>Semua aktif</b>, <b>Diterima</b>, per tahap (Cuci, Setrika, …), <b>Siap</b>, <b>Menunggu jemput</b>, <b>Dalam pengantaran</b> (di daftar ditulis singkat: <b>Tunggu jemput</b> / <b>Diantar</b>), <b>Terlambat</b>, <b>Selesai & batal</b>; atau cari nomor/nama/No. HP.</>,
       <>Ketuk pesanan › tombol <b>→ [tahap berikutnya]</b> (mis. → Kering) setiap kali pekerjaan pindah tahap. Setelah tahap terakhir: <b>→ Siap</b>. Bisa juga <b>Langsung siap</b>.</>,
       <>Salah tekan? <b>Mundur</b> (alasan wajib). Semua perpindahan tercatat di <b>Riwayat</b> beserta waktu dan siapa.</>,
       <>Karyawan bagian produksi undang sebagai <b>Petugas proses</b> (menu Karyawan): hanya bisa memindahkan tahap & mencatat keluhan, tidak melihat uang dan tidak bisa menyerahkan pesanan.</>,
