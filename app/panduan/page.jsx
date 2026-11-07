@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -44,6 +44,7 @@ const MENUS = [
   ['Penghuni', 'Data penghuni, tunggakan, deposit/uang jaminan, pengingat WhatsApp, dan akhiri sewa'],
   ['Tagihan', 'Tagihan sewa otomatis, tagihan tambahan, dan mencatat pembayaran'],
   ['Pembayaran', 'Memverifikasi pembayaran dan riwayat uang masuk per bulan'],
+  ['Booking kamar', 'Pesan kamar untuk tanggal masuk, uang tanda jadi, check-in, batal/hangus'],
   ['Keluhan & perbaikan', 'Kerusakan/keluhan per kamar, penanggung jawab, status, biaya perbaikan'],
   ['Meteran listrik/air', 'Angka meter per kamar tiap bulan → tagihan tambahan otomatis'],
   ['Pengeluaran', 'Biaya kos (termasuk gaji pengelola) dan uang yang diambil pemilik'],
@@ -379,7 +380,7 @@ const PARTS = [
       <><b>Laporan</b>: pendapatan per bulan, laba perkiraan (pendapatan − bahan − biaya), uang masuk, belum lunas, uang muka, per layanan, pelanggan teratas, ketepatan waktu, dan keluhan. <b>Unduh Excel</b> (Standar ke atas).</>,
     ], <>Pembukuan otomatis: pesanan diserahkan → Pendapatan jasa & Piutang jasa; pembayaran → Kas/Bank; pemakaian bahan → Beban bahan. Belum tersedia: komisi/penugasan per karyawan, pengingat otomatis jasa, dan stok per cabang untuk bisnis jasa.</>, null, null],
   ]],
-  ['H', 'Kos lanjutan: deposit, keluhan & meteran', [
+  ['H', 'Kos lanjutan: deposit, keluhan, meteran & booking', [
     ['Deposit / uang jaminan', 'Penghuni › ketuk penghuni › Deposit', [
       <>Saat <b>Isi kamar</b>, isi <b>Deposit diterima</b> dan pilih masuk ke kas atau bank. Penghuni lama: buka penghuninya › <b>+ Terima deposit</b>.</>,
       <>Saldo deposit tampil di Penghuni, di detail Kamar, dan di portal penghuni.</>,
@@ -398,6 +399,13 @@ const PARTS = [
       <>Bulan berikutnya: isi angka sekarang. Pemakaian dan tagihan tampil langsung (angka sekarang − bulan lalu × tarif). Isi jatuh tempo, lalu <b>Simpan & buat tagihan</b>.</>,
       <>Tagihan masuk ke <b>Tagihan</b> sebagai tagihan tambahan dan ikut pengingat WhatsApp/portal. Salah angka? Tekan <b>Batalkan</b> di kamar itu (tagihannya ikut batal bila belum dibayar), lalu isi ulang.</>,
     ], <>Kamar kosong tetap dicatat angkanya tetapi tidak ditagih. Angka lebih kecil dari bulan lalu ditolak — bila meteran diganti, centang <b>Meteran baru</b>. Listrik token/prabayar tidak perlu dicatat di sini.</>, null, <ScrMeteran />],
+    ['Booking kamar', 'Lainnya › Booking kamar (atau Kamar › Booking kamar ini, Prospek › Buat booking)', [
+      <>Tekan <b>+ Booking</b>: pilih kamar, isi nama & WhatsApp calon penghuni, <b>tanggal masuk</b>, sewa yang disepakati, lama sewa, dan batas konfirmasi (opsional).</>,
+      <>Ada uang tanda jadi? Isi <b>DP</b> dan pilih masuk ke kas atau bank. Kirim <b>WA konfirmasi</b> ke calon penghuni.</>,
+      <>Kamar yang dibooking ditandai <b>Dibooking</b> di Kamar, tidak bisa diisi orang lain, dan tidak tampil sebagai kamar kosong di halaman bisnis/portal. Kamar yang masih terisi boleh dibooking untuk tanggal setelah rencana selesai sewa penghuninya (isi di <b>Penghuni › ketuk nama › Rencana selesai › ubah</b>).</>,
+      <>Saat penghuni datang: buka booking › <b>Check-in</b>. Sewa dimulai, data penghuni dibuat, dan DP menjadi <b>deposit</b> — atau centang <b>Pakai DP untuk membayar tagihan pertama</b>.</>,
+      <>Tidak jadi? <b>Batalkan booking</b>: tulis alasan dan berapa DP yang dikembalikan; sisanya <b>hangus</b> menjadi pendapatan lain.</>,
+    ], <>DP booking bukan pendapatan sampai penghuni masuk atau DP hangus (di Pembukuan dicatat sebagai uang muka). Booking ber-DP hanya bisa dibatalkan pemilik/pengelola. Booking dari Prospek otomatis menandai prospek <b>Jadi</b> saat check-in.</>, 'warn', <ScrBooking />],
   ]],
 ];
 
@@ -450,7 +458,7 @@ export default function Panduan() {
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
           <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–44</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek, halaman bisnis</span></div>
           <div><b>Jasa & Laundry</b><span><a href="#bagian-G">Langkah 45–50</a><br />Layanan & tahap, pesanan, nota, proses, bayar, keluhan, bahan, laporan</span></div>
-          <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–53</a><br />Deposit, keluhan & perbaikan, meteran listrik/air</span></div>
+          <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–54</a><br />Deposit, keluhan & perbaikan, meteran listrik/air, booking kamar</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

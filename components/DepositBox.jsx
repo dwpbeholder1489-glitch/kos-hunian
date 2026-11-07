@@ -29,10 +29,10 @@ export default function DepositBox({ d, lease }) {
       {rows.length > 0 && <div className="list">{rows.map((x) => (
         <div className="li" key={x.id} style={{ opacity: x.status === 'aktif' ? 1 : 0.55 }}>
           <div className="main"><b className="small">{KIND[x.kind]}{x.status === 'batal' ? ' (batal)' : ''}</b>
-            <span className="small muted">{tgl(x.date)}{x.account ? ` · ${ACC[x.account]}` : x.invoice_id ? ' · untuk tagihan' : ''}{x.reason ? ` · ${x.reason}` : ''}{x.void_reason ? ` · batal: ${x.void_reason}` : ''}</span></div>
+            <span className="small muted">{tgl(x.date)}{x.booking_id ? ' · dari DP booking' : ''}{x.account ? ` · ${ACC[x.account]}` : x.invoice_id ? ' · untuk tagihan' : ''}{x.reason && !x.booking_id ? ` · ${x.reason}` : ''}{x.void_reason ? ` · batal: ${x.void_reason}` : ''}</span></div>
           <div className="row" style={{ flexWrap: 'nowrap' }}>
             <span className="num">{x.kind === 'terima' ? '+' : '−'}{rp(x.amount)}</span>
-            {money && x.status === 'aktif' && <button className="sm ghost" aria-label="Batalkan catatan" onClick={() => voidRow(x)}>✕</button>}
+            {money && x.status === 'aktif' && !x.booking_id && <button className="sm ghost" aria-label="Batalkan catatan" onClick={() => voidRow(x)}>✕</button>}
           </div>
         </div>
       ))}</div>}

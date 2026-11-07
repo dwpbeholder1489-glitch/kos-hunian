@@ -34,8 +34,11 @@ export default function Beranda() {
   const collected = paidMonth.reduce((s, p) => s + p.amount, 0);
   const cashIn = paidMonth.filter((p) => p.method !== 'deposit').reduce((s, p) => s + p.amount, 0); // dibayar dari deposit = bukan uang masuk baru
   const depM = (d.deposits || []).filter((x) => x.status === 'aktif' && x.date.startsWith(ym));
-  const depIn = depM.filter((x) => x.kind === 'terima').reduce((s, x) => s + x.amount, 0);
   const depOut = depM.filter((x) => x.kind === 'kembali').reduce((s, x) => s + x.amount, 0);
+  const depInCash = depM.filter((x) => x.kind === 'terima' && !x.booking_id).reduce((s, x) => s + x.amount, 0);
+  const bkIn = (d.bookings || []).filter((b) => b.dp_amount > 0 && (b.dp_date || '').startsWith(ym)).reduce((s, b) => s + b.dp_amount, 0);
+  const bkOut = (d.bookings || []).filter((b) => b.status === 'batal' && (b.closed_date || '').startsWith(ym)).reduce((s, b) => s + b.refund_amount, 0);
+  const checkins = (d.bookings || []).filter((b) => b.status === 'aktif' && b.check_in <= in7);
   const cashOut = d.expenses.filter((x) => x.date.startsWith(ym)).reduce((s, x) => s + x.amount, 0);
   const entIn = d.entries.filter((x) => x.date.startsWith(ym) && ['pendapatan_lain', 'setoran_modal', 'pinjaman_masuk'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
   const entOut = d.entries.filter((x) => x.date.startsWith(ym) && ['prive', 'bayar_pinjaman'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
@@ -59,7 +62,7 @@ export default function Beranda() {
       <CrmHint />
       <RecHint />
       <div className="grid">
-        <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn + depIn - cashOut - entOut - depOut)} sub={`Masuk ${rp(cashIn + entIn + depIn)} · keluar ${rp(cashOut + entOut + depOut)}${depIn || depOut ? ' (termasuk deposit)' : ''}`} />
+        <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn + depInCash + bkIn - cashOut - entOut - depOut - bkOut)} sub={`Masuk ${rp(cashIn + entIn + depInCash + bkIn)} · keluar ${rp(cashOut + entOut + depOut + bkOut)}${depInCash || depOut || bkIn || bkOut ? ' (termasuk deposit/DP)' : ''}`} />
         <Tile label="Hunian" value={`${occ}%`} sub={`${filled} dari ${rentable.length} kamar terisi`} />
         <Tile label="Tagihan bulan ini" value={rp(billedMonth)} sub={`Terkumpul ${rp(collected)}`} />
         <Tile tone={arrears > 0 ? 'bad' : ''} label="Tunggakan" value={rp(arrears)} sub={`${overdue.length} tagihan lewat jatuh tempo`} />
@@ -92,6 +95,18 @@ export default function Beranda() {
           </div>
         )}
       </section>
+
+      {checkins.length > 0 && (
+        <section className="panel">
+          <h3>Booking: jadwal masuk</h3>
+          <div className="list">{checkins.map((b) => (
+            <Link key={b.id} href="/booking" className="li" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="main"><b>{b.name} · {d.roomCode(b.room_id)}</b><span className="small muted">masuk {tgl(b.check_in)}{b.dp_amount > 0 ? ` · DP ${rp(b.dp_amount)}` : ''}</span></div>
+              <span className={'chip ' + (b.check_in < today() ? 'bad' : 'gold')}>{b.check_in < today() ? 'Terlewat' : b.check_in === today() ? 'Hari ini' : 'Segera'}</span>
+            </Link>
+          ))}</div>
+        </section>
+      )}
 
       <section className="panel">
         <h3>Jatuh tempo 7 hari ke depan</h3>

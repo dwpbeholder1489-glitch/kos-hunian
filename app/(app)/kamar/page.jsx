@@ -38,6 +38,7 @@ export default function Kamar() {
                 <span className="who">{l ? d.occName(l.occupant_id) : ROOM_ST[r.status]}</span>
                 <span className="small muted">{r.rent ? rp(r.rent) : 'Harga belum diisi'}</span>
                 {debt > 0 && <span className="small" style={{ color: 'var(--bad)', fontWeight: 800 }}>Tunggak {rp(debt)}</span>}
+                {d.bookByRoom?.get(r.id) && <span className="small" style={{ color: 'var(--gold-fg)', fontWeight: 800 }}>Dibooking · masuk {tgl(d.bookByRoom.get(r.id).check_in)}</span>}
               </button>
             );
           })}
@@ -79,9 +80,12 @@ function RoomDetail({ d, room, go, onClose }) {
           </dl>
           <button className="danger" onClick={() => go({ t: 'end', lease: l })}>Akhiri sewa</button>
         </section>
-      ) : room.status === 'tersedia' ? (
+      ) : room.status === 'tersedia' && !d.bookByRoom?.get(room.id) ? (
         <button className="cta" onClick={() => go({ t: 'start', id: room.id })}>Isi kamar ini</button>
       ) : null}
+      {d.bookByRoom?.get(room.id) ? (
+        <Link href="/booking" className="notice" style={{ textDecoration: 'none' }}>📅 Dibooking {d.bookByRoom.get(room.id).name} ({d.bookByRoom.get(room.id).number}), masuk {tgl(d.bookByRoom.get(room.id).check_in)}. Check-in lewat menu Booking →</Link>
+      ) : moduleOn(kos, 'p_booking') && room.status !== 'tidak_disewakan' && <Link href={`/booking?kamar=${room.id}`} className="small" style={{ textAlign: 'center' }}>📅 Booking kamar ini untuk calon penghuni</Link>}
       {moduleOn(kos, 'p_perbaikan') && <Link href={`/perbaikan?kamar=${room.id}`} className="small" style={{ textAlign: 'center' }}>🔧 Catat keluhan / kerusakan kamar ini</Link>}
       {hist.length > 0 && (
         <section className="panel"><span className="label">Penghuni sebelumnya</span>

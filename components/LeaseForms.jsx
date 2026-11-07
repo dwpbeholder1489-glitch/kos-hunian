@@ -9,7 +9,7 @@ import { uid } from '@/lib/retail';
 // Isi kamar: pilih penghuni lama atau tambah penghuni baru, lalu mulai sewa
 export function StartLeaseSheet({ d, roomId: fixedRoom, occupantId: fixedOcc, onClose }) {
   const { kosId, bump } = useKos();
-  const free = d.rooms.filter((r) => r.status === 'tersedia');
+  const free = d.rooms.filter((r) => r.status === 'tersedia' && !d.bookByRoom?.get(r.id)); // kamar dibooking: isi lewat Booking › Check-in
   const idleOcc = d.occupants.filter((o) => !d.activeByOcc.has(o.id));
   const [roomId, setRoom] = useState(fixedRoom || free[0]?.id || '');
   const [mode, setMode] = useState(fixedOcc ? 'lama' : idleOcc.length ? 'lama' : 'baru');

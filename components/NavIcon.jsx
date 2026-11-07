@@ -6,6 +6,7 @@ const P = {
   '/pesanan': <><rect x="4" y="2" width="16" height="20" rx="2" /><circle cx="12" cy="13" r="4.5" /><path d="M7 6h.01M10 6h.01" /></>,
   '/layanan': <><path d="M4 6h16M4 12h16M4 18h10" /><circle cx="18" cy="18" r="2" /></>,
   '/laporan-jasa': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
+  '/booking': <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4" /></>,
   '/perbaikan': <><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" /></>,
   '/meteran': <><circle cx="12" cy="13" r="8" /><path d="M12 13l3.5-3.5M8 5l1 2M16 5l-1 2" /></>,
   '/kamar': <><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></>,

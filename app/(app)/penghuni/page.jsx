@@ -75,6 +75,7 @@ function OccDetail({ d, occ, go, onClose }) {
       <dl className="kv">
         <dt>Kamar</dt><dd>{l ? d.roomCode(l.room_id) : '—'}</dd>
         {l && <><dt>Sewa</dt><dd>{rp(l.rent)}/bulan sejak {tgl(l.start_date)}</dd></>}
+        {l && <><dt>Rencana selesai</dt><dd><EndDate lease={l} /></dd></>}
         <dt>WhatsApp</dt><dd>{occ.phone || '—'}</dd>
         {occ.emergency && <><dt>Kontak darurat</dt><dd>{occ.emergency}</dd></>}
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
@@ -139,5 +140,26 @@ function OccEdit({ d, occ, onClose }) {
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
       {!isNew && !used && <button className="danger" onClick={del}>Hapus penghuni</button>}
     </Sheet>
+  );
+}
+
+// Ubah rencana selesai sewa (mis. penghuni akan pindah; kamar bisa dibooking untuk setelahnya)
+function EndDate({ lease }) {
+  const { bump } = useKos();
+  const [edit, setEdit] = useState(false);
+  const [v, setV] = useState(lease.end_date || '');
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('lease_set_end', { p_lease: lease.id, p_end: v || null }), v ? 'Rencana selesai disimpan' : 'Rencana selesai dikosongkan', errMsg);
+    setBusy(false);
+    if (ok) { setEdit(false); bump(); }
+  };
+  if (!edit) return <>{lease.end_date ? tgl(lease.end_date) : 'belum diisi'} <button className="sm ghost" style={{ minHeight: 0, padding: '0 4px' }} onClick={() => setEdit(true)}>ubah</button></>;
+  return (
+    <span className="row" style={{ flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
+      <input type="date" value={v} min={lease.start_date} onChange={(e) => setV(e.target.value)} style={{ width: 150 }} aria-label="Rencana selesai" />
+      <button className="sm primary" disabled={busy} onClick={save}>Simpan</button>
+    </span>
   );
 }

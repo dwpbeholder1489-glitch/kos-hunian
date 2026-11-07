@@ -410,3 +410,19 @@ export function ScrMeteran() {
     </Phone>
   );
 }
+
+export function ScrBooking() {
+  const B = [['Sinta · Kamar A03', 'BKG-001 · masuk 10 Nov (3 hari lagi) · DP Rp300.000', 'Segera masuk', 'gold'], ['Andi · Kamar B02', 'BKG-002 · masuk 1 Des · tanpa DP', 'Menunggu', 'info']];
+  return (
+    <Phone tab="Kamar">
+      <div className="row between"><Title>Booking kamar</Title><span className="mini-btn primary">+ Booking</span></div>
+      <div className="seg"><button className="on">Aktif 2</button><button>Sudah masuk</button><button>Batal</button></div>
+      <span className="small muted">Uang tanda jadi yang dipegang: <b>Rp300.000</b></span>
+      <div className="panel"><div className="list">{B.map(([t, s, st, tone]) => (
+        <div className="li" key={t}><div className="main"><b className="small">{t}</b><span className="small muted">{s}</span></div><span className={'chip ' + tone}>{st}</span></div>
+      ))}</div></div>
+      <span className="mini-btn cta">Check-in (mulai sewa)</span>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

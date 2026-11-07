@@ -6,6 +6,8 @@ import PageHelp from '@/components/PageHelp';
 import Timeline from '@/components/CrmTimeline';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
 import { rp, tgl, today, errMsg, angka, waLink, parseRp } from '@/lib/format';
+import Link from 'next/link';
+import { moduleOn } from '@/lib/business';
 
 const STAGES = { baru: ['Baru', ''], dihubungi: ['Dihubungi', 'gold'], penawaran: ['Penawaran', 'gold'], jadi: ['Jadi', 'good'], batal: ['Tidak jadi', 'void'] };
 const NEXT = { baru: ['dihubungi', 'penawaran', 'jadi', 'batal'], dihubungi: ['penawaran', 'jadi', 'batal'], penawaran: ['dihubungi', 'jadi', 'batal'], jadi: ['dihubungi'], batal: ['dihubungi'] };
@@ -78,6 +80,7 @@ export default function Crm() {
 }
 
 function LeadSheet({ l, kosId, retail, jasa, onClose, onSaved }) {
+  const { kos } = useKos();
   const isNew = !l.id;
   const [f, setF] = useState({ name: l.name || '', phone: l.phone || '', need: l.need || '', source: l.source || 'wa', est: l.est_value ? String(Math.round(l.est_value)) : '' });
   const [cur, setCur] = useState(l);
@@ -118,6 +121,7 @@ function LeadSheet({ l, kosId, retail, jasa, onClose, onSaved }) {
           {Array.isArray(cur.items) && cur.items.length > 0 && <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>{cur.items.map((it, i) => <li key={i}>{it.name} · {angka(it.qty)} {it.unit}{it.price != null ? ` × ${rp(it.price)}` : ''}</li>)}</ul>}
           <br /><span className="muted">Harga & ketersediaan belum dikonfirmasi — hubungi pengirim lewat WA.</span></div>}
         <div className="row">{NEXT[cur.stage].map((to) => <button key={to} className={to === 'jadi' ? 'sm primary' : to === 'batal' ? 'sm ghost danger' : 'sm'} onClick={() => move(to)}>{['jadi', 'batal'].includes(cur.stage) ? 'Buka lagi' : `→ ${STAGES[to][0]}`}</button>)}</div>
+        {!retail && !['jadi', 'batal'].includes(cur.stage) && moduleOn(kos, 'p_booking') && <Link href={`/booking?lead=${cur.id}`} className="small">📅 Buat booking kamar untuk {cur.name} →</Link>}
         <Timeline kosId={kosId} lead={cur.id} />
       </>}
       {!isNew && <details><summary className="small">Ubah data prospek</summary><div className="stack" style={{ marginTop: 8 }}>

@@ -41,7 +41,7 @@ const VALUES = [
 
 // Solusi per kategori: status jujur
 const CATS = [
-  ['🏠', 'Properti & Sewa', 'Kos, kontrakan, homestay: kamar, penghuni, tagihan bulanan otomatis, deposit, keluhan & perbaikan, meteran listrik/air, verifikasi pembayaran, laba rugi.', 'ready'],
+  ['🏠', 'Properti & Sewa', 'Kos, kontrakan, homestay: kamar, penghuni, tagihan bulanan otomatis, booking, deposit, keluhan & perbaikan, meteran listrik/air, verifikasi pembayaran, laba rugi.', 'ready'],
   ['🛒', 'Retail & Grosir', 'Toko sembako, minimarket, grosir: kasir eceran & grosir, stok multi-satuan, barcode, belanja ke supplier, kasbon, laporan laba.', 'ready'],
   ['🧺', 'Jasa & Laundry', 'Laundry kiloan & satuan (dan jasa lain): pesanan, tahap cuci–kering–setrika–QC, nota, DP, antar-jemput, keluhan, bahan, laporan.', 'ready'],
   ['🍳', 'Kuliner', 'Menu, resep, bahan baku, dan pesanan dapur.', 'plan'],
@@ -56,7 +56,7 @@ const GROUPS = [
     ['Tagihan otomatis', 'Tagihan sewa terbit sendiri tiap bulan; boleh dibayar sebagian.'],
     ['Verifikasi pembayaran', 'Tunai, transfer, atau QRIS diperiksa dulu sebelum dihitung lunas.'],
     ['Pengingat WhatsApp', 'Pesan pengingat berisi rincian tagihan siap kirim dengan satu ketukan.'],
-    ['Deposit, keluhan & meteran', 'Uang jaminan tercatat terpisah dari pendapatan, keluhan kamar sampai selesai, listrik/air per meteran jadi tagihan otomatis.'],
+    ['Booking, deposit, keluhan & meteran', 'Booking kamar dengan DP, uang jaminan tercatat terpisah dari pendapatan, keluhan kamar sampai selesai, listrik/air per meteran jadi tagihan otomatis.'],
     ['Portal penghuni', 'Penghuni cek tagihan dan kirim bukti transfer lewat link pribadi.', 'Pro'],
     ['Laba rugi & kwitansi', 'Untung bersih per bulan, kwitansi PDF, ekspor Excel.', 'Standar'],
   ]],
