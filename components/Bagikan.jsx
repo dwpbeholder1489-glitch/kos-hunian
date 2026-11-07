@@ -9,6 +9,7 @@ import { useKos } from '@/components/KosProvider';
 import { Sheet, Loading, toast } from '@/components/ui';
 import { errMsg, waLink } from '@/lib/format';
 import { qrMatrix, qrSvg } from '@/lib/qr';
+import { isDraft } from '@/lib/business';
 
 const ajakan = (i) => (i.kuliner ? 'Pindai untuk lihat menu & pesan' : i.type === 'retail' ? 'Pindai untuk lihat barang & pesan' : i.type === 'jasa' ? 'Pindai untuk lihat layanan & pesan' : i.type === 'properti' ? 'Pindai untuk lihat kamar tersedia' : 'Pindai untuk info & pesan');
 
@@ -33,15 +34,37 @@ export function SharePanel({ kosId, compact }) {
   const [origin, setOrigin] = useState('');
   const [printing, setPrinting] = useState(null); // null | {mode:'poster'} | {mode:'meja', tables:[n…]}
   const [one, setOne] = useState('');
-  useEffect(() => { setOrigin(window.location.origin); supabase.rpc('share_info', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setI(data))); }, [kosId]);
+  const [busy, setBusy] = useState(false);
+  const { kos, loadKos } = useKos();
+  const fetchInfo = () => supabase.rpc('share_info', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setI(data)));
+  useEffect(() => { setOrigin(window.location.origin); fetchInfo(); }, [kosId]);
+  const publish = async () => {
+    if (!window.confirm(`Terbitkan halaman ${i.name}?\n\nSiapa saja yang membuka tautan bisa melihat nama, alamat, WhatsApp, dan ${i.type === 'retail' ? 'barang' : i.type === 'jasa' ? 'layanan/menu' : i.type === 'properti' ? 'kamar yang tersedia' : 'informasi bisnis'} beserta harganya.\nHarga modal, laba, dan data pelanggan/penghuni tidak pernah ditampilkan.\n\nIsi lengkap (tagline, foto, tautan, jam buka) bisa diatur nanti di menu Halaman bisnis.`)) return;
+    setBusy(true);
+    const { error } = await supabase.rpc('public_page_quick_publish', { p_kos: kosId });
+    setBusy(false);
+    if (error) return toast(/public_page_quick_publish/.test(error.message || '') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : errMsg(error));
+    toast('Halaman terbit — siap dibagikan'); loadKos?.(); fetchInfo();
+  };
   const url = i?.slug ? `${origin}/b/${i.slug}` : '';
   const svg = useMemo(() => (url ? qrSvg(url) : ''), [url]);
+  if (isDraft(kos)) return (
+    <div className="stack" style={{ gap: 10 }}>
+      <div className="notice">Bisnis <b>{kos.name}</b> masih <b>draf</b>. Tautan & QR bisa dibagikan setelah bisnis diaktifkan.</div>
+      <Link href="/konfirmasi"><button className="cta" style={{ width: '100%' }}>Buka Pusat Konfirmasi</button></Link>
+    </div>
+  );
   if (err) return <div className="notice bad">{/share_info/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!i) return <Loading />;
-  if (!i.module) return <div className="notice">Modul <b>Halaman bisnis</b> belum aktif. {i.can_edit ? <>Aktifkan di <Link href="/konfigurasi">Konfigurasi</Link>.</> : 'Minta pemilik mengaktifkannya.'}</div>;
-  if (!i.live) return (
-    <div className="notice">Halaman bisnis <b>belum terbit</b>, jadi belum ada tautan & QR untuk dibagikan.
-      {i.can_edit ? <> <Link href="/halaman"><button className="sm primary" style={{ marginTop: 8 }}>Atur & terbitkan halaman</button></Link></> : ' Minta pemilik menerbitkannya di menu Halaman bisnis.'}</div>
+  if (!i.module || !i.live) return (
+    <div className="stack" style={{ gap: 10 }}>
+      <div className="notice">Halaman bisnis <b>{i.name}</b> belum terbit, jadi belum ada tautan & QR untuk dibagikan.</div>
+      {i.can_edit ? <>
+        <button className="cta" disabled={busy} onClick={publish}>{busy ? 'Menerbitkan…' : 'Terbitkan sekarang & dapatkan tautan'}</button>
+        <Link href="/halaman"><button className="ghost" style={{ width: '100%' }}>Atur isi halaman dulu</button></Link>
+        <span className="small muted">Satu ketukan: halaman diterbitkan dengan nama, alamat & WhatsApp bisnis{i.type === 'properti' ? ' serta kamar yang tersedia (calon penghuni bisa langsung daftar)' : ''}. Bisa disembunyikan lagi kapan saja di menu Halaman bisnis.</span>
+      </> : <span className="small muted">Minta pemilik menerbitkannya (ikon Bagikan › Terbitkan sekarang).</span>}
+    </div>
   );
   const line = ajakan(i);
   const msg = `${i.name} — ${line.replace('Pindai untuk', 'Klik untuk')}: ${url}`;

@@ -767,3 +767,4 @@ nav.tabs.ptabs{display:flex} /* portal penghuni tidak punya navigasi bawah: tab 
 /* iPhone/Safari: input tanggal & jam punya lebar bawaan sendiri sehingga keluar dari kartu */
 input[type="date"],input[type="time"],input[type="datetime-local"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
 input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value,input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;min-height:1.4em}
+.sheet{padding-bottom:calc(28px + env(safe-area-inset-bottom))}

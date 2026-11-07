@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PAY_ST } from '@/lib/format';
 
 export function Sheet({ title, onClose, children }) {
@@ -8,7 +9,7 @@ export function Sheet({ title, onClose, children }) {
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
   }, [onClose]);
-  return (
+  const el = (
     <div className="sheet-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="row between"><h2>{title}</h2><button className="ghost" onClick={onClose}>Tutup</button></div>
@@ -16,6 +17,8 @@ export function Sheet({ title, onClose, children }) {
       </div>
     </div>
   );
+  // Dirender di <body> agar tidak terkurung lapisan header/menu (mis. lembar dari tombol di header tertutup menu bawah)
+  return typeof document === 'undefined' ? el : createPortal(el, document.body);
 }
 
 let toastSet = null;

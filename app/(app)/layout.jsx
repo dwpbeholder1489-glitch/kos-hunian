@@ -64,7 +64,7 @@ export default function AppLayout({ children }) {
             </button>
             <div className="right">
               {isDraft(kos) ? null : kos.business_type !== 'retail' ? canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') && <NotifBell /> : canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') && <RetailBell />}
-              {!isDraft(kos) && !kos.closed_at && moduleOn(kos, 'u_halaman') && <Bagikan />}
+              {!kos.closed_at && <Bagikan />}
               <Link href="/bantuan" className="helpbtn" aria-label="Pusat bantuan" title="Bantuan">?</Link>
             </div>
           </div>
