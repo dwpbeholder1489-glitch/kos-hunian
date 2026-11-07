@@ -343,7 +343,7 @@ const PARTS = [
       <>Unggah <b>Logo</b> (gambar persegi; dikecilkan otomatis). Isi <b>alamat halaman</b> (mis. toko-subur), kalimat singkat, tentang, alamat, jam buka, dan No. WhatsApp untuk pelanggan.</>,
       <>Pilih yang ditampilkan: toko — <b>barang cepat (★)</b> atau <b>semua barang aktif</b>; kos — <b>kamar yang tersedia</b>. Centang <b>Tampilkan harga jual</b> bila ingin harganya terlihat.</>,
       <>Tambahkan <b>Tautan</b> (maks 6): ketuk <b>+ 📍 Lokasi (Google Maps)</b>, <b>+ 📷 Instagram</b>, <b>+ 🖼️ Foto</b> atau <b>+ Tautan lain</b>, lalu tempel alamatnya (di aplikasi Maps/Instagram: <b>Bagikan › Salin tautan</b>). Tampil sebagai tombol di halaman. Alamat https:// yang Anda tulis di Tentang/Ketentuan juga bisa diketuk.</>,
-      <>Tekan <b>Terbitkan</b>. Baca daftar yang akan terlihat publik, lalu setujui. Setelah terbit: <b>Salin tautan</b> atau <b>Bagikan ke WhatsApp</b> (status WA, grup, bio Instagram).</>,
+      <>Tekan <b>Terbitkan</b>. Baca daftar yang akan terlihat publik, lalu setujui. Setelah terbit, dari menu mana pun ketuk ikon <b>Bagikan</b> (panah ke atas, pojok kanan atas): muncul <b>QR code</b> dan tautan. Pilih <b>Bagikan…</b> (menu bagikan HP), <b>WhatsApp</b>, <b>Salin tautan</b>, <b>Simpan gambar QR</b> (untuk status/grup WA), atau <b>Cetak poster QR</b> (A4 — di iPhone pilih Cetak atau simpan PDF) untuk ditempel di kasir, meja, etalase, atau pintu.</>,
       <>Pelanggan membuka tautan tanpa memasang aplikasi, memilih barang/kamar, mengisi nama & WhatsApp, menyetujui dihubungi, lalu <b>Kirim permintaan</b>. Mereka mendapat nomor permintaan (mis. PRM-261107-001).</>,
       <>Permintaan masuk ke <b>Prospek & tindak lanjut</b> (label <b>Perlu konfirmasi</b>); email ke Anda bila dicentang. Ketuk permintaannya: sistem sudah <b>mengecek otomatis</b> (kamar kosong pada tanggal itu, stok cukup, harga masih sama, No. HP ganda).</>,
       <>Bila cocok tekan <b>Konfirmasi</b>: kos → <b>booking kamar</b> langsung dibuat (bisa sekalian catat DP); toko → <b>keranjang Kasir</b> terisi, prospek otomatis <b>Jadi</b> setelah dibayar. Lalu kabari pelanggan lewat tombol WhatsApp.</>,
@@ -520,6 +520,7 @@ export default function Panduan() {
         <h2 style={{ color: 'var(--brand-2)' }}>Cara berpindah menu</h2>
         <ul style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <li>Di HP, <b>4 menu utama ada di bawah layar</b>. Menu lain ada di <b>Lainnya</b> (•••), bersama Bantuan, pilihan <b>Tampilan</b> (Ikuti HP / Terang / Gelap), dan Keluar.</li>
+          <li>Ikon <b>Bagikan</b> (panah ke atas) di pojok kanan atas: tautan & <b>QR code</b> halaman bisnis, siap dikirim atau dicetak, dari menu mana pun.</li>
           <li>Di laptop, semua menu tampil di bagian atas.</li>
           <li><b>Ketuk nama bisnis di kiri atas</b> untuk pindah bisnis atau menambah bisnis baru.</li>
           <li>Karyawan hanya melihat menu sesuai perannya.</li>

@@ -1,4 +1,5 @@
 'use client';
+import { SharePanel } from '@/components/Bagikan';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -48,7 +49,6 @@ export default function Halaman() {
     toast(enabled ? (saved?.enabled ? 'Perubahan diterbitkan' : 'Halaman diterbitkan') : saved?.enabled ? 'Halaman disembunyikan' : 'Disimpan (belum diterbitkan)');
     load();
   };
-  const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Tautan disalin'); } catch { window.prompt('Salin tautan ini:', url); } };
 
   return (
     <div className="stack">
@@ -59,12 +59,8 @@ export default function Halaman() {
       {saved?.enabled ? (
         <section className="panel">
           <div className="row between"><b>Sudah terbit</b><span className="chip good">Online</span></div>
-          <a href={url} target="_blank" rel="noreferrer" className="small" style={{ wordBreak: 'break-all' }}>{url}</a>
-          <div className="row">
-            <button className="sm" onClick={copy}>Salin tautan</button>
-            <a href={waLink('', `Lihat ${kos.name} dan kirim pesanan/pertanyaan di sini: ${url}`)} target="_blank" rel="noreferrer"><button className="sm">Bagikan ke WhatsApp</button></a>
-            <a href={url} target="_blank" rel="noreferrer"><button className="sm ghost">Lihat halaman</button></a>
-          </div>
+          <SharePanel key={saved.slug} kosId={kosId} compact />
+          <span className="small muted">Tombol <b>Bagikan</b> (ikon panah di pojok kanan atas) membuka QR & tautan ini dari menu mana pun.</span>
         </section>
       ) : <div className="notice">Belum terbit. Isi data di bawah, lalu tekan <b>Terbitkan</b>.</div>}
 

@@ -733,3 +733,19 @@ nav.tabs.ptabs{display:flex} /* portal penghuni tidak punya navigasi bawah: tab 
 }
 .ln-compare tr.ln-groupsep td{display:table-cell;padding-left:10px;text-align:left}
 .ln-amount .per{display:block;font-size:13px;font-weight:600;color:var(--ln-muted)}
+
+/* ---------- Bagikan & QR ---------- */
+.qrbox{align-self:center;width:100%;background:#fff;border-radius:12px;padding:6px;border:1px solid var(--line)}
+.qrbox svg{display:block;width:100%;height:auto}
+.sharegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sharegrid>a{display:block}.sharegrid button{width:100%}
+.qrprint{display:none}
+@media print{
+  body.pq>*:not(.qrprint){display:none!important}
+  body.pq .qrprint{display:flex!important;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:92vh;color:#000;font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+  .qrprint h1{font-size:34pt;margin:0 0 6pt}
+  .qrprint .sub{font-size:18pt;margin:0 0 18pt;color:#333}
+  .qrprint .q{width:11cm;height:11cm}.qrprint .q svg{width:100%;height:100%}
+  .qrprint .u{font-size:13pt;margin:14pt 0 4pt;font-weight:700}
+  .qrprint .f{font-size:11pt;color:#555;margin:0}
+}
