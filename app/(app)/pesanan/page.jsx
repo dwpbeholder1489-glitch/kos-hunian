@@ -338,8 +338,8 @@ function RequestBox({ o, kos, money, onDone }) {
   };
   return (
     <div className="unitbox">
-      <b className="small">Pesanan dari halaman bisnis — belum dikonfirmasi</b>
-      <span className="small muted">Cek layanan, jadwal & alamat. Setelah dikonfirmasi pesanan masuk antrean; janji selesai dihitung sejak konfirmasi. Berat/jumlah bisa diubah lewat Ubah isi setelah barang diterima.</span>
+      <b className="small">{o.table_no ? `Pesanan dari QR Meja ${o.table_no} — belum dikonfirmasi` : 'Pesanan dari halaman bisnis — belum dikonfirmasi'}</b>
+      {o.table_no ? <span className="small muted">Pastikan memang ada tamu di Meja {o.table_no}, lalu Konfirmasi — pesanan langsung masuk Dapur. Pesanan iseng? Tolak.</span> : <span className="small muted">Cek layanan, jadwal & alamat. Setelah dikonfirmasi pesanan masuk antrean; janji selesai dihitung sejak konfirmasi. Berat/jumlah bisa diubah lewat Ubah isi setelah barang diterima.</span>}
       {(o.pickup || o.deliver) && <Field label="Ongkos antar jemput"><input inputMode="numeric" value={fee} onChange={(e) => setFee(e.target.value)} /></Field>}
       <div className="row">
         <button className="primary" disabled={busy} onClick={confirm}>{busy ? 'Menyimpan…' : 'Konfirmasi'}</button>

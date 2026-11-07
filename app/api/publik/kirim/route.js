@@ -20,17 +20,18 @@ export async function POST(req) {
   // Pesanan langsung (bisnis jasa): masuk sebagai "Permintaan masuk" sampai dikonfirmasi pemilik
   if (b.order) {
     const str = (v, n) => String(v ?? '').slice(0, n);
-    const lines = Array.isArray(b.lines) ? b.lines.slice(0, 10).map((x) => ({ service_id: str(x.service_id, 40), qty: Number(x.qty) || 0 })) : [];
+    const lines = Array.isArray(b.lines) ? b.lines.slice(0, 10).map((x) => ({ service_id: str(x.service_id, 40), qty: Number(x.qty) || 0, note: str(x.note, 120) })) : [];
+    const mejaNo = /^\d{1,3}$/.test(String(b.table_no || '')) ? String(b.table_no) : null;
     const dt = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? v : null);
     const { data, error } = await sb.rpc('public_order_create', {
       p_slug: str(b.slug, 40), p_ip_hash: ipHash, p_elapsed: Math.min(Number(b.elapsed) || 0, 100000),
-      p: { name: str(b.name, 80), phone: str(b.phone, 20), note: str(b.note, 300), consent: b.consent === true, lines, pickup: b.pickup === true, deliver: b.deliver === true,
+      p: { name: str(b.name, 80), phone: str(b.phone, 20), note: str(b.note, 300), consent: b.consent === true, lines, table_no: mejaNo, pickup: b.pickup === true, deliver: b.deliver === true,
         address: str(b.address, 200), zone_id: b.zone_id ? str(b.zone_id, 40) : null, pickup_date: dt(b.pickup_date), pickup_slot: str(b.pickup_slot, 40), delivery_date: dt(b.delivery_date), delivery_slot: str(b.delivery_slot, 40) },
     });
     if (error) { console.error('[publik] pesanan gagal', error.message); return json({ ok: false, error: 'Gagal menyimpan pesanan. Coba lagi nanti.' }, 500); }
     if (!data?.ok) return json({ ok: false, error: data?.error || 'Gagal mengirim' }, 400);
     try {
-      if (mailConfigured()) {
+      if (mailConfigured() && !mejaNo) { // pesanan dari QR meja tidak dikirim email (terlalu sering; cukup di layar Pesanan)
         const [{ data: kos }, { data: pg }] = await Promise.all([
           sb.from('kos').select('name, owner_id').eq('id', data.kos_id).single(),
           sb.from('public_pages').select('email_notify').eq('kos_id', data.kos_id).single(),

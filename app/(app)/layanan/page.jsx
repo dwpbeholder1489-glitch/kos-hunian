@@ -56,6 +56,7 @@ export default function Layanan() {
           ))}</div>
         </section>
       ))}
+      {T.kul && <Tables kos={kos} can={can} />}
       <section className="panel">
         <h3>Tahap proses</h3>
         <span className="small muted">Urutan tahap antara "Diterima" dan "Siap". {T.kul ? 'Contoh kuliner: Dimasak → Siap saji.' : 'Contoh laundry: Cuci → Kering → Setrika → QC → Kemas.'} Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan.</span>
@@ -77,6 +78,32 @@ export default function Layanan() {
       </section>
       {edit && <ServiceForm kosId={kosId} T={T} s={edit} cats={groups} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); load(); }} />}
     </div>
+  );
+}
+
+// Kuliner: jumlah meja (dipakai pilihan meja di Pesanan dan QR per meja)
+function Tables({ kos, can }) {
+  const { loadKos } = useKos();
+  const [n, setN] = useState(String(kos.profile?.tables ?? 0));
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    const v = parseInt(n, 10);
+    if (!(v >= 0 && v <= 200)) return toast('Jumlah meja 0–200');
+    setBusy(true);
+    const { error } = await supabase.rpc('kul_tables_set', { p_kos: kos.id, p_n: v });
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    toast('Jumlah meja disimpan'); loadKos?.();
+  };
+  return (
+    <section className="panel">
+      <h3>Meja</h3>
+      <div className="row" style={{ flexWrap: 'nowrap', alignItems: 'flex-end' }}>
+        <Field label="Jumlah meja" hint="0 = tanpa makan di tempat bernomor"><input inputMode="numeric" value={n} disabled={!can} onChange={(e) => setN(e.target.value.replace(/\D/g, ''))} /></Field>
+        {can && <button className="primary" disabled={busy || String(kos.profile?.tables ?? 0) === n} onClick={save}>Simpan</button>}
+      </div>
+      <span className="small muted">Dipakai untuk pilihan meja saat menerima pesanan dan untuk <b>QR per meja</b> (ikon Bagikan di pojok kanan atas › Cetak QR semua meja).</span>
+    </section>
   );
 }
 

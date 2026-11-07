@@ -1,6 +1,6 @@
 'use client';
 import Linkify from '@/components/Linkify';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
 
@@ -23,6 +23,17 @@ export default function PublicForm({ page }) {
   // jasa: pesanan langsung (status "Permintaan masuk" sampai dikonfirmasi pemilik)
   const ord = jasa ? page.order : null;
   const kul = Boolean(ord?.kuliner); // kuliner: tidak ada jemput, "menu" bukan "layanan"
+  // QR per meja: /b/slug?meja=N → pesanan makan di tempat untuk meja itu (nomor dicek ulang di server)
+  const [meja, setMeja] = useState(null);
+  const [mejaBad, setMejaBad] = useState(false);
+  const formRef = useRef(null);
+  useEffect(() => {
+    try {
+      const m = new URLSearchParams(window.location.search).get('meja'); if (!m) return;
+      const n = parseInt(m, 10);
+      if (kul && /^\d{1,3}$/.test(m) && n >= 1 && n <= Number(ord?.tables || 0)) { setMeja(String(n)); setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300); } else setMejaBad(true);
+    } catch {}
+  }, []);
   const [pickup, setPickup] = useState(false);
   const [deliver, setDeliver] = useState(false);
   const [zone, setZone] = useState('');
@@ -38,7 +49,9 @@ export default function PublicForm({ page }) {
   }, 0), [pick]);
 
   const ordering = Boolean(ord) && chosen.length > 0;
-  const logi = ordering && ord.logistics && (pickup || deliver);
+  const logi = ordering && !meja && ord.logistics && (pickup || deliver);
+  const phoneOk = phone.replace(/\D/g, '').length >= 9;
+  const canSend = meja ? (!phone.trim() || (phoneOk && consent)) : consent && name.trim().length >= 2 && phoneOk;
   const zoneObj = (ord?.zones || []).find((z) => z.id === zone);
   const minDate = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
   const send = async (e) => {
@@ -49,14 +62,14 @@ export default function PublicForm({ page }) {
     if (ordering) {
       try {
         const r = await fetch('/api/publik/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          order: true, slug: page.slug, name, phone, note: msg, consent, website: hp, elapsed: Math.round((Date.now() - started.current) / 1000),
+          order: true, slug: page.slug, name, phone, note: msg, consent, website: hp, table_no: meja, elapsed: Math.round((Date.now() - started.current) / 1000),
           lines: chosen.map(([id, v]) => ({ service_id: id, qty: Number(String(v.qty).replace(',', '.')) })),
           pickup: logi && pickup, deliver: logi && deliver, address: addr, zone_id: zone || null,
           pickup_date: pickup && date ? date : null, pickup_slot: pickup ? pSlot : null, delivery_date: deliver && dDate ? dDate : null, delivery_slot: deliver ? dSlot : null,
         }) });
         const d = await r.json().catch(() => ({}));
         if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.');
-        else setDone({ order: true, number: d.number, total: d.total });
+        else setDone({ order: true, number: d.number, total: d.total, meja });
       } catch { setErr('Koneksi terputus. Coba lagi.'); }
       setBusy(false); return;
     }
@@ -72,6 +85,14 @@ export default function PublicForm({ page }) {
     setBusy(false);
   };
 
+  if (done?.meja) return (
+    <section className="panel">
+      <h3>Pesanan Meja {done.meja} terkirim!</h3>
+      <p style={{ margin: 0 }}>Nomor pesanan <b>{done.number}</b>. Kasir akan mengonfirmasi, lalu pesanan disiapkan dan diantar ke meja Anda.</p>
+      {page.show_prices && done.total != null && <span className="small">Total {rp(done.total)}. Pembayaran di kasir.</span>}
+      {phone.trim() ? <a href={`/b/${page.slug}/cek?no=${encodeURIComponent(done.number)}`}><button className="primary">Cek status pesanan</button></a> : <span className="small muted">Ingin pesan lagi? Muat ulang halaman ini.</span>}
+    </section>
+  );
   if (done?.order) return (
     <section className="panel">
       <h3>Pesanan terkirim, {name.trim()}!</h3>
@@ -89,9 +110,11 @@ export default function PublicForm({ page }) {
     </section>
   );
   return (
-    <form className="panel stack" onSubmit={send}>
+    <form className="panel stack" onSubmit={send} ref={formRef}>
+      {meja && <div className="notice good" style={{ fontSize: 16 }}>🍽 Anda memesan untuk <b>Meja {meja}</b>. Pilih menu, lalu Kirim pesanan.</div>}
+      {mejaBad && <div className="notice bad">Nomor meja di QR tidak dikenal. Tanyakan ke kasir, atau pesan biasa di bawah.</div>}
       <h3>{retail ? 'Pesan / tanya barang' : jasa ? (kul ? 'Pesan menu' : 'Pesan / tanya layanan') : 'Tanya / booking kamar'}</h3>
-      {ord && <span className="small muted">Pilih {kul ? 'menu' : 'layanan'} untuk memesan langsung, atau kosongkan untuk bertanya saja.</span>}
+      {ord && !meja && <span className="small muted">Pilih {kul ? 'menu' : 'layanan'} untuk memesan langsung, atau kosongkan untuk bertanya saja.</span>}
       {page.form_intro && <p className="small" style={{ margin: 0 }}><Linkify text={page.form_intro} /></p>}
       {items.length > 0 && <>
         <span className="label">{retail ? 'Pilih barang (opsional)' : jasa ? (kul ? 'Pilih menu' : 'Pilih layanan (opsional)') : 'Pilih kamar (opsional)'}</span>
@@ -110,9 +133,9 @@ export default function PublicForm({ page }) {
             </div>
           );
         })}</div>
-        {total > 0 && <span className="small">Perkiraan: <b>{rp(total)}</b> (belum termasuk ongkos; dikonfirmasi penjual)</span>}
+        {total > 0 && <span className="small">Perkiraan: <b>{rp(total)}</b> {meja ? '' : '(belum termasuk ongkos; dikonfirmasi penjual)'}</span>}
       </>}
-      {ordering && ord.logistics && <>
+      {ordering && !meja && ord.logistics && <>
         <span className="label">{kul ? 'Diantar? (opsional — tanpa centang = ambil sendiri)' : 'Antar jemput (opsional)'}</span>
         <div className="row">
           {!kul && <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pickup} onChange={(e) => setPickup(e.target.checked)} />Dijemput</label>}
@@ -134,20 +157,21 @@ export default function PublicForm({ page }) {
           {zoneObj && page.show_prices && <span className="small">{kul ? 'Ongkos antar' : 'Ongkos antar jemput'}: <b>{Number(zoneObj.fee) > 0 ? rp(zoneObj.fee) : 'gratis'}</b></span>}
         </>}
       </>}
-      {!retail && !ordering && <label className="f">{jasa ? 'Tanggal jemput / diantar (opsional)' : 'Rencana mulai tinggal'}<input type="date" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} /></label>}
-      <label className="f">{ordering ? 'Catatan (opsional)' : retail || jasa ? 'Pesan / kebutuhan' : 'Pesan (mis. berapa orang, pertanyaan)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : kul && ordering ? 'mis. pedas sedang, tanpa bawang, ambil jam 12' : jasa ? 'mis. bisa dijemput hari ini? Alamat Jl. Melati 12.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
-      <label className="f">Nama<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required autoComplete="name" /></label>
-      <label className="f">No. WhatsApp<input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} required autoComplete="tel" placeholder="08…" /></label>
+      {!retail && !ordering && !meja && <label className="f">{jasa ? 'Tanggal jemput / diantar (opsional)' : 'Rencana mulai tinggal'}<input type="date" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} /></label>}
+      <label className="f">{ordering ? 'Catatan (opsional)' : retail || jasa ? 'Pesan / kebutuhan' : 'Pesan (mis. berapa orang, pertanyaan)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : meja ? 'mis. pedas sedang, es teh tanpa gula' : kul && ordering ? 'mis. pedas sedang, tanpa bawang, ambil jam 12' : jasa ? 'mis. bisa dijemput hari ini? Alamat Jl. Melati 12.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
+      <label className="f">{meja ? 'Nama (opsional)' : 'Nama'}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required={!meja} autoComplete="name" placeholder={meja ? `boleh kosong — tercatat "Meja ${meja}"` : undefined} /></label>
+      <label className="f">{meja ? 'No. WhatsApp (opsional, untuk cek status)' : 'No. WhatsApp'}<input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} required={!meja} autoComplete="tel" placeholder="08…" /></label>
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>
         <label>Website<input tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} /></label>
       </div>
-      <label className="row small" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+      {(!meja || phone.trim()) && <label className="row small" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
         <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         <span>Saya setuju nama dan No. WhatsApp ini disimpan {page.name} hanya untuk menghubungi saya tentang permintaan ini.</span>
-      </label>
+      </label>}
       {err && <div className="notice bad">{err}</div>}
-      {ordering && <span className="small muted">Pesanan masuk sebagai <b>menunggu konfirmasi</b>. {page.name} mengonfirmasi lewat WhatsApp; pembayaran langsung ke {page.name}.</span>}
-      <button className="cta" type="submit" disabled={busy || !consent || name.trim().length < 2 || phone.replace(/\D/g, '').length < 9}>{busy ? 'Mengirim…' : ordering ? 'Kirim pesanan' : 'Kirim permintaan'}</button>
+      {ordering && (meja ? <span className="small muted">Pesanan dikonfirmasi kasir dulu, lalu disiapkan. Bayar di kasir.</span>
+        : <span className="small muted">Pesanan masuk sebagai <b>menunggu konfirmasi</b>. {page.name} mengonfirmasi lewat WhatsApp; pembayaran langsung ke {page.name}.</span>)}
+      <button className="cta" type="submit" disabled={busy || !canSend || (meja && !ordering)}>{busy ? 'Mengirim…' : ordering ? 'Kirim pesanan' : 'Kirim permintaan'}</button>
     </form>
   );
 }

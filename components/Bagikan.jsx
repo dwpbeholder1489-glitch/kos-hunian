@@ -31,7 +31,8 @@ export function SharePanel({ kosId, compact }) {
   const [i, setI] = useState(null);
   const [err, setErr] = useState(null);
   const [origin, setOrigin] = useState('');
-  const [printing, setPrinting] = useState(false);
+  const [printing, setPrinting] = useState(null); // null | {mode:'poster'} | {mode:'meja', tables:[n…]}
+  const [one, setOne] = useState('');
   useEffect(() => { setOrigin(window.location.origin); supabase.rpc('share_info', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setI(data))); }, [kosId]);
   const url = i?.slug ? `${origin}/b/${i.slug}` : '';
   const svg = useMemo(() => (url ? qrSvg(url) : ''), [url]);
@@ -55,11 +56,11 @@ export function SharePanel({ kosId, compact }) {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
     toast('Gambar QR diunduh');
   };
-  const print = () => {
-    setPrinting(true);
+  const print = (job = { mode: 'poster' }) => {
+    setPrinting(job);
     setTimeout(() => {
       document.body.classList.add('pq');
-      const done = () => { document.body.classList.remove('pq'); setPrinting(false); window.removeEventListener('afterprint', done); };
+      const done = () => { document.body.classList.remove('pq'); setPrinting(null); window.removeEventListener('afterprint', done); };
       window.addEventListener('afterprint', done);
       window.print();
       setTimeout(done, 1500); // Safari iPhone kadang tidak mengirim afterprint
@@ -74,11 +75,32 @@ export function SharePanel({ kosId, compact }) {
         <a href={waLink('', msg)} target="_blank" rel="noreferrer"><button>WhatsApp</button></a>
         <button onClick={copy}>Salin tautan</button>
         <button onClick={saveImg}>Simpan gambar QR</button>
-        <button onClick={print}>Cetak poster QR</button>
+        <button onClick={() => print()}>Cetak poster QR</button>
         <a href={url} target="_blank" rel="noreferrer"><button className="ghost">Lihat halaman</button></a>
       </div>
       <span className="small muted">Tempel poster di meja kasir, etalase, pintu, atau kirim gambarnya ke grup WhatsApp/status. Pelanggan cukup memindai dengan kamera HP.</span>
-      {printing && typeof document !== 'undefined' && createPortal(
+      {i.kuliner && (i.tables > 0 ? (
+        <div className="unitbox">
+          <b className="small">QR per meja ({i.tables} meja)</b>
+          <span className="small muted">Pelanggan memindai QR di mejanya → pesanan otomatis tercatat untuk meja itu (makan di tempat). Kasir tetap mengonfirmasi dulu.</span>
+          <button className="primary" onClick={() => print({ mode: 'meja', tables: Array.from({ length: i.tables }, (_, k) => k + 1) })}>Cetak QR semua meja</button>
+          <div className="row" style={{ flexWrap: 'nowrap' }}>
+            <select value={one} onChange={(e) => setOne(e.target.value)} aria-label="Pilih meja" style={{ flex: 1 }}><option value="">Satu meja saja…</option>{Array.from({ length: i.tables }, (_, k) => <option key={k} value={k + 1}>Meja {k + 1}</option>)}</select>
+            <button className="sm" disabled={!one} onClick={() => print({ mode: 'meja', tables: [Number(one)] })}>Cetak</button>
+          </div>
+        </div>
+      ) : <span className="small muted">QR per meja: {i.can_edit ? <>isi <b>Jumlah meja</b> di <Link href="/layanan">Menu & tahap</Link> dulu.</> : 'minta pemilik mengisi jumlah meja.'}</span>)}
+      {printing?.mode === 'meja' && typeof document !== 'undefined' && createPortal(
+        <div className="qrprint meja">{printing.tables.map((n) => (
+          <div className="card" key={n}>
+            <span className="biz">{i.name}</span>
+            <b className="no">MEJA {n}</b>
+            <div className="q" dangerouslySetInnerHTML={{ __html: qrSvg(`${url}?meja=${n}`) }} />
+            <span className="cta">Pindai untuk lihat menu & pesan dari meja ini</span>
+            <span className="pay">Bayar di kasir</span>
+          </div>
+        ))}</div>, document.body)}
+      {printing?.mode === 'poster' && typeof document !== 'undefined' && createPortal(
         <div className="qrprint">
           <h1>{i.name}</h1>
           <p className="sub">{line}</p>

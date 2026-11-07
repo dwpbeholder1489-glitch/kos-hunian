@@ -26,6 +26,7 @@ export default function Dapur() {
   // Antrean dapur: diterima & diproses (pesanan antar yang belum berangkat tetap tampil sampai siap)
   const queue = d.orders.filter((o) => ['diterima', 'proses'].includes(o.status)).sort((a, b) => new Date(a.received_at) - new Date(b.received_at));
   const ready = d.orders.filter((o) => o.status === 'siap');
+  const req = d.orders.filter((o) => o.status === 'permintaan');
   const cols = [{ id: 'baru', name: 'Baru masuk', list: queue.filter((o) => o.status === 'diterima') },
     ...d.stages.map((s) => ({ id: s.id, name: s.name, list: queue.filter((o) => o.stage_id === s.id) }))];
   const next = (o) => { if (o.status === 'diterima') return d.stages[0]?.name || 'Siap'; const i = d.stages.findIndex((s) => s.id === o.stage_id); return d.stages[i + 1]?.name || 'Siap'; };
@@ -40,6 +41,7 @@ export default function Dapur() {
     <div className="stack">
       <div className="row between"><div className="row"><h2>Dapur</h2><PageHelp page="dapur" /></div><button className="sm ghost" onClick={load}>Muat ulang</button></div>
       <span className="small muted">Pesanan terlama di atas. Layar memuat ulang sendiri tiap 20 detik.</span>
+      {req.length > 0 && <Link href="/pesanan" className="notice" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}><b>{req.length} pesanan dari QR meja / halaman bisnis</b> menunggu konfirmasi kasir: {req.map((o) => (o.table_no ? `Meja ${o.table_no}` : o.customer_name)).join(', ')} →</Link>}
       {queue.length === 0 && ready.length === 0 && <Empty title="Belum ada pesanan untuk dimasak" text="Pesanan baru dari kasir atau halaman bisnis (setelah dikonfirmasi) muncul di sini." />}
       {cols.filter((c) => c.list.length).map((c) => (
         <section key={c.id} className="stack" style={{ gap: 8 }}>
