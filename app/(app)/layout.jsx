@@ -14,9 +14,9 @@ import NotifBell from '@/components/NotifBell';
 import RetailBell from '@/components/RetailBell';
 import AnnounceBanner from '@/components/AnnounceBanner';
 
-import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, primaryTabs, pathModuleOff, moduleOn } from '@/lib/business';
+import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, primaryTabs, pathModuleOff, moduleOn, isDraft, SETUP_STATUS } from '@/lib/business';
 
-const SHORT = { '/barang': 'Barang', '/laporan-toko': 'Laporan', '/kas': 'Kas', '/kontak': 'Kontak', '/shift': 'Shift', '/beranda': 'Beranda' };
+const SHORT = { '/barang': 'Barang', '/laporan-toko': 'Laporan', '/kas': 'Kas', '/kontak': 'Kontak', '/shift': 'Shift', '/beranda': 'Beranda', '/konfirmasi': 'Konfirmasi', '/bisnis': 'Ringkasan' };
 
 function PlanBar({ kos }) {
   const p = planOf(kos);
@@ -61,7 +61,7 @@ export default function AppLayout({ children }) {
               <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
             <div className="right">
-              {kos.business_type !== 'retail' ? canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') && <NotifBell /> : canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') && <RetailBell />}
+              {isDraft(kos) ? null : kos.business_type !== 'retail' ? canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') && <NotifBell /> : canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') && <RetailBell />}
               <Link href="/bantuan" className="helpbtn" aria-label="Pusat bantuan" title="Bantuan">?</Link>
             </div>
           </div>
@@ -80,7 +80,9 @@ export default function AppLayout({ children }) {
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka dengan mengetuk nama bisnis di kiri atas.</span>}</div>
-      ) : allowed ? children : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
+      ) : allowed ? children : isDraft(kos) ? (
+        <div className="empty"><h2>{kos.name} masih dalam setup</h2><p className="muted">Menu operasional terbuka setelah pemilik meninjau dan mengaktifkan bisnis di Pusat Konfirmasi.</p>{canArea(kos, 'settings') && <Link href="/konfirmasi"><button className="primary">Buka Pusat Konfirmasi</button></Link>}</div>
+      ) : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
         <div className="empty"><h2>Modul ini sedang nonaktif</h2><p className="muted">Data lamanya tetap tersimpan. Pemilik atau pengelola bisa mengaktifkannya lagi di Pusat konfigurasi.</p>{canArea(kos, 'settings') && <Link href="/konfigurasi"><button className="primary">Buka Pusat konfigurasi</button></Link>}</div>
       ) : pathOfType(kos, path) ? (
         <div className="empty"><h2>Menu ini tidak termasuk tugas Anda</h2><p className="muted">Anda masuk sebagai {ROLES[role]?.name || role} di {kos.name}. Hubungi pemilik bila perlu akses.</p>{own[0] && <Link href={homeOf(kos)}><button className="primary">Buka {own[0][1]}</button></Link>}</div>
@@ -113,6 +115,7 @@ export default function AppLayout({ children }) {
               <button key={k.id} className={k.id === kosId ? 'on' : ''} onClick={() => go(k)} aria-current={k.id === kosId ? 'true' : undefined}>
                 <span className="ic" aria-hidden="true">{typeOf(k).icon}</span>
                 <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}><b style={{ overflowWrap: 'anywhere' }}>{k.name}</b><span className="small muted">{typeOf(k).name}{k.my_role && k.my_role !== 'pemilik' ? ` · ${ROLES[k.my_role]?.name}` : ''}{k.closed_at ? ' · ditutup (arsip)' : ''}</span></span>
+                {isDraft(k) && k.id !== kosId && <span className={'chip ' + (SETUP_STATUS[k.setup_status]?.[1] || 'void')}>{SETUP_STATUS[k.setup_status]?.[0] || 'Draf'}</span>}
                 {k.id === kosId && <span className="chip info">Dibuka</span>}
               </button>
             ))}

@@ -67,13 +67,16 @@ export function ScrRooms() {
 }
 
 export function ScrSignup() {
+  const C = [['🛒', 'Retail & Perdagangan', true], ['🏠', 'Properti & Hunian', true], ['🧺', 'Laundry & Jasa Rumah Tangga', true], ['🍽️', 'Kuliner & Hospitality', false]];
   return (
     <Phone bare>
-      <p className="mini-hello">Daftarkan kos Anda</p>
-      <F label="Nama kos" value="Kos Melati" />
-      <F label="Alamat (opsional)" value={KOS.address} />
-      <div className="row"><F label="Jumlah kamar" value="10" /><F label="Awalan kode" value="A" hint="A → A01, A02, …" /></div>
-      <span className="mini-btn cta">Buat kos</span>
+      <p className="mini-hello">Kenalkan bisnis Anda</p>
+      <span className="small"><b>Apa jenis bisnis yang Anda miliki atau kelola?</b> Boleh lebih dari satu.</span>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>{C.map(([i, n, on]) => (
+        <div key={n} className="panel" style={{ padding: 8, gap: 2, ...(on ? { borderColor: 'var(--brand)' } : {}) }}><span>{i}{on ? ' ✓' : ''}</span><b className="small" style={{ fontSize: 11 }}>{n}</b></div>
+      ))}</div>
+      <span className="mini-btn cta">Lanjut · 3 bisnis</span>
+      <span className="small muted">DATA CONTOH</span>
     </Phone>
   );
 }
@@ -471,6 +474,21 @@ export function ScrLampiran() {
         ))}</div>
         <span className="small muted" style={{ fontSize: 10 }}>Foto (dikecilkan otomatis) atau PDF maks 4 MB, 10 per data. Terpakai 3,2 MB dari 500 MB.</span>
       </div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}
+
+export function ScrKonfirmasi() {
+  const I = [['Alamat lengkap', 'Jl. Contoh No. 5', 'Disetujui', 'good'], ['Laundry kiloan', 'Rp7.000/kg · estimasi 48 jam', 'Disetujui', 'good'], ['Setrika saja', 'Harga belum diisi', 'Perlu informasi', 'warn'], ['Antar jemput', 'Wilayah, biaya & jadwal belum diisi', 'Perlu informasi', 'warn']];
+  return (
+    <Phone tab="Konfirmasi" tabs={['Konfirmasi', 'Ringkasan']} name="Laundry Contoh">
+      <div className="row between"><Title>Pusat Konfirmasi</Title><span className="chip warn">Perlu informasi</span></div>
+      <div className="panel" style={{ gap: 4 }}><span className="small">Kelengkapan data 61%</span><div className="progress"><i style={{ width: '61%' }} /></div><span className="small muted">4 informasi belum diisi</span></div>
+      <div className="panel"><div className="list">{I.map(([l, v, st, t]) => (
+        <div className="li" key={l}><span className="small"><b>{l}</b><br /><span className="muted">{v}</span></span><span className={'chip ' + t}>{st}</span></div>
+      ))}</div></div>
+      <span className="mini-btn cta">Tinjau seluruh konfigurasi & aktifkan</span>
       <span className="small muted">DATA CONTOH</span>
     </Phone>
   );

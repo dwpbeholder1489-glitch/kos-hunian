@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -61,12 +61,12 @@ const MENUS = [
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
 const PARTS = [
   ['A', 'Persiapan (sekali saja)', [
-    ['Daftar dan buat kos', 'Halaman depan › Mulai Gratis 30 Hari', [
-      <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Gratis 30 Hari</b>, isi email dan kata sandi, lalu <b>Buat akun</b>.</>,
-      <>Buka email Anda dan ketuk tautan konfirmasi.</>,
-      <>Masuk, pilih jenis bisnis (kos = <b>Properti & Sewa</b>), lalu isi <b>Nama kos</b>, <b>Jumlah kamar</b>, dan <b>Awalan kode</b>.</>,
-      <>Jawab beberapa pertanyaan singkat tentang usaha Anda (boleh dilewati), tinjau <b>modul yang disarankan</b> beserta alasannya, lalu tekan <b>Setujui & buat bisnis</b>. Kamar A01, A02, … dibuat otomatis.</>,
-    ], 'Tidak menerima email konfirmasi? Periksa folder Spam atau Promosi.', null, <ScrSignup />],
+    ['Daftar dan kenalkan bisnis Anda', 'Halaman depan › Mulai Gratis 30 Hari', [
+      <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Gratis 30 Hari</b>, isi email dan kata sandi, lalu <b>Buat akun</b>. Buka email Anda dan ketuk tautan konfirmasi.</>,
+      <>Masuk. Di <b>Apa jenis bisnis yang Anda miliki atau kelola?</b> pilih satu atau lebih kategori (mis. Properti & Hunian, Retail, Laundry), lalu <b>Lanjut</b>.</>,
+      <>Untuk tiap bisnis isi <b>nama</b>, <b>subkategori</b>, <b>lokasi</b>, <b>status bisnis</b>, <b>hubungan Anda</b>, <b>jumlah cabang</b>, dan pertanyaan singkat (mis. kos: jumlah kamar; laundry: layanan, jam, antar jemput).</>,
+      <>Tekan <b>Tinjau</b> lalu <b>Buat draf bisnis</b>. Tiap bisnis dibuat terpisah sebagai <b>draf</b> — lanjutkan di <b>Pusat Konfirmasi</b> (Langkah 64) untuk melengkapi & mengaktifkannya.</>,
+    ], <>Karyawan tidak membuat bisnis baru: pilih <b>Saya karyawan…</b> dan minta pemilik mengundang email Anda di menu Karyawan. Tidak menerima email konfirmasi? Periksa folder Spam atau Promosi.</>, null, <ScrSignup />],
     ['Kenali tombol Panduan', 'Semua menu', [
       <>Di sebelah judul setiap menu ada tombol kecil <b>? Panduan</b>.</>,
       <>Tekan untuk membaca <b>Cara pakai</b> menu itu dalam 3 langkah.</>,
@@ -460,6 +460,14 @@ const PARTS = [
       <>Ketuk gambar untuk membuka ukuran penuh. Hapus dengan <b>✕</b> › <b>Ya, hapus</b>.</>,
     ], <>File disimpan privat: hanya pengguna yang berhak melihat datanya (mis. dokumen penghuni hanya pemilik & bagian sewa; foto nota pengeluaran hanya pemilik/pengelola) yang bisa membuka, lewat tautan sementara 10 menit. Maks 4 MB per file, 10 file per data; ruang per bisnis mengikuti paket (Gratis 50 MB, Standar 500 MB, Pro 2 GB). Penambahan & penghapusan tercatat di Riwayat. Unduh semua data hanya berisi <b>daftar</b> lampiran, bukan filenya. Bisnis yang ditutup: lampiran bisa dilihat, tidak bisa ditambah.</>, 'warn', <ScrLampiran />],
   ]],
+  ['K', 'Pusat Konfirmasi (setup bisnis baru)', [
+    ['Tinjau, lengkapi & aktifkan bisnis', 'Pusat Konfirmasi (menu utama bisnis yang masih draf)', [
+      <>Buka bisnis yang masih draf (ketuk nama bisnis di kiri atas). Lihat <b>Kelengkapan data</b> dan daftar yang disiapkan PRASARA: profil & informasi, layanan, alur kerja, modul, dan halaman pelanggan.</>,
+      <>Ketuk <b>Lengkapi</b>/<b>Ubah</b> untuk mengisi (mis. alamat, WhatsApp, metode pembayaran; laundry: <b>harga & estimasi tiap layanan</b>, wilayah/biaya/jadwal antar jemput; kos: jumlah kamar & harga sewa), lalu <b>Simpan & setujui</b> — atau <b>Simpan draf</b>.</>,
+      <>Putuskan tiap bagian: <b>Setujui</b>, <b>Tunda</b>, atau <b>Tolak</b> (bagian bertanda wajib hanya bisa disetujui). Modul: <b>Setujui semua yang disarankan</b> lalu sesuaikan.</>,
+      <>Tekan <b>Tinjau seluruh konfigurasi & aktifkan</b>: lihat apa yang akan aktif dan yang tidak, lalu <b>Aktifkan</b>. Menu operasional langsung terbuka; halaman bisnis tetap draf sampai Anda terbitkan sendiri (Langkah 44).</>,
+    ], <>Selama draf, transaksi (pesanan, penjualan, tagihan) ditolak server. Harga, kapasitas, dan jumlah karyawan tidak pernah diisi otomatis. Yang tidak disetujui tidak diaktifkan. Setelah aktif, bagian yang Anda setujui di sini langsung diterapkan; semua keputusan tercatat di Konfigurasi › Riwayat. Belum siap? <b>Tunda setup</b> atau <b>Tolak draf</b> (datanya tetap tersimpan). Asisten AI untuk mengisi draf: segera hadir.</>, 'warn', <ScrKonfirmasi />],
+  ]],
 ];
 
 const RULES = [
@@ -514,6 +522,7 @@ export default function Panduan() {
           <div><b>Business Builder</b><span><a href="#bagian-I">Langkah 55–62</a><br />Bisnis kustom: data & field, alur & peran, laporan, validasi, catatan, uang masuk & kas; isian tambahan di menu bawaan</span></div>
           <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–54</a><br />Deposit, keluhan & perbaikan, meteran listrik/air, booking kamar</span></div>
           <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
+          <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

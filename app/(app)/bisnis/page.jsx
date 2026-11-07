@@ -7,7 +7,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Loading, Tile } from '@/components/ui';
 import { rp, bulan, today, errMsg, tgl } from '@/lib/format';
-import { typeOf, homeOf, ROLES } from '@/lib/business';
+import { typeOf, homeOf, ROLES, isDraft, SETUP_STATUS } from '@/lib/business';
 import { LEGAL_KIND } from '@/lib/modules';
 
 const BASIS = { kas: 'dicatat saat uang diterima (basis kas)', penjualan: 'dicatat saat penjualan terjadi, termasuk kasbon', 'pesanan selesai': 'dicatat saat pesanan diserahkan ke pelanggan, termasuk yang belum lunas', 'status catatan': 'dicatat saat catatan mencapai status uang masuk yang diatur di Business Builder' };
@@ -97,6 +97,14 @@ export default function Bisnis() {
             {b.attention?.length > 0 && <div className="list">{b.attention.map((a) => <button key={a.text} className="li click" onClick={() => go(b, a.href)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}><span className="small">{a.text}</span><b className="small">›</b></button>)}</div>}
             <span className="small muted">Uang masuk belum diatur (Business Builder › Data & formulir › Uang masuk), jadi bisnis ini belum ikut dijumlahkan.{b.last_activity ? ` Catatan terakhir ${tgl(String(b.last_activity).slice(0, 10))}.` : ''}</span>
             <button className="sm" onClick={() => go(b, '/kerja')}>Buka {b.name}</button>
+          </section>
+        );
+        const lk = list?.find((x) => x.id === b.id);
+        if (isDraft(lk)) return (
+          <section className="panel" key={b.id}>
+            <div className="row between"><b>{t.icon} {b.name}</b><span className={'chip ' + (SETUP_STATUS[lk.setup_status]?.[1] || 'void')}>{SETUP_STATUS[lk.setup_status]?.[0] || 'Draf'}</span></div>
+            <span className="small muted">Masih dalam setup — belum ada transaksi. Tinjau & aktifkan di Pusat Konfirmasi.</span>
+            <button className="sm" onClick={() => go(b, '/konfirmasi')}>Buka Pusat Konfirmasi</button>
           </section>
         );
         const retail = b.business_type === 'retail';

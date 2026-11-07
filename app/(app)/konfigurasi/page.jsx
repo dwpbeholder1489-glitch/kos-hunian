@@ -51,6 +51,7 @@ export default function Konfigurasi() {
   return (
     <div className="stack">
       <div className="row"><h2>Pusat konfigurasi</h2><PageHelp page="konfigurasi" /></div>
+      {kos?.category_code && <Link href="/konfirmasi" className="small">Konfigurasi awal (layanan, info bisnis, modul yang disetujui) ada di Pusat Konfirmasi →</Link>}
       <p className="small muted" style={{ margin: 0 }}>Atur profil, modul, dan struktur {kos.name}. Perubahan penting dicatat dan {owner ? 'langsung diterapkan setelah Anda konfirmasi' : 'menunggu persetujuan pemilik'}.</p>
       <div className="seg" style={{ overflowX: 'auto' }}>
         {[['modul', 'Modul'], ['saran', 'Saran'], ['profil', 'Profil'], ...(ENTITY_FOR[kos.business_type] ? [['isian', 'Isian tambahan']] : []), ['cabang', 'Cabang & gudang'], ['setuju', 'Persetujuan'], ['riwayat', 'Riwayat']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}

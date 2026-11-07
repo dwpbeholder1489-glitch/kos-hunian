@@ -48,6 +48,11 @@ begin
       ('att_list', format('select public.att_list(''occupant'', (select id from public.occupants where kos_id = %L limit 1))', k)),
       ('att_prepare', format('select public.att_prepare(''expense'', (select id from public.expenses where kos_id = %L limit 1), ''x.jpg'', ''image/jpeg'', 10)', k)),
       ('att_purge_list', 'select public.att_purge_list(10)'),
+      ('setup_state', format('select public.setup_state(%L)', k)),
+      ('setup_item_save', format('select public.setup_item_save(%L, ''alamat'', ''{"v":"dibajak"}'', ''simpan'')', k)),
+      ('setup_activate', format('select public.setup_activate(%L)', k)),
+      ('setup_business_action', format('select public.setup_business_action(%L, ''tolak'', ''uji isolasi'')', k)),
+      ('setup_add_service', format('select public.setup_add_service(%L, ''{"name":"uji"}'')', k)),
       ('bb_people', format('select public.bb_people(%L)', k)),
       ('booking_create', format('select public.booking_create(gen_random_uuid(), %L, ''{"name":"uji"}'')', k)),
       ('meter_record', format('select public.meter_record(%L, (select id from public.utility_types where kos_id = %L limit 1), current_date, current_date, ''[]'')', k, k))

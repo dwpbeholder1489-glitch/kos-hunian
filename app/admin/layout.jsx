@@ -12,6 +12,7 @@ const NAV = [
   ['/admin/tiket', 'Tiket', 'tickets.view'],
   ['/admin/langganan', 'Langganan & pembayaran', 'payments.view'],
   ['/admin/paket', 'Paket & harga', 'payments.view'],
+  ['/admin/kategori', 'Kategori bisnis', 'payments.view'],
   ['/admin/pengumuman', 'Pengumuman', 'announce.manage'],
   ['/admin/template', 'Template', 'templates.manage'],
   ['/admin/aktivitas', 'Catatan audit', 'audit.view'],
