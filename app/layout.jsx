@@ -6,7 +6,7 @@ import { SITE_URL as SITE } from '@/lib/plan';
 import { themeScript } from '@/lib/theme';
 const TITLE = 'PRASARA — One Intelligence. Every Business.';
 const DESC = 'Satu aplikasi untuk mengelola bisnis Anda dari HP: kos & properti sewa, toko retail & grosir. Coba gratis 30 hari.';
-const IMAGE = { url: '/og.jpg', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' };
+const IMAGE = { url: '/og.jpg?v=2', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' };
 
 // Judul, deskripsi & gambar pratinjau saat link dibagikan (WhatsApp, Facebook, Telegram, X)
 export const metadata = {
@@ -14,6 +14,7 @@ export const metadata = {
   title: TITLE,
   description: DESC,
   applicationName: 'PRASARA',
+  appleWebApp: { capable: true, title: 'PRASARA', statusBarStyle: 'default' },
   openGraph: { title: TITLE, description: DESC, url: '/', siteName: 'PRASARA', locale: 'id_ID', type: 'website', images: [IMAGE] },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: [IMAGE.url] },
 };
