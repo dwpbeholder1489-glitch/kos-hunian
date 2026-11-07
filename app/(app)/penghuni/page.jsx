@@ -2,6 +2,7 @@
 import PortalBox from '@/components/PortalBox';
 import DepositBox from '@/components/DepositBox';
 import IsianTambahan from '@/components/IsianTambahan';
+import Lampiran from '@/components/Lampiran';
 import { moduleOn } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
@@ -83,6 +84,7 @@ function OccDetail({ d, occ, go, onClose }) {
       </dl>
       {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
       <IsianTambahan entity="occupant" id={occ.id} extra={occ.extra} area="rent" />
+      <Lampiran entity="occupant" id={occ.id} title="Dokumen penghuni" hint="Mis. foto KTP, surat perjanjian sewa (PDF). Hanya pemilik & karyawan bagian sewa yang bisa melihat." />
       {depLease && <DepositBox d={d} lease={depLease} />}
       {moduleOn(kos, 'p_portal') && <PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />}
       {kos.owner_id === user?.id && <Link href="/pengaturan#pesan" className="small" style={{ textAlign: 'center' }}>Ubah teks pesan WhatsApp</Link>}

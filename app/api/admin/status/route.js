@@ -14,7 +14,7 @@ export async function GET(req) {
     commit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
     services: [
       ['Database (Supabase)', has('NEXT_PUBLIC_SUPABASE_URL') && has('NEXT_PUBLIC_SUPABASE_ANON_KEY')],
-      ['Kunci server Supabase (untuk jadwal otomatis)', has('SUPABASE_SECRET_KEY') || has('SUPABASE_SERVICE_ROLE_KEY')],
+      ['Kunci server Supabase (untuk jadwal otomatis & lampiran)', has('SUPABASE_SECRET_KEY') || has('SUPABASE_SERVICE_ROLE_KEY')],
       ['Email (Gmail SMTP)', has('SMTP_USER') && has('SMTP_PASS')],
       ['Pengaman jadwal otomatis (CRON_SECRET)', has('CRON_SECRET')],
       ['Alamat aplikasi (APP_URL / SITE_URL)', has('APP_URL') || has('NEXT_PUBLIC_SITE_URL')],

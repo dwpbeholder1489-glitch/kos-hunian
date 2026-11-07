@@ -9,6 +9,7 @@ import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui'
 import { rp, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
 import LokasiBar from '@/components/LokasiBar';
+import Lampiran from '@/components/Lampiran';
 import { multiLoc } from '@/lib/business';
 
 const ACC = { kas: 'Kas (laci)', bank: 'Bank' };
@@ -90,6 +91,7 @@ export default function Kas() {
               <div className="main"><b className="small">{f.label}</b><span className="small muted">{tgl(f.date)} · {f.acc}{f.note ? ` · ${f.note}` : ''}</span></div>
               <div className="row" style={{ flexWrap: 'nowrap' }}>
                 <b className="small" style={{ color: f.amt < 0 ? 'var(--bad)' : f.amt > 0 ? 'var(--good)' : 'inherit' }}>{f.amt === 0 ? rp(f.raw) : (f.amt > 0 ? '+' : '−') + rp(Math.abs(f.amt))}</b>
+                {f.t === 'exp' && <button className="sm ghost" aria-label="Foto nota" onClick={() => setSheet({ t: 'att', f })}>📎</button>}
                 <button className="sm ghost" aria-label="Hapus atau batalkan" onClick={() => setSheet({ t: 'del', f })}>✕</button>
               </div>
             </div>
@@ -121,12 +123,17 @@ export default function Kas() {
       {sheet?.t === 'cash' && <CashForm kosId={kosId} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'pay' && <PayForm kosId={kosId} c={sheet.c} kind={sheet.kind} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'move' && <MoveCash kosId={kosId} locs={d.loc.filter((b) => b.active)} cur={kos.locs?.current} onClose={() => setSheet(null)} onSaved={done} />}
+      {sheet?.t === 'att' && <Sheet title={`${sheet.f.label} · ${tgl(sheet.f.date)}`} onClose={() => setSheet(null)}>
+        <p className="small" style={{ margin: 0 }}>{rp(Math.abs(sheet.f.amt))} · {sheet.f.acc}{sheet.f.note ? ` · ${sheet.f.note}` : ''}</p>
+        <Lampiran entity="expense" id={sheet.f.id} title="Foto nota / kuitansi" hint="Belum ada foto nota untuk biaya ini." />
+      </Sheet>}
       {sheet?.t === 'del' && <DeleteEntry f={sheet.f} onClose={() => setSheet(null)} onSaved={done} />}
     </div>
   );
 }
 
 function ExpenseForm({ kosId, cats, onClose, onSaved }) {
+  const [saved, setSaved] = useState(null); // id biaya yang baru tersimpan → bisa tambah foto nota
   const [cat, setCat] = useState(cats.find((c) => c.kind === 'operasional')?.id || '');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
@@ -136,8 +143,17 @@ function ExpenseForm({ kosId, cats, onClose, onSaved }) {
     const a = parseRp(amount);
     if (!(a > 0)) return toast('Isi jumlahnya.');
     const c = cats.find((x) => x.id === cat);
-    if (await run(() => supabase.from('expenses').insert({ kos_id: kosId, date, amount: a, category_id: cat || null, kind: c?.kind || 'operasional', account: acc, description: desc || null }), 'Biaya tercatat', errMsg)) onSaved();
+    const { data: row, error } = await supabase.from('expenses').insert({ kos_id: kosId, date, amount: a, category_id: cat || null, kind: c?.kind || 'operasional', account: acc, description: desc || null }).select('id').single();
+    if (error) return toast(errMsg(error));
+    toast('Biaya tercatat'); setSaved(row.id);
   };
+  if (saved) return (
+    <Sheet title="Biaya tercatat" onClose={onSaved}>
+      <p className="small" style={{ margin: 0 }}>✓ {rp(parseRp(amount))} · {cats.find((x) => x.id === cat)?.name || 'Biaya'} · {tgl(date)}</p>
+      <Lampiran entity="expense" id={saved} title="Foto nota / kuitansi" hint="Opsional: foto nota agar mudah dicek nanti." />
+      <button className="cta" onClick={onSaved}>Selesai</button>
+    </Sheet>
+  );
   return (
     <Sheet title="Catat biaya" onClose={onClose}>
       <Field label="Jenis biaya"><select value={cat} onChange={(e) => setCat(e.target.value)}>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}{c.kind === 'modal' ? ' (modal)' : ''}</option>)}</select></Field>

@@ -5,6 +5,7 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
+import Lampiran from '@/components/Lampiran';
 import { rp, parseRp, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
 import { canArea } from '@/lib/business';
@@ -144,6 +145,7 @@ function Detail({ d, kos, t, onClose, onChanged }) {
         {occ?.phone && <a href={waLink(occ.phone, waMsg)} target="_blank" rel="noreferrer"><button className="sm">WA penghuni</button></a>}
       </div>
       {mode === 'catatan' && <NoteForm onSave={(n) => upd({ note: n }, 'Catatan disimpan').then(() => setMode(null))} />}
+      <Lampiran entity="maint_ticket" id={t.id} title="Foto kerusakan / nota" hint="Foto sebelum & sesudah perbaikan, atau nota belanja bahan." />
       {isOpen ? <button className="sm ghost danger" onClick={cancel}>Batalkan keluhan</button> : <button className="sm ghost" onClick={reopen}>Buka kembali</button>}
       <section className="panel"><span className="label">Riwayat</span>
         <div className="list">{ev.map((e) => <div className="li" key={e.id}><span className="small">{e.text}</span><span className="small muted" style={{ textAlign: 'right' }}>{waktu(e.created_at)}<br />{e.actor}</span></div>)}</div>

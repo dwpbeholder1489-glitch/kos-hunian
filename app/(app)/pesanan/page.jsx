@@ -1,5 +1,6 @@
 'use client';
 import IsianTambahan from '@/components/IsianTambahan';
+import Lampiran from '@/components/Lampiran';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -252,6 +253,7 @@ function Detail({ o, d, kos, onClose, onChanged }) {
             {p.status === 'selesai' && <button className="sm ghost" onClick={() => voidPay(p)} aria-label="Batalkan pembayaran">✕</button>}</div>
         ))}</div></>}
         <IsianTambahan entity="svc_order" id={o.id} area="sell" />
+        <Lampiran entity="svc_order" id={o.id} hint="Foto barang saat diterima (noda, kerusakan) melindungi Anda bila ada komplain." />
         <span className="label">Riwayat</span>
         <div className="list">{x.events.map((e, i) => <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span className="small">{e.text}</span><span className="small muted" style={{ textAlign: 'right' }}>{waktu(e.at)}<br />{e.actor}</span></div>)}</div>
       </>}

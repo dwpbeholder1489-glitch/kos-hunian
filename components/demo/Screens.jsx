@@ -456,3 +456,22 @@ export function ScrCatatan() {
     </Phone>
   );
 }
+
+export function ScrLampiran() {
+  const T = [['🧾', 'nota-cat.jpg'], ['📷', 'sebelum.jpg'], ['📷', 'sesudah.jpg'], ['📄', 'garansi.pdf']];
+  return (
+    <Phone tab="Tagihan">
+      <Title>KLH-003 · Keran bocor</Title>
+      <div className="row"><span className="chip good">Selesai</span><span className="small muted">Kamar A02</span></div>
+      <div className="panel">
+        <div className="row between"><span className="label">📎 Foto kerusakan / nota (4)</span><span className="mini-btn">+ Foto / file</span></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>{T.map(([i, n]) => (
+          <div key={n} style={{ minWidth: 0 }}><div style={{ aspectRatio: '1', borderRadius: 8, background: 'var(--sunk)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{i}</div>
+            <div className="small muted" style={{ fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</div></div>
+        ))}</div>
+        <span className="small muted" style={{ fontSize: 10 }}>Foto (dikecilkan otomatis) atau PDF maks 4 MB, 10 per data. Terpakai 3,2 MB dari 500 MB.</span>
+      </div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

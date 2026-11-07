@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -418,7 +418,7 @@ const PARTS = [
       <>Tekan <b>+ Field</b>: nama, tipe (teks, angka, uang, tanggal, tanggal & jam, pilihan satu/banyak, ya/tidak, No. HP, <b>rujukan</b> ke jenis data lain), wajib, nilai bawaan, batas minimal/maksimal.</>,
       <>Atur <b>Tampil di daftar</b>, <b>Bisa dicari</b>, <b>Bisa disaring</b>, dan <b>Sembunyikan dari peran</b> (mis. harga modal tidak terlihat petugas). Urutkan dengan ↑ ↓.</>,
       <>Di <b>Ubah</b> jenis data, pilih <b>Field judul</b> (mis. Plat nomor) dan apakah memakai status & alur. Cek dengan <b>Pratinjau formulir</b>.</>,
-    ], <>Field yang sudah berisi data tidak bisa diganti tipenya; nonaktifkan dan buat field baru (isi lama tidak hilang). Nama field yang sama di satu jenis data ditolak (konflik). Lampiran file belum tersedia.</>, 'warn', null],
+    ], <>Field yang sudah berisi data tidak bisa diganti tipenya; nonaktifkan dan buat field baru (isi lama tidak hilang). Nama field yang sama di satu jenis data ditolak (konflik). Foto/file tidak dibuat sebagai field: pakai panel <b>📎 Lampiran</b> di setiap catatan (Langkah 63).</>, 'warn', null],
     ['Alur status & peran (workflow)', 'Business Builder › 3. Alur & peran', [
       <>Susun <b>status</b> (mis. Antre → Dikerjakan → Selesai → Diambil, Batal). Tandai satu <b>Awal</b> dan minimal satu <b>Akhir</b>; isi <b>batas jam</b> bila ada target waktu.</>,
       <>Tambah <b>aturan</b>: dari status apa ke status apa. Centang peran yang boleh (kosong = semua), <b>Wajib catatan</b>, dan <b>Perlu persetujuan</b> (selain pemilik, dikirim ke menu Persetujuan).</>,
@@ -450,6 +450,14 @@ const PARTS = [
       <>Isian muncul di bagian <b>Isian tambahan</b> pada detail data (Penghuni › ketuk nama, Barang › ketuk barang, Pesanan › ketuk pesanan, Kontak). Tekan <b>Ubah</b> untuk mengisi.</>,
       <>Isian ikut terunduh di <b>Unduh semua data</b> (lembar Isian tambahan).</>,
     ], <>Isian yang dinonaktifkan disembunyikan, isinya tetap tersimpan. Tipe tidak bisa diganti bila sudah berisi data. Maksimal 20 isian per menu. Belum bisa dipakai untuk mencari/menyaring di daftar.</>, null, null],
+  ]],
+  ['J', 'Lampiran foto & file', [
+    ['Lampirkan foto, nota & dokumen', 'Detail data › 📎 Lampiran › + Foto / file', [
+      <>Buka datanya: <b>Catatan</b> (bisnis kustom), <b>Pesanan</b> (jasa/laundry), <b>Keluhan & perbaikan</b>, <b>Penghuni › ketuk nama</b>, atau pengeluaran (<b>Pengeluaran › ketuk baris</b> / <b>Kas & biaya › 📎</b>).</>,
+      <>Di bagian <b>📎 Lampiran</b> tekan <b>+ Foto / file</b>. Di iPhone pilih <b>Ambil Foto</b>, <b>Perpustakaan Foto</b>, atau <b>Pilih File</b> (PDF). Bisa memilih beberapa sekaligus.</>,
+      <>Foto otomatis dikecilkan (foto iPhone/HEIC menjadi JPG) sebelum diunggah. Setelah mencatat biaya baru, Anda langsung ditawari menambah <b>foto nota</b>.</>,
+      <>Ketuk gambar untuk membuka ukuran penuh. Hapus dengan <b>✕</b> › <b>Ya, hapus</b>.</>,
+    ], <>File disimpan privat: hanya pengguna yang berhak melihat datanya (mis. dokumen penghuni hanya pemilik & bagian sewa; foto nota pengeluaran hanya pemilik/pengelola) yang bisa membuka, lewat tautan sementara 10 menit. Maks 4 MB per file, 10 file per data; ruang per bisnis mengikuti paket (Gratis 50 MB, Standar 500 MB, Pro 2 GB). Penambahan & penghapusan tercatat di Riwayat. Unduh semua data hanya berisi <b>daftar</b> lampiran, bukan filenya. Bisnis yang ditutup: lampiran bisa dilihat, tidak bisa ditambah.</>, 'warn', <ScrLampiran />],
   ]],
 ];
 
@@ -504,6 +512,7 @@ export default function Panduan() {
           <div><b>Jasa & Laundry</b><span><a href="#bagian-G">Langkah 45–50</a><br />Layanan & tahap, pesanan, nota, proses, bayar, keluhan, bahan, laporan</span></div>
           <div><b>Business Builder</b><span><a href="#bagian-I">Langkah 55–62</a><br />Bisnis kustom: data & field, alur & peran, laporan, validasi, catatan, uang masuk & kas; isian tambahan di menu bawaan</span></div>
           <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–54</a><br />Deposit, keluhan & perbaikan, meteran listrik/air, booking kamar</span></div>
+          <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

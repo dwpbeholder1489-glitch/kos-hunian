@@ -4,7 +4,8 @@ import { Fragment, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
-import { Sheet, Field, Loading, Empty, run } from '@/components/ui';
+import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
+import Lampiran from '@/components/Lampiran';
 import { rp, tgl, today, thisMonth, bulan, addMonthsYm, parseRp, angka, KIND, ENTRY, errMsg } from '@/lib/format';
 
 export default function Pengeluaran() {
@@ -113,6 +114,7 @@ function EntrySheet({ x, onClose }) {
 
 function ExpSheet({ d, x, onClose }) {
   const { kosId, bump } = useKos();
+  const [newId, setNewId] = useState(null); // setelah pengeluaran baru tersimpan → bisa tambah foto nota
   const isNew = !x;
   const [date, setDate] = useState(x?.date || today());
   const [amt, setAmt] = useState(x ? angka(x.amount) : '');
@@ -125,7 +127,13 @@ function ExpSheet({ d, x, onClose }) {
     const c = d.catById.get(cat);
     const data = { date, amount: a, category_id: cat || null, kind: c?.kind || 'operasional', description: desc.trim() || null };
     setBusy(true);
-    const ok = await run(() => isNew ? supabase.from('expenses').insert({ ...data, kos_id: kosId }) : supabase.from('expenses').update(data).eq('id', x.id), isNew ? 'Pengeluaran dicatat' : 'Perubahan disimpan', errMsg);
+    if (isNew) {
+      const { data: row, error } = await supabase.from('expenses').insert({ ...data, kos_id: kosId }).select('id').single();
+      setBusy(false);
+      if (error) return toast(errMsg(error));
+      toast('Pengeluaran dicatat'); bump(); setNewId(row.id); return;
+    }
+    const ok = await run(() => supabase.from('expenses').update(data).eq('id', x.id), 'Perubahan disimpan', errMsg);
     setBusy(false);
     if (ok) { bump(); onClose(); }
   }
@@ -134,6 +142,11 @@ function ExpSheet({ d, x, onClose }) {
     if (await run(() => supabase.from('expenses').delete().eq('id', x.id), 'Dihapus', errMsg)) { bump(); onClose(); }
   }
   return (
+    newId ? <Sheet title="Pengeluaran tercatat" onClose={onClose}>
+      <p className="small" style={{ margin: 0 }}>✓ {rp(parseRp(amt))} · {d.catById.get(cat)?.name || 'Pengeluaran'} · {tgl(date)}</p>
+      <Lampiran entity="expense" id={newId} title="Foto nota / kuitansi" hint="Opsional: foto nota agar mudah dicek nanti." />
+      <button className="cta" onClick={onClose}>Selesai</button>
+    </Sheet> :
     <Sheet title={isNew ? 'Catat pengeluaran' : 'Ubah pengeluaran'} onClose={onClose}>
       <div className="row">
         <Field label="Jumlah"><input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="mis. 350rb" /></Field>
@@ -144,6 +157,7 @@ function ExpSheet({ d, x, onClose }) {
       </Field>
       <Field label="Keterangan (opsional)"><input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="mis. Token listrik kamar mandi bersama" /></Field>
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
+      {!isNew && <Lampiran entity="expense" id={x.id} title="Foto nota / kuitansi" />}
       {!isNew && <button className="danger" onClick={del}>Hapus</button>}
     </Sheet>
   );

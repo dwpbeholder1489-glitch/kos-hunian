@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
+import Lampiran from '@/components/Lampiran';
 import { errMsg } from '@/lib/format';
 import { uid } from '@/lib/retail';
 import { canArea, roleOf } from '@/lib/business';
@@ -176,6 +177,7 @@ function RecordDetail({ kos, cfg, id, refs, onClose, onEdit, onChanged }) {
         <button className="sm" onClick={() => onEdit(rec)}>Ubah isi</button>
         {canArea(kos, 'settings') && <button className="sm ghost danger" onClick={archive}>Arsipkan</button>}
       </div>}
+      <Lampiran entity="bb_record" id={rec.id} hint="Tambahkan foto (mis. kondisi barang, nota) atau PDF." />
       {x.refs.length > 0 && <section className="panel"><span className="label">Dipakai di</span>
         <div className="list">{x.refs.map((y) => <div className="li" key={y.id}><span className="small">{y.object} · {y.title}</span><span className="small muted">{y.number}{statusById(cfg, y.status_id) ? ` · ${statusById(cfg, y.status_id).label}` : ''}</span></div>)}</div></section>}
       <section className="panel"><span className="label">Riwayat</span>

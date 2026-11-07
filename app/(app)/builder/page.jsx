@@ -178,7 +178,7 @@ function FieldForm({ kosId, cfg, o, f, onClose, onSaved }) {
   return (
     <Sheet title={f ? `Field: ${f.label}` : `Field baru · ${o.name}`} onClose={onClose}>
       <Field label="Nama field (label)"><input value={p.label} maxLength={60} onChange={(e) => set('label', e.target.value)} placeholder="mis. Plat nomor" /></Field>
-      <Field label="Tipe" hint={f ? 'Tipe tidak bisa diubah bila field sudah berisi data' : undefined}><select value={p.type} onChange={(e) => set('type', e.target.value)}>{Object.entries(FTYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}<option value="file" disabled>Lampiran file (segera hadir)</option></select></Field>
+      <Field label="Tipe" hint={f ? 'Tipe tidak bisa diubah bila field sudah berisi data' : undefined}><select value={p.type} onChange={(e) => set('type', e.target.value)}>{Object.entries(FTYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}<option value="file" disabled>Foto/file → pakai 📎 Lampiran di catatan</option></select></Field>
       {['select', 'multiselect'].includes(p.type) && <Field label="Pilihan (satu per baris)"><textarea rows={4} value={p.choices} onChange={(e) => set('choices', e.target.value)} placeholder={'Matic\nBebek\nSport'} /></Field>}
       {p.type === 'reference' && <Field label="Merujuk ke"><select value={p.ref_object} onChange={(e) => set('ref_object', e.target.value)}><option value="">— pilih jenis data —</option>{refs.map((x) => <option key={x.id} value={x.id}>{x.icon} {x.name}</option>)}</select></Field>}
       {['number', 'currency'].includes(p.type) && <div className="row">
