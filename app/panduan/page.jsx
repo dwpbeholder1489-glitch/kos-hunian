@@ -133,7 +133,7 @@ const PARTS = [
       <>Laporan memisahkannya: prive mengurangi kas tetapi <b>tidak</b> mengurangi laba.</>,
     ], <><b>Jangan tertukar:</b> gaji pengelola/penjaga adalah <b>biaya kos</b> (tab Biaya kos). Uang yang dipakai pemilik untuk keperluan pribadi adalah <b>prive</b> (tab ini).</>, 'warn', <ScrOwner />],
     ['Penghuni keluar', 'Penghuni (atau Kamar) › Akhiri sewa', [
-      <>Isi <b>Tanggal keluar</b> dan alasan bila perlu.</>,
+      <>Isi <b>Tanggal keluar</b> (hari ini atau sebelumnya) dan alasan bila perlu. Penghuni baru akan keluar nanti? Isi <b>Rencana selesai</b> di detail penghuni saja — kamar tetap terisi sampai penghuni benar-benar keluar.</>,
       <>Tekan <b>Akhiri sewa</b>. Kamar kembali <b>Tersedia</b>.</>,
       <>Tagihan bulan berikutnya yang belum dibayar dibatalkan otomatis. Tunggakan lama tetap tercatat.</>,
       <>Masih ada deposit? Selesaikan di <b>Penghuni › Deposit</b>: kembalikan, potong untuk kerusakan, atau lunasi tunggakan dari deposit (Langkah 51).</>,
@@ -183,7 +183,8 @@ const PARTS = [
     ], null, null, null],
     ['Portal penghuni & asisten 24 jam', 'Penghuni › ketuk penghuni › Portal penghuni', [
       <>Isi dulu <b>Info untuk penghuni</b> di Pengaturan: nomor WhatsApp pengelola, <b>cara bayar</b>, <b>peraturan kos</b>, dan unggah <b>QRIS kos</b> agar penghuni bisa langsung scan.</>,
-      <>Buka penghuni, tekan <b>Kirim link via WhatsApp</b>. Penghuni menerima link pribadi tanpa perlu daftar. Kata-kata pesannya bisa diubah di <b>Pengaturan › Teks pesan WhatsApp</b>; link selalu ikut terkirim.</>,
+      <>Buka penghuni. Bila tertulis <b>Portal penghuni belum aktif</b>, tekan <b>Aktifkan portal penghuni</b> (sekali saja untuk semua penghuni). Kos yang didaftarkan lewat pendaftaran baru: portal disarankan di Pusat Konfirmasi, dan <b>rekening/cara bayar</b> serta <b>peraturan</b> yang diisi di sana langsung tampil di portal.</>,
+      <>Tekan <b>Kirim link via WhatsApp</b>. Penghuni menerima link pribadi tanpa perlu daftar. Kata-kata pesannya bisa diubah di <b>Pengaturan › Teks pesan WhatsApp</b>; link selalu ikut terkirim.</>,
       <>Penghuni bisa melihat tagihan, <b>mengirim bukti transfer</b>, <b>melapor kerusakan</b> (tab Lapor kerusakan), dan <b>bertanya ke asisten</b> soal tagihan, cara bayar, dan peraturan.</>,
       <>Bukti yang dikirim muncul di <b>Pembayaran › Menunggu verifikasi</b> dengan tombol <b>Lihat bukti</b>.</>,
     ], <>Asisten hanya menjawab urusan kos dan hanya memakai data penghuni itu sendiri. Jika link tersebar ke orang lain, tekan <b>Ganti link</b>.</>, 'warn', <ScrPortal />, 'pro'],

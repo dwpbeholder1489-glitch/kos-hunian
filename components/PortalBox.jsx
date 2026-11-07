@@ -5,21 +5,38 @@ import { useKos } from '@/components/KosProvider';
 import { toast } from '@/components/ui';
 import Locked from '@/components/Locked';
 import { hasFeature } from '@/lib/plan';
+import { moduleOn, canArea } from '@/lib/business';
 import { waLink, errMsg } from '@/lib/format';
 import { message } from '@/lib/templates';
 
 // Bagian "Portal penghuni" di detail penghuni: kirim / salin / ganti link pribadi
 export default function PortalBox({ occ, room }) {
-  const { kos } = useKos();
+  const { kos, loadKos } = useKos();
   const pro = hasFeature(kos, 'portal_penghuni');
+  const on = moduleOn(kos, 'p_portal');
   const [token, setToken] = useState(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!pro) return;
+    if (!pro || !on) return;
     supabase.rpc('portal_link', { p_occupant: occ.id, p_reset: false }).then(({ data, error }) => { if (error) toast(errMsg(error)); else setToken(data); });
-  }, [occ.id, pro]);
+  }, [occ.id, pro, on]);
 
+  const enable = async () => {
+    setBusy(true);
+    const { data, error } = await supabase.rpc('module_set', { p_kos: kos.id, p_code: 'p_portal', p_on: true, p_reason: 'Aktifkan portal penghuni dari detail penghuni' });
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    toast(data === 'menunggu' ? 'Menunggu persetujuan pemilik' : 'Portal penghuni aktif'); loadKos?.();
+  };
+  if (pro && !on) return (
+    <section className="panel">
+      <span className="label">Portal penghuni</span>
+      <p className="small" style={{ margin: 0 }}>Portal penghuni <b>belum aktif</b>. Bila aktif, {occ.name} mendapat link pribadi untuk melihat tagihan, mengirim bukti transfer, dan melapor kerusakan — tanpa daftar akun.</p>
+      {canArea(kos, 'settings') ? <button className="primary" disabled={busy} onClick={enable}>{busy ? 'Mengaktifkan…' : 'Aktifkan portal penghuni'}</button>
+        : <span className="small muted">Minta pemilik mengaktifkannya (Konfigurasi › Modul).</span>}
+    </section>
+  );
   if (!pro) return <Locked need="pro" title="Portal penghuni" text="Penghuni bisa melihat tagihan sendiri, mengirim bukti transfer, dan bertanya ke asisten 24 jam lewat link pribadi." />;
   const url = token ? `${window.location.origin}/p/${token}` : '';
   const msg = message('portal', kos.wa_portal_tpl, { nama: occ.name, kos: kos.name, kamar: room || '', link: url });

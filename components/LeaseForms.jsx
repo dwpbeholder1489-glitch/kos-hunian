@@ -110,7 +110,8 @@ export function EndLeaseSheet({ d, lease, onClose }) {
     <Sheet title={`Akhiri sewa · ${d.occName(lease.occupant_id)}`} onClose={onClose}>
       {out > 0 && <div className="notice">Masih ada tagihan belum lunas {rp(out)}. Tagihan itu tetap tercatat setelah sewa diakhiri.</div>}
       {dep > 0 && <div className="notice">Deposit {rp(dep)} masih dipegang. Setelah sewa diakhiri, selesaikan di Penghuni › {d.occName(lease.occupant_id)} › Deposit: <b>Kembalikan</b>, <b>Potong</b> untuk kerusakan, atau lunasi tunggakan lewat Tagihan (metode “Dipotong dari deposit”).</div>}
-      <Field label="Tanggal keluar"><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+      <Field label="Tanggal keluar" hint="hari ini atau sebelumnya"><input type="date" value={end} max={today()} onChange={(e) => setEnd(e.target.value)} /></Field>
+      <span className="small muted">Penghuni belum keluar tapi sudah pasti pindah? Tutup ini dan isi <b>Rencana selesai</b> di detail penghuni — kamar tetap terisi sampai tanggal itu.</span>
       <Field label="Alasan (opsional)"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. lulus kuliah, pindah kerja" /></Field>
       <p className="small muted" style={{ margin: 0 }}>Tagihan sewa untuk periode setelah tanggal keluar yang belum dibayar akan dibatalkan otomatis.</p>
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Akhiri sewa'}</button>

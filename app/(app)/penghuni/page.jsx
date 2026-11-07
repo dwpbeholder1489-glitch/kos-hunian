@@ -86,7 +86,7 @@ function OccDetail({ d, occ, go, onClose }) {
       <IsianTambahan entity="occupant" id={occ.id} extra={occ.extra} area="rent" />
       <Lampiran entity="occupant" id={occ.id} title="Dokumen penghuni" hint="Mis. foto KTP, surat perjanjian sewa (PDF). Hanya pemilik & karyawan bagian sewa yang bisa melihat." />
       {depLease && <DepositBox d={d} lease={depLease} />}
-      {moduleOn(kos, 'p_portal') && <PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />}
+      {<PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />}
       {kos.owner_id === user?.id && <Link href="/pengaturan#pesan" className="small" style={{ textAlign: 'center' }}>Ubah teks pesan WhatsApp</Link>}
       <section className="panel"><span className="label">Tagihan terakhir</span>
         {invs.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Belum ada tagihan.</p> : (

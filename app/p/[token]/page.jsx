@@ -84,7 +84,7 @@ export default function Portal() {
               ))}</div></section>
             ) : <p className="muted small" style={{ margin: 0 }}>Tidak ada tagihan yang perlu dibayar. Terima kasih!</p>}
             {p.kos.qris && <QrisPanel src={p.kos.qris} kos={p.kos.name} />}
-            {p.kos.payment_info && <section className="panel"><span className="label">Cara bayar</span><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{p.kos.payment_info}</p></section>}
+            <PayInfo k={p.kos} />
             <EmailBox demo={demo} token={token} current={p.occupant.email} onSaved={load} />
           </>
         )}
@@ -107,7 +107,7 @@ export default function Portal() {
           <>
             {p.lease && <section className="panel"><span className="label">Kamar Anda</span><dl className="kv"><dt>Kamar</dt><dd>{p.lease.room}</dd><dt>Sewa</dt><dd>{rp(p.lease.rent)}/bulan</dd><dt>Mulai</dt><dd>{tgl(p.lease.start_date)}</dd>{Number(p.deposit) > 0 && <><dt>Deposit dipegang</dt><dd>{rp(p.deposit)}</dd></>}{p.lease.facilities?.length > 0 && <><dt>Fasilitas</dt><dd>{p.lease.facilities.join(', ')}</dd></>}</dl></section>}
             {p.kos.house_rules && <section className="panel"><span className="label">Peraturan kos</span><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{p.kos.house_rules}</p></section>}
-            {p.kos.payment_info && <section className="panel"><span className="label">Cara bayar</span><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{p.kos.payment_info}</p></section>}
+            <PayInfo k={p.kos} />
             <section className="panel"><span className="label">Alamat & kontak</span><p style={{ margin: 0 }}>{p.kos.address || '—'}</p>{p.kos.contact_phone && <a href={waLink(p.kos.contact_phone, 'Halo, saya ' + p.occupant.name + '.')} target="_blank" rel="noreferrer">WhatsApp pengelola: {p.kos.contact_phone}</a>}</section>
           </>
         )}
@@ -118,6 +118,21 @@ export default function Portal() {
       </main>
       {pay && <PaySheet demo={demo} token={token} inv={pay} info={p.kos.payment_info} qris={p.kos.qris} onClose={() => setPay(null)} onDone={() => { setPay(null); load(); }} />}
     </>
+  );
+}
+
+// Cara bayar: rekening/info dari pengelola + metode & aturan bayar yang diisi saat pendaftaran
+function PayInfo({ k }) {
+  const methods = Array.isArray(k.payment_methods) ? k.payment_methods.filter(Boolean) : [];
+  if (!k.payment_info && !methods.length && !k.payment_rules) return k.qris ? null : (
+    <section className="panel"><span className="label">Cara bayar</span><p className="small" style={{ margin: 0 }}>Pengelola belum menuliskan rekening/cara bayar. Tanyakan lewat tombol <b>Hubungi</b> sebelum mentransfer.</p></section>
+  );
+  return (
+    <section className="panel"><span className="label">Cara bayar</span>
+      {k.payment_info && <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{k.payment_info}</p>}
+      {methods.length > 0 && <span className="small">Bisa dibayar: <b>{methods.join(', ')}</b></span>}
+      {k.payment_rules && <span className="small muted" style={{ whiteSpace: 'pre-wrap' }}>{k.payment_rules}</span>}
+    </section>
   );
 }
 
