@@ -30,7 +30,12 @@ begin
       ('stock_levels_list', format('select public.stock_levels_list(%L)', k)),
       ('sale_create', format('select public.sale_create(gen_random_uuid(), %L, ''ecer'', ''[{"product_id":"00000000-0000-0000-0000-000000000000","unit":"pcs","qty":1}]'', 0, ''tunai'')', k)),
       ('module_set', format('select public.module_set(%L, ''r_shift'', true, ''uji isolasi'')', k)),
-      ('business_close', format('select public.business_close(%L, ''x'', ''uji isolasi'')', k))
+      ('business_close', format('select public.business_close(%L, ''x'', ''uji isolasi'')', k)),
+      ('svc_board', format('select public.svc_board(%L)', k)),
+      ('svc_report', format('select public.svc_report(%L, current_date - 30, current_date)', k)),
+      ('svc_order_create', format('select public.svc_order_create(gen_random_uuid(), %L, ''{"name":"x","lines":[]}'')', k)),
+      ('svc_service_save', format('select public.svc_service_save(%L, null, ''{"name":"x","price":1}'')', k)),
+      ('svc_stages_save', format('select public.svc_stages_save(%L, ''[]'')', k))
     ) v(name, q) loop
     begin
       execute t.q;

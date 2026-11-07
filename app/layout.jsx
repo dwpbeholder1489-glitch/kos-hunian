@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui';
 import { SITE_URL as SITE } from '@/lib/plan';
 import { themeScript } from '@/lib/theme';
 const TITLE = 'PRASARA — One Intelligence. Every Business.';
-const DESC = 'Satu aplikasi untuk mengelola bisnis Anda dari HP: kos & properti sewa, toko retail & grosir. Coba gratis 30 hari.';
+const DESC = 'Satu aplikasi untuk mengelola bisnis Anda dari HP: kos & properti sewa, toko retail & grosir, laundry & jasa. Coba gratis 30 hari.';
 const IMAGE = { url: '/og.jpg?v=2', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' };
 
 // Judul, deskripsi & gambar pratinjau saat link dibagikan (WhatsApp, Facebook, Telegram, X)

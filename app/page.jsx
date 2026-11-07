@@ -7,7 +7,7 @@ import { PLANS, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell } from '@/lib/pl
 import { TESTIMONIALS } from '@/lib/testimonials';
 
 const TITLE = 'PRASARA — One Intelligence. Every Business.';
-const DESC = 'Satu aplikasi untuk mengelola bisnis dari HP: kos & properti sewa, toko retail & grosir. Satu akun untuk beberapa bisnis. Coba gratis 30 hari.';
+const DESC = 'Satu aplikasi untuk mengelola bisnis dari HP: kos & properti sewa, toko retail & grosir, laundry & jasa. Satu akun untuk beberapa bisnis. Coba gratis 30 hari.';
 export const metadata = {
   title: TITLE,
   description: DESC,
@@ -34,8 +34,8 @@ const START = '/masuk?daftar=1';
 
 // Nilai utama (hanya yang sudah berjalan)
 const VALUES = [
-  ['layers', 'Satu akun, banyak bisnis', 'Kelola kos dan toko dari satu akun. Ketuk nama bisnis untuk pindah, dan lihat ringkasan semua bisnis dalam satu layar.'],
-  ['compass', 'Menu sesuai jenis usaha', 'Kos melihat kamar, penghuni, dan tagihan. Toko melihat kasir, stok, dan belanja. Menu yang tidak relevan tidak ditampilkan.'],
+  ['layers', 'Satu akun, banyak bisnis', 'Kelola kos, toko, dan laundry dari satu akun. Ketuk nama bisnis untuk pindah, dan lihat ringkasan semua bisnis dalam satu layar.'],
+  ['compass', 'Menu sesuai jenis usaha', 'Kos melihat kamar, penghuni, dan tagihan. Toko melihat kasir, stok, dan belanja. Laundry melihat pesanan dan tahap proses. Menu yang tidak relevan tidak ditampilkan.'],
   ['shield', 'Tim dengan hak akses jelas', 'Karyawan masuk dengan akun sendiri. Kasir hanya melihat kasir — tidak melihat harga modal atau laba. Batasan diperiksa di database.'],
 ];
 
@@ -43,7 +43,7 @@ const VALUES = [
 const CATS = [
   ['🏠', 'Properti & Sewa', 'Kos, kontrakan, homestay: kamar, penghuni, tagihan bulanan otomatis, verifikasi pembayaran, pengeluaran, laba rugi.', 'ready'],
   ['🛒', 'Retail & Grosir', 'Toko sembako, minimarket, grosir: kasir eceran & grosir, stok multi-satuan, barcode, belanja ke supplier, kasbon, laporan laba.', 'ready'],
-  ['🧺', 'Laundry', 'Pesanan, antrean, proses, dan pengambilan.', 'plan'],
+  ['🧺', 'Jasa & Laundry', 'Laundry kiloan & satuan (dan jasa lain): pesanan, tahap cuci–kering–setrika–QC, nota, DP, antar-jemput, keluhan, bahan, laporan.', 'ready'],
   ['🍳', 'Kuliner', 'Menu, resep, bahan baku, dan pesanan dapur.', 'plan'],
   ['🏭', 'Produksi', 'Produksi, daftar bahan (BOM), bahan baku, kontrol mutu.', 'plan'],
   ['🚚', 'Distribusi', 'Gudang, pesanan, armada, dan pengiriman.', 'plan'],
@@ -67,8 +67,15 @@ const GROUPS = [
     ['Retur & shift kasir', 'Barang kembali menambah stok; tutup shift menunjukkan uang laci pas, lebih, atau kurang.'],
     ['Laporan laba', 'Penjualan bersih, laba kotor, barang terlaris dan yang tidak laku.'],
   ]],
+  ['layers', 'Jasa & Laundry', [
+    ['Pesanan kiloan & satuan', 'Harga per kg/pcs dengan minimal otomatis, diskon, ongkos antar-jemput, DP atau lunas.'],
+    ['Tahap proses', 'Cuci, kering, setrika, cek kualitas, kemas — urutan bisa diatur. Petugas proses tidak melihat uang.'],
+    ['Nota & WhatsApp', 'Nota cetak atau kirim WA; pesan diterima, sudah siap, dan tagih siap kirim (manual).'],
+    ['Keluhan & cuci ulang', 'Catat keluhan, cuci ulang tanpa biaya, ganti rugi; batal pesanan dengan alasan & persetujuan.'],
+    ['Bahan & laporan', 'Stok deterjen/pewangi, pendapatan per layanan, ketepatan waktu, laba perkiraan.'],
+  ]],
   ['users', 'Untuk semua bisnis', [
-    ['Karyawan & peran', 'Pengelola, kasir, staf gudang, penjaga — masing-masing hanya melihat menunya.'],
+    ['Karyawan & peran', 'Pengelola, kasir, staf gudang, penjaga, petugas proses — masing-masing hanya melihat menunya.'],
     ['Ringkasan semua bisnis', 'Angka penting setiap bisnis dalam satu layar.'],
     ['Pengingat & email pagi', 'Lonceng pengingat, email ringkasan, dan daftar yang perlu ditindaklanjuti.', 'Standar'],
     ['Bantuan', 'Panduan bergambar, tombol "? Panduan" di setiap menu, dan tiket bantuan.'],
@@ -84,7 +91,7 @@ const TRUST = [
 ];
 
 const FAQ = [
-  ['Bisnis apa saja yang sudah bisa dikelola?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay) dan Retail & Grosir (toko sembako, minimarket, grosir). Jenis lain seperti laundry, kuliner, produksi, dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
+  ['Bisnis apa saja yang sudah bisa dikelola?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay), Retail & Grosir (toko sembako, minimarket, grosir), dan Jasa & Laundry (laundry kiloan/satuan, juga jasa lain seperti jahit atau servis). Jenis lain seperti kuliner, produksi, dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
   ['Apakah satu akun bisa untuk kos dan toko sekaligus?', 'Bisa. Tambahkan bisnis kedua dari menu bisnis (ketuk nama bisnis di kiri atas). Data tiap bisnis terpisah, dan Anda bisa melihat ringkasan semuanya dalam satu layar.'],
   ['Apakah harus memasang aplikasi?', 'Tidak. PRASARA dibuka lewat browser di HP atau laptop. Agar terasa seperti aplikasi, tambahkan ke layar utama: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
   ['Bagaimana cara mencoba gratis?', `Daftar dengan email, pilih jenis bisnis, lalu isi namanya. Setiap bisnis baru mendapat ${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit. Setelah itu otomatis menjadi paket Gratis kecuali Anda berlangganan.`],
@@ -154,8 +161,8 @@ export default async function Landing() {
         {/* 3. SOLUSI PER KATEGORI */}
         <section className="ln-sec ln-sec-alt" id="solusi" aria-labelledby="h-solusi">
           <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Solusi per jenis bisnis</span><h2 id="h-solusi">Mulai dari kos dan toko.</h2>
-              <p>Dua jenis bisnis sudah bisa dipakai penuh. Jenis lain sedang kami rancang dan baru dibuka setelah siap.</p></div>
+            <div className="ln-head"><span className="ln-kicker">Solusi per jenis bisnis</span><h2 id="h-solusi">Kos, toko, dan laundry.</h2>
+              <p>Tiga jenis bisnis sudah bisa dipakai penuh. Jenis lain sedang kami rancang dan baru dibuka setelah siap.</p></div>
             <div className="ln-cats">
               {CATS.map(([ic, t, d, st]) => (
                 <div key={t} className={'ln-cat ' + st}>

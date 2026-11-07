@@ -3,8 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal,
-} from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -29,6 +28,15 @@ const MENUS_TOKO = [
   ['Barang & stok', 'Barang, satuan, harga, barcode, label, tombol cepat'],
   ['Pelanggan & supplier', 'Kontak, sisa kasbon/utang, riwayat'],
   ['Laporan', 'Laba, barang terlaris dan tidak laku'],
+];
+// Menu jasa (Jasa & Laundry)
+const MENUS_JASA = [
+  ['Dashboard', 'Antrean per tahap, terlambat, harus selesai hari ini, jemput/antar, uang masuk hari ini'],
+  ['Pesanan', 'Terima pesanan, pindah tahap, siap, serahkan, bayar/DP, nota, keluhan, batal'],
+  ['Kas', 'Saldo kas/bank, biaya, uang masuk/keluar lain, utang supplier'],
+  ['Laporan', 'Pendapatan, laba perkiraan, per layanan, pelanggan, ketepatan waktu, keluhan'],
+  ['Layanan & tahap', 'Harga per kg/pcs, minimal, lama pengerjaan; urutan tahap proses'],
+  ['Bahan & stok', 'Deterjen, pewangi, plastik: stok, belanja, pemakaian'],
 ];
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
@@ -332,6 +340,41 @@ const PARTS = [
       <>Permintaan masuk ke <b>Prospek & tindak lanjut</b> (tahap Baru, label nomor permintaan) dan muncul kotak <b>📨</b> di dashboard; email ke Anda bila dicentang. Hubungi lewat WA, konfirmasi harga & stok, lalu catat penjualannya di Kasir seperti biasa.</>,
     ], <>Yang TIDAK pernah tampil: harga modal, laba, stok persis (hanya Tersedia/Habis), data pelanggan, dan catatan staf. Permintaan bukan penjualan final dan tidak mengubah stok, kas, atau jurnal. Spam dibatasi otomatis (terlalu cepat/terlalu sering dari satu perangkat ditolak). Tekan <b>Sembunyikan halaman</b> kapan saja; bisnis yang ditutup otomatis tidak tampil. Pembayaran online dan pesanan langsung jadi belum tersedia.</>, null, null],
   ]],
+  ['G', 'Jasa & Laundry', [
+    ['Buat bisnis laundry, atur layanan & tahap', 'Ketuk nama bisnis › + Tambah bisnis › Jasa & Laundry; lalu Lainnya › Layanan & tahap', [
+      <>Pilih jenis <b>Jasa & Laundry</b>, isi nama usaha, lalu pilih contoh awal: <b>Laundry</b> (tahap Cuci → Kering → Setrika → Cek kualitas → Kemas, layanan kiloan & satuan dengan harga contoh) atau <b>Jasa umum</b> (jahit, servis, cetak; layanan diisi sendiri).</>,
+      <>Buka <b>Layanan & tahap</b>. Ketuk layanan untuk mengubah <b>harga per kg/pcs</b>, <b>minimal</b> (mis. 3 kg — 2 kg tetap dihitung 3 kg), dan <b>lama pengerjaan</b> (jam) yang dipakai untuk janji selesai otomatis. <b>+ Layanan</b> untuk menambah.</>,
+      <>Di <b>Tahap proses</b>, ganti nama, urutkan dengan ↑ ↓, nonaktifkan, atau <b>+ Tahap</b>, lalu <b>Simpan tahap</b>.</>,
+    ], <>Harga contoh hanya contoh — sesuaikan dulu sebelum menerima pesanan. Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan. Setiap perubahan harga & tahap tercatat di Konfigurasi › Riwayat.</>, null, null],
+    ['Terima pesanan & beri nota', 'Pesanan › + Pesanan baru', [
+      <>Cari pelanggan lama (nama / No. HP) atau isi nama & No. WhatsApp pelanggan baru — tersimpan otomatis, dicocokkan lewat nomor.</>,
+      <>Ketuk layanan (mis. <b>+ Cuci kering setrika</b>), isi berat/jumlah dan catatan (mis. "3 kemeja putih"). Total dihitung otomatis termasuk minimal.</>,
+      <>Bila perlu: centang <b>Dijemput</b>/<b>Diantar</b> (alamat & ongkos), isi <b>diskon</b>, dan ubah <b>janji selesai</b>.</>,
+      <>Isi <b>Bayar sekarang</b> untuk DP atau tekan <b>Lunas sekarang</b>; kosongkan bila bayar saat ambil. Tekan <b>Simpan pesanan</b>.</>,
+      <>Di detail pesanan tekan <b>Nota</b> untuk mencetak (printer struk 58 mm) atau <b>Kirim via WhatsApp</b>, atau tombol <b>WA: diterima</b>.</>,
+    ], <>Harga dihitung ulang oleh server dari daftar layanan — kasir tidak bisa mengubah harga satuan; potongan lewat diskon yang tercatat. Tekan Simpan dua kali tidak membuat pesanan dobel. Pesan WhatsApp dikirim manual dari HP Anda (bukan otomatis).</>, null, <ScrPesanan />],
+    ['Kerjakan pesanan per tahap', 'Pesanan (pemilik, kasir, Petugas proses)', [
+      <>Papan pesanan bisa disaring: <b>Semua aktif</b>, <b>Diterima</b>, per tahap (Cuci, Setrika, …), <b>Siap</b>, <b>Antar-jemput</b>, <b>Terlambat</b>, <b>Selesai & batal</b>; atau cari nomor/nama/No. HP.</>,
+      <>Ketuk pesanan › tombol <b>→ [tahap berikutnya]</b> (mis. → Kering) setiap kali pekerjaan pindah tahap. Setelah tahap terakhir: <b>→ Siap</b>. Bisa juga <b>Langsung siap</b>.</>,
+      <>Salah tekan? <b>Mundur</b> (alasan wajib). Semua perpindahan tercatat di <b>Riwayat</b> beserta waktu dan siapa.</>,
+      <>Karyawan bagian produksi undang sebagai <b>Petugas proses</b> (menu Karyawan): hanya bisa memindahkan tahap & mencatat keluhan, tidak melihat uang dan tidak bisa menyerahkan pesanan.</>,
+    ], <>Pesanan lewat janji selesai berwarna merah dan muncul di Dashboard & Ringkasan pemilik. Pesanan siap lebih dari 3 hari belum diambil juga diingatkan.</>, null, null],
+    ['Serahkan, terima bayar, tagih', 'Pesanan › ketuk pesanan Siap', [
+      <>Tekan <b>WA: sudah siap</b> untuk memberi tahu pelanggan.</>,
+      <>Saat pelanggan membayar: <b>+ Bayar</b> (tunai/transfer/e-wallet). Boleh sebagian.</>,
+      <>Tekan <b>Sudah diambil</b> (atau <b>Sudah diantar</b>) saat barang diserahkan; boleh isi siapa yang menerima. Bila belum lunas, sistem meminta konfirmasi — sisa bayar tetap tercatat dan bisa ditagih dengan <b>WA: tagih</b>.</>,
+    ], <>Pendapatan dicatat saat pesanan diserahkan. Uang yang diterima sebelumnya (DP) dicatat sebagai uang muka. Transfer dicatat setelah uang benar-benar masuk.</>, null, <ScrNota />],
+    ['Keluhan, cuci ulang, batal & pengembalian uang', 'Pesanan › ketuk pesanan', [
+      <><b>Catat keluhan</b>: pilih jenis (kurang bersih, rusak, hilang, luntur, terlambat), tulis catatan, centang <b>Cuci ulang</b> bila perlu. Pesanan yang sudah diserahkan dibuatkan <b>pesanan cuci ulang</b> baru tanpa biaya; yang belum, kembali ke tahap pertama.</>,
+      <>Setelah beres: <b>Selesaikan</b> keluhan, tulis penyelesaian dan ganti rugi bila ada. Ganti rugi uang catat di <b>Kas › + Biaya</b> (kategori Ganti rugi pelanggan).</>,
+      <><b>Batalkan pesanan</b> atau membatalkan catatan pembayaran (✕ di daftar pembayaran): alasan wajib dan, untuk karyawan, perlu <b>persetujuan</b> pemilik. Uang yang sudah dibayar dikembalikan lewat <b>Pengembalian uang</b>.</>,
+    ], <>Pesanan yang sudah diserahkan tidak bisa dibatalkan. Bisnis tidak bisa ditutup selama masih ada pesanan belum selesai atau pesanan batal yang uangnya belum dikembalikan.</>, 'warn', null],
+    ['Bahan, kas & laporan jasa', 'Lainnya › Bahan & stok · Kas · Laporan', [
+      <><b>Bahan & stok</b>: daftar deterjen, pewangi, plastik, dll. Beli lewat <b>Belanja</b>; saat dipakai tekan <b>Stok</b> › <b>Pemakaian bahan</b> agar biaya bahan masuk laporan.</>,
+      <><b>Kas</b>: saldo kas/bank (termasuk pembayaran pesanan), <b>+ Biaya</b> (listrik, gaji, gas), dan utang supplier. Sisa bayar pelanggan ada di Pesanan.</>,
+      <><b>Laporan</b>: pendapatan per bulan, laba perkiraan (pendapatan − bahan − biaya), uang masuk, belum lunas, uang muka, per layanan, pelanggan teratas, ketepatan waktu, dan keluhan. <b>Unduh Excel</b> (Standar ke atas).</>,
+    ], <>Pembukuan otomatis: pesanan diserahkan → Pendapatan jasa & Piutang jasa; pembayaran → Kas/Bank; pemakaian bahan → Beban bahan. Belum tersedia: komisi/penugasan per karyawan, pengingat otomatis jasa, dan stok per cabang untuk bisnis jasa.</>, null, null],
+  ]],
 ];
 
 const RULES = [
@@ -348,7 +391,7 @@ export default function Panduan() {
       <LandingNav />
       <div className="guide">
         <h1>Panduan PRASARA</h1>
-        <p className="muted" style={{ margin: 0 }}>Langkah demi langkah memakai PRASARA untuk kos (kamar, penghuni, tagihan, pembayaran, laporan) dan toko (kasir, stok, belanja, kas, laporan), termasuk karyawan.</p>
+        <p className="muted" style={{ margin: 0 }}>Langkah demi langkah memakai PRASARA untuk kos (kamar, penghuni, tagihan, pembayaran, laporan) toko (kasir, stok, belanja, kas, laporan), dan jasa/laundry (pesanan, tahap proses, nota, keluhan), termasuk karyawan.</p>
 
         <h2 style={{ color: 'var(--brand-2)' }}>Cara berpindah menu</h2>
         <ul style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -368,6 +411,12 @@ export default function Panduan() {
             <tbody>{MENUS_TOKO.map(([m, t]) => <tr key={m}><td><b>{m}</b></td><td>{t}</td></tr>)}</tbody></table>
         </div>
 
+        <h2 style={{ color: 'var(--brand-2)' }}>Menu jasa (Jasa & Laundry)</h2>
+        <div className="panel" style={{ padding: 0, overflowX: 'auto' }}>
+          <table className="g-table"><thead><tr><th>Menu</th><th>Dipakai untuk</th></tr></thead>
+            <tbody>{MENUS_JASA.map(([m, t]) => <tr key={m}><td><b>{m}</b></td><td>{t}</td></tr>)}</tbody></table>
+        </div>
+
         <h2 style={{ color: 'var(--brand-2)' }}>Urutan panduan</h2>
         <div className="g-order">
           <div><b>Persiapan</b><span><a href="#bagian-A">Langkah 1–5</a><br />Daftar, kamar, penghuni</span></div>
@@ -376,6 +425,7 @@ export default function Panduan() {
           <div><b>Akun & otomatis</b><span><a href="#bagian-D">Langkah 18–24</a><br />Langganan, portal, pengingat</span></div>
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
           <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–44</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek, halaman bisnis</span></div>
+          <div><b>Jasa & Laundry</b><span><a href="#bagian-G">Langkah 45–50</a><br />Layanan & tahap, pesanan, nota, proses, bayar, keluhan, bahan, laporan</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

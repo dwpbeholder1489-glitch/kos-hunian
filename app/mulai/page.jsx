@@ -6,7 +6,7 @@ import { useKos } from '@/components/KosProvider';
 import { Field } from '@/components/ui';
 import { errMsg } from '@/lib/format';
 import { BUSINESS_TYPES } from '@/lib/business';
-import { PROFILE_Q, recommend } from '@/lib/modules';
+import { PROFILE_Q, qFor, recommend } from '@/lib/modules';
 
 // Tambah bisnis: pilih jenis dulu, lalu isi data sesuai jenisnya
 export default function Mulai() {
@@ -17,6 +17,7 @@ export default function Mulai() {
   const [addr, setAddr] = useState('');
   const [count, setCount] = useState('10');
   const [prefix, setPrefix] = useState('A');
+  const [tpl, setTpl] = useState('laundry'); // contoh awal bisnis jasa
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -45,7 +46,7 @@ export default function Mulai() {
     if (!name.trim()) return setErr(type === 'properti' ? 'Isi nama kos / properti.' : 'Isi nama usaha.');
     if (!(n >= 0 && n <= 300)) return setErr('Jumlah kamar 0 sampai 300.');
     setBusy(true);
-    const { data, error } = await supabase.rpc('create_business', { p_type: type, p_name: name, p_address: addr, p_room_count: n, p_prefix: prefix || 'A' });
+    const { data, error } = await supabase.rpc('create_business', { p_type: type, p_name: name, p_address: addr, p_room_count: n, p_prefix: type === 'jasa' ? tpl : prefix || 'A' });
     if (error) { setErr(errMsg(error)); setBusy(false); return; }
     if (mods && mods.length) await supabase.rpc('business_modules_init', { p_kos: data, p_codes: [...chosen] }); // pemilik menyetujui modul awal
     await loadKos();
@@ -77,9 +78,11 @@ export default function Mulai() {
       <p className="hello">{t.icon} {t.name}</p>
       {type === 'properti'
         ? <p className="muted" style={{ margin: 0 }}>Kamar dibuat otomatis dengan kode berurutan (mis. A01–A10). Harga sewa diisi nanti per kamar.</p>
+        : type === 'jasa'
+        ? <p className="muted" style={{ margin: 0 }}>Setelah dibuat: cek harga di <b>Layanan & tahap</b>, lalu tekan <b>+ Pesanan baru</b> saat pelanggan datang. Semua harga & tahap contoh bisa diubah.</p>
         : <p className="muted" style={{ margin: 0 }}>Setelah dibuat: masukkan barang di <b>Barang & stok</b>, catat uang awal laci di <b>Kas & kasbon</b>, lalu mulai jualan di <b>Kasir</b>.</p>}
       <form className="stack" onSubmit={submit}>
-        <Field label={type === 'properti' ? 'Nama kos / properti' : 'Nama usaha'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'properti' ? 'mis. Kos Melati' : 'mis. Toko Subur'} /></Field>
+        <Field label={type === 'properti' ? 'Nama kos / properti' : 'Nama usaha'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'properti' ? 'mis. Kos Melati' : type === 'jasa' ? 'mis. Laundry Bersih' : 'mis. Toko Subur'} /></Field>
         <Field label="Alamat (opsional)"><input value={addr} onChange={(e) => setAddr(e.target.value)} /></Field>
         {type === 'properti' && (
           <div className="row">
@@ -87,11 +90,17 @@ export default function Mulai() {
             <Field label="Awalan kode" hint="A → A01, A02, …"><input value={prefix} maxLength={3} onChange={(e) => setPrefix(e.target.value.toUpperCase())} /></Field>
           </div>
         )}
+        {type === 'jasa' && (
+          <Field label="Mulai dari contoh" hint="Isi awal layanan & tahap proses; bisa diubah kapan saja">
+            <div className="seg">{[['laundry', 'Laundry'], ['umum', 'Jasa umum']].map(([k, l]) => <button type="button" key={k} className={tpl === k ? 'on' : ''} onClick={() => setTpl(k)}>{l}</button>)}</div>
+            <span className="small muted">{tpl === 'laundry' ? 'Tahap Cuci → Kering → Setrika → Cek kualitas → Kemas; layanan kiloan & satuan (bed cover, selimut, jas, sepatu) dengan harga contoh.' : 'Tahap Dikerjakan → Dicek; layanan & harga diisi sendiri di Layanan & tahap. Cocok untuk jahit, servis, cetak, dll.'}</span>
+          </Field>
+        )}
         {mods && mods.length > 0 && <>
           <div className="panel" style={{ gap: 10 }}>
             <b>Ceritakan usaha Anda (opsional)</b>
             <span className="small muted">Dipakai untuk menyarankan modul. Bisa diubah kapan saja di Pusat konfigurasi.</span>
-            {PROFILE_Q.filter((q) => !q.only || q.only === type).map((q) => (
+            {PROFILE_Q.filter((q) => qFor(q, type)).map((q) => (
               <Field key={q.key} label={q.label}><select value={answers[q.key] || ''} onChange={(e) => answer(q.key, e.target.value)}><option value="">— lewati —</option>{q.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
             ))}
           </div>

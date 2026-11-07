@@ -7,14 +7,14 @@ import PageHelp from '@/components/PageHelp';
 import Rekomendasi from '@/components/Rekomendasi';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { tgl, errMsg } from '@/lib/format';
-import { canArea } from '@/lib/business';
+import { canArea, BUSINESS_TYPES } from '@/lib/business';
 import { FEATURE_CODES } from '@/lib/plan';
-import { GROUPS, LEGAL_KIND, PROFILE_Q } from '@/lib/modules';
+import { GROUPS, LEGAL_KIND, PROFILE_Q, qFor } from '@/lib/modules';
 
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
 const ACT = {
   aktifkan_modul: 'Mengaktifkan modul', nonaktifkan_modul: 'Menonaktifkan modul', minta_persetujuan: 'Meminta persetujuan', tolak_persetujuan: 'Menolak permintaan',
-  konfigurasi_awal: 'Konfigurasi awal', terbitkan_halaman: 'Menerbitkan halaman bisnis', sembunyikan_halaman: 'Menyembunyikan halaman bisnis', ubah_halaman: 'Mengubah halaman bisnis', rekomendasi_diterima: 'Menerapkan saran', rekomendasi_diabaikan: 'Mengabaikan saran', ekspor_data: 'Mengunduh semua data', tutup_bisnis: 'Menutup bisnis', buka_bisnis: 'Membuka kembali bisnis', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang',
+  konfigurasi_awal: 'Konfigurasi awal', terbitkan_halaman: 'Menerbitkan halaman bisnis', sembunyikan_halaman: 'Menyembunyikan halaman bisnis', ubah_halaman: 'Mengubah halaman bisnis', rekomendasi_diterima: 'Menerapkan saran', rekomendasi_diabaikan: 'Mengabaikan saran', ekspor_data: 'Mengunduh semua data', tutup_bisnis: 'Menutup bisnis', buka_bisnis: 'Membuka kembali bisnis', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang', ubah_layanan: 'Mengubah layanan/harga jasa', ubah_tahap_jasa: 'Mengubah tahap proses',
 };
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 
@@ -143,14 +143,14 @@ function ModuleSheet({ m, owner, kosId, onClose, onDone }) {
 }
 
 function ProfileTab({ kos, owner, onSaved }) {
-  const [groups, setGroups] = useState(kos.business_groups?.length ? kos.business_groups : [kos.business_type === 'retail' ? 'retail_trading' : 'property_rental']);
+  const [groups, setGroups] = useState(kos.business_groups?.length ? kos.business_groups : [{ retail: 'retail_trading', jasa: 'services' }[kos.business_type] || 'property_rental']);
   const [prof, setProf] = useState(kos.profile || {});
   const [le, setLe] = useState(kos.legal_entity_id || '');
   const [ents, setEnts] = useState([]);
   const [newLe, setNewLe] = useState(null);
   useEffect(() => { if (owner) supabase.from('legal_entities').select('*').order('created_at').then(({ data }) => setEnts(data || [])); }, [owner]);
   if (kos.business_groups === undefined) return <div className="notice">Profil bisnis belum tersedia. Coba lagi beberapa menit lagi.</div>;
-  const qs = PROFILE_Q.filter((q) => !q.only || q.only === kos.business_type);
+  const qs = PROFILE_Q.filter((q) => qFor(q, kos.business_type));
   const save = async () => {
     if (await run(() => supabase.rpc('business_profile_save', { p_kos: kos.id, p_groups: groups, p_profile: prof, p_legal_entity: le || null }), 'Profil disimpan', errMsg)) onSaved();
   };
@@ -163,7 +163,7 @@ function ProfileTab({ kos, owner, onSaved }) {
     <>
       <section className="panel">
         <h3>Kelompok bisnis</h3>
-        <span className="small muted">Boleh lebih dari satu (mis. grosir + distribusi). Menu saat ini mengikuti jenis bisnis {kos.business_type === 'retail' ? 'Retail & Grosir' : 'Properti & Sewa'}; kelompok lain dipakai untuk rekomendasi modul yang akan datang.</span>
+        <span className="small muted">Boleh lebih dari satu (mis. grosir + distribusi). Menu saat ini mengikuti jenis bisnis {BUSINESS_TYPES[kos.business_type]?.name || kos.business_type}; kelompok lain dipakai untuk rekomendasi modul yang akan datang.</span>
         <div className="row" style={{ gap: 6 }}>{Object.entries(GROUPS).map(([k, l]) => (
           <button key={k} className={'sm ' + (groups.includes(k) ? 'primary' : '')} aria-pressed={groups.includes(k)} onClick={() => setGroups(groups.includes(k) ? groups.filter((x) => x !== k) : [...groups, k])}>{l}</button>
         ))}</div>

@@ -8,6 +8,7 @@ const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number
 export default function PublicForm({ page }) {
   const started = useRef(Date.now());
   const retail = page.type === 'retail';
+  const jasa = page.type === 'jasa';
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [msg, setMsg] = useState('');
@@ -48,10 +49,10 @@ export default function PublicForm({ page }) {
   );
   return (
     <form className="panel stack" onSubmit={send}>
-      <h3>{retail ? 'Pesan / tanya barang' : 'Tanya / booking kamar'}</h3>
+      <h3>{retail ? 'Pesan / tanya barang' : jasa ? 'Pesan / tanya layanan' : 'Tanya / booking kamar'}</h3>
       {page.form_intro && <p className="small" style={{ margin: 0 }}>{page.form_intro}</p>}
       {items.length > 0 && <>
-        <span className="label">{retail ? 'Pilih barang (opsional)' : 'Pilih kamar (opsional)'}</span>
+        <span className="label">{retail ? 'Pilih barang (opsional)' : jasa ? 'Pilih layanan (opsional)' : 'Pilih kamar (opsional)'}</span>
         <div className="list">{items.map((it) => {
           const v = pick[it.id];
           return (
@@ -69,7 +70,7 @@ export default function PublicForm({ page }) {
         })}</div>
         {total > 0 && <span className="small">Perkiraan: <b>{rp(total)}</b> (belum termasuk ongkos; dikonfirmasi penjual)</span>}
       </>}
-      <label className="f">{retail ? 'Pesan / kebutuhan' : 'Pesan (mis. mulai kapan, berapa orang)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
+      <label className="f">{retail || jasa ? 'Pesan / kebutuhan' : 'Pesan (mis. mulai kapan, berapa orang)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : jasa ? 'mis. bisa dijemput hari ini? Alamat Jl. Melati 12.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
       <label className="f">Nama<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required autoComplete="name" /></label>
       <label className="f">No. WhatsApp<input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} required autoComplete="tel" placeholder="08…" /></label>
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>

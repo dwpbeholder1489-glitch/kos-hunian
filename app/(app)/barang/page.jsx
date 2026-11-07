@@ -40,6 +40,7 @@ export default function Barang() {
   if (err) return <div className="notice bad">{err.includes('products') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
+  const bahan = kos?.business_type === 'jasa'; // bisnis jasa: menu ini untuk bahan operasional (tanpa harga jual)
   const locs = multi ? kos.locs.list : [];
   const locName = (id) => locs.find((b) => b.id === id)?.name || 'lokasi lain';
   const here = (p) => Number(d.levels.find((l) => l.product_id === p.id && l.branch_id === kos.locs?.current)?.qty || 0);
@@ -54,10 +55,10 @@ export default function Barang() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Barang & stok</h2><PageHelp page="barang" /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}<button className="primary" onClick={() => setEdit('new')}>+ Tambah barang</button></div></div>
+      <div className="row between"><div className="row"><h2>{bahan ? 'Bahan & stok' : 'Barang & stok'}</h2><PageHelp page={bahan ? 'bahan' : 'barang'} /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></div></div>
       <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
       <div className="grid">
-        <Tile label="Barang aktif" value={angka(active.length)} />
+        <Tile label={bahan ? 'Bahan aktif' : 'Barang aktif'} value={angka(active.length)} />
         <Tile label="Nilai stok (harga modal)" value={rp(value)} sub={active.some((p) => !(p.cost > 0)) ? 'ada barang tanpa harga modal' : null} />
         <Tile label="Stok menipis" value={angka(low.length)} tone={low.length ? 'bad' : ''} sub="di bawah batas minimum" />
       </div>
@@ -68,7 +69,7 @@ export default function Barang() {
         </div>
       </>}
       {d.products.length === 0 ? (
-        <Empty title="Belum ada barang" text="Tambahkan barang yang dijual. Satu barang bisa punya beberapa satuan, misalnya pcs dan dus isi 40, masing-masing dengan harga eceran dan grosir.">
+        <Empty title={bahan ? 'Belum ada bahan' : 'Belum ada barang'} text={bahan ? 'Catat bahan operasional (deterjen, pewangi, plastik, hanger) agar stok dan biaya bahan terpantau. Pemakaian dicatat lewat tombol Stok › Pemakaian bahan.' : 'Tambahkan barang yang dijual. Satu barang bisa punya beberapa satuan, misalnya pcs dan dus isi 40, masing-masing dengan harga eceran dan grosir.'}>
           <button className="primary" onClick={() => setEdit('new')}>+ Tambah barang pertama</button>
         </Empty>
       ) : shown.length === 0 ? <Empty title="Tidak ada yang cocok" /> : (
@@ -80,7 +81,7 @@ export default function Barang() {
                 <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}</b>
                 {p.sku && <span className="small muted">Kode {p.sku}</span>}
                 <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>
-                <span className="small muted">{us.map((u) => `${u.name}${u.qty > 1 ? ` (${angka(u.qty)})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
+                <span className="small muted">{us.map((u) => bahan ? `${u.name}${u.qty > 1 ? ` (${angka(u.qty)})` : ''}` : `${u.name}${u.qty > 1 ? ` (${angka(u.qty)})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
               </div>
               <div className="row" style={{ flexWrap: 'nowrap' }}>
                 {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
@@ -93,8 +94,8 @@ export default function Barang() {
           );
         })}</div></section>
       )}
-      {edit && <ProductForm kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
-      {adj && <StockSheet p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
+      {edit && <ProductForm bahan={bahan} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
+      {adj && <StockSheet bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
     </div>
   );
 }
@@ -102,7 +103,7 @@ export default function Barang() {
 const blankUnit = () => ({ name: '', qty: '', price_retail: '', price_wholesale: '' });
 const money = (v) => (Number(v) > 0 ? angka(v) : '');
 
-function ProductForm({ kosId, p, units, onClose, onSaved }) {
+function ProductForm({ kosId, p, units, bahan, onClose, onSaved }) {
   const [name, setName] = useState(p?.name || '');
   const [base, setBase] = useState(p?.base_unit || 'pcs');
   const [cost, setCost] = useState(money(p?.cost));
@@ -132,7 +133,7 @@ function ProductForm({ kosId, p, units, onClose, onSaved }) {
 
   return (
     <Sheet title={p ? 'Ubah barang' : 'Tambah barang'} onClose={onClose}>
-      <Field label="Nama barang"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Minyak goreng 2L" /></Field>
+      <Field label={bahan ? 'Nama bahan' : 'Nama barang'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={bahan ? 'mis. Deterjen cair' : 'mis. Minyak goreng 2L'} /></Field>
       <Field label="Kode barang (opsional)" hint="kode sendiri, mis. MG-2L"><input value={sku} maxLength={40} autoCapitalize="characters" onChange={(e) => setSku(e.target.value)} /></Field>
       <div className="row">
         <Field label="Satuan terkecil" hint="pcs / bungkus / kg / liter"><input value={base} maxLength={20} onChange={(e) => setBase(e.target.value)} /></Field>
@@ -142,8 +143,8 @@ function ProductForm({ kosId, p, units, onClose, onSaved }) {
         {!p && <Field label={`Stok sekarang (${base || 'satuan'})`}><input inputMode="decimal" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" /></Field>}
         <Field label={`Peringatan stok minimum (${base || 'satuan'})`}><input inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
       </div>
-      <span className="label">Satuan jual & harga</span>
-      <p className="small muted" style={{ margin: 0 }}>Baris pertama = satuan terkecil. Tambah satuan lain, misalnya dus isi 40 atau renteng isi 10. Harga grosir boleh dikosongkan.</p>
+      <span className="label">{bahan ? 'Satuan' : 'Satuan jual & harga'}</span>
+      <p className="small muted" style={{ margin: 0 }}>{bahan ? 'Baris pertama = satuan terkecil (mis. liter). Tambah satuan beli bila perlu, mis. jeriken isi 5.' : 'Baris pertama = satuan terkecil. Tambah satuan lain, misalnya dus isi 40 atau renteng isi 10. Harga grosir boleh dikosongkan.'}</p>
       {rows.map((r, i) => {
         const qn = i === 0 ? 1 : qtyNum(r.qty);
         const pr = parseRp(r.price_retail);
@@ -154,15 +155,15 @@ function ProductForm({ kosId, p, units, onClose, onSaved }) {
               {i === 0 ? <Field label="Satuan"><input value={base} disabled /></Field> : <Field label="Satuan"><input value={r.name} maxLength={20} onChange={(e) => set(i, 'name', e.target.value)} placeholder="dus / pak / renteng" /></Field>}
               {i > 0 && <Field label={`Isi (${base || 'satuan'})`}><input inputMode="decimal" value={r.qty} onChange={(e) => set(i, 'qty', e.target.value)} placeholder="40" /></Field>}
             </div>
-            <div className="row">
+            {!bahan && <div className="row">
               <Field label="Harga eceran"><input inputMode="numeric" value={r.price_retail} onChange={(e) => set(i, 'price_retail', e.target.value)} /></Field>
               <Field label="Harga grosir"><input inputMode="numeric" value={r.price_wholesale} onChange={(e) => set(i, 'price_wholesale', e.target.value)} /></Field>
-            </div>
-            <div className="row" style={{ alignItems: 'flex-end' }}>
+            </div>}
+            {!bahan && <div className="row" style={{ alignItems: 'flex-end' }}>
               <Field label={`Barcode ${i === 0 ? base : r.name || 'satuan'} (opsional)`}><input inputMode="numeric" value={r.barcode || ''} maxLength={40} onChange={(e) => set(i, 'barcode', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} placeholder="scan atau ketik angka di kemasan" /></Field>
               <ScanButton onCode={(c) => set(i, 'barcode', c)} />
-            </div>
-            {under && <p className="small" style={{ margin: 0, color: 'var(--bad)' }}>Harga eceran di bawah modal ({rp(costN * qn)} per {i === 0 ? base : r.name || 'satuan'}).</p>}
+            </div>}
+            {under && !bahan && <p className="small" style={{ margin: 0, color: 'var(--bad)' }}>Harga eceran di bawah modal ({rp(costN * qn)} per {i === 0 ? base : r.name || 'satuan'}).</p>}
             {i > 0 && <button className="sm ghost" onClick={() => setRows(rows.filter((_, j) => j !== i))}>Hapus satuan ini</button>}
           </div>
         );
@@ -175,6 +176,7 @@ function ProductForm({ kosId, p, units, onClose, onSaved }) {
   );
 }
 
+const PAKAI = ['pakai', 'Pemakaian bahan', 'Jumlah yang terpakai'];
 const REASONS = [
   ['opname', 'Stok opname (hitung ulang)', 'Jumlah fisik hasil hitung'],
   ['rusak', 'Barang rusak', 'Jumlah yang rusak'],
@@ -182,8 +184,9 @@ const REASONS = [
   ['koreksi', 'Koreksi (tambah/kurang)', 'Jumlah'],
 ];
 
-function StockSheet({ p, units, loc, onClose, onSaved }) {
-  const [reason, setReason] = useState('opname');
+function StockSheet({ p, units, loc, bahan, onClose, onSaved }) {
+  const reasons = bahan ? [PAKAI, ...REASONS] : REASONS;
+  const [reason, setReason] = useState(bahan ? 'pakai' : 'opname');
   const [unit, setUnit] = useState(units[0]?.name || p.base_unit);
   const [qty, setQty] = useState('');
   const [note, setNote] = useState('');
@@ -195,7 +198,7 @@ function StockSheet({ p, units, loc, onClose, onSaved }) {
       .then(({ data }) => setHist(data || []));
   }, [p.id]);
   const mult = Number(units.find((u) => u.name === unit)?.qty || 1);
-  const r = REASONS.find((x) => x[0] === reason);
+  const r = reasons.find((x) => x[0] === reason);
   const n = qtyNum(qty);
   const base = isFinite(n) ? Math.round(Math.abs(n) * mult * 1000) / 1000 * (reason === 'koreksi' ? dir : 1) : NaN;
   const cur = loc ? Number(loc.here) : Number(p.stock); // stok di lokasi kerja (bila ada beberapa lokasi)
@@ -217,7 +220,7 @@ function StockSheet({ p, units, loc, onClose, onSaved }) {
         <p style={{ margin: 0 }}>Di {loc.name}: <b>{stockText(cur, units, p.base_unit)}</b> · total semua lokasi {stockText(p.stock, units, p.base_unit)}</p>
         {loc.rows.length > 0 && <span className="small muted">{loc.rows.map(([n, q]) => `${n} ${angka(q)} ${p.base_unit}`).join(' · ')}</span>}
       </> : <p style={{ margin: 0 }}>Tercatat <b>{stockText(p.stock, units, p.base_unit)}</b>{units.length > 1 ? ` (${angka(p.stock)} ${p.base_unit})` : ''}</p>}
-      <Field label="Alasan"><select value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+      <Field label="Alasan"><select value={reason} onChange={(e) => setReason(e.target.value)}>{reasons.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
       {reason === 'koreksi' && <div className="seg">{[[1, 'Tambah stok'], [-1, 'Kurangi stok']].map(([v, l]) => <button key={v} className={dir === v ? 'on' : ''} onClick={() => setDir(v)}>{l}</button>)}</div>}
       <div className="row">
         <Field label={r[2]}><input inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} /></Field>

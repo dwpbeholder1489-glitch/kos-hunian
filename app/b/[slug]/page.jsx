@@ -19,7 +19,7 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const p = await getPage(slug);
   if (!p) return { title: 'Halaman tidak ditemukan', robots: { index: false } };
-  const desc = p.tagline || (p.type === 'retail' ? `Katalog & pemesanan ${p.name}` : `Info kamar & sewa ${p.name}`);
+  const desc = p.tagline || (p.type === 'retail' ? `Katalog & pemesanan ${p.name}` : p.type === 'jasa' ? `Layanan & harga ${p.name}` : `Info kamar & sewa ${p.name}`);
   return { title: p.name, description: desc, openGraph: { title: p.name, description: desc, type: 'website' } };
 }
 
@@ -42,11 +42,12 @@ export default async function PublicPage({ params }) {
       {p.about && <section className="panel"><h3>Tentang kami</h3><p style={{ margin: 0, whiteSpace: 'pre-line' }}>{p.about}</p></section>}
       {p.items?.length > 0 && (
         <section className="panel">
-          <h3>{retail ? 'Barang' : 'Kamar tersedia'}</h3>
+          <h3>{retail ? 'Barang' : p.type === 'jasa' ? 'Layanan' : 'Kamar tersedia'}</h3>
           <div className="list">{p.items.map((it) => (
             <div className="li" key={it.id} style={{ alignItems: 'flex-start' }}>
               <div className="main"><b className="small">{it.name}</b>
                 {!retail && it.facilities?.length > 0 && <span className="small muted">{it.facilities.join(', ')}</span>}
+                {it.note && <span className="small muted">{it.note}</span>}
                 {p.show_prices && <span className="small">{it.units.filter((u) => u.price != null).map((u) => `${rp(u.price)}/${u.name}`).join(' · ')}</span>}</div>
               {retail && <span className={'chip ' + (it.available ? 'good' : 'void')}>{it.available ? 'Tersedia' : 'Habis'}</span>}
             </div>

@@ -31,8 +31,9 @@ export default function Pengaturan() {
   if (!d.ready || !kos) return <Loading />;
   const isOwner = kos.owner_id === user?.id;
   const canEdit = canArea(kos, 'settings'); // pemilik & pengelola
-  const retail = kos.business_type === 'retail';
-  const noun = retail ? 'toko' : 'kos';
+  const jasa = kos.business_type === 'jasa';
+  const retail = kos.business_type === 'retail' || jasa; // toko & jasa: profil dengan WA + tulisan di struk/nota
+  const noun = jasa ? 'usaha' : retail ? 'toko' : 'kos';
 
   async function saveKos() {
     if (!name.trim()) return run(() => { throw new Error(`Nama ${noun} wajib diisi.`); });
@@ -69,9 +70,9 @@ export default function Pengaturan() {
         <Field label={`Nama ${noun}`}><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} /></Field>
         <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} disabled={!canEdit} /></Field>
         {retail && <>
-          <Field label="No. WhatsApp toko" hint="tampil di struk"><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08…" disabled={!canEdit} /></Field>
-          {kos.receipt_footer !== undefined && <Field label="Tulisan di bawah struk" hint="maks 200 huruf"><textarea value={footer} maxLength={200} onChange={(e) => setFooter(e.target.value)} placeholder={'Terima kasih\nBarang yang sudah dibeli tidak dapat ditukar'} disabled={!canEdit} /></Field>}
-          <pre className="struk" style={{ margin: 0 }}>{strukPreview({ ...kos, name: name || kos.name, address: addr, contact_phone: phone, receipt_footer: footer })}</pre>
+          <Field label={jasa ? 'No. WhatsApp usaha' : 'No. WhatsApp toko'} hint={jasa ? 'untuk kontak pelanggan' : 'tampil di struk'}><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08…" disabled={!canEdit} /></Field>
+          {kos.receipt_footer !== undefined && <Field label={jasa ? 'Tulisan di bawah nota' : 'Tulisan di bawah struk'} hint="maks 200 huruf"><textarea value={footer} maxLength={200} onChange={(e) => setFooter(e.target.value)} placeholder={jasa ? 'Terima kasih\nCucian tidak diambil 30 hari di luar tanggung jawab kami' : 'Terima kasih\nBarang yang sudah dibeli tidak dapat ditukar'} disabled={!canEdit} /></Field>}
+          {!jasa && <pre className="struk" style={{ margin: 0 }}>{strukPreview({ ...kos, name: name || kos.name, address: addr, contact_phone: phone, receipt_footer: footer })}</pre>}
         </>}
         {canEdit && <button className="primary" onClick={saveKos}>Simpan</button>}
       </section>

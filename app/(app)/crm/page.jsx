@@ -14,7 +14,8 @@ const SOURCE = { wa: 'WhatsApp', datang: 'Datang langsung', telepon: 'Telepon', 
 // CRM sederhana (blueprint 5.4): prospek & tahapannya, catatan komunikasi, tindak lanjut terjadwal
 export default function Crm() {
   const { kos, kosId, ver } = useKos();
-  const retail = kos?.business_type === 'retail';
+  const jasa = kos?.business_type === 'jasa';
+  const retail = kos?.business_type === 'retail' || jasa; // prospek jadi → pelanggan (toko & jasa)
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState('prospek');
@@ -32,7 +33,7 @@ export default function Crm() {
   return (
     <div className="stack">
       <div className="row"><h2>Prospek & tindak lanjut</h2><PageHelp page="crm" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Catat calon {retail ? 'pelanggan (mis. warung yang mau ambil grosir)' : 'penghuni yang menanyakan kamar'}, ikuti tahapannya, dan jadwalkan kapan harus dihubungi lagi.</p>
+      <p className="small muted" style={{ margin: 0 }}>Catat calon {jasa ? 'pelanggan (mis. kos/hotel yang mau langganan laundry)' : retail ? 'pelanggan (mis. warung yang mau ambil grosir)' : 'penghuni yang menanyakan kamar'}, ikuti tahapannya, dan jadwalkan kapan harus dihubungi lagi.</p>
       <div className="grid">
         <Tile label="Prospek aktif" value={angka(active.length)} sub={d.open_value > 0 ? `perkiraan ${rp(d.open_value)}` : 'belum ada perkiraan nilai'} />
         <Tile label="Tindak lanjut hari ini" value={angka(d.due)} tone={d.due > 0 ? 'bad' : undefined} sub="termasuk yang terlewat" />
@@ -71,12 +72,12 @@ export default function Crm() {
         ))}</div></section>
       ))}
       <span className="small muted">Simpan seperlunya saja: nama, No. HP, dan kebutuhan. Jangan mencatat data pribadi sensitif (KTP, kesehatan, dll.).</span>
-      {open && <LeadSheet l={open} kosId={kosId} retail={retail} onClose={() => setOpen(null)} onSaved={() => { load(); }} />}
+      {open && <LeadSheet l={open} kosId={kosId} retail={retail} jasa={jasa} onClose={() => setOpen(null)} onSaved={() => { load(); }} />}
     </div>
   );
 }
 
-function LeadSheet({ l, kosId, retail, onClose, onSaved }) {
+function LeadSheet({ l, kosId, retail, jasa, onClose, onSaved }) {
   const isNew = !l.id;
   const [f, setF] = useState({ name: l.name || '', phone: l.phone || '', need: l.need || '', source: l.source || 'wa', est: l.est_value ? String(Math.round(l.est_value)) : '' });
   const [cur, setCur] = useState(l);
@@ -101,9 +102,9 @@ function LeadSheet({ l, kosId, retail, onClose, onSaved }) {
   return (
     <Sheet title={isNew && !cur.id ? 'Prospek baru' : cur.name} onClose={onClose}>
       {!cur.id && <>
-        <Field label="Nama"><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={retail ? 'mis. Warung Bu Sri' : 'mis. Rina (mahasiswi)'} /></Field>
+        <Field label="Nama"><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={retail ? (jasa ? 'mis. Kos Melati (langganan)' : 'mis. Warung Bu Sri') : 'mis. Rina (mahasiswi)'} /></Field>
         <Field label="No. HP / WhatsApp"><input inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
-        <Field label="Kebutuhan"><input value={f.need} onChange={(e) => setF({ ...f, need: e.target.value })} placeholder={retail ? 'mis. ambil beras 5 karung/minggu' : 'mis. kamar mandi dalam, mulai Desember'} /></Field>
+        <Field label="Kebutuhan"><input value={f.need} onChange={(e) => setF({ ...f, need: e.target.value })} placeholder={retail ? (jasa ? 'mis. laundry seprai 20 kg/minggu' : 'mis. ambil beras 5 karung/minggu') : 'mis. kamar mandi dalam, mulai Desember'} /></Field>
         <div className="row">
           <Field label="Dari mana"><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{Object.entries(SOURCE).filter(([k]) => k !== 'halaman' || f.source === 'halaman').map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
           <Field label="Perkiraan nilai (opsional)"><input inputMode="numeric" value={f.est} onChange={(e) => setF({ ...f, est: e.target.value })} placeholder="Rp" /></Field>
@@ -120,9 +121,9 @@ function LeadSheet({ l, kosId, retail, onClose, onSaved }) {
         <Timeline kosId={kosId} lead={cur.id} />
       </>}
       {!isNew && <details><summary className="small">Ubah data prospek</summary><div className="stack" style={{ marginTop: 8 }}>
-        <Field label="Nama"><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={retail ? 'mis. Warung Bu Sri' : 'mis. Rina (mahasiswi)'} /></Field>
+        <Field label="Nama"><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={retail ? (jasa ? 'mis. Kos Melati (langganan)' : 'mis. Warung Bu Sri') : 'mis. Rina (mahasiswi)'} /></Field>
         <Field label="No. HP / WhatsApp"><input inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
-        <Field label="Kebutuhan"><input value={f.need} onChange={(e) => setF({ ...f, need: e.target.value })} placeholder={retail ? 'mis. ambil beras 5 karung/minggu' : 'mis. kamar mandi dalam, mulai Desember'} /></Field>
+        <Field label="Kebutuhan"><input value={f.need} onChange={(e) => setF({ ...f, need: e.target.value })} placeholder={retail ? (jasa ? 'mis. laundry seprai 20 kg/minggu' : 'mis. ambil beras 5 karung/minggu') : 'mis. kamar mandi dalam, mulai Desember'} /></Field>
         <div className="row">
           <Field label="Dari mana"><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{Object.entries(SOURCE).filter(([k]) => k !== 'halaman' || f.source === 'halaman').map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
           <Field label="Perkiraan nilai (opsional)"><input inputMode="numeric" value={f.est} onChange={(e) => setF({ ...f, est: e.target.value })} placeholder="Rp" /></Field>

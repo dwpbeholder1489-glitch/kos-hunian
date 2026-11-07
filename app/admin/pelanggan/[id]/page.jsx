@@ -10,6 +10,7 @@ import { PLANS } from '@/lib/plan';
 import { ADMIN_TEMPLATES, fillAdmin } from '@/lib/adminTemplates';
 import { can, ACTION, TYPE_ICON, loadTemplates } from '@/lib/admin';
 import { health } from '@/lib/health';
+import { BUSINESS_TYPES } from '@/lib/business';
 
 const RQ = { menunggu: ['Menunggu', 'gold'], disetujui: ['Disetujui', 'good'], ditolak: ['Ditolak', 'bad'] };
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
@@ -74,10 +75,10 @@ export default function CustomerDetail() {
         <div className="list">
           <div className="li"><span className="muted small">Pemilik</span><b className="small">{k.owner_email}</b></div>
           <div className="li"><span className="muted small">No. WA bisnis</span><b className="small">{k.contact_phone || '—'}</b></div>
-          <div className="li"><span className="muted small">Jenis</span><b className="small">{retail ? 'Retail & Grosir' : 'Properti & Sewa'}{c.counts.other_businesses > 0 ? ` · punya ${c.counts.other_businesses} bisnis lain` : ''}</b></div>
+          <div className="li"><span className="muted small">Jenis</span><b className="small">{BUSINESS_TYPES[k.business_type]?.name || k.business_type}{c.counts.other_businesses > 0 ? ` · punya ${c.counts.other_businesses} bisnis lain` : ''}</b></div>
           <div className="li"><span className="muted small">Daftar</span><b className="small">{tgl(String(k.created_at).slice(0, 10))}</b></div>
           <div className="li"><span className="muted small">Paket</span><b className="small">{planList.find((x) => x.key === k.effective_plan)?.name || PLANS[k.effective_plan]?.name || k.effective_plan}{k.paid_until ? ` · bayar s.d. ${tgl(k.paid_until)}` : k.trial_until ? ` · coba s.d. ${tgl(k.trial_until)}` : ''}</b></div>
-          <div className="li"><span className="muted small">Ringkasan</span><b className="small">{retail ? `${c.counts.products} barang · ${c.counts.sales} penjualan · ${c.counts.purchases} belanja` : `${c.counts.rooms} kamar · ${c.counts.active_leases} terisi · ${c.counts.payments} pembayaran`}</b></div>
+          <div className="li"><span className="muted small">Ringkasan</span><b className="small">{k.business_type === 'jasa' ? `${c.counts.services ?? 0} layanan · ${c.counts.orders ?? 0} pesanan · ${c.counts.orders_done ?? 0} diserahkan` : retail ? `${c.counts.products} barang · ${c.counts.sales} penjualan · ${c.counts.purchases} belanja` : `${c.counts.rooms} kamar · ${c.counts.active_leases} terisi · ${c.counts.payments} pembayaran`}</b></div>
         </div>
       </section>
 

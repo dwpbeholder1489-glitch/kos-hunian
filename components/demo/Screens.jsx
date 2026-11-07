@@ -6,13 +6,13 @@ import {
 
 const TABS = ['Dashboard', 'Kamar', 'Penghuni', 'Tagihan', 'Pembayaran'];
 
-export function Phone({ tab, children, bare }) {
+export function Phone({ tab, children, bare, tabs = TABS, name = KOS.name }) {
   return (
     <div className="mini" aria-label={`Contoh tampilan ${tab || ''}`}>
       {!bare && (
         <div className="mini-top">
-          <div className="mini-brand"><span className="mark">P</span><b>{KOS.name}</b><span className="mini-help">?</span></div>
-          <div className="mini-tabs">{TABS.map((t) => <span key={t} className={t === tab ? 'on' : ''}>{t}</span>)}</div>
+          <div className="mini-brand"><span className="mark">P</span><b>{name}</b><span className="mini-help">?</span></div>
+          <div className="mini-tabs">{tabs.map((t) => <span key={t} className={t === tab ? 'on' : ''}>{t}</span>)}</div>
         </div>
       )}
       <div className="mini-body">{children}</div>
@@ -312,5 +312,52 @@ export function ScrPortal() {
         <div className="chatmsg assistant"><div>Maaf, saya hanya bisa membantu urusan kos. Ada yang ingin ditanyakan soal tagihan atau peraturan kos?</div></div>
       </div>
     </div>
+  );
+}
+
+// Bisnis jasa (laundry) — DATA CONTOH
+const JASA_TABS = ['Dashboard', 'Pesanan', 'Kas', 'Laporan'];
+const ORDERS = [
+  ['PSN-261107-004', 'Rina', 'Cuci kering setrika 3,5 kg', 'Setrika', 'gold', 'janji Sab 8 Nov', 24500, 0],
+  ['PSN-261107-003', 'Pak Darto', 'Bed cover 2 pcs', 'Cuci', 'gold', 'janji Sen 10 Nov', 50000, 20000],
+  ['PSN-261106-009', 'Sari', 'Kilat 3 kg · diantar', 'Siap diantar', 'good', 'Jl. Melati 12', 36000, 36000],
+  ['PSN-261105-002', 'Bu Wati', 'Selimut 1 pcs', 'Cek kualitas (QC)', 'bad', 'terlambat 1 hari', 20000, 0],
+];
+export function ScrPesanan() {
+  return (
+    <Phone tab="Pesanan" tabs={JASA_TABS} name="Laundry Bersih">
+      <div className="row between"><Title>Pesanan</Title><span className="mini-btn primary">+ Pesanan baru</span></div>
+      <div className="seg"><button className="on">Aktif 4</button><button>Diterima</button><button>Cuci</button><button>Setrika</button><button>Siap</button></div>
+      <div className="panel"><div className="list">
+        {ORDERS.map(([no, who, what, st, tone, when, tot, paid]) => (
+          <div className="li" key={no}><div className="main"><b>{who} · {no.slice(-3)}</b><span className="small muted">{what} · {when}</span></div>
+            <div style={{ textAlign: 'right' }}><span className={'chip ' + tone}>{st}</span><div className="small muted">{paid >= tot ? 'Lunas' : `sisa ${rp(tot - paid)}`}</div></div></div>
+        ))}
+      </div></div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}
+export function ScrNota() {
+  return (
+    <Phone bare>
+      <pre className="struk" style={{ fontSize: 10.5 }}>{`         LAUNDRY BERSIH
+--------------------------------
+No            PSN-261107-004
+Terima           7 Nov 09.12
+Janji           Sab, 8 Nov
+Pelanggan               Rina
+--------------------------------
+Cuci kering setrika
+  3,5 kg x Rp7.000    Rp24.500
+--------------------------------
+TOTAL                 Rp24.500
+Dibayar               Rp10.000
+SISA                  Rp14.500
+--------------------------------
+Status: Setrika
+       (DATA CONTOH)`}</pre>
+      <div className="row"><span className="mini-btn primary">Cetak</span><span className="mini-btn">Kirim via WhatsApp</span></div>
+    </Phone>
   );
 }

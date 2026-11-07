@@ -8,7 +8,7 @@ import { tgl, errMsg } from '@/lib/format';
 import { can } from '@/lib/admin';
 
 const PLANS = [['gratis', 'Gratis'], ['coba', 'Masa coba'], ['standar', 'Standar'], ['pro', 'Pro']];
-const TYPES = [['properti', '🏠 Properti'], ['retail', '🛒 Retail']];
+const TYPES = [['properti', '🏠 Properti'], ['retail', '🛒 Retail'], ['jasa', '🧺 Jasa']];
 const KIND = { layanan: ['Layanan penting', 'warn'], info: ['Info / fitur / tips', 'info'] };
 
 // Pengumuman ke pelanggan: banner di aplikasi dan/atau email, dengan pratinjau & konfirmasi
