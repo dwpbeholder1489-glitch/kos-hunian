@@ -6,8 +6,8 @@ import Showcase from '@/components/landing/Showcase';
 import { PLANS, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell } from '@/lib/plan';
 import { TESTIMONIALS } from '@/lib/testimonials';
 
-const TITLE = 'PRASARA — One Intelligence. Every Business.';
-const DESC = 'Satu aplikasi untuk mengelola bisnis dari HP: kos & properti sewa, toko retail & grosir, laundry & jasa. Satu akun untuk beberapa bisnis. Coba gratis 30 hari.';
+const TITLE = 'PRASARA — Kelola Bisnis Lebih Terarah. Kembangkan dengan Lebih Cerdas.';
+const DESC = 'Adaptive Business System: satu platform untuk operasional, pelanggan, transaksi, keuangan, stok, dan layanan — kos & properti, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain. Sistem menyesuaikan jenis bisnis; pemilik yang menyetujui. Coba gratis 30 hari.';
 export const metadata = {
   title: TITLE,
   description: DESC,
@@ -32,12 +32,54 @@ const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
 const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi PRASARA.')}`;
 const START = '/masuk?daftar=1';
 
-// Nilai utama (hanya yang sudah berjalan)
-const VALUES = [
-  ['layers', 'Satu akun, banyak bisnis', 'Kelola kos, toko, dan laundry dari satu akun. Ketuk nama bisnis untuk pindah, dan lihat ringkasan semua bisnis dalam satu layar.'],
-  ['compass', 'Menu sesuai jenis usaha', 'Kos melihat kamar, penghuni, dan tagihan. Toko melihat kasir, stok, dan belanja. Laundry melihat pesanan dan tahap proses. Menu yang tidak relevan tidak ditampilkan.'],
-  ['shield', 'Tim dengan hak akses jelas', 'Karyawan masuk dengan akun sendiri. Kasir hanya melihat kasir — tidak melihat harga modal atau laba. Batasan diperiksa di database.'],
+// Masalah umum → apa yang dilakukan PRASARA (tanpa klaim hasil finansial)
+const PROBLEMS = [
+  ['Pencatatan tersebar di buku, spreadsheet, dan chat', 'Satu tempat per bisnis: transaksi, pelanggan, stok, dan kas tersusun rapi, bisa dibuka dari HP.'],
+  ['Transaksi sulit dipantau', 'Kasir, pesanan, dan tagihan tercatat dengan nomor, waktu, dan petugasnya; pembatalan butuh alasan dan tercatat.'],
+  ['Data pelanggan tidak terorganisasi', 'Kontak pelanggan & penghuni, riwayat transaksi, kasbon, serta prospek dan tindak lanjutnya.'],
+  ['Stok sulit dikontrol', 'Stok multi-satuan & per lokasi, belanja ke supplier, stok opname, dan peringatan barang menipis.'],
+  ['Laporan memakan waktu', 'Laporan laba, kas, dan per layanan tersusun otomatis dari transaksi harian — tinggal pilih bulan, bisa diunduh Excel.'],
+  ['Operasional bergantung pada catatan manual', 'Tagihan sewa terbit otomatis, tahap pesanan jelas, pengingat & daftar tindak lanjut harian.'],
+  ['Sulit mengetahui kondisi bisnis', 'Dashboard per bisnis dan ringkasan semua bisnis: uang masuk, tunggakan, pesanan, dan hal yang perlu ditindaklanjuti.'],
 ];
+
+// Kemampuan inti (status jujur: ready = tersedia, part = sebagian, soon = segera hadir)
+const CAPS = [
+  ['layers', 'Manajemen bisnis', 'ready', 'Beberapa bisnis dalam satu akun, profil & badan usaha, cabang/gudang, modul yang bisa diaktifkan atau dimatikan.', 'Pemilik kos dan toko memantau keduanya dari satu ringkasan.'],
+  ['receipt', 'Transaksi', 'ready', 'Kasir eceran & grosir, pesanan jasa & kuliner, tagihan sewa, pembayaran sebagian, retur, dan pembatalan dengan alasan.', 'Kasir toko menjual per pcs atau per dus dengan harga masing-masing.'],
+  ['users', 'Pelanggan', 'ready', 'Kontak pelanggan, penghuni & supplier, prospek dari halaman bisnis, tindak lanjut, kasbon.', 'Calon penghuni mendaftar online; pemilik tinggal mengonfirmasi.'],
+  ['box', 'Inventaris', 'ready', 'Stok multi-satuan, barcode, per lokasi, belanja & terima barang, stok opname, bahan operasional.', 'Laundry mencatat pemakaian deterjen agar biaya bahan ikut terhitung.'],
+  ['wallet', 'Keuangan', 'ready', 'Kas & bank, biaya, deposit, utang-piutang, jurnal otomatis, laba rugi, dan neraca per badan usaha.', 'Uang jaminan penghuni dicatat terpisah dari pendapatan.'],
+  ['calendar', 'Booking & reservasi', 'ready', 'Booking kamar dengan uang tanda jadi, reservasi meja dengan cek bentrok, jadwal jemput-antar.', 'Kamar yang dibooking terkunci sampai penghuni check-in.'],
+  ['flow', 'Layanan', 'ready', 'Pesanan per kg/item, tahap proses yang bisa diatur, keluhan & pengerjaan ulang, antar-jemput, layar dapur.', 'Petugas proses melihat tahap cucian tanpa melihat uang.'],
+  ['shield', 'Karyawan & operasional', 'part', 'Peran & hak akses per karyawan, persetujuan untuk aksi penting, shift kasir, riwayat perubahan. Absensi & penggajian: dalam rencana.', 'Kasir tidak melihat harga modal dan laba.'],
+  ['chart', 'Laporan & analitik', 'ready', 'Laporan per jenis bisnis dengan grafik, tren 6 bulan, barang terlaris, ketepatan waktu, ekspor Excel/PDF.', 'Melihat bulan mana biaya operasional paling besar.'],
+  ['sparkles', 'Asisten AI bisnis', 'soon', 'Membaca laporan, merangkum aktivitas, dan menjawab pertanyaan dari data yang diizinkan.', 'Belum aktif — lihat bagian AI di bawah.'],
+];
+const CAP_ST = { ready: ['Tersedia', 'ok'], part: ['Sebagian tersedia', 'std'], soon: ['Segera hadir', 'soon'] };
+
+// Sistem adaptif: alur nyata (/mulai → setup_items → Pusat Konfirmasi → setup_activate)
+const FLOW = ['Identifikasi bisnis', 'Analisis kebutuhan', 'Rekomendasi modul', 'Persetujuan pemilik', 'Aktivasi konfigurasi', 'Dashboard bisnis'];
+const ADAPT = [
+  ['compass', 'Mengenali jenis bisnis', 'Anda memilih kategori & subkategori (15 kategori) dan menjawab beberapa pertanyaan singkat.'],
+  ['layers', 'Merekomendasikan modul', 'Dari template per jenis usaha, PRASARA menyusun draf modul, menu, dan informasi yang perlu dilengkapi.'],
+  ['check', 'Anda yang memutuskan', 'Setiap rekomendasi bisa disetujui, diubah, atau ditolak di Pusat Konfirmasi. Harga dan kapasitas tidak diisi otomatis.'],
+  ['chart', 'Ikut berkembang', 'Modul bisa ditambah atau dimatikan kapan saja di Pusat konfigurasi; saran fitur muncul dari data bisnis Anda sendiri.'],
+  ['shield', 'Perubahan penting butuh persetujuan', 'Aktivasi dan perubahan konfigurasi diperiksa di server, bukan hanya di tampilan. Admin platform tidak mengubah konfigurasi bisnis Anda.'],
+  ['notebook', 'Tercatat di riwayat', 'Setiap perubahan konfigurasi tersimpan: siapa, kapan, dan alasannya.'],
+];
+
+// AI: konsep (belum aktif)
+const AI_CAN = ['Membantu membaca laporan bisnis', 'Merangkum aktivitas operasional', 'Mengenali pola transaksi', 'Membantu menganalisis stok', 'Menyusun rekomendasi operasional', 'Menemukan potensi masalah lebih awal', 'Menjawab pertanyaan dari data yang diizinkan', 'Membantu pekerjaan administratif'];
+
+// Cara kerja (4 tahap, sesuai alur pendaftaran yang berjalan)
+const HOW4 = [
+  ['Daftarkan bisnis Anda', 'Buat akun dengan email, lalu isi nama bisnis, kategori, dan lokasi. Boleh lebih dari satu bisnis sekaligus.'],
+  ['Kenali kebutuhan bisnis', 'PRASARA membaca kategori, subkategori, dan jawaban Anda untuk menyiapkan draf konfigurasi.'],
+  ['Pilih konfigurasi', 'Tinjau modul yang direkomendasikan di Pusat Konfirmasi — setujui, ubah, atau tolak satu per satu.'],
+  ['Mulai kelola bisnis', 'Setelah Anda aktifkan, menu dan dashboard disiapkan sesuai konfigurasi yang disetujui.'],
+];
+
 
 // Solusi per kategori: status jujur
 const CATS = [
@@ -50,12 +92,6 @@ const CATS = [
   ['🚚', 'Distribusi', 'Modul khusus (armada, rute) dalam rencana. Sementara bisa disusun lewat Business Builder.', 'plan'],
 ];
 
-// Cara mulai (alur nyata: /mulai → Pusat Konfirmasi → pakai)
-const HOW = [
-  ['compass', 'Pilih jenis bisnis', 'Daftar dengan email, pilih satu atau beberapa jenis usaha, lalu isi info singkatnya.'],
-  ['check', 'Tinjau & aktifkan', 'PRASARA menyiapkan draf menu dan pengaturan. Anda menyetujui, mengubah, atau menolak tiap bagian di Pusat Konfirmasi — harga dan kapasitas Anda isi sendiri.'],
-  ['link', 'Pakai & bagikan', 'Mulai catat transaksi dari HP. Bagikan tautan atau QR halaman bisnis agar pelanggan bisa memesan atau mendaftar.'],
-];
 
 // Fitur utama yang sudah tersedia
 const GROUPS = [
@@ -103,17 +139,27 @@ const TRUST = [
   ['shield', 'Hak akses diperiksa server', 'Peran karyawan diperiksa di database, bukan hanya disembunyikan dari menu.'],
   ['globe', 'Lewat browser, terenkripsi', 'Tidak perlu memasang aplikasi. Koneksi selalu HTTPS.'],
   ['lock', 'Data tetap milik Anda', 'Berhenti berlangganan tidak menghapus data. Laporan bisa diekspor.'],
+  ['eye', 'Akses dukungan dengan izin', 'Tim PRASARA hanya melihat ringkasan diagnostik bila Anda mengizinkan dari Pusat bantuan; setiap akses tercatat.'],
+  ['headset', 'Bantuan nyata', 'Panduan bergambar, tombol "? Panduan" di setiap menu, tiket bantuan, dan WhatsApp.'],
 ];
 
 const FAQ = [
-  ['Bisnis apa saja yang sudah bisa dikelola?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay), Retail & Grosir (toko sembako, minimarket, grosir), Jasa & Laundry (laundry kiloan/satuan, juga jasa lain seperti jahit atau servis), Kuliner (warung, kafe, katering: menu, dapur, QR meja, reservasi), dan usaha lain lewat Business Builder (susun sendiri data, alur, dan laporan). Modul khusus produksi dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
-  ['Apakah satu akun bisa untuk kos dan toko sekaligus?', 'Bisa. Tambahkan bisnis kedua dari menu bisnis (ketuk nama bisnis di kiri atas). Data tiap bisnis terpisah, dan Anda bisa melihat ringkasan semuanya dalam satu layar.'],
-  ['Apakah harus memasang aplikasi?', 'Tidak. PRASARA dibuka lewat browser di HP atau laptop. Agar terasa seperti aplikasi, tambahkan ke layar utama: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
-  ['Bagaimana cara mencoba gratis?', `Daftar dengan email, pilih satu atau lebih jenis bisnis, lalu isi info singkatnya. PRASARA menyiapkan draf konfigurasinya; Anda meninjau dan mengaktifkannya di Pusat Konfirmasi. Setiap bisnis baru mendapat ${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit. Setelah itu otomatis menjadi paket Gratis kecuali Anda berlangganan.`],
+  ['Apa itu PRASARA?', 'PRASARA adalah sistem pengelolaan bisnis yang menyesuaikan diri dengan jenis usaha Anda. Satu akun bisa dipakai untuk beberapa bisnis — misalnya kos dan toko — dengan menu, data, dan laporan masing-masing. Dibuka lewat browser di HP atau laptop.'],
+  ['Bisnis apa saja yang dapat menggunakan PRASARA?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay), Retail & Grosir (toko sembako, minimarket, grosir), Jasa & Laundry (laundry kiloan/satuan, juga jasa lain seperti jahit atau servis), Kuliner (warung, kafe, katering: menu, dapur, QR meja, reservasi), dan usaha lain lewat Business Builder (susun sendiri data, alur, dan laporan). Modul khusus produksi dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
+  ['Apakah PRASARA hanya untuk bisnis besar?', 'Tidak. PRASARA dirancang untuk usaha kecil dan menengah yang dikelola dari HP — ada paket Gratis untuk mulai. Saat bisnis tumbuh, Anda bisa menambah karyawan, cabang/gudang, modul, atau naik paket tanpa pindah aplikasi.'],
+  ['Apakah setiap bisnis menggunakan fitur yang sama?', 'Tidak. Kos melihat kamar, penghuni, dan tagihan; toko melihat kasir, stok, dan belanja; laundry melihat pesanan dan tahap proses; kuliner melihat menu, dapur, dan meja. Menu yang tidak relevan tidak ditampilkan, dan karyawan hanya melihat menu sesuai perannya.'],
+  ['Apakah saya dapat memilih modul sendiri?', 'Bisa. Saat mendaftar, setiap modul yang disarankan Anda setujui atau tolak di Pusat Konfirmasi. Setelah aktif, modul bisa dinyalakan atau dimatikan kapan saja di Pusat konfigurasi, dan setiap perubahan tercatat di riwayat.'],
+  ['Bagaimana sistem rekomendasi bekerja?', 'Saat ini rekomendasi disusun dari template per jenis usaha (aturan tetap, bukan AI) ditambah jawaban Anda saat mendaftar — misalnya jumlah kamar atau layanan yang ditawarkan. Setelah berjalan, PRASARA juga memberi saran fitur berdasarkan data bisnis Anda sendiri. Semua saran hanya berlaku bila Anda menyetujuinya.'],
+  ['Apakah tersedia demo?', `Ya. Contoh tampilan di halaman ini memakai DATA CONTOH dan tidak tersambung ke data siapa pun. Anda juga bisa langsung mencoba dengan data sendiri: setiap bisnis baru mendapat ${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit.`],
+  ['Bagaimana proses pendaftaran?', 'Daftar dengan email, pilih satu atau lebih jenis bisnis, lalu isi info singkatnya. PRASARA menyiapkan draf konfigurasi; Anda meninjau dan mengaktifkannya di Pusat Konfirmasi. Sebelum diaktifkan, bisnis masih berstatus draf dan halaman publiknya belum tampil.'],
+  ['Apakah data bisnis aman?', 'Data setiap bisnis dipisahkan di tingkat database, hak akses karyawan diperiksa di server, dan koneksi selalu terenkripsi (HTTPS). Tim PRASARA hanya bisa melihat ringkasan diagnostik bila Anda memberi izin dari Pusat bantuan, dan setiap aksesnya tercatat.'],
+  ['Apakah tersedia AI Assistant?', 'Belum. Asisten AI untuk pemilik masih dalam pengembangan dan ditandai "Segera hadir". Saran yang ada sekarang disusun dari aturan dan data bisnis Anda, bukan AI.'],
+  ['Apakah penggunaan AI dikenakan biaya?', 'Bila nanti tersedia, AI memakai penyedia pihak ketiga yang berbayar per pemakaian, sehingga akan ada kuota per paket atau biaya tambahan. Ketentuannya diumumkan sebelum fitur diaktifkan — AI tidak akan dijanjikan gratis tanpa batas, dan tidak ada biaya yang ditagihkan untuk fitur yang belum tersedia.'],
+  ['Bagaimana cara mengubah paket?', 'Buka menu Langganan di aplikasi. Naik paket berlaku sejak pembayaran disetujui, dan sisa hari paket lama dihitung ulang lalu ditambahkan. Turun paket berlaku setelah masa paket sekarang berakhir. Pembayaran lewat QRIS atau transfer bank, diperiksa biasanya dalam 1×24 jam pada hari kerja.'],
+  ['Apakah bisnis dapat berkembang tanpa berpindah platform?', 'Bisa. Tambah bisnis baru, cabang atau gudang, karyawan dengan peran berbeda, modul baru, atau naik paket — semua di akun yang sama, dan data lama tetap utuh.'],
+  ['Bagaimana jika bisnis saya belum tersedia dalam kategori?', 'Pilih Business Builder: susun sendiri jenis data, formulir, alur status, peran, dan laporan, atau mulai dari template (bengkel, salon, kursus, rental, dan lainnya). Bila masih ragu, ceritakan usaha Anda lewat WhatsApp.'],
+  ['Apakah harus memasang aplikasi?', 'Tidak. PRASARA dibuka lewat browser. Agar terasa seperti aplikasi, tambahkan ke layar utama: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
   ['Harganya per apa?', 'Per bisnis, per bulan. Jika punya kos dan toko, masing-masing memilih paketnya sendiri.'],
-  ['Bagaimana dengan karyawan?', 'Pemilik mengundang karyawan lewat email dan memilih perannya. Karyawan masuk dengan akunnya sendiri dan hanya melihat menu sesuai perannya. Email karyawan yang tidak dipakai bisa dihapus kapan saja.'],
-  ['Bagaimana cara membayar langganan?', 'Buka menu Langganan, pilih paket dan durasi, lalu bayar lewat QRIS atau transfer bank dan tekan "Saya sudah bayar". Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam pada hari kerja.'],
-  ['Apakah data saya aman?', 'Data setiap bisnis dipisahkan di tingkat database, hak akses karyawan diperiksa di server, dan koneksi selalu terenkripsi. Tim PRASARA hanya bisa melihat ringkasan diagnostik bila Anda memberi izin dari Pusat bantuan, dan setiap aksesnya tercatat.'],
   ['Apa yang terjadi jika berhenti berlangganan?', 'Data tidak dihapus. Bisnis kembali ke paket Gratis dengan batasannya; begitu berlangganan lagi, semuanya terbuka kembali.'],
 ];
 
@@ -142,53 +188,130 @@ export default async function Landing() {
   return (
     <div className="ln">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <LandingNav />
+      <LandingNav theme />
 
       <main>
         {/* 1. HERO */}
         <section className="ln-hero" id="beranda">
           <div className="ln-wrap ln-hero-grid">
             <div className="ln-hero-text ln-rise">
-              <span className="ln-eyebrow">Satu aplikasi untuk berbagai jenis bisnis</span>
-              <h1>One Intelligence. <span>Every Business.</span></h1>
-              <p className="ln-lead">PRASARA membantu pemilik usaha mengelola bisnisnya dari HP — saat ini untuk <b>kos & properti sewa</b>, <b>toko retail & grosir</b>, <b>laundry & jasa</b>, dan <b>kuliner</b>. Satu akun untuk beberapa bisnis; menu menyesuaikan jenis usahanya.</p>
+              <span className="ln-eyebrow">One Intelligence. Every Business.</span>
+              <h1>Kelola Bisnis Lebih Terarah. <span>Kembangkan dengan Lebih Cerdas.</span></h1>
+              <p className="ln-lead">Mulai dari operasional harian hingga pengambilan keputusan, PRASARA membantu menyatukan kebutuhan bisnis Anda dalam satu sistem yang adaptif.</p>
               <div className="ln-cta-row">
-                <Link href={START} className="ln-btn ln-btn-primary ln-btn-lg">Mulai Gratis {BUSINESS.trialDays} Hari <Icon name="arrow" size={18} /></Link>
-                <a href="#solusi" className="ln-btn ln-btn-outline ln-btn-lg">Lihat solusinya</a>
+                <Link href={START} className="ln-btn ln-btn-primary ln-btn-lg">Mulai Sekarang <Icon name="arrow" size={18} /></Link>
+                <a href="#demo" className="ln-btn ln-btn-outline ln-btn-lg">Lihat Demo</a>
               </div>
-              <p className="ln-support">Tanpa kartu kredit. Data setiap bisnis terpisah dan tetap milik Anda.</p>
+              <p className="ln-support">Gratis {BUSINESS.trialDays} hari semua fitur, tanpa kartu kredit. Untuk kos & properti, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain.</p>
             </div>
             <div className="ln-rise ln-rise-2"><HeroMulti /></div>
           </div>
         </section>
 
-        {/* 1b. CARA MULAI */}
-        <section className="ln-sec ln-sec-alt" id="cara" aria-labelledby="h-cara">
+        {/* 2. MASALAH & SOLUSI */}
+        <section className="ln-sec" id="masalah" aria-labelledby="h-masalah">
           <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Cara mulai</span><h2 id="h-cara">Dari daftar sampai dipakai, tiga langkah.</h2></div>
-            <ol className="ln-steps">
-              {HOW.map(([ic, t, d], i) => (
-                <li key={t}><div className="row" style={{ display: 'flex', gap: 12, alignItems: 'center' }}><span className="ln-step-n">{i + 1}</span><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span></div><h3>{t}</h3><p>{d}</p></li>
+            <div className="ln-head"><span className="ln-kicker">Masalah yang sering terjadi</span><h2 id="h-masalah">Dari catatan yang tercecer ke satu sistem yang tertata.</h2>
+              <p>Bukan janji angka — ini yang berubah dalam cara Anda bekerja setiap hari.</p></div>
+            <div className="ln-ba" role="list">
+              <div className="ln-ba-h" aria-hidden="true"><span>Sebelum</span><span>Dengan PRASARA</span></div>
+              {PROBLEMS.map(([b4, af]) => (
+                <div key={b4} className="ln-ba-row" role="listitem">
+                  <div className="ln-ba-b"><Icon name="x" size={16} /><span><span className="ln-sr">Sebelum: </span>{b4}</span></div>
+                  <div className="ln-ba-a"><Icon name="check" size={16} /><span><span className="ln-sr">Dengan PRASARA: </span>{af}</span></div>
+                </div>
               ))}
-            </ol>
-          </div>
-        </section>
-
-        {/* 2. NILAI UTAMA */}
-        <section className="ln-sec" aria-labelledby="h-nilai">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Kenapa PRASARA</span><h2 id="h-nilai">Satu kendali untuk semua usaha Anda.</h2>
-              <p>Catatan di buku, spreadsheet, dan chat WhatsApp pindah ke satu tempat — tersusun per bisnis, bisa dibuka dari HP kapan saja.</p></div>
-            <div className="ln-vals">
-              {VALUES.map(([ic, t, d]) => <div key={t} className="ln-val"><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span><h3>{t}</h3><p>{d}</p></div>)}
             </div>
           </div>
         </section>
 
-        {/* 3. SOLUSI PER KATEGORI */}
-        <section className="ln-sec ln-sec-alt" id="solusi" aria-labelledby="h-solusi">
+        {/* 3. PRODUK — KEMAMPUAN INTI */}
+        <section className="ln-sec ln-sec-alt" id="produk" aria-labelledby="h-produk">
           <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Solusi per jenis bisnis</span><h2 id="h-solusi">Kos, toko, laundry, dan kuliner.</h2>
+            <div className="ln-head"><span className="ln-kicker">Produk</span><h2 id="h-produk">Kemampuan inti dalam satu platform.</h2>
+              <p>Status setiap kemampuan ditulis apa adanya: <b>Tersedia</b>, <b>Sebagian tersedia</b>, atau <b>Segera hadir</b>.</p></div>
+            <div className="ln-caps">
+              {CAPS.map(([ic, t, st, d, ex]) => (
+                <div key={t} className={'ln-cap' + (st === 'soon' ? ' soon' : '')}>
+                  <div className="ln-cap-h"><span className="ln-ico-wrap sm"><Icon name={ic} size={18} /></span><h3>{t}</h3><span className={'ln-badge ' + CAP_ST[st][1]}>{CAP_ST[st][0]}</span></div>
+                  <p>{d}</p>
+                  <p className="ln-cap-ex"><b>Contoh:</b> {ex}</p>
+                </div>
+              ))}
+            </div>
+            <p className="ln-small" style={{ marginTop: 18 }}><a href="#fitur" className="ln-textlink">Lihat rincian fitur per jenis bisnis <Icon name="arrow" size={16} /></a></p>
+          </div>
+        </section>
+
+        {/* 4. DEMO */}
+        <section className="ln-sec" id="demo" aria-labelledby="h-demo">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Demo</span><h2 id="h-demo">Lihat Bagaimana PRASARA Bekerja untuk Bisnis Anda.</h2>
+              <p>Semua tampilan di bawah memakai <b>DATA CONTOH</b> — tidak tersambung ke data bisnis siapa pun.</p></div>
+            <div className="ln-demo">
+              <div><h3 style={{ marginBottom: 14 }}>Properti & Sewa</h3><Showcase /></div>
+              <div className="ln-demo-side">
+                <h3>Retail & Grosir — Kasir</h3>
+                <KasirMock />
+                <p className="ln-p" style={{ fontSize: 15 }}>Tombol barang cepat untuk barang tanpa barcode, scan kamera untuk barang berbarcode, lalu bayar tunai, transfer, atau kasbon.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. SISTEM ADAPTIF */}
+        <section className="ln-sec ln-sec-alt" id="adaptif" aria-labelledby="h-adaptif">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Adaptive Business System</span><h2 id="h-adaptif">Bisnis Berbeda, Kebutuhan Berbeda. Sistem yang Sama-sama Bisa Menyesuaikan.</h2>
+              <p>PRASARA tidak memaksa semua bisnis memakai fitur dan pengaturan yang sama. Sistem menyiapkan rekomendasi — keputusan tetap di tangan pemilik.</p></div>
+            <ol className="ln-flow" aria-label="Alur penyesuaian sistem">
+              {FLOW.map((t, i) => <li key={t}><span className="ln-flow-n">{String(i + 1).padStart(2, '0')}</span><span>{t}</span></li>)}
+            </ol>
+            <div className="ln-vals" style={{ marginTop: 36 }}>
+              {ADAPT.map(([ic, t, d]) => <div key={t} className="ln-val"><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span><h3>{t}</h3><p>{d}</p></div>)}
+            </div>
+          </div>
+        </section>
+
+        {/* 6. AI */}
+        <section className="ln-sec" id="ai" aria-labelledby="h-ai">
+          <div className="ln-wrap">
+            <div className="ln-ai">
+              <div>
+                <span className="ln-kicker">AI Business Assistant <Badge t="Segera hadir" /></span>
+                <h2 id="h-ai">Lebih dari Sekadar Mengelola. Pahami Bisnis Anda.</h2>
+                <p className="ln-p">Asisten AI direncanakan sebagai bagian dari ekosistem PRASARA — membaca data bisnis yang Anda izinkan, bukan menebak. <b>Fitur ini belum aktif.</b></p>
+                <ul className="ln-checks">{AI_CAN.map((t) => <li key={t}><Icon name="check" size={18} />{t}</li>)}</ul>
+                <p className="ln-small">Prinsipnya: hanya membaca data sesuai hak akses, tidak mengarang bila data tidak ada, rekomendasi bukan tindakan otomatis, dan perubahan data selalu menunggu persetujuan Anda. AI memakai penyedia pihak ketiga, sehingga akan ada kuota atau biaya sesuai paket — diumumkan sebelum diaktifkan.</p>
+              </div>
+              <div className="ln-chat" aria-label="Contoh konsep percakapan dengan asisten AI">
+                <span className="ln-chat-tag">CONTOH KONSEP — BELUM AKTIF</span>
+                <div className="ln-bub me">Bagaimana kondisi bisnis saya bulan ini?</div>
+                <div className="ln-bub">Berikut ringkasan transaksi, pengeluaran, dan aktivitas operasional bulan ini berdasarkan data yang tersedia. Ada 3 hal yang perlu Anda tinjau: 2 tagihan lewat jatuh tempo dan 1 barang yang stoknya menipis.</div>
+                <div className="ln-bub me">Buatkan pengingat untuk penghuni yang menunggak.</div>
+                <div className="ln-bub">Draf pesan sudah siap untuk 2 penghuni. Tinjau dan kirim sendiri — saya tidak mengirim apa pun tanpa persetujuan Anda.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 7. CARA KERJA */}
+        <section className="ln-sec ln-sec-alt" id="cara" aria-labelledby="h-cara">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Cara kerja</span><h2 id="h-cara">Empat tahap dari daftar sampai dipakai.</h2></div>
+            <ol className="ln-steps ln-steps4">
+              {HOW4.map(([t, d], i) => (
+                <li key={t}><span className="ln-step-n">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{d}</p></li>
+              ))}
+            </ol>
+            <div className="ln-cta-row" style={{ marginTop: 28 }}><Link href={START} className="ln-btn ln-btn-primary">Daftarkan bisnis <Icon name="arrow" size={18} /></Link></div>
+          </div>
+        </section>
+
+        {/* 8. SOLUSI PER INDUSTRI */}
+        <section className="ln-sec" id="solusi" aria-labelledby="h-solusi">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Solusi bisnis</span><h2 id="h-solusi">Kos, toko, laundry, kuliner — dan usaha lain.</h2>
               <p>Empat jenis bisnis sudah bisa dipakai penuh, ditambah Business Builder untuk usaha lain. Modul khusus jenis lain baru dibuka setelah siap.</p></div>
             <div className="ln-cats">
               {CATS.map(([ic, t, d, st]) => (
@@ -203,25 +326,25 @@ export default async function Landing() {
           </div>
         </section>
 
-        {/* 4. FITUR UTAMA */}
-        <section className="ln-sec" id="fitur" aria-labelledby="h-fitur">
+        {/* 9. RINCIAN FITUR */}
+        <section className="ln-sec ln-sec-alt" id="fitur" aria-labelledby="h-fitur">
           <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Fitur utama</span><h2 id="h-fitur">Yang sudah bisa Anda pakai hari ini.</h2></div>
+            <div className="ln-head"><span className="ln-kicker">Fitur utama</span><h2 id="h-fitur">Rincian fitur yang sudah bisa dipakai hari ini.</h2><p>Ketuk jenis bisnis untuk melihat fiturnya.</p></div>
             <div className="ln-groups">
               {GROUPS.map(([ic, g, items]) => (
-                <div key={g} className="ln-group">
-                  <div className="ln-group-h"><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span><h3>{g}</h3></div>
+                <details key={g} className="ln-group">
+                  <summary className="ln-group-h"><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span><h3>{g}</h3><span className="ln-small">{items.length} fitur</span><Icon name="plus" size={18} className="ln-group-tg" /></summary>
                   <ul>{items.map(([t, d, b]) => (
                     <li key={t}><div className="ln-feat-t">{t} <Badge t={b} /></div><p>{d}</p></li>
                   ))}</ul>
-                </div>
+                </details>
               ))}
             </div>
           </div>
         </section>
 
-        {/* 5. BUSINESS BUILDER */}
-        <section className="ln-sec ln-sec-alt" id="builder" aria-labelledby="h-builder">
+        {/* 10. BUSINESS BUILDER */}
+        <section className="ln-sec" id="builder" aria-labelledby="h-builder">
           <div className="ln-wrap">
             <div className="ln-builder">
               <div>
@@ -244,33 +367,18 @@ export default async function Landing() {
           </div>
         </section>
 
-        {/* 6. DEMO PRODUK */}
-        <section className="ln-sec" id="demo" aria-labelledby="h-demo">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Lihat aplikasinya</span><h2 id="h-demo">Dirancang untuk dipakai setiap hari, dari HP.</h2>
-              <p>Semua tampilan di bawah memakai data contoh.</p></div>
-            <div className="ln-demo">
-              <div><h3 style={{ marginBottom: 14 }}>Properti & Sewa</h3><Showcase /></div>
-              <div className="ln-demo-side">
-                <h3>Retail & Grosir — Kasir</h3>
-                <KasirMock />
-                <p className="ln-p" style={{ fontSize: 15 }}>Tombol barang cepat untuk barang tanpa barcode, scan kamera untuk barang berbarcode, lalu bayar tunai, transfer, atau kasbon.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* KEAMANAN */}
+        {/* 11. KEAMANAN */}
         <section className="ln-sec ln-sec-dark" aria-labelledby="h-trust">
           <div className="ln-wrap">
             <div className="ln-head"><span className="ln-kicker">Keamanan & privasi</span><h2 id="h-trust">Data bisnis Anda, tetap milik Anda.</h2></div>
             <div className="ln-trust">
               {TRUST.map(([ic, t, d]) => <div key={t}><Icon name={ic} size={22} /><h3>{t}</h3><p>{d}</p></div>)}
             </div>
+            <p style={{ marginTop: 28 }}><Link href="/privasi" className="ln-textlink" style={{ color: '#E6CB8F' }}>Baca Kebijakan Privasi <Icon name="arrow" size={16} /></Link></p>
           </div>
         </section>
 
-        {/* 7. PAKET HARGA */}
+        {/* 12. HARGA */}
         <section className="ln-sec" id="harga" aria-labelledby="h-harga">
           <div className="ln-wrap">
             <div className="ln-head"><span className="ln-kicker">Harga</span><h2 id="h-harga">Harga sederhana, per bisnis.</h2>
@@ -302,7 +410,13 @@ export default async function Landing() {
                 ])}</tbody>
               </table></div>
             </details>
-            <p className="ln-plan-note">Harga masih dapat berubah selama tahap pengembangan. Fitur bertanda "Segera hadir" belum tersedia dan tidak ditagihkan.</p>
+            <ul className="ln-plan-notes">
+              <li>Harga per bisnis per bulan, diambil langsung dari sistem langganan PRASARA. Harga masih dapat berubah selama tahap pengembangan; pelanggan aktif diberi tahu lebih dulu.</li>
+              <li>Batas paket (kamar terisi, akun karyawan, ruang foto & lampiran) tertulis di tabel perbandingan. Modul bisa diaktifkan atau dimatikan sesuai kebutuhan di setiap paket.</li>
+              <li>Naik paket berlaku sejak pembayaran disetujui (sisa hari paket lama dihitung ulang). Turun paket berlaku setelah masa paket sekarang berakhir.</li>
+              <li>Langganan PRASARA terpisah dari biaya pihak ketiga yang Anda pakai sendiri (internet, pulsa/WhatsApp, printer, biaya transfer). AI belum tersedia; bila nanti aktif, pemakaiannya dapat memiliki kuota atau biaya tersendiri.</li>
+              <li>Fitur bertanda "Segera hadir" belum tersedia dan tidak ditagihkan.</li>
+            </ul>
           </div>
         </section>
 
@@ -318,7 +432,7 @@ export default async function Landing() {
           </section>
         )}
 
-        {/* 8. FAQ */}
+        {/* 13. FAQ */}
         <section className="ln-sec ln-sec-alt" id="faq" aria-labelledby="h-faq">
           <div className="ln-wrap ln-faq-wrap">
             <div className="ln-head"><span className="ln-kicker">FAQ</span><h2 id="h-faq">Pertanyaan yang sering diajukan</h2></div>
@@ -328,14 +442,14 @@ export default async function Landing() {
           </div>
         </section>
 
-        {/* 9. CTA */}
+        {/* 14. CTA */}
         <section className="ln-sec">
           <div className="ln-wrap">
             <div className="ln-final">
-              <h2>Mulai rapikan bisnis Anda hari ini.</h2>
-              <p>Lebih sedikit catatan yang tercecer. Lebih banyak kendali atas setiap usaha Anda.</p>
+              <h2>Kelola bisnis lebih terarah, mulai hari ini.</h2>
+              <p>Daftar dalam beberapa menit, tinjau konfigurasi yang disarankan, lalu mulai dari HP.</p>
               <div className="ln-cta-row center">
-                <Link href={START} className="ln-btn ln-btn-accent ln-btn-lg">Mulai Gratis {BUSINESS.trialDays} Hari <Icon name="arrow" size={18} /></Link>
+                <Link href={START} className="ln-btn ln-btn-accent ln-btn-lg">Mulai Sekarang <Icon name="arrow" size={18} /></Link>
                 <a href={WA} target="_blank" rel="noreferrer" className="ln-btn ln-btn-onDark ln-btn-lg"><Icon name="message" size={18} />Hubungi Kami</a>
               </div>
             </div>
@@ -343,20 +457,20 @@ export default async function Landing() {
         </section>
       </main>
 
-      {/* 10. FOOTER */}
+      {/* FOOTER */}
       <footer className="ln-foot">
-        <div className="ln-wrap ln-foot-in">
-          <div>
+        <div className="ln-wrap ln-foot-grid">
+          <div className="ln-foot-brand">
             <div className="ln-logo"><span className="ln-logo-mark">P</span><b>PRASARA</b></div>
-            <p>One Intelligence. Every Business.</p>
-            <p style={{ fontSize: 13, marginTop: 4 }}>A smarter way to manage life and business.</p>
+            <p>Adaptive Business System untuk mengelola operasional, pelanggan, transaksi, keuangan, dan layanan dalam satu tempat.</p>
+            <p className="ln-small" style={{ marginTop: 8 }}>One Intelligence. Every Business.</p>
           </div>
-          <nav aria-label="Tautan footer">
-            <a href="#solusi">Solusi</a><a href="#fitur">Fitur</a><a href="#harga">Harga</a><Link href="/panduan">Panduan</Link><Link href="/p/contoh">Contoh portal penghuni</Link><Link href="/masuk">Masuk</Link>
-            <a href={WA} target="_blank" rel="noreferrer">WhatsApp {BUSINESS.whatsappDisplay}</a>
-          </nav>
+          <nav aria-label="Produk"><b>Produk</b><a href="#produk">Kemampuan inti</a><a href="#demo">Demo</a><a href="#adaptif">Sistem adaptif</a><a href="#harga">Harga</a></nav>
+          <nav aria-label="Solusi bisnis"><b>Solusi bisnis</b><a href="#solusi">Kos & properti</a><a href="#solusi">Toko retail & grosir</a><a href="#solusi">Laundry & jasa</a><a href="#solusi">Kuliner</a><a href="#builder">Business Builder</a></nav>
+          <nav aria-label="Bantuan"><b>Bantuan</b><Link href="/panduan">Pusat bantuan & panduan</Link><Link href="/p/contoh">Contoh portal penghuni</Link><a href={WA} target="_blank" rel="noreferrer">WhatsApp {BUSINESS.whatsappDisplay}</a><Link href="/masuk">Masuk</Link></nav>
+          <nav aria-label="Perusahaan"><b>Perusahaan</b><Link href="/tentang">Tentang Kami</Link><Link href="/privasi">Kebijakan Privasi</Link><Link href="/syarat">Syarat & Ketentuan</Link></nav>
         </div>
-        <div className="ln-wrap ln-copy">© {new Date().getFullYear()} PRASARA</div>
+        <div className="ln-wrap ln-copy">© {new Date().getFullYear()} PRASARA. Hak cipta dilindungi.</div>
       </footer>
     </div>
   );

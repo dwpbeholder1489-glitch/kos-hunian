@@ -63,8 +63,8 @@ const MENUS = [
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
 const PARTS = [
   ['A', 'Persiapan (sekali saja)', [
-    ['Daftar dan kenalkan bisnis Anda', 'Halaman depan › Mulai Gratis 30 Hari', [
-      <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Gratis 30 Hari</b>, isi email dan kata sandi, lalu <b>Buat akun</b>. Buka email Anda dan ketuk tautan konfirmasi.</>,
+    ['Daftar dan kenalkan bisnis Anda', 'Halaman depan › Mulai Sekarang', [
+      <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Sekarang</b>, isi email dan kata sandi, lalu <b>Buat akun</b>. Buka email Anda dan ketuk tautan konfirmasi.</>,
       <>Masuk. Di <b>Apa jenis bisnis yang Anda miliki atau kelola?</b> pilih satu atau lebih kategori (mis. Properti & Hunian, Retail, Laundry), lalu <b>Lanjut</b>.</>,
       <>Untuk tiap bisnis isi <b>nama</b>, <b>subkategori</b>, <b>lokasi</b>, <b>status bisnis</b>, <b>hubungan Anda</b>, <b>jumlah cabang</b>, dan pertanyaan singkat (mis. kos: jumlah kamar; laundry: layanan, jam, antar jemput).</>,
       <>Tekan <b>Tinjau</b> lalu <b>Buat draf bisnis</b>. Tiap bisnis dibuat terpisah sebagai <b>draf</b> — lanjutkan di <b>Pusat Konfirmasi</b> (Langkah 64) untuk melengkapi & mengaktifkannya.</>,
