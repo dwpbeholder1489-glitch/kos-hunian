@@ -1,6 +1,7 @@
 'use client';
 import Linkify from '@/components/Linkify';
 import { compressImage } from '@/lib/image';
+import { ItemThumb } from '@/components/media/PublicPics';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
@@ -282,7 +283,7 @@ function ApplyForm({ page, rooms }) {
       <span className="label">1. Pilih kamar</span>
       <div className="list">{rooms.map((r) => (
         <label key={r.id} className="li" style={{ cursor: 'pointer', alignItems: 'center' }}>
-          <span className="row small" style={{ flexWrap: 'nowrap' }}><input type="radio" name="kamar" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.room_id === r.id} onChange={() => set('room_id', r.id)} /><span><b>{r.name}</b>{r.facilities?.length ? <span className="muted"> · {r.facilities.join(', ')}</span> : null}</span></span>
+          <span className="row small" style={{ flexWrap: 'nowrap' }}><input type="radio" name="kamar" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.room_id === r.id} onChange={() => set('room_id', r.id)} /><ItemThumb pics={page.media?.items?.[r.id]} name={r.name} size={48} /><span><b>{r.name}</b>{r.facilities?.length ? <span className="muted"> · {r.facilities.join(', ')}</span> : null}</span></span>
           {r.units?.[0]?.price != null && <span className="small" style={{ whiteSpace: 'nowrap' }}>{rp(r.units[0].price)}/bln</span>}
         </label>
       ))}</div>

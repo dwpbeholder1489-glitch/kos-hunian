@@ -7,6 +7,7 @@ import { Sheet, Field, Loading, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp } from '@/lib/format';
 import { qtyNum } from '@/lib/retail';
 import { terms } from '@/lib/jasa';
+import EntityPhotos from '@/components/media/EntityPhotos';
 
 const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
 const UNITS_K = ['porsi', 'pcs', 'gelas', 'cup', 'botol', 'bungkus', 'box', 'paket', 'kg', 'loyang'];
@@ -124,6 +125,7 @@ function ServiceForm({ kosId, T, s, cats, onClose, onSaved }) {
   };
   return (
     <Sheet title={s.id ? `Ubah ${T.svc.toLowerCase()}` : `${T.svc} baru`} onClose={onClose}>
+      {s.id && <EntityPhotos kosId={kosId} entity="service" entityId={s.id} category="layanan" title={`Foto ${T.svc.toLowerCase()}`} max={6} hint={T.kul ? 'Opsional. Foto menu tampil di halaman bisnis.' : 'Opsional. Foto layanan / hasil kerja tampil di halaman bisnis.'} />}
       <Field label={`Nama ${T.svc.toLowerCase()}`}><input value={f.name} onChange={(e) => set('name', e.target.value)} maxLength={80} placeholder={T.kul ? 'mis. Nasi goreng spesial' : 'mis. Cuci kering setrika'} /></Field>
       <div className="row">
         <Field label="Kelompok"><input value={f.category} onChange={(e) => set('category', e.target.value)} maxLength={40} list="svc-cats" /></Field>

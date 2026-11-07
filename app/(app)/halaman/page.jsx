@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import LogoUpload from '@/components/LogoUpload';
+import EntityPhotos from '@/components/media/EntityPhotos';
 import { Field, Loading, Tile, toast } from '@/components/ui';
 import { errMsg, angka, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -54,6 +55,11 @@ export default function Halaman() {
     <div className="stack">
       <div className="row"><h2>Halaman bisnis</h2><PageHelp page="halaman" /></div>
       {canArea(kos, 'settings') && <section className="panel"><span className="label">Logo</span><LogoUpload /><span className="small muted">Tampil di halaman bisnis dan di aplikasi (pojok kiri atas). Gambar persegi paling bagus.</span></section>}
+      {canArea(kos, 'settings') && <section className="panel">
+        <EntityPhotos kosId={kosId} entity="kos_cover" category="cover" title="Cover (opsional)" max={1} hint="Satu foto lebar (16:9) di bagian atas halaman, mis. tampak depan." />
+        <EntityPhotos kosId={kosId} entity="kos_gallery" category="galeri" title="Galeri" max={12} hint={retail ? 'Mis. tampak depan, rak barang, area parkir.' : jasa ? 'Mis. tempat usaha, peralatan, hasil kerja.' : 'Mis. tampak depan, dapur bersama, parkir, kamar mandi.'} />
+        <span className="small muted">Semua foto juga ada di <Link href="/media">Foto & media</Link>; foto yang sama bisa dipakai di beberapa tempat tanpa diunggah ulang.</span>
+      </section>}
       <p className="small muted" style={{ margin: 0 }}>Satu tautan untuk pelanggan: profil {kos.name}, {retail ? 'katalog barang' : jasa ? 'daftar layanan' : 'kamar yang tersedia'}, dan formulir permintaan. Setiap permintaan masuk ke <Link href="/crm">Prospek & tindak lanjut</Link> — bukan penjualan otomatis.</p>
 
       {saved?.enabled ? (

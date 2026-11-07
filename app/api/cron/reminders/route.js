@@ -30,7 +30,19 @@ export async function GET(req) {
       lampiran = { ok: true, dibersihkan: rows?.length || 0 };
     }
   } catch (e) { lampiran = { ok: false, error: e.message }; }
-  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && lampiran.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, lampiran };
+  // Media (foto publik): file lama setelah diganti/dihapus + unggahan yang tidak selesai
+  let media = { ok: true, skipped: 'belum dikonfigurasi' };
+  try {
+    const sb = adminDb();
+    if (sb) {
+      const { data: rows, error } = await sb.rpc('media_purge_list', { p_limit: 1000 });
+      if (error && !/media_purge_list/.test(error.message)) throw error;
+      const paths = (rows || []).map((x) => x.path).filter(Boolean);
+      if (paths.length) { const r = await sb.storage.from('media').remove(paths); if (r.error && !/not found/i.test(r.error.message)) throw r.error; await sb.rpc('media_purged', { p_paths: paths }); }
+      media = { ok: true, dibersihkan: paths.length };
+    }
+  } catch (e) { media = { ok: false, error: e.message }; }
+  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, lampiran, media };
   console.log('[cron daily]', JSON.stringify(res));
   try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });

@@ -546,3 +546,22 @@ export function ScrMeja() {
     </Phone>
   );
 }
+
+export function ScrMedia() {
+  const C = ['#d9c6a5', '#c8d6df', '#e6dcc9', '#efe7da', '#dfe8e1', '#f1e3d3'];
+  const F = ['#7a5c3a', '#3a5a7a', '#556b2f', '#8b4513', '#2f4f4f', '#a0522d'];
+  return (
+    <Phone tab="Foto & media" tabs={['Beranda', 'Kamar', 'Tagihan', 'Pembayaran']} name="Kos Contoh">
+      <Title>Pustaka media</Title>
+      <div className="panel" style={{ gap: 4 }}><span className="small">Penyimpanan <b>12 MB</b> dari 50 MB</span><div style={{ height: 5, borderRadius: 9, background: 'var(--line)' }}><div style={{ width: '24%', height: '100%', borderRadius: 9, background: 'var(--gold)' }} /></div></div>
+      <div className="seg"><button className="on">Semua (6)</button><button>Kamar (3)</button></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 5 }}>{C.map((c, i) => (
+        <div key={c} style={{ aspectRatio: '1/1', borderRadius: 8, background: c, position: 'relative', overflow: 'hidden', border: '1px solid var(--line)' }}>
+          <div style={{ position: 'absolute', left: '10%', right: '10%', bottom: '10%', height: '35%', background: F[i] }} />
+          <span style={{ position: 'absolute', left: 4, top: 4, fontSize: 9, background: 'rgba(15,26,42,.78)', color: '#fff', borderRadius: 9, padding: '1px 5px' }}>{i === 4 ? 'Belum dipakai' : 'Dipakai'}</span>
+        </div>
+      ))}</div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

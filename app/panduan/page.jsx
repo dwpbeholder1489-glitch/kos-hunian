@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -517,6 +517,15 @@ const PARTS = [
       <>Tekan <b>Kabari … via WhatsApp</b>, lalu kirim link <b>Portal penghuni</b> dari detail penghuni.</>,
     ], <>Kamar hanya bisa dipilih bila masih kosong di tanggal itu; nomor kontak darurat harus nomor orang lain. Bukti transfer bukan bukti sah sampai Anda cek mutasi — pembayaran hanya tercatat bila Anda mengisinya saat konfirmasi. Konfirmasi hanya bisa sekali (tidak ada penghuni/tagihan dobel). Foto bukti hanya bisa dibuka pemilik & bagian sewa.</>, 'warn', null],
   ]],
+  ['O', 'Foto & media', [
+    ['Foto kamar, barang, layanan, cover & galeri', 'Lainnya › Foto & media · Kamar/Barang/Layanan › + Foto · Halaman bisnis', [
+      <>Tempelkan foto langsung di datanya: <b>Kamar</b> › ketuk kamar › <b>+ Foto</b>; <b>Barang</b> › ubah barang › <b>+ Foto</b>; <b>Layanan/Menu</b> › ketuk layanan › <b>+ Foto</b>; <b>Halaman bisnis</b> › <b>Cover</b> (1 foto lebar) dan <b>Galeri</b> (maks 12).</>,
+      <><b>+ Foto</b> › <b>Unggah foto baru</b> (📷 Kamera atau 🖼 Galeri, bisa beberapa sekaligus) atau <b>Pilih dari pustaka media</b> (foto yang sudah ada, tanpa unggah ulang). Sebelum menyimpan: pilih rasio (Asli, 1:1, 4:3, 3:4, 16:9), <b>↻ Putar</b>, dan geser posisi agar bagian penting tidak terpotong. Tekan <b>Simpan</b>; bila gagal, tekan Simpan lagi untuk mencoba ulang.</>,
+      <>Foto pertama = <b>foto utama</b> (tampil di daftar). Ketuk foto: <b>Jadikan utama</b>, <b>Ganti foto ini</b> (hanya di tempat ini), atau <b>Lepas</b> (file tetap di pustaka).</>,
+      <>Menu <b>Foto & media</b>: semua foto, kuota penyimpanan, filter kategori, pencarian, dan <b>Dipakai di</b> mana saja. <b>Ganti gambar</b> = berlaku di semua tempat yang memakainya. <b>Hapus</b> foto yang masih dipakai meminta konfirmasi dan melepasnya dari semua tempat.</>,
+      <>Di halaman bisnis publik: cover di atas, galeri yang bisa digeser, dan foto kecil di samping tiap kamar/barang/layanan — ketuk untuk memperbesar. Foto kamar hanya tampil bila kamar tersedia.</>,
+    ], <>Foto di sini bersifat <b>publik</b> (untuk ditampilkan ke pelanggan). Dokumentasi internal — nota, bukti transfer, kondisi kamar/barang — tetap lewat <b>📎 Lampiran</b> di tiap data (privat). Foto dikecilkan di HP sebelum dikirim (maks 1600 px + thumbnail) agar hemat kuota dan cepat dibuka; kuota dihitung bersama lampiran sesuai paket. <b>Segera hadir</b>: saran foto & deskripsi otomatis oleh AI.</>, 'warn', <ScrMedia />],
+  ]],
 ];
 
 const RULES = [
@@ -574,6 +583,7 @@ export default function Panduan() {
           <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
           <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
+          <div><b>Foto & media</b><span><a href="#bagian-O">Langkah 71</a><br />Foto kamar, barang, layanan, cover & galeri; pustaka media</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>

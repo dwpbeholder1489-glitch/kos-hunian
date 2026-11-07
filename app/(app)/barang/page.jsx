@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import LokasiBar from '@/components/LokasiBar';
+import EntityPhotos from '@/components/media/EntityPhotos';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, MOVE } from '@/lib/retail';
@@ -142,6 +143,7 @@ function ProductForm({ kosId, p, units, bahan, onClose, onSaved }) {
   return (
     <Sheet title={p ? 'Ubah barang' : 'Tambah barang'} onClose={onClose}>
       <Field label={bahan ? 'Nama bahan' : 'Nama barang'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={bahan ? 'mis. Deterjen cair' : 'mis. Minyak goreng 2L'} /></Field>
+      {p && !bahan && <EntityPhotos kosId={kosId} entity="product" entityId={p.id} category="produk" title="Foto barang" max={6} hint="Opsional. Foto utama tampil di katalog halaman bisnis." />}
       <Field label="Kode barang (opsional)" hint="kode sendiri, mis. MG-2L"><input value={sku} maxLength={40} autoCapitalize="characters" onChange={(e) => setSku(e.target.value)} /></Field>
       <div className="row">
         <Field label="Satuan terkecil" hint="pcs / bungkus / kg / liter"><input value={base} maxLength={20} placeholder="mis. kg" onChange={(e) => setBase(e.target.value)} /></Field>

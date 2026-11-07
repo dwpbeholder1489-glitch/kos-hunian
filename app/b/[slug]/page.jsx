@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import PublicForm from '@/components/PublicForm';
 import Linkify from '@/components/Linkify';
 import { logoUrl } from '@/lib/logo';
+import { PublicCover, PublicGallery, ItemThumb } from '@/components/media/PublicPics';
 
 export const revalidate = 60;
 
@@ -13,7 +14,14 @@ async function getPage(slug) {
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const r = await fetch(`${url}/rest/v1/rpc/public_page_view`, { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_slug: slug }), next: { revalidate: 60 } });
     if (!r.ok) return null;
-    return await r.json();
+    const page = await r.json();
+    if (!page) return null;
+    // foto (cover, galeri, foto item) — halaman tetap tampil walau bagian ini gagal
+    try {
+      const m = await fetch(`${url}/rest/v1/rpc/public_media`, { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_slug: slug }), next: { revalidate: 60 } });
+      if (m.ok) page.media = await m.json();
+    } catch {}
+    return page;
   } catch { return null; }
 }
 
@@ -22,7 +30,9 @@ export async function generateMetadata({ params }) {
   const p = await getPage(slug);
   if (!p) return { title: 'Halaman tidak ditemukan', robots: { index: false } };
   const desc = p.tagline || (p.type === 'retail' ? `Katalog & pemesanan ${p.name}` : p.type === 'jasa' ? `Layanan & harga ${p.name}` : `Info kamar & sewa ${p.name}`);
-  return { title: p.name, description: desc, openGraph: { title: p.name, description: desc, type: 'website' } };
+  const img = p.media?.cover?.path || p.media?.gallery?.[0]?.path;
+  const og = img && process.env.NEXT_PUBLIC_SUPABASE_URL ? [`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${img}`] : undefined;
+  return { title: p.name, description: desc, openGraph: { title: p.name, description: desc, type: 'website', ...(og ? { images: og } : {}) } };
 }
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
@@ -36,6 +46,7 @@ export default async function PublicPage({ params }) {
   const retail = p.type === 'retail';
   return (
     <main className="wrap stack" style={{ maxWidth: 640, paddingTop: 20, paddingBottom: 40 }}>
+      <PublicCover cover={p.media?.cover} name={p.name} />
       <header className="stack" style={{ gap: 6 }}>
         <div className="row" style={{ flexWrap: 'nowrap', gap: 12 }}>
           {logoUrl(p.logo) && <img src={logoUrl(p.logo)} alt={`Logo ${p.name}`} width={56} height={56} style={{ borderRadius: 12, objectFit: 'cover', flex: 'none', border: '1px solid var(--line)' }} />}
@@ -49,12 +60,14 @@ export default async function PublicPage({ params }) {
         ))}</div>}
       </header>
       {p.about && <section className="panel"><h3>Tentang kami</h3><p style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.about} /></p></section>}
+      <PublicGallery items={p.media?.gallery} title={p.type === 'properti' ? 'Foto kos & fasilitas' : 'Galeri'} />
       {p.items?.length > 0 && (
         <section className="panel">
           <h3>{retail ? 'Barang' : p.type === 'jasa' ? 'Layanan' : 'Kamar tersedia'}</h3>
           <div className="list">{p.items.map((it) => (
-            <div className="li" key={it.id} style={{ alignItems: 'flex-start' }}>
-              <div className="main"><b className="small">{it.name}</b>
+            <div className="li" key={it.id} style={{ alignItems: 'flex-start', justifyContent: 'flex-start', gap: 10 }}>
+              <ItemThumb pics={p.media?.items?.[it.id]} name={it.name} />
+              <div className="main" style={{ flex: 1 }}><b className="small">{it.name}</b>
                 {!retail && it.facilities?.length > 0 && <span className="small muted">{it.facilities.join(', ')}</span>}
                 {it.note && <span className="small muted">{it.note}</span>}
                 {p.show_prices && <span className="small">{it.units.filter((u) => u.price != null).map((u) => `${rp(u.price)}/${u.name}`).join(' · ')}</span>}</div>

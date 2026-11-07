@@ -8,7 +8,8 @@ import { Sheet, Field, Loading, Empty, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet } from '@/components/LeaseForms';
 import { rp, tgl, angka, parseRp, ROOM_ST, errMsg } from '@/lib/format';
 import Link from 'next/link';
-import { moduleOn } from '@/lib/business';
+import { moduleOn, canArea } from '@/lib/business';
+import EntityPhotos from '@/components/media/EntityPhotos';
 
 export default function Kamar() {
   const d = useData();
@@ -67,6 +68,8 @@ function RoomDetail({ d, room, go, onClose }) {
         {room.facilities?.length > 0 && <><dt>Fasilitas</dt><dd>{room.facilities.join(', ')}</dd></>}
         {room.notes && <><dt>Catatan</dt><dd>{room.notes}</dd></>}
       </dl>
+      <EntityPhotos kosId={kos.id} entity="room" entityId={room.id} category="kamar" title="Foto kamar" max={8} canEdit={canArea(kos, 'rent')}
+        hint="Belum ada foto. Foto kamar tampil di halaman bisnis saat kamar tersedia — calon penghuni lebih yakin bila bisa melihat kamarnya." />
       {occ ? (
         <section className="panel">
           <span className="label">Penghuni sekarang</span>
