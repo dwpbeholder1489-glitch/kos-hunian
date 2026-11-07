@@ -62,6 +62,7 @@ export default function JasaHome() {
           {canArea(kos, 'settings') && moduleOn(kos, 'u_halaman') && <Link href="/halaman" className="li" style={{ textDecoration: 'none', color: 'inherit' }}><span className="small">4. Terbitkan halaman bisnis untuk pelanggan</span><span className="small">→</span></Link>}
         </div>
       </section>}
+      {Number(s?.permintaan) > 0 && d.money && <Link href="/pesanan" className="notice" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}><b>{s.permintaan} pesanan dari halaman bisnis</b> menunggu konfirmasi →</Link>}
       <div className="grid">
         <Tile label="Pesanan baru hari ini" value={angka(s?.baru_hari_ini ?? 0)} sub={`${angka(s?.selesai_hari_ini ?? 0)} selesai hari ini`} />
         {logi && <Tile label="Menunggu penjemputan" value={angka(s?.menunggu_jemput ?? jemput.length)} tone={jemput.length ? 'gold' : undefined} />}

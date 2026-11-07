@@ -13,12 +13,22 @@ export default function PublicForm({ page }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [msg, setMsg] = useState('');
+  const [date, setDate] = useState(''); // kos: rencana masuk; jasa: tanggal jemput/antar
   const [pick, setPick] = useState({}); // id → { unit, qty }
   const [consent, setConsent] = useState(false);
   const [hp, setHp] = useState(''); // jebakan bot (tidak terlihat)
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
   const [err, setErr] = useState('');
+  // jasa: pesanan langsung (status "Permintaan masuk" sampai dikonfirmasi pemilik)
+  const ord = jasa ? page.order : null;
+  const [pickup, setPickup] = useState(false);
+  const [deliver, setDeliver] = useState(false);
+  const [zone, setZone] = useState('');
+  const [addr, setAddr] = useState('');
+  const [pSlot, setPSlot] = useState('');
+  const [dDate, setDDate] = useState('');
+  const [dSlot, setDSlot] = useState('');
   const items = (page.items || []).filter((i) => i.available);
   const chosen = Object.entries(pick).filter(([, v]) => Number(String(v.qty).replace(',', '.')) > 0);
   const total = useMemo(() => chosen.reduce((s, [id, v]) => {
@@ -26,12 +36,32 @@ export default function PublicForm({ page }) {
     return s + (u?.price != null ? u.price * Number(String(v.qty).replace(',', '.')) : 0);
   }, 0), [pick]);
 
+  const ordering = Boolean(ord) && chosen.length > 0;
+  const logi = ordering && ord.logistics && (pickup || deliver);
+  const zoneObj = (ord?.zones || []).find((z) => z.id === zone);
+  const minDate = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
   const send = async (e) => {
     e.preventDefault(); setErr('');
+    if (logi && (ord.zones || []).length && !zone) return setErr('Pilih wilayah Anda. Bila tidak ada di daftar, hubungi kami lewat WhatsApp.');
+    if (logi && addr.trim().length < 5) return setErr('Isi alamat lengkap untuk antar jemput.');
     setBusy(true);
+    if (ordering) {
+      try {
+        const r = await fetch('/api/publik/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          order: true, slug: page.slug, name, phone, note: msg, consent, website: hp, elapsed: Math.round((Date.now() - started.current) / 1000),
+          lines: chosen.map(([id, v]) => ({ service_id: id, qty: Number(String(v.qty).replace(',', '.')) })),
+          pickup: logi && pickup, deliver: logi && deliver, address: addr, zone_id: zone || null,
+          pickup_date: pickup && date ? date : null, pickup_slot: pickup ? pSlot : null, delivery_date: deliver && dDate ? dDate : null, delivery_slot: deliver ? dSlot : null,
+        }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.');
+        else setDone({ order: true, number: d.number, total: d.total });
+      } catch { setErr('Koneksi terputus. Coba lagi.'); }
+      setBusy(false); return;
+    }
     try {
       const r = await fetch('/api/publik/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-        slug: page.slug, name, phone, message: msg, consent, website: hp, elapsed: Math.round((Date.now() - started.current) / 1000),
+        slug: page.slug, name, phone, message: msg, date: date || null, consent, website: hp, elapsed: Math.round((Date.now() - started.current) / 1000),
         items: chosen.map(([id, v]) => ({ id, unit: v.unit, qty: Number(String(v.qty).replace(',', '.')) })),
       }) });
       const d = await r.json().catch(() => ({}));
@@ -41,6 +71,15 @@ export default function PublicForm({ page }) {
     setBusy(false);
   };
 
+  if (done?.order) return (
+    <section className="panel">
+      <h3>Pesanan terkirim, {name.trim()}!</h3>
+      <p style={{ margin: 0 }}>Nomor pesanan Anda <b>{done.number}</b>. Status: <b>Menunggu konfirmasi</b> dari {page.name}.</p>
+      {page.show_prices && done.total != null && <span className="small">Perkiraan total {rp(done.total)} — dihitung ulang saat barang diterima (mis. berat sebenarnya).</span>}
+      <span className="small muted">Pembayaran dilakukan langsung ke {page.name}; pesanan belum dibayar. Simpan nomor pesanan untuk cek status.</span>
+      <a href={`/b/${page.slug}/cek?no=${encodeURIComponent(done.number)}`}><button className="primary">Cek status pesanan</button></a>
+    </section>
+  );
   if (done) return (
     <section className="panel">
       <h3>Terima kasih, {name.trim()}!</h3>
@@ -51,6 +90,7 @@ export default function PublicForm({ page }) {
   return (
     <form className="panel stack" onSubmit={send}>
       <h3>{retail ? 'Pesan / tanya barang' : jasa ? 'Pesan / tanya layanan' : 'Tanya / booking kamar'}</h3>
+      {ord && <span className="small muted">Pilih layanan untuk memesan langsung, atau kosongkan untuk bertanya saja.</span>}
       {page.form_intro && <p className="small" style={{ margin: 0 }}><Linkify text={page.form_intro} /></p>}
       {items.length > 0 && <>
         <span className="label">{retail ? 'Pilih barang (opsional)' : jasa ? 'Pilih layanan (opsional)' : 'Pilih kamar (opsional)'}</span>
@@ -71,7 +111,30 @@ export default function PublicForm({ page }) {
         })}</div>
         {total > 0 && <span className="small">Perkiraan: <b>{rp(total)}</b> (belum termasuk ongkos; dikonfirmasi penjual)</span>}
       </>}
-      <label className="f">{retail || jasa ? 'Pesan / kebutuhan' : 'Pesan (mis. mulai kapan, berapa orang)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : jasa ? 'mis. bisa dijemput hari ini? Alamat Jl. Melati 12.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
+      {ordering && ord.logistics && <>
+        <span className="label">Antar jemput (opsional)</span>
+        <div className="row">
+          <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pickup} onChange={(e) => setPickup(e.target.checked)} />Dijemput</label>
+          <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={deliver} onChange={(e) => setDeliver(e.target.checked)} />Diantar</label>
+        </div>
+        {logi && <>
+          {(ord.zones || []).length > 0 && <label className="f">Wilayah<select value={zone} onChange={(e) => setZone(e.target.value)}><option value="">— pilih wilayah —</option>{ord.zones.map((z) => <option key={z.id} value={z.id}>{z.name}{page.show_prices ? ` · ${Number(z.fee) > 0 ? rp(z.fee) : 'gratis'}` : ''}</option>)}</select></label>}
+          {zoneObj?.note && <span className="small muted">{zoneObj.note}</span>}
+          <span className="small muted">Hanya wilayah di daftar yang dilayani. Di luar itu, hubungi kami lewat WhatsApp.</span>
+          <label className="f">Alamat lengkap<input value={addr} onChange={(e) => setAddr(e.target.value)} maxLength={200} placeholder="jalan, nomor rumah, patokan" autoComplete="street-address" /></label>
+          {pickup && <div className="row">
+            <label className="f" style={{ flex: 1 }}>Tanggal jemput<input type="date" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} /></label>
+            {(ord.slots || []).some((s) => s.kind !== 'antar') && <label className="f" style={{ flex: 1 }}>Jam jemput<select value={pSlot} onChange={(e) => setPSlot(e.target.value)}><option value="">— bebas —</option>{ord.slots.filter((s) => s.kind !== 'antar').map((s) => <option key={s.label}>{s.label}</option>)}</select></label>}
+          </div>}
+          {deliver && <div className="row">
+            <label className="f" style={{ flex: 1 }}>Tanggal antar<input type="date" value={dDate} min={minDate} onChange={(e) => setDDate(e.target.value)} /></label>
+            {(ord.slots || []).some((s) => s.kind !== 'jemput') && <label className="f" style={{ flex: 1 }}>Jam antar<select value={dSlot} onChange={(e) => setDSlot(e.target.value)}><option value="">— bebas —</option>{ord.slots.filter((s) => s.kind !== 'jemput').map((s) => <option key={s.label}>{s.label}</option>)}</select></label>}
+          </div>}
+          {zoneObj && page.show_prices && <span className="small">Ongkos antar jemput: <b>{Number(zoneObj.fee) > 0 ? rp(zoneObj.fee) : 'gratis'}</b></span>}
+        </>}
+      </>}
+      {!retail && !ordering && <label className="f">{jasa ? 'Tanggal jemput / diantar (opsional)' : 'Rencana mulai tinggal'}<input type="date" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} /></label>}
+      <label className="f">{ordering ? 'Catatan (opsional)' : retail || jasa ? 'Pesan / kebutuhan' : 'Pesan (mis. berapa orang, pertanyaan)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : jasa ? 'mis. bisa dijemput hari ini? Alamat Jl. Melati 12.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
       <label className="f">Nama<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required autoComplete="name" /></label>
       <label className="f">No. WhatsApp<input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} required autoComplete="tel" placeholder="08…" /></label>
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>
@@ -82,7 +145,8 @@ export default function PublicForm({ page }) {
         <span>Saya setuju nama dan No. WhatsApp ini disimpan {page.name} hanya untuk menghubungi saya tentang permintaan ini.</span>
       </label>
       {err && <div className="notice bad">{err}</div>}
-      <button className="cta" type="submit" disabled={busy || !consent || name.trim().length < 2 || phone.replace(/\D/g, '').length < 9}>{busy ? 'Mengirim…' : 'Kirim permintaan'}</button>
+      {ordering && <span className="small muted">Pesanan masuk sebagai <b>menunggu konfirmasi</b>. {page.name} mengonfirmasi lewat WhatsApp; pembayaran langsung ke {page.name}.</span>}
+      <button className="cta" type="submit" disabled={busy || !consent || name.trim().length < 2 || phone.replace(/\D/g, '').length < 9}>{busy ? 'Mengirim…' : ordering ? 'Kirim pesanan' : 'Kirim permintaan'}</button>
     </form>
   );
 }

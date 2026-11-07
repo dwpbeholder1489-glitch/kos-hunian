@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import LogoUpload from '@/components/LogoUpload';
 import { Field, Loading, Sheet, toast } from '@/components/ui';
 import { rp, angka, errMsg } from '@/lib/format';
 import { waktu } from '@/lib/jasa';
@@ -174,18 +175,19 @@ export default function Konfirmasi() {
   const decided = (it) => ['approved', 'active', 'rejected', 'paused'].includes(it.status);
   const Item = ({ it }) => {
     const [label, tone] = ITEM_ST[it.status] || ['—', 'void'];
-    const editable = !['module', 'portal', 'pending', 'builder'].includes(it.input);
+    const editable = !['module', 'portal', 'pending', 'builder', 'logo'].includes(it.input);
     return (
       <div className="li" style={{ display: 'block' }}>
         <div className="row between" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
           <span className="small" style={{ minWidth: 0 }}><b>{it.label}</b>{it.must === 'approve' && <span className="muted"> · wajib</span>}{it.kind === 'modul' && it.value?.recommended && <span style={{ color: 'var(--good)' }}> · disarankan</span>}<br />
-            <span className={it.complete ? '' : 'muted'} style={{ overflowWrap: 'anywhere' }}>{it.input === 'pending' ? it.help : it.input === 'builder' ? (it.complete ? 'Business Builder sudah divalidasi & aktif' : 'Selesaikan di Business Builder › Validasi & aktifkan') : it.kind === 'modul' || it.kind === 'portal' ? it.help : show(it)}</span></span>
+            <span className={it.complete ? '' : 'muted'} style={{ overflowWrap: 'anywhere' }}>{it.input === 'pending' ? it.help : it.input === 'logo' ? (it.complete ? 'Logo sudah diunggah' : it.help) : it.input === 'builder' ? (it.complete ? 'Business Builder sudah divalidasi & aktif' : 'Selesaikan di Business Builder › Validasi & aktifkan') : it.kind === 'modul' || it.kind === 'portal' ? it.help : show(it)}</span></span>
           <span className={'chip ' + tone} style={{ flex: 'none' }}>{label}</span>
         </div>
         {it.note && <span className="small muted">Catatan: {it.note}</span>}
         <div className="row" style={{ marginTop: 6, gap: 6 }}>
           {editable && <button className="sm" onClick={() => setEdit(it)}>{it.complete ? 'Ubah' : 'Lengkapi'}</button>}
           {it.input === 'builder' && <Link href="/builder"><button className="sm">Buka Business Builder</button></Link>}
+          {it.input === 'logo' && <LogoUpload onChanged={load} />}
           {owner && it.input !== 'builder' && it.input !== 'pending' && !['approved', 'active'].includes(it.status) && <button className="sm primary" disabled={!it.complete} onClick={() => act(it, null, 'setujui')}>Setujui</button>}
           {owner && it.must !== 'approve' && it.input !== 'pending' && !['rejected', 'paused'].includes(it.status) && <>
             <button className="sm ghost" onClick={() => act(it, null, 'tunda')}>Tunda</button>

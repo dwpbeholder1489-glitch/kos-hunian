@@ -20,6 +20,7 @@ export default function Kasir() {
   const [q, setQ] = useState('');
   const [tier, setTier] = useState('ecer');
   const [cart, setCart] = useState([]);
+  const [lead, setLead] = useState(null); // permintaan halaman bisnis yang sedang diproses {id, number, name, phone}
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(null);
   const [shift, setShift] = useState(undefined);
@@ -33,8 +34,8 @@ export default function Kasir() {
   };
   useEffect(() => { load(); }, [kosId, ver]);
   // Keranjang disimpan di HP ini supaya tidak hilang saat pindah menu
-  useEffect(() => { try { const s = JSON.parse(localStorage.getItem(cartKey(kosId)) || 'null'); if (s) { setCart(s.cart || []); setTier(s.tier || 'ecer'); } } catch {} }, [kosId]);
-  useEffect(() => { try { localStorage.setItem(cartKey(kosId), JSON.stringify({ cart, tier })); } catch {} }, [cart, tier, kosId]);
+  useEffect(() => { try { const s = JSON.parse(localStorage.getItem(cartKey(kosId)) || 'null'); if (s) { setCart(s.cart || []); setTier(s.tier || 'ecer'); setLead(s.lead || null); } } catch {} }, [kosId]);
+  useEffect(() => { try { localStorage.setItem(cartKey(kosId), JSON.stringify({ cart, tier, lead })); } catch {} }, [cart, tier, lead, kosId]);
 
   const shown = useMemo(() => {
     if (!d) return [];
@@ -81,6 +82,9 @@ export default function Kasir() {
         <div className="seg">{[['ecer', 'Eceran'], ['grosir', 'Grosir']].map(([k, l]) => <button key={k} className={tier === k ? 'on' : ''} onClick={() => switchTier(k)} aria-pressed={tier === k}>{l}</button>)}</div>
       </div>
       <LokasiBar note="Stok yang tampil dan berkurang adalah stok di lokasi ini." />
+      {lead && <div className="notice small" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>Dari permintaan <b>{lead.number}</b> · {lead.name}. Setelah dibayar, prospeknya otomatis <b>Jadi</b>.</span>
+        <button className="sm ghost" aria-label="Lepaskan dari permintaan" onClick={() => setLead(null)}>✕</button></div>}
       {shift !== undefined && moduleOn(kos, 'r_shift') && <Link href="/shift" className="small">{shift ? `Shift berjalan · seharusnya di laci ${rp(shift.summary.expected)} · Tutup shift →` : 'Belum buka shift · Buka shift (hitung uang laci) →'}</Link>}
       <div className="row" style={{ flexWrap: 'nowrap' }}>
         <input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari nama, kode, atau scan barcode" aria-label="Cari barang" style={{ flex: 1 }} />
@@ -117,20 +121,20 @@ export default function Kasir() {
           <span>Keranjang · {angka(count)} barang</span><b>{rp(total)} ›</b>
         </button>
       )}
-      {open && <Checkout kos={kos} kosId={kosId} d={d} tier={tier} cart={cart} setCart={setCart} onClose={() => setOpen(false)} reloadContacts={load}
-        onDone={(r) => { setOpen(false); setCart([]); setDone(r); load(); }} />}
+      {open && <Checkout kos={kos} kosId={kosId} d={d} tier={tier} cart={cart} setCart={setCart} lead={lead} onClose={() => setOpen(false)} reloadContacts={load}
+        onDone={(r) => { setOpen(false); setCart([]); setLead(null); setDone(r); load(); }} />}
       {done && <Done r={done} onClose={() => setDone(null)} />}
     </div>
   );
 }
 
-function Checkout({ kosId, d, tier, cart, setCart, onClose, onDone, reloadContacts }) {
+function Checkout({ kosId, d, tier, cart, setCart, lead, onClose, onDone, reloadContacts }) {
   const [discount, setDiscount] = useState('');
   const [method, setMethod] = useState('tunai');
   const [paid, setPaid] = useState('');
   const [contact, setContact] = useState('');
-  const [newName, setNewName] = useState('');
-  const [newPhone, setNewPhone] = useState('');
+  const [newName, setNewName] = useState(lead?.name || '');
+  const [newPhone, setNewPhone] = useState(lead?.phone || '');
   const [due, setDue] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -165,6 +169,7 @@ function Checkout({ kosId, d, tier, cart, setCart, onClose, onDone, reloadContac
         p_discount: disc, p_method: method, p_paid: method === 'tunai' ? paidN : null, p_contact: cid, p_due: method === 'kasbon' && due ? due : null, p_note: note,
       });
       if (error) throw error;
+      if (lead) { const r2 = await supabase.rpc('lead_mark_sold', { p_lead: lead.id, p_sale: txId }); if (r2.error) toast('Penjualan tersimpan, tetapi prospek belum ditandai Jadi: ' + errMsg(r2.error)); }
       onDone({ ...data, change: method === 'tunai' ? change : 0, method });
     } catch (e) { toast(errMsg(e)); }
     setBusy(false);

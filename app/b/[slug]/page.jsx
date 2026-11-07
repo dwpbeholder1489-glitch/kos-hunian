@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation';
 import PublicForm from '@/components/PublicForm';
 import Linkify from '@/components/Linkify';
+import { logoUrl } from '@/lib/logo';
 
 export const revalidate = 60;
 
@@ -36,7 +37,10 @@ export default async function PublicPage({ params }) {
   return (
     <main className="wrap stack" style={{ maxWidth: 640, paddingTop: 20, paddingBottom: 40 }}>
       <header className="stack" style={{ gap: 6 }}>
-        <h1 style={{ margin: 0, fontSize: 26 }}>{p.name}</h1>
+        <div className="row" style={{ flexWrap: 'nowrap', gap: 12 }}>
+          {logoUrl(p.logo) && <img src={logoUrl(p.logo)} alt={`Logo ${p.name}`} width={56} height={56} style={{ borderRadius: 12, objectFit: 'cover', flex: 'none', border: '1px solid var(--line)' }} />}
+          <h1 style={{ margin: 0, fontSize: 26 }}>{p.name}</h1>
+        </div>
         {p.tagline && <p style={{ margin: 0, fontSize: 16 }}>{p.tagline}</p>}
         <span className="small muted">{[p.address, p.hours].filter(Boolean).join(' · ')}</span>
         {p.wa_phone && <a href={wa(p.wa_phone, `Halo ${p.name}, saya lihat halaman Anda.`)} target="_blank" rel="noreferrer" style={{ alignSelf: 'flex-start' }}><button className="primary">Chat WhatsApp</button></a>}
@@ -61,6 +65,7 @@ export default async function PublicPage({ params }) {
         </section>
       )}
       <PublicForm page={p} />
+      {p.type === 'jasa' && p.order && <a href={`/b/${p.slug}/cek`} className="small" style={{ textAlign: 'center' }}>Sudah memesan? Cek status pesanan →</a>}
       {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.policy} /></p></section>}
       <footer className="small muted" style={{ textAlign: 'center' }}>Halaman ini dikelola {p.name} dengan <a href="/">PRASARA</a></footer>
     </main>

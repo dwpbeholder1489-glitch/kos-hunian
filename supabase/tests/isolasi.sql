@@ -57,6 +57,9 @@ begin
       ('svc_dashboard', format('select public.svc_dashboard(%L)', k)),
       ('svc_zone_save', format('select public.svc_zone_save(%L, null, ''{"name":"uji isolasi"}'')', k)),
       ('svc_slot_save', format('select public.svc_slot_save(%L, null, ''{"label":"08-10"}'')', k)),
+      ('lead_check', format('select public.lead_check((select id from public.crm_leads where kos_id = %L limit 1))', k)),
+      ('logo_prepare', format('select public.logo_prepare(%L)', k)),
+      ('logo_set', format('select public.logo_set(%L, null)', k)),
       ('bb_people', format('select public.bb_people(%L)', k)),
       ('booking_create', format('select public.booking_create(gen_random_uuid(), %L, ''{"name":"uji"}'')', k)),
       ('meter_record', format('select public.meter_record(%L, (select id from public.utility_types where kos_id = %L limit 1), current_date, current_date, ''[]'')', k, k))

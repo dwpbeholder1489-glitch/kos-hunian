@@ -339,13 +339,15 @@ const PARTS = [
       <>Tab <b>Tindak lanjut</b> berisi semua jadwal; yang jatuh hari ini atau terlewat berwarna merah dan muncul sebagai kotak <b>📞</b> di dashboard. Tekan <b>Kirim WA</b> lalu <b>Selesai</b>.</>,
     ], <>Angka "Jadi (90 hari)" = prospek jadi ÷ (jadi + tidak jadi) yang ditutup 90 hari terakhir. Catatan tidak bisa dihapus agar riwayat utuh. Simpan seperlunya saja (nama, No. HP, kebutuhan); jangan mencatat data pribadi sensitif. Kasir dan penjaga juga bisa memakai menu ini.</>, null, null],
     ['Halaman bisnis untuk pelanggan', 'Lainnya › Halaman bisnis (pemilik)', [
-      <>Isi <b>alamat halaman</b> (mis. toko-subur), kalimat singkat, tentang, alamat, jam buka, dan No. WhatsApp untuk pelanggan.</>,
+      <>Unggah <b>Logo</b> (gambar persegi; dikecilkan otomatis). Isi <b>alamat halaman</b> (mis. toko-subur), kalimat singkat, tentang, alamat, jam buka, dan No. WhatsApp untuk pelanggan.</>,
       <>Pilih yang ditampilkan: toko — <b>barang cepat (★)</b> atau <b>semua barang aktif</b>; kos — <b>kamar yang tersedia</b>. Centang <b>Tampilkan harga jual</b> bila ingin harganya terlihat.</>,
       <>Tambahkan <b>Tautan</b> (maks 6): ketuk <b>+ 📍 Lokasi (Google Maps)</b>, <b>+ 📷 Instagram</b>, <b>+ 🖼️ Foto</b> atau <b>+ Tautan lain</b>, lalu tempel alamatnya (di aplikasi Maps/Instagram: <b>Bagikan › Salin tautan</b>). Tampil sebagai tombol di halaman. Alamat https:// yang Anda tulis di Tentang/Ketentuan juga bisa diketuk.</>,
       <>Tekan <b>Terbitkan</b>. Baca daftar yang akan terlihat publik, lalu setujui. Setelah terbit: <b>Salin tautan</b> atau <b>Bagikan ke WhatsApp</b> (status WA, grup, bio Instagram).</>,
       <>Pelanggan membuka tautan tanpa memasang aplikasi, memilih barang/kamar, mengisi nama & WhatsApp, menyetujui dihubungi, lalu <b>Kirim permintaan</b>. Mereka mendapat nomor permintaan (mis. PRM-261107-001).</>,
-      <>Permintaan masuk ke <b>Prospek & tindak lanjut</b> (tahap Baru, label nomor permintaan) dan muncul kotak <b>📨</b> di dashboard; email ke Anda bila dicentang. Hubungi lewat WA, konfirmasi harga & stok, lalu catat penjualannya di Kasir seperti biasa.</>,
-    ], <>Yang TIDAK pernah tampil: harga modal, laba, stok persis (hanya Tersedia/Habis), data pelanggan, dan catatan staf. Permintaan bukan penjualan final dan tidak mengubah stok, kas, atau jurnal. Spam dibatasi otomatis (terlalu cepat/terlalu sering dari satu perangkat ditolak). Tekan <b>Sembunyikan halaman</b> kapan saja; bisnis yang ditutup otomatis tidak tampil. Pembayaran online dan pesanan langsung jadi belum tersedia.</>, null, null],
+      <>Permintaan masuk ke <b>Prospek & tindak lanjut</b> (label <b>Perlu konfirmasi</b>); email ke Anda bila dicentang. Ketuk permintaannya: sistem sudah <b>mengecek otomatis</b> (kamar kosong pada tanggal itu, stok cukup, harga masih sama, No. HP ganda).</>,
+      <>Bila cocok tekan <b>Konfirmasi</b>: kos → <b>booking kamar</b> langsung dibuat (bisa sekalian catat DP); toko → <b>keranjang Kasir</b> terisi, prospek otomatis <b>Jadi</b> setelah dibayar. Lalu kabari pelanggan lewat tombol WhatsApp.</>,
+      <>Bisnis <b>jasa/laundry</b>: pelanggan yang memilih layanan langsung membuat <b>pesanan</b> (lihat Langkah 66); yang hanya bertanya masuk ke Prospek.</>,
+    ], <>Yang TIDAK pernah tampil: harga modal, laba, stok persis (hanya Tersedia/Habis), data pelanggan, dan catatan staf. Permintaan bukan penjualan final dan tidak mengubah stok, kas, atau jurnal. Spam dibatasi otomatis (terlalu cepat/terlalu sering dari satu perangkat ditolak). Tekan <b>Sembunyikan halaman</b> kapan saja; bisnis yang ditutup otomatis tidak tampil. Tanpa Konfirmasi Anda, tidak ada booking/pesanan/penjualan yang dibuat. Pembayaran online belum tersedia.</>, null, null],
   ]],
   ['G', 'Jasa & Laundry', [
     ['Buat bisnis laundry, atur layanan & tahap', 'Ketuk nama bisnis › + Tambah bisnis › Laundry & Jasa Rumah Tangga; lalu Lainnya › Layanan & tahap', [
@@ -476,6 +478,12 @@ const PARTS = [
       <>Tab <b>Antar</b>: pesanan siap yang harus diantar. Tekan <b>Berangkat antar</b> (status jadi <b>Dalam pengantaran</b>), lalu <b>Sudah diterima pelanggan</b> — pesanan selesai.</>,
       <>Gagal jemput/antar (pelanggan tidak di rumah)? Tekan <b>Gagal</b>, tulis alasannya, lalu jadwalkan ulang.</>,
     ], <>Pesanan yang dijemput baru bisa diproses setelah <b>Sudah dijemput</b>. Hanya wilayah di daftar yang bisa dipilih — alamat di luar wilayah tidak dianggap terlayani. Petugas proses bisa menjemput/mengantar dan melihat No. HP pelanggan antar jemput, tetapi hanya bisa menyerahkan pesanan yang sudah lunas; penagihan oleh kasir/pemilik. Pembayaran tetap terpisah: pesanan tidak otomatis lunas. Semua langkah tercatat di Riwayat pesanan.</>, 'warn', <ScrAntar />],
+    ['Pesanan dari halaman bisnis & cek status', 'Halaman bisnis (pelanggan) › Pesanan (Anda)', [
+      <>Pelanggan membuka halaman bisnis Anda, memilih layanan & jumlah, memilih <b>Dijemput/Diantar</b> (hanya wilayah dan jam yang Anda atur), mengisi alamat, nama & WhatsApp, lalu <b>Kirim pesanan</b>. Mereka mendapat nomor pesanan (mis. PSN-261107-004).</>,
+      <>Pesanan masuk ke <b>Pesanan</b> dengan status <b>Permintaan masuk</b> (dashboard menampilkan pemberitahuan; email bila dicentang). Ketuk pesanannya: periksa layanan, jadwal & alamat, ubah ongkos bila perlu, lalu <b>Konfirmasi</b> — atau <b>Tolak</b> dengan alasan. Kabari lewat <b>WA pelanggan</b>.</>,
+      <>Setelah dikonfirmasi pesanan berjalan seperti biasa (jemput → proses → siap → antar/ambil). Berat sebenarnya diisi lewat <b>Ubah isi</b> saat barang diterima.</>,
+      <>Pelanggan bisa membuka <b>Cek status pesanan</b> di halaman bisnis dengan nomor pesanan + No. WhatsApp yang sama: terlihat menunggu konfirmasi, dijemput, tahap proses, siap, dalam pengantaran, selesai, serta lunas/belum.</>,
+    ], <>Permintaan belum bisa diproses sebelum dikonfirmasi. Harga dihitung server dari daftar layanan yang tersedia; layanan nonaktif tidak bisa dipesan. Pelanggan baru masuk daftar pelanggan saat Anda mengonfirmasi. Pembayaran tetap langsung ke Anda (tidak ada pembayaran online). Kiriman dibatasi per perangkat agar tidak di-spam.</>, 'warn', null],
   ]],
 ];
 
@@ -532,7 +540,7 @@ export default function Panduan() {
           <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–54</a><br />Deposit, keluhan & perbaikan, meteran listrik/air, booking kamar</span></div>
           <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
-          <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65</a><br />Wilayah, biaya, jadwal, jemput & antar</span></div>
+          <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

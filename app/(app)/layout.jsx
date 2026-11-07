@@ -15,6 +15,7 @@ import RetailBell from '@/components/RetailBell';
 import AnnounceBanner from '@/components/AnnounceBanner';
 
 import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, primaryTabs, pathModuleOff, moduleOn, isDraft, SETUP_STATUS } from '@/lib/business';
+import { logoUrl } from '@/lib/logo';
 
 const SHORT = { '/barang': 'Barang', '/laporan-toko': 'Laporan', '/kas': 'Kas', '/kontak': 'Kontak', '/shift': 'Shift', '/beranda': 'Beranda', '/konfirmasi': 'Konfirmasi', '/bisnis': 'Ringkasan' };
 
@@ -56,7 +57,7 @@ export default function AppLayout({ children }) {
         <div className="wrap">
           <div className="brandrow">
             <button className="bizbtn" onClick={() => setSheet('biz')} aria-label={`${kos.name}, ganti bisnis`}>
-              <span className="mark">P</span>
+              {logoUrl(kos.profile?.logo_path) ? <img className="mark" src={logoUrl(kos.profile.logo_path)} alt="" style={{ objectFit: 'cover', padding: 0 }} /> : <span className="mark">P</span>}
               <span className="t"><b>{kos.name}</b><small>{type.name}{role !== 'pemilik' ? ` · ${ROLES[role]?.name || role}` : ''}</small></span>
               <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>

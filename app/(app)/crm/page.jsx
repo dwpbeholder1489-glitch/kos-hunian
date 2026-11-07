@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import Timeline from '@/components/CrmTimeline';
+import LeadCheck from '@/components/LeadCheck';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
 import { rp, tgl, today, errMsg, angka, waLink, parseRp } from '@/lib/format';
 import Link from 'next/link';
@@ -29,6 +30,7 @@ export default function Crm() {
   if (!d) return <Loading />;
   const active = d.leads.filter((l) => !['jadi', 'batal'].includes(l.stage));
   const shown = stage === 'aktif' ? active : d.leads.filter((l) => l.stage === stage);
+  const waiting = active.filter((l) => l.source === 'halaman' && !l.ref_id && Array.isArray(l.items) && l.items.length > 0);
   const conv = d.won90 + d.lost90 > 0 ? Math.round((100 * d.won90) / (d.won90 + d.lost90)) : null;
   const doneTask = async (t) => { const { error } = await supabase.rpc('crm_task_done', { p_task: t.id, p_done: true }); if (error) return toast(errMsg(error)); toast('Tindak lanjut selesai'); load(); };
 
@@ -47,6 +49,7 @@ export default function Crm() {
       </div>
 
       {tab === 'prospek' && <>
+        {waiting.length > 0 && <div className="notice small"><b>{waiting.length} permintaan dari halaman bisnis</b> menunggu konfirmasi. Ketuk untuk melihat hasil cek otomatis, lalu <b>Konfirmasi</b> bila cocok.</div>}
         <button className="cta" onClick={() => setOpen({})}>+ Prospek baru</button>
         <div className="seg" style={{ overflowX: 'auto' }}>
           {[['aktif', `Aktif (${active.length})`], ...Object.entries(STAGES).map(([k, [l]]) => [k, `${l} (${d.leads.filter((x) => x.stage === k).length})`])].map(([k, l]) => <button key={k} className={stage === k ? 'on' : ''} onClick={() => setStage(k)}>{l}</button>)}
@@ -57,7 +60,7 @@ export default function Crm() {
               <div className="main"><b className="small">{l.name}{l.source === 'halaman' && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || 'Halaman'}</span>}</b>
                 <span className="small muted">{l.need ? `${l.need} · ` : ''}{SOURCE[l.source]}{Number(l.est_value) > 0 ? ` · ${rp(l.est_value)}` : ''}</span>
                 {l.next_due && <span className="small" style={{ color: l.next_due <= today() ? 'var(--bad)' : 'var(--muted)' }}>Tindak lanjut {tgl(l.next_due)}</span>}</div>
-              <span className={'chip ' + STAGES[l.stage][1]}>{STAGES[l.stage][0]}</span>
+              <span className={'chip ' + (waiting.includes(l) ? 'gold' : STAGES[l.stage][1])}>{waiting.includes(l) ? 'Perlu konfirmasi' : l.ref_number ? `✓ ${l.ref_number}` : STAGES[l.stage][0]}</span>
             </button>
           ))}</div></section>
         )}
@@ -119,7 +122,8 @@ function LeadSheet({ l, kosId, retail, jasa, onClose, onSaved }) {
         {cur.lost_reason && <span className="small muted">Alasan tidak jadi: {cur.lost_reason}</span>}
         {cur.source === 'halaman' && <div className="notice small">Permintaan <b>{cur.number}</b> dari halaman bisnis{cur.consent_at ? ' · pengunjung menyetujui dihubungi' : ''}.{cur.need ? <><br />{cur.need}</> : ''}
           {Array.isArray(cur.items) && cur.items.length > 0 && <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>{cur.items.map((it, i) => <li key={i}>{it.name} · {angka(it.qty)} {it.unit}{it.price != null ? ` × ${rp(it.price)}` : ''}</li>)}</ul>}
-          <br /><span className="muted">Harga & ketersediaan belum dikonfirmasi — hubungi pengirim lewat WA.</span></div>}
+          {cur.req_date && <><br />Tanggal diminta: <b>{tgl(cur.req_date)}</b></>}</div>}
+        {cur.source === 'halaman' && <LeadCheck lead={cur} kos={kos} onChanged={async () => { onSaved(); const { data } = await supabase.from('crm_leads').select('*').eq('id', cur.id).maybeSingle(); if (data) setCur({ ...cur, ...data }); }} />}
         <div className="row">{NEXT[cur.stage].map((to) => <button key={to} className={to === 'jadi' ? 'sm primary' : to === 'batal' ? 'sm ghost danger' : 'sm'} onClick={() => move(to)}>{['jadi', 'batal'].includes(cur.stage) ? 'Buka lagi' : `→ ${STAGES[to][0]}`}</button>)}</div>
         {!retail && !['jadi', 'batal'].includes(cur.stage) && moduleOn(kos, 'p_booking') && <Link href={`/booking?lead=${cur.id}`} className="small">📅 Buat booking kamar untuk {cur.name} →</Link>}
         <Timeline kosId={kosId} lead={cur.id} />

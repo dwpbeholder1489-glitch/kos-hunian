@@ -29,7 +29,9 @@ export default function Pesanan() {
   if (!d) return <Loading />;
   const money = d.money;
   const act = d.orders.filter((o) => !['selesai', 'batal'].includes(o.status));
+  const req = act.filter((o) => o.status === 'permintaan');
   const chips = [
+    ...(req.length ? [['permintaan', `Permintaan masuk (${req.length})`]] : []),
     ['aktif', `Semua aktif (${act.length})`],
     ['diterima', `Diterima (${act.filter((o) => o.status === 'diterima' && !waitPickup(o)).length})`],
     ...d.stages.map((s) => [s.id, `${s.name} (${act.filter((o) => o.stage_id === s.id).length})`]),
@@ -42,7 +44,7 @@ export default function Pesanan() {
   const term = q.trim().toLowerCase();
   const shown = d.orders.filter((o) => {
     const okF = f === 'aktif' ? act.includes(o) : f === 'tutup' ? !act.includes(o) : f === 'jemput' ? waitPickup(o) : f === 'pengantaran' ? onTheWay(o)
-      : f === 'terlambat' ? late(o) : f === 'diterima' ? o.status === 'diterima' && !waitPickup(o) : f === 'siap' ? o.status === 'siap' && !onTheWay(o) : o.stage_id === f;
+      : f === 'permintaan' ? o.status === 'permintaan' : f === 'terlambat' ? late(o) : f === 'diterima' ? o.status === 'diterima' && !waitPickup(o) : f === 'siap' ? o.status === 'siap' && !onTheWay(o) : o.stage_id === f;
     return okF && (!term || [o.number, o.customer_name, o.customer_phone].some((x) => (x || '').toLowerCase().includes(term)));
   });
   const cur = open && d.orders.find((o) => o.id === open);
@@ -50,6 +52,7 @@ export default function Pesanan() {
   return (
     <div className="stack">
       <div className="row between"><div className="row"><h2>Pesanan</h2><PageHelp page="pesanan" /></div>{money && <button className="primary" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</div>
+      {req.length > 0 && money && f !== 'permintaan' && <div className="notice"><b>{req.length} pesanan dari halaman bisnis</b> menunggu konfirmasi. <button className="sm" onClick={() => setF('permintaan')}>Lihat</button></div>}
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor, nama, atau No. HP" aria-label="Cari pesanan" />
       {shown.length === 0 ? <Empty title="Tidak ada pesanan di sini" text={money ? 'Tekan + Pesanan baru saat pelanggan menyerahkan cucian.' : 'Pesanan yang perlu dikerjakan akan muncul di sini.'} /> : (
@@ -254,8 +257,9 @@ function Detail({ o, d, kos, onClose, onChanged }) {
           : paid > 0 && <div className="notice bad small">Pesanan batal. Uang {rp(paid)} perlu dikembalikan — catat lewat <b>Pengembalian uang</b>.</div>}
       </div>}
 
+      {o.status === 'permintaan' && <RequestBox o={o} kos={kos} money={money} onDone={refresh} />}
       {/* tindakan tahap */}
-      {!['selesai', 'batal'].includes(o.status) && <div className="row">
+      {!['selesai', 'batal', 'permintaan'].includes(o.status) && <div className="row">
         {waitPickup(o) && <button className="primary" disabled={busy} onClick={async () => { setBusy(true); const { error } = await supabase.rpc('svc_pickup', { p_order: o.id, p_action: 'dijemput', p_note: null }); setBusy(false); if (error) return toast(errMsg(error)); toast('Sudah dijemput'); refresh(); }}>Sudah dijemput</button>}
         {o.status !== 'siap' && !waitPickup(o) && <button className="primary" disabled={busy} onClick={() => move('next')}>→ {nextName || 'Siap'}</button>}
         {o.status === 'siap' && o.deliver && !onTheWay(o) && <button className="sm" disabled={busy} onClick={async () => { setBusy(true); const { error } = await supabase.rpc('svc_delivery', { p_order: o.id, p_action: 'berangkat', p_note: null }); setBusy(false); if (error) return toast(errMsg(error)); toast('Dalam pengantaran'); refresh(); }}>Berangkat antar</button>}
@@ -275,11 +279,11 @@ function Detail({ o, d, kos, onClose, onChanged }) {
         {o.status !== 'batal' && sisa(o) > 0 && <button className="sm" onClick={() => setMode(mode === 'bayar' ? null : 'bayar')}>+ Bayar</button>}
         {o.status === 'batal' && paid > 0 && <button className="sm" onClick={() => setMode(mode === 'kembali' ? null : 'kembali')}>Pengembalian uang</button>}
         <Link href={`/nota/${o.id}`}><button className="sm">Nota</button></Link>
-        {['diterima', 'proses'].includes(o.status) && <button className="sm ghost" onClick={() => setMode(mode === 'ubah' ? null : 'ubah')}>Ubah isi</button>}
+        {['permintaan', 'diterima', 'proses'].includes(o.status) && <button className="sm ghost" onClick={() => setMode(mode === 'ubah' ? null : 'ubah')}>Ubah isi</button>}
       </div>}
       {o.status !== 'batal' && <div className="row">
         <button className="sm ghost" onClick={() => setMode(mode === 'keluhan' ? null : 'keluhan')}>Catat keluhan</button>
-        {money && !['selesai', 'batal'].includes(o.status) && <button className="sm ghost danger" onClick={cancel}>Batalkan pesanan</button>}
+        {money && !['selesai', 'batal', 'permintaan'].includes(o.status) && <button className="sm ghost danger" onClick={cancel}>Batalkan pesanan</button>}
       </div>}
       {mode === 'bayar' && <PayForm o={o} kind="bayar" max={sisa(o)} onDone={() => { setMode(null); refresh(); }} />}
       {mode === 'kembali' && <PayForm o={o} kind="kembali" max={paid} onDone={() => { setMode(null); refresh(); }} />}
@@ -298,6 +302,38 @@ function Detail({ o, d, kos, onClose, onChanged }) {
         <div className="list">{x.events.map((e, i) => <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span className="small">{e.text}</span><span className="small muted" style={{ textAlign: 'right' }}>{waktu(e.at)}<br />{e.actor}</span></div>)}</div>
       </>}
     </Sheet>
+  );
+}
+
+// Pesanan dari halaman bisnis: belum dikonfirmasi → Konfirmasi (boleh ubah ongkos/janji) atau Tolak
+function RequestBox({ o, kos, money, onDone }) {
+  const [fee, setFee] = useState(String(Math.round(o.delivery_fee || 0)));
+  const [busy, setBusy] = useState(false);
+  if (!money) return <div className="notice">Pesanan dari halaman bisnis — menunggu konfirmasi kasir/pemilik.</div>;
+  const confirm = async () => {
+    setBusy(true);
+    const { error } = await supabase.rpc('svc_request_confirm', { p_order: o.id, p: (o.pickup || o.deliver) ? { delivery_fee: parseRp(fee) || 0 } : {} });
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    toast('Dikonfirmasi — kabari pelanggan lewat WA'); onDone();
+  };
+  const reject = async () => {
+    const r = window.prompt('Alasan menolak (kabari pelanggan juga lewat WA):', ''); if (!r) return;
+    const { error } = await supabase.rpc('svc_request_reject', { p_order: o.id, p_reason: r });
+    if (error) return toast(errMsg(error));
+    toast('Permintaan ditolak'); onDone();
+  };
+  return (
+    <div className="unitbox">
+      <b className="small">Pesanan dari halaman bisnis — belum dikonfirmasi</b>
+      <span className="small muted">Cek layanan, jadwal & alamat. Setelah dikonfirmasi pesanan masuk antrean; janji selesai dihitung sejak konfirmasi. Berat/jumlah bisa diubah lewat Ubah isi setelah barang diterima.</span>
+      {(o.pickup || o.deliver) && <Field label="Ongkos antar jemput"><input inputMode="numeric" value={fee} onChange={(e) => setFee(e.target.value)} /></Field>}
+      <div className="row">
+        <button className="primary" disabled={busy} onClick={confirm}>{busy ? 'Menyimpan…' : 'Konfirmasi'}</button>
+        <button className="sm ghost danger" disabled={busy} onClick={reject}>Tolak</button>
+        {o.customer_phone && <a href={waLink(o.customer_phone, `Halo ${o.customer_name}, pesanan ${o.number} di ${kos.name} sudah kami terima dan konfirmasi.`)} target="_blank" rel="noreferrer"><button className="sm">WA pelanggan</button></a>}
+      </div>
+    </div>
   );
 }
 
