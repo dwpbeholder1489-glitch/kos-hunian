@@ -764,3 +764,6 @@ nav.tabs.ptabs{display:flex} /* portal penghuni tidak punya navigasi bawah: tab 
 .tablecell.gold{border-color:var(--gold)}.tablecell.good{border-color:var(--good)}.tablecell.bad{border-color:var(--bad)}.tablecell.info{border-color:var(--info)}
 .tablecell .chip{font-size:11px;max-width:100%;white-space:normal}
 @media (min-width:700px){.tablegrid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+/* iPhone/Safari: input tanggal & jam punya lebar bawaan sendiri sehingga keluar dari kartu */
+input[type="date"],input[type="time"],input[type="datetime-local"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value,input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;min-height:1.4em}

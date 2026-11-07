@@ -1,5 +1,6 @@
 'use client';
 import Linkify from '@/components/Linkify';
+import { compressImage } from '@/lib/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
@@ -35,6 +36,8 @@ export default function PublicForm({ page }) {
     } catch {}
   }, []);
   const [resv, setResv] = useState(false); // kuliner: tab Reservasi meja
+  const kosType = !retail && !jasa && page.type !== 'kustom';
+  const [ask, setAsk] = useState(false); // kos: Daftar (default) atau Tanya dulu
   const [pickup, setPickup] = useState(false);
   const [deliver, setDeliver] = useState(false);
   const [zone, setZone] = useState('');
@@ -87,6 +90,9 @@ export default function PublicForm({ page }) {
   };
 
   const canResv = kul && !meja && Number(ord?.tables || 0) > 0;
+  const kosRooms = (page.items || []).filter((i) => i.available);
+  const kosTabs = kosType && kosRooms.length > 0 && !done && <div className="seg"><button type="button" className={!ask ? 'on' : ''} onClick={() => setAsk(false)}>Daftar / booking kamar</button><button type="button" className={ask ? 'on' : ''} onClick={() => setAsk(true)}>Tanya dulu</button></div>;
+  if (kosType && kosRooms.length > 0 && !ask && !done) return <section className="stack" style={{ gap: 10 }}>{kosTabs}<ApplyForm page={page} rooms={kosRooms} /></section>;
   const tabs = canResv && <div className="seg"><button type="button" className={!resv ? 'on' : ''} onClick={() => setResv(false)}>Pesan menu</button><button type="button" className={resv ? 'on' : ''} onClick={() => setResv(true)}>Reservasi meja</button></div>;
   if (resv && canResv && !done) return <section className="stack" style={{ gap: 10 }}>{tabs}<ResvPublic page={page} /></section>;
   if (done?.meja) return (
@@ -114,7 +120,7 @@ export default function PublicForm({ page }) {
     </section>
   );
   return (
-    <>{tabs}<form className="panel stack" onSubmit={send} ref={formRef}>
+    <>{tabs}{kosTabs}<form className="panel stack" onSubmit={send} ref={formRef}>
       {meja && <div className="notice good" style={{ fontSize: 16 }}>🍽 Anda memesan untuk <b>Meja {meja}</b>. Pilih menu, lalu Kirim pesanan.</div>}
       {mejaBad && <div className="notice bad">Nomor meja di QR tidak dikenal. Tanyakan ke kasir, atau pesan biasa di bawah.</div>}
       <h3>{retail ? 'Pesan / tanya barang' : jasa ? (kul ? 'Pesan menu' : 'Pesan / tanya layanan') : 'Tanya / booking kamar'}</h3>
@@ -228,6 +234,94 @@ function ResvPublic({ page }) {
       {err && <div className="notice bad">{err}</div>}
       <span className="small muted">Reservasi dikonfirmasi {page.name} lewat WhatsApp. Tanpa uang muka.</span>
       <button className="cta" type="submit" disabled={busy || !consent || f.name.trim().length < 2 || f.phone.replace(/\D/g, '').length < 9 || !(Number(f.party) > 0)}>{busy ? 'Mengirim…' : 'Kirim permintaan reservasi'}</button>
+    </form>
+  );
+}
+
+// Kos: pendaftaran calon penghuni — data diri, kamar, booking/langsung huni, DP/lunas (+ bukti transfer). Dikonfirmasi pemilik di aplikasi.
+function ApplyForm({ page, rooms }) {
+  const started = useRef(Date.now());
+  const today = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
+  const plus = (n) => new Date(Date.now() + 7 * 36e5 + n * 864e5).toISOString().slice(0, 10);
+  const [f, setF] = useState({ room_id: rooms.length === 1 ? rooms[0].id : '', mode: 'booking', date: '', name: '', phone: '', address: '', emergency_name: '', emergency_rel: '', emergency_phone: '', pay_plan: 'dp', pay_amount: '', pay_method: 'transfer', note: '' });
+  const [proof, setProof] = useState(null);
+  const [consent, setConsent] = useState(false);
+  const [hp, setHp] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [done, setDone] = useState(null);
+  const [pay, setPay] = useState(null);
+  useEffect(() => { fetch('/api/publik/kirim?pay=' + encodeURIComponent(page.slug)).then((r) => r.json()).then((d) => setPay(d?.pay || null)).catch(() => {}); }, [page.slug]);
+  const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
+  const room = rooms.find((r) => r.id === f.room_id);
+  const rent = room?.units?.[0]?.price;
+  const digits = (v) => String(v || '').replace(/\D/g, '');
+  const amount = f.pay_plan === 'lunas' ? rent : Number(digits(f.pay_amount)) || 0;
+  const pickProof = async (e) => { const file = e.target.files?.[0]; if (!file) return; try { setProof(await compressImage(file)); } catch (er) { setErr(er.message || 'Foto tidak bisa dibaca'); } };
+  const ok = f.room_id && f.date && f.name.trim().length >= 2 && digits(f.phone).length >= 9 && f.address.trim().length >= 8 && f.emergency_name.trim().length >= 2 && digits(f.emergency_phone).length >= 9 && consent && (f.pay_plan === 'lunas' || amount > 0);
+  const send = async (e) => {
+    e.preventDefault(); setErr(''); setBusy(true);
+    try {
+      const r = await fetch('/api/publik/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apply: true, slug: page.slug, ...f, proof, consent, website: hp, elapsed: Math.round((Date.now() - started.current) / 1000) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.'); else setDone(d);
+    } catch { setErr('Koneksi terputus. Coba lagi.'); }
+    setBusy(false);
+  };
+  if (done) return (
+    <section className="panel">
+      <h3>Pendaftaran terkirim, {f.name.trim()}!</h3>
+      <p style={{ margin: 0 }}>Nomor pendaftaran <b>{done.number}</b> · {f.mode === 'huni' ? 'langsung huni' : 'booking'} {room?.name || ''} mulai {new Date(f.date + 'T12:00:00+07:00').toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric' })}.</p>
+      <span className="small muted">{page.name} akan memeriksa data & pembayaran Anda, lalu mengonfirmasi lewat WhatsApp {f.phone}. Kamar belum pasti sebelum dikonfirmasi.</span>
+    </section>
+  );
+  return (
+    <form className="panel stack" onSubmit={send}>
+      <h3>Daftar / booking kamar</h3>
+      {page.form_intro && <p className="small" style={{ margin: 0 }}><Linkify text={page.form_intro} /></p>}
+      <span className="label">1. Pilih kamar</span>
+      <div className="list">{rooms.map((r) => (
+        <label key={r.id} className="li" style={{ cursor: 'pointer', alignItems: 'center' }}>
+          <span className="row small" style={{ flexWrap: 'nowrap' }}><input type="radio" name="kamar" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.room_id === r.id} onChange={() => set('room_id', r.id)} /><span><b>{r.name}</b>{r.facilities?.length ? <span className="muted"> · {r.facilities.join(', ')}</span> : null}</span></span>
+          {r.units?.[0]?.price != null && <span className="small" style={{ whiteSpace: 'nowrap' }}>{rp(r.units[0].price)}/bln</span>}
+        </label>
+      ))}</div>
+      <span className="label">2. Rencana tinggal</span>
+      <div className="seg"><button type="button" className={f.mode === 'booking' ? 'on' : ''} onClick={() => set('mode', 'booking')}>Booking dulu</button><button type="button" className={f.mode === 'huni' ? 'on' : ''} onClick={() => { set('mode', 'huni'); if (!f.date || f.date > plus(7)) set('date', today); }}>Langsung huni</button></div>
+      <label className="f">{f.mode === 'huni' ? 'Tanggal masuk (paling lambat 7 hari lagi)' : 'Tanggal mulai tinggal'}<input type="date" value={f.date} min={today} max={f.mode === 'huni' ? plus(7) : plus(180)} onChange={(e) => set('date', e.target.value)} required /></label>
+      <span className="label">3. Data diri</span>
+      <label className="f">Nama lengkap<input value={f.name} onChange={(e) => set('name', e.target.value)} maxLength={80} required autoComplete="name" /></label>
+      <label className="f">No. WhatsApp<input inputMode="tel" value={f.phone} onChange={(e) => set('phone', e.target.value)} maxLength={20} required autoComplete="tel" placeholder="08…" /></label>
+      <label className="f">Alamat asal<textarea rows={2} maxLength={300} value={f.address} onChange={(e) => set('address', e.target.value)} placeholder="jalan, desa/kelurahan, kecamatan, kota" required autoComplete="street-address" /></label>
+      <span className="label">Kontak darurat (keluarga/kerabat)</span>
+      <div className="row">
+        <label className="f" style={{ flex: 2 }}>Nama<input value={f.emergency_name} onChange={(e) => set('emergency_name', e.target.value)} maxLength={80} required /></label>
+        <label className="f" style={{ flex: 1 }}>Hubungan<input value={f.emergency_rel} onChange={(e) => set('emergency_rel', e.target.value)} maxLength={40} placeholder="mis. Ibu" /></label>
+      </div>
+      <label className="f">No. HP kontak darurat<input inputMode="tel" value={f.emergency_phone} onChange={(e) => set('emergency_phone', e.target.value)} maxLength={20} required placeholder="08…" /></label>
+      <span className="label">4. Pembayaran</span>
+      <div className="seg"><button type="button" className={f.pay_plan === 'dp' ? 'on' : ''} onClick={() => set('pay_plan', 'dp')}>Bayar DP</button><button type="button" className={f.pay_plan === 'lunas' ? 'on' : ''} onClick={() => set('pay_plan', 'lunas')}>Lunas 1 bulan</button></div>
+      {f.pay_plan === 'dp' ? <label className="f">Jumlah DP<input inputMode="numeric" value={f.pay_amount} onChange={(e) => set('pay_amount', e.target.value)} placeholder="mis. 200.000" required /></label>
+        : <span className="small">{rent != null ? <>Bayar <b>{rp(rent)}</b> (sewa bulan pertama).</> : <>Bayar sewa bulan pertama (jumlah dikonfirmasi pengelola).</>}</span>}
+      <label className="f">Cara bayar<select value={f.pay_method} onChange={(e) => set('pay_method', e.target.value)}><option value="transfer">Transfer bank</option><option value="ewallet">QRIS / e-wallet</option><option value="tunai">Tunai saat datang</option></select></label>
+      {f.pay_method !== 'tunai' && pay && (pay.payment_info || pay.qris) && <div className="unitbox" style={{ gap: 6 }}>
+        <b className="small">Transfer ke</b>
+        {pay.payment_info && <span className="small" style={{ whiteSpace: 'pre-wrap' }}>{pay.payment_info}</span>}
+        {pay.qris && <img src={pay.qris} alt="QRIS" className="qris" />}
+        {pay.rules && <span className="small muted" style={{ whiteSpace: 'pre-wrap' }}>{pay.rules}</span>}
+      </div>}
+      {f.pay_method !== 'tunai' && !(pay && (pay.payment_info || pay.qris)) && <span className="small muted">Nomor rekening/QRIS akan dikirim pengelola lewat WhatsApp. Anda boleh mengirim pendaftaran dulu, bukti transfer menyusul.</span>}
+      {f.pay_method !== 'tunai' && <label className="f">Foto bukti transfer (opsional)<input type="file" accept="image/*" onChange={pickProof} /></label>}
+      {proof && <img src={proof} alt="Bukti transfer" style={{ maxWidth: 160, borderRadius: 8, border: '1px solid var(--line)' }} />}
+      <label className="f">Catatan (opsional)<textarea rows={2} maxLength={300} value={f.note} onChange={(e) => set('note', e.target.value)} placeholder="mis. bawa motor, mahasiswa kampus X" /></label>
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}><label>Website<input tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} /></label></div>
+      <label className="row small" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+        <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+        <span>Saya setuju data ini disimpan {page.name} untuk keperluan sewa kamar, dan kontak darurat dihubungi hanya bila darurat.</span>
+      </label>
+      {err && <div className="notice bad">{err}</div>}
+      <span className="small muted">Pendaftaran dicek dulu oleh {page.name}. Pembayaran dianggap sah setelah dicek pengelola.</span>
+      <button className="cta" type="submit" disabled={busy || !ok}>{busy ? 'Mengirim…' : `Kirim pendaftaran${amount ? ` · ${f.pay_plan === 'lunas' ? 'lunas' : 'DP'} ${rp(amount)}` : ''}`}</button>
     </form>
   );
 }

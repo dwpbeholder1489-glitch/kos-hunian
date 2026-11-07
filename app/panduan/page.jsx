@@ -508,6 +508,15 @@ const PARTS = [
       <>Tab <b>Reservasi</b>: <b>+ Reservasi</b> untuk pesanan lewat telepon/WA (nama, jam, jumlah orang, meja bila sudah ditentukan). Tamu juga bisa menekan <b>Reservasi meja</b> di halaman bisnis — masuk sebagai <b>Permintaan</b>: pilih meja › <b>Konfirmasi</b> › <b>WA: konfirmasi</b>. Saat tamu tiba: <b>Tamu datang</b>; tidak muncul: <b>Tidak datang</b>.</>,
     ], <>Meja yang sudah dipesan di jam yang bertumpuk ditolak otomatis. Bayar gabungan dicatat sekaligus — bila salah satu gagal, tidak ada yang tercatat; ketukan ganda tidak tercatat dua kali. Diskon/ongkos dibagi sebanding harga saat bayar per item. Tutup meja dengan sisa tagihan menjadikan sisa itu piutang (ada peringatan). Reservasi tanpa uang muka; <b>Dalam rencana</b>: DP reservasi dan pembayaran online.</>, 'warn', <ScrMeja />],
   ]],
+  ['N', 'Pendaftaran penghuni online (kos)', [
+    ['Calon penghuni daftar sendiri → Anda konfirmasi', 'Halaman bisnis (calon penghuni) › Prospek & tindak lanjut (Anda)', [
+      <>Terbitkan <b>Halaman bisnis</b> dan bagikan tautannya (ikon <b>Bagikan</b> di pojok kanan atas). Bila ingin rekening/QRIS tampil di formulir, centang <b>Tampilkan rekening/QRIS di formulir pendaftaran penghuni</b> di menu Halaman bisnis (isinya dari Pengaturan › Info untuk penghuni).</>,
+      <>Calon penghuni membuka tautan › <b>Daftar / booking kamar</b>: pilih kamar, <b>Booking dulu</b> atau <b>Langsung huni</b> (masuk paling lambat 7 hari lagi), tanggal, nama, No. WhatsApp, alamat asal, kontak darurat, lalu <b>Bayar DP</b> atau <b>Lunas 1 bulan</b>, cara bayar, dan foto bukti transfer (opsional). Yang hanya ingin bertanya memakai tab <b>Tanya dulu</b>.</>,
+      <>Pendaftaran masuk ke <b>Prospek & tindak lanjut</b> (email bila diaktifkan). Ketuk › lihat <b>Data pendaftar</b> dan <b>Lihat bukti transfer</b>. Cocokkan dengan mutasi rekening, lalu tekan <b>Uang Rp… sudah masuk → isi</b> (lewati bila belum masuk).</>,
+      <><b>Langsung huni</b> › <b>Konfirmasi → masukkan sebagai penghuni</b>: data penghuni (nama, No. HP, alamat, kontak darurat) dibuat otomatis, sewa kamar dimulai, tagihan pertama terbit, dan pembayaran tercatat lunas/sebagian beserta foto buktinya. <b>Booking dulu</b> › <b>Konfirmasi → buat booking</b>: masuk <b>Booking kamar</b> (DP tercatat); saat check-in, data diri pendaftar otomatis menjadi data penghuni.</>,
+      <>Tekan <b>Kabari … via WhatsApp</b>, lalu kirim link <b>Portal penghuni</b> dari detail penghuni.</>,
+    ], <>Kamar hanya bisa dipilih bila masih kosong di tanggal itu; nomor kontak darurat harus nomor orang lain. Bukti transfer bukan bukti sah sampai Anda cek mutasi — pembayaran hanya tercatat bila Anda mengisinya saat konfirmasi. Konfirmasi hanya bisa sekali (tidak ada penghuni/tagihan dobel). Foto bukti hanya bisa dibuka pemilik & bagian sewa.</>, 'warn', null],
+  ]],
 ];
 
 const RULES = [
@@ -565,6 +574,7 @@ export default function Panduan() {
           <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
           <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
+          <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

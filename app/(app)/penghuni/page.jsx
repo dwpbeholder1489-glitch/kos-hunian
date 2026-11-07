@@ -79,6 +79,7 @@ function OccDetail({ d, occ, go, onClose }) {
         {l && <><dt>Sewa</dt><dd>{rp(l.rent)}/bulan sejak {tgl(l.start_date)}</dd></>}
         {l && <><dt>Rencana selesai</dt><dd><EndDate lease={l} /></dd></>}
         <dt>WhatsApp</dt><dd>{occ.phone || '—'}</dd>
+        {occ.address && <><dt>Alamat asal</dt><dd style={{ overflowWrap: 'anywhere' }}>{occ.address}</dd></>}
         {occ.emergency && <><dt>Kontak darurat</dt><dd>{occ.emergency}</dd></>}
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
       </dl>
@@ -110,6 +111,7 @@ function OccEdit({ d, occ, onClose }) {
   const [name, setName] = useState(occ?.name || '');
   const [phone, setPhone] = useState(occ?.phone || '');
   const [em, setEm] = useState(occ?.emergency || '');
+  const [addr, setAddr] = useState(occ?.address || '');
   const [email, setEmail] = useState(occ?.email || '');
   const [remind, setRemind] = useState(occ ? occ.email_reminders !== false : true);
   const [notes, setNotes] = useState(occ?.notes || '');
@@ -120,7 +122,7 @@ function OccEdit({ d, occ, onClose }) {
     if (!name.trim()) return run(() => { throw new Error('Isi nama penghuni.'); });
     const mail = email.trim().toLowerCase();
     if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return run(() => { throw new Error('Format email tidak valid.'); });
-    const data = { name: name.trim(), phone: phone.trim() || null, emergency: em.trim() || null, notes: notes.trim() || null, ...(occ?.email !== undefined || isNew ? { email: mail || null, email_reminders: remind } : {}) };
+    const data = { name: name.trim(), phone: phone.trim() || null, emergency: em.trim() || null, ...(occ?.address !== undefined || isNew ? { address: addr.trim() || null } : {}), notes: notes.trim() || null, ...(occ?.email !== undefined || isNew ? { email: mail || null, email_reminders: remind } : {}) };
     setBusy(true);
     const ok = await run(() => isNew ? supabase.from('occupants').insert({ ...data, kos_id: kosId }) : supabase.from('occupants').update(data).eq('id', occ.id), isNew ? 'Penghuni ditambahkan' : 'Data diperbarui', errMsg);
     setBusy(false);
@@ -137,6 +139,9 @@ function OccEdit({ d, occ, onClose }) {
       <div className="row">
         <Field label="No. WhatsApp"><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08…" /></Field>
         <Field label="Kontak darurat"><input value={em} onChange={(e) => setEm(e.target.value)} placeholder="Nama & nomor" /></Field>
+      </div>
+      <div className="row">
+        <Field label="Alamat asal (opsional)"><input value={addr} maxLength={300} onChange={(e) => setAddr(e.target.value)} placeholder="jalan, desa, kota" /></Field>
       </div>
       <Field label="Email (opsional)" hint="Untuk pengingat tagihan otomatis. Penghuni juga bisa mengisinya sendiri di portal."><input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@gmail.com" /></Field>
       {email.trim() && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={remind} onChange={(e) => setRemind(e.target.checked)} /> Kirim pengingat jatuh tempo ke email ini (paket Standar)</label>}

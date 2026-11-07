@@ -143,6 +143,8 @@ function Detail({ d, kos, b, onClose }) {
         <dt>Sewa</dt><dd>{rp(b.rent)}/bulan</dd>
         <dt>Uang tanda jadi</dt><dd>{b.dp_amount > 0 ? `${rp(b.dp_amount)} · ${b.dp_account === 'bank' ? 'bank' : 'kas'} · ${tgl(b.dp_date)}` : '—'}</dd>
         {b.phone && <><dt>WhatsApp</dt><dd>{b.phone}</dd></>}
+        {b.applicant?.address && <><dt>Alamat asal</dt><dd style={{ overflowWrap: 'anywhere' }}>{b.applicant.address}</dd></>}
+        {b.applicant?.emergency_phone && <><dt>Kontak darurat</dt><dd>{b.applicant.emergency_name}{b.applicant.emergency_rel ? ` (${b.applicant.emergency_rel})` : ''} · {b.applicant.emergency_phone}</dd></>}
         {b.expires_on && <><dt>Batas konfirmasi</dt><dd style={{ color: b.status === 'aktif' && b.expires_on < today() ? 'var(--bad)' : undefined }}>{tgl(b.expires_on)}</dd></>}
         {b.note && <><dt>Catatan</dt><dd>{b.note}</dd></>}
         {b.status !== 'aktif' && <><dt>{b.status === 'selesai' ? 'Masuk' : 'Dibatalkan'}</dt><dd>{tgl(b.closed_date)} · {b.closed_by}</dd></>}

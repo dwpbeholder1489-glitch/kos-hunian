@@ -8,6 +8,15 @@ export const dynamic = 'force-dynamic';
 const json = (b, s = 200) => Response.json(b, { status: s });
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+// Cara bayar untuk formulir pendaftaran kos — hanya bila pemilik mengizinkan (Halaman bisnis › Tampilkan cara bayar)
+export async function GET(req) {
+  const slug = (new URL(req.url).searchParams.get('pay') || '').slice(0, 40);
+  if (!slug) return json({ pay: null });
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+  const { data } = await sb.rpc('public_pay_info', { p_slug: slug });
+  return json({ pay: data || null });
+}
+
 export async function POST(req) {
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!key) return json({ ok: false, error: 'Layanan formulir belum dikonfigurasi.' }, 503);
@@ -17,6 +26,39 @@ export async function POST(req) {
   const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || req.headers.get('x-real-ip') || 'tanpa-ip';
   const ipHash = createHash('sha256').update(ip + '|' + key.slice(-16)).digest('hex').slice(0, 32);
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  // Pendaftaran calon penghuni (kos): data diri + kamar + booking/langsung huni + DP/lunas → Prospek, dikonfirmasi pemilik
+  if (b.apply) {
+    const str = (v, n) => String(v ?? '').slice(0, n);
+    const proof = typeof b.proof === 'string' && b.proof.startsWith('data:image/') && b.proof.length <= 1500000 ? b.proof : null;
+    const { data, error } = await sb.rpc('public_apply', {
+      p_slug: str(b.slug, 40), p_ip_hash: ipHash, p_elapsed: Math.min(Number(b.elapsed) || 0, 100000),
+      p: { name: str(b.name, 80), phone: str(b.phone, 20), address: str(b.address, 300), emergency_name: str(b.emergency_name, 80), emergency_rel: str(b.emergency_rel, 40),
+        emergency_phone: str(b.emergency_phone, 20), room_id: str(b.room_id, 40), mode: str(b.mode, 10), date: str(b.date, 10), pay_plan: str(b.pay_plan, 10),
+        pay_amount: str(b.pay_amount, 15), pay_method: str(b.pay_method, 10), note: str(b.note, 300), proof, consent: b.consent === true },
+    });
+    if (error) { console.error('[publik] pendaftaran gagal', error.message); return json({ ok: false, error: 'Gagal menyimpan pendaftaran. Coba lagi nanti.' }, 500); }
+    if (!data?.ok) return json({ ok: false, error: data?.error || 'Gagal mengirim' }, 400);
+    if (!data.duplicate) {
+      try {
+        if (mailConfigured()) {
+          const [{ data: kos }, { data: pg }] = await Promise.all([
+            sb.from('kos').select('name, owner_id').eq('id', data.kos_id).single(),
+            sb.from('public_pages').select('email_notify').eq('kos_id', data.kos_id).single(),
+          ]);
+          const { data: owner } = pg?.email_notify ? await sb.auth.admin.getUserById(kos.owner_id) : { data: null };
+          const to = owner?.user?.email;
+          if (to) {
+            const link = `${new URL(req.url).origin}/crm`;
+            const what = `${data.mode === 'huni' ? 'Langsung huni' : 'Booking'} kamar ${data.room} mulai ${b.date}`;
+            await sendMail({ to, subject: `Pendaftaran penghuni ${data.number} — ${kos.name}`,
+              text: `Pendaftaran baru ${data.number} di ${kos.name}.\nNama: ${b.name}\nWhatsApp: ${b.phone}\n${what}\nPembayaran: ${b.pay_plan === 'lunas' ? 'lunas' : 'DP'} Rp${Number(data.amount || 0).toLocaleString('id-ID')} (${b.pay_method})${proof ? ', ada bukti transfer' : ''}\n\nBuka ${link} (Calon penghuni), cek pembayaran, lalu Konfirmasi.`,
+              html: `<div style="font-family:Arial,sans-serif;max-width:520px;color:#1A1D21"><p>Pendaftaran baru <b>${esc(data.number)}</b> di <b>${esc(kos.name)}</b>.</p><p>Nama: <b>${esc(b.name)}</b><br>WhatsApp: <b>${esc(b.phone)}</b><br>${esc(what)}<br>Pembayaran: ${b.pay_plan === 'lunas' ? 'lunas' : 'DP'} Rp${esc(Number(data.amount || 0).toLocaleString('id-ID'))} (${esc(b.pay_method)})${proof ? ', ada bukti transfer' : ''}</p><p><a href="${link}" style="display:inline-block;background:#B88A2E;color:#1D2A21;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:10px">Cek & konfirmasi</a></p><p style="font-size:12px;color:#5A675F">Email ini dikirim otomatis oleh PRASARA. Matikan di menu Halaman bisnis.</p></div>` });
+          }
+        }
+      } catch (e) { console.error('[publik] email gagal', e); }
+    }
+    return json({ ok: true, number: data.number });
+  }
   // Reservasi meja (kuliner): masuk sebagai permintaan, dikonfirmasi kasir lewat WhatsApp
   if (b.reserve) {
     const str = (v, n) => String(v ?? '').slice(0, n);
