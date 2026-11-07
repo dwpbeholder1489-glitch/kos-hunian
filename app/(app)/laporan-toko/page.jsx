@@ -6,6 +6,7 @@ import PageHelp from '@/components/PageHelp';
 import Locked from '@/components/Locked';
 import { Loading, Empty, Tile } from '@/components/ui';
 import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from '@/lib/format';
+import { DayColumns } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
 
@@ -128,9 +129,7 @@ export default function LaporanToko() {
         {r.harian.length > 1 && (
           <section className="panel">
             <h3>Penjualan per hari</h3>
-            <div className="dbars" role="img" aria-label={`Penjualan harian ${bulan(ym)}`}>{r.harian.map((h) => (
-              <div key={h.d} className="dbar" title={`${tgl(h.d)}: ${rp(h.omzet)}`}><span style={{ height: `${Math.max(3, (N(h.omzet) / maxD) * 100)}%` }} /><small>{+h.d.slice(8)}</small></div>
-            ))}</div>
+            <DayColumns title={`Penjualan harian ${bulan(ym)}`} data={r.harian.map((h) => ({ key: h.d, label: tgl(h.d), short: String(+h.d.slice(8)), value: N(h.omzet) }))} />
           </section>
         )}
 

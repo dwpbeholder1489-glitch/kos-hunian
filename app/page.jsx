@@ -45,9 +45,16 @@ const CATS = [
   ['🛒', 'Retail & Grosir', 'Toko sembako, minimarket, grosir: kasir eceran & grosir, stok multi-satuan, barcode, belanja ke supplier, kasbon, laporan laba.', 'ready'],
   ['🧩', 'Bisnis lain (Business Builder)', 'Bengkel, salon, katering, dan usaha lain: susun sendiri data, formulir, alur status, peran, dan laporan. Uang masuk per status langsung ke kas & pembukuan.', 'ready'],
   ['🧺', 'Jasa & Laundry', 'Laundry kiloan & satuan (dan jasa lain): pesanan, tahap cuci–kering–setrika–QC, nota, DP, antar-jemput, keluhan, bahan, laporan.', 'ready'],
-  ['🍳', 'Kuliner', 'Menu, resep, bahan baku, dan pesanan dapur.', 'plan'],
-  ['🏭', 'Produksi', 'Produksi, daftar bahan (BOM), bahan baku, kontrol mutu.', 'plan'],
-  ['🚚', 'Distribusi', 'Gudang, pesanan, armada, dan pengiriman.', 'plan'],
+  ['🍳', 'Kuliner', 'Warung, kafe, katering: menu, pesanan makan di tempat/bungkus, layar dapur, QR per meja, reservasi meja, bayar per meja.', 'ready'],
+  ['🏭', 'Produksi', 'Modul khusus (BOM, kontrol mutu) dalam rencana. Sementara bisa disusun lewat Business Builder.', 'plan'],
+  ['🚚', 'Distribusi', 'Modul khusus (armada, rute) dalam rencana. Sementara bisa disusun lewat Business Builder.', 'plan'],
+];
+
+// Cara mulai (alur nyata: /mulai → Pusat Konfirmasi → pakai)
+const HOW = [
+  ['compass', 'Pilih jenis bisnis', 'Daftar dengan email, pilih satu atau beberapa jenis usaha, lalu isi info singkatnya.'],
+  ['check', 'Tinjau & aktifkan', 'PRASARA menyiapkan draf menu dan pengaturan. Anda menyetujui, mengubah, atau menolak tiap bagian di Pusat Konfirmasi — harga dan kapasitas Anda isi sendiri.'],
+  ['link', 'Pakai & bagikan', 'Mulai catat transaksi dari HP. Bagikan tautan atau QR halaman bisnis agar pelanggan bisa memesan atau mendaftar.'],
 ];
 
 // Fitur utama yang sudah tersedia
@@ -76,11 +83,17 @@ const GROUPS = [
     ['Keluhan & cuci ulang', 'Catat keluhan, cuci ulang tanpa biaya, ganti rugi; batal pesanan dengan alasan & persetujuan.'],
     ['Bahan & laporan', 'Stok deterjen/pewangi, pendapatan per layanan, ketepatan waktu, laba perkiraan.'],
   ]],
+  ['receipt', 'Kuliner', [
+    ['Menu & pesanan dapur', 'Pesanan makan di tempat atau bungkus, layar dapur untuk koki, nomor meja.'],
+    ['QR per meja', 'Tamu memindai QR di meja dan memesan sendiri; pesanan masuk sebagai permintaan untuk dikonfirmasi.'],
+    ['Reservasi & bayar per meja', 'Reservasi meja dengan cek bentrok, tagihan meja bisa dibayar terpisah (split bill).'],
+  ]],
   ['users', 'Untuk semua bisnis', [
     ['Karyawan & peran', 'Pengelola, kasir, staf gudang, penjaga, petugas proses — masing-masing hanya melihat menunya.'],
     ['Ringkasan semua bisnis', 'Angka penting setiap bisnis dalam satu layar.'],
     ['Pengingat & email pagi', 'Lonceng pengingat, email ringkasan, dan daftar yang perlu ditindaklanjuti.', 'Standar'],
     ['Bantuan', 'Panduan bergambar, tombol "? Panduan" di setiap menu, dan tiket bantuan.'],
+    ['Halaman bisnis, QR & foto', 'Halaman publik dengan foto, tautan & QR siap bagikan atau cetak; pendaftaran penghuni dan pesanan online.'],
     ['Tampilan terang & gelap', 'Nyaman dipakai siang maupun malam; mengikuti pengaturan HP.'],
   ]],
 ];
@@ -93,7 +106,7 @@ const TRUST = [
 ];
 
 const FAQ = [
-  ['Bisnis apa saja yang sudah bisa dikelola?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay), Retail & Grosir (toko sembako, minimarket, grosir), Jasa & Laundry (laundry kiloan/satuan, juga jasa lain seperti jahit atau servis), dan usaha lain lewat Business Builder (susun sendiri data, alur, dan laporan). Jenis lain seperti kuliner, produksi, dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
+  ['Bisnis apa saja yang sudah bisa dikelola?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay), Retail & Grosir (toko sembako, minimarket, grosir), Jasa & Laundry (laundry kiloan/satuan, juga jasa lain seperti jahit atau servis), Kuliner (warung, kafe, katering: menu, dapur, QR meja, reservasi), dan usaha lain lewat Business Builder (susun sendiri data, alur, dan laporan). Modul khusus produksi dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
   ['Apakah satu akun bisa untuk kos dan toko sekaligus?', 'Bisa. Tambahkan bisnis kedua dari menu bisnis (ketuk nama bisnis di kiri atas). Data tiap bisnis terpisah, dan Anda bisa melihat ringkasan semuanya dalam satu layar.'],
   ['Apakah harus memasang aplikasi?', 'Tidak. PRASARA dibuka lewat browser di HP atau laptop. Agar terasa seperti aplikasi, tambahkan ke layar utama: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
   ['Bagaimana cara mencoba gratis?', `Daftar dengan email, pilih satu atau lebih jenis bisnis, lalu isi info singkatnya. PRASARA menyiapkan draf konfigurasinya; Anda meninjau dan mengaktifkannya di Pusat Konfirmasi. Setiap bisnis baru mendapat ${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit. Setelah itu otomatis menjadi paket Gratis kecuali Anda berlangganan.`],
@@ -138,7 +151,7 @@ export default async function Landing() {
             <div className="ln-hero-text ln-rise">
               <span className="ln-eyebrow">Satu aplikasi untuk berbagai jenis bisnis</span>
               <h1>One Intelligence. <span>Every Business.</span></h1>
-              <p className="ln-lead">PRASARA membantu pemilik usaha mengelola bisnisnya dari HP — saat ini untuk <b>kos & properti sewa</b> dan <b>toko retail & grosir</b>. Satu akun untuk beberapa bisnis; menu menyesuaikan jenis usahanya.</p>
+              <p className="ln-lead">PRASARA membantu pemilik usaha mengelola bisnisnya dari HP — saat ini untuk <b>kos & properti sewa</b>, <b>toko retail & grosir</b>, <b>laundry & jasa</b>, dan <b>kuliner</b>. Satu akun untuk beberapa bisnis; menu menyesuaikan jenis usahanya.</p>
               <div className="ln-cta-row">
                 <Link href={START} className="ln-btn ln-btn-primary ln-btn-lg">Mulai Gratis {BUSINESS.trialDays} Hari <Icon name="arrow" size={18} /></Link>
                 <a href="#solusi" className="ln-btn ln-btn-outline ln-btn-lg">Lihat solusinya</a>
@@ -146,6 +159,18 @@ export default async function Landing() {
               <p className="ln-support">Tanpa kartu kredit. Data setiap bisnis terpisah dan tetap milik Anda.</p>
             </div>
             <div className="ln-rise ln-rise-2"><HeroMulti /></div>
+          </div>
+        </section>
+
+        {/* 1b. CARA MULAI */}
+        <section className="ln-sec ln-sec-alt" id="cara" aria-labelledby="h-cara">
+          <div className="ln-wrap">
+            <div className="ln-head"><span className="ln-kicker">Cara mulai</span><h2 id="h-cara">Dari daftar sampai dipakai, tiga langkah.</h2></div>
+            <ol className="ln-steps">
+              {HOW.map(([ic, t, d], i) => (
+                <li key={t}><div className="row" style={{ display: 'flex', gap: 12, alignItems: 'center' }}><span className="ln-step-n">{i + 1}</span><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span></div><h3>{t}</h3><p>{d}</p></li>
+              ))}
+            </ol>
           </div>
         </section>
 
@@ -163,8 +188,8 @@ export default async function Landing() {
         {/* 3. SOLUSI PER KATEGORI */}
         <section className="ln-sec ln-sec-alt" id="solusi" aria-labelledby="h-solusi">
           <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Solusi per jenis bisnis</span><h2 id="h-solusi">Kos, toko, dan laundry.</h2>
-              <p>Tiga jenis bisnis sudah bisa dipakai penuh. Jenis lain sedang kami rancang dan baru dibuka setelah siap.</p></div>
+            <div className="ln-head"><span className="ln-kicker">Solusi per jenis bisnis</span><h2 id="h-solusi">Kos, toko, laundry, dan kuliner.</h2>
+              <p>Empat jenis bisnis sudah bisa dipakai penuh, ditambah Business Builder untuk usaha lain. Modul khusus jenis lain baru dibuka setelah siap.</p></div>
             <div className="ln-cats">
               {CATS.map(([ic, t, d, st]) => (
                 <div key={t} className={'ln-cat ' + st}>

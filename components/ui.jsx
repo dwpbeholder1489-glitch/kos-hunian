@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PAY_ST } from '@/lib/format';
+import EmptyArt from '@/components/EmptyArt';
 
 export function Sheet({ title, onClose, children }) {
   useEffect(() => {
@@ -40,8 +41,9 @@ export function Tile({ label, value, sub, tone }) {
   return <div className={'tile ' + (tone || '')}><span className="label">{label}</span><span className="v">{value}</span>{sub && <span className="s">{sub}</span>}</div>;
 }
 
-export function Empty({ title, text, children }) {
-  return <div className="empty"><h3>{title}</h3>{text && <p className="muted" style={{ margin: 0 }}>{text}</p>}{children}</div>;
+// Tampilan kosong: ilustrasi kecil (dipilih dari judul, atau `art`), judul, penjelasan, dan tombol tindakan berikutnya.
+export function Empty({ title, text, children, art }) {
+  return <div className="empty">{art !== false && <EmptyArt kind={art} title={title} />}<h3>{title}</h3>{text && <p className="muted" style={{ margin: 0 }}>{text}</p>}{children}</div>;
 }
 
 export function Loading() {

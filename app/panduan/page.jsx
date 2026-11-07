@@ -150,7 +150,7 @@ const PARTS = [
       <>Pilih bulan dengan tombol <b>‹ ›</b>.</>,
       <><b>Laba operasional</b> = pendapatan − biaya operasional.</>,
       <><b>Arus kas bersih</b> = laba − belanja modal − pengeluaran non-operasional.</>,
-      <>Tren 6 bulan dan <b>pendapatan per kamar</b> (sewa, tambahan listrik/air, dan sisa belum dibayar tiap kamar) <Std /></>,
+      <>Biaya operasional per kategori (semua paket). Grafik 6 bulan (pendapatan vs biaya — ketuk batang untuk angkanya) dan <b>pendapatan per kamar</b> (sewa, tambahan listrik/air, dan sisa belum dibayar tiap kamar) <Std /></>,
     ], 'Laporan berbasis kas: pendapatan dihitung saat uang diterima, bukan saat ditagih.', null, <ScrReport />],
     ['Ekspor Excel dan PDF', 'Laporan › Ekspor', [
       <><b>Laporan 12 bulan</b>: rekap pendapatan, biaya, dan laba per bulan.</>,

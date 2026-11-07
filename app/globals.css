@@ -3,7 +3,7 @@
   --bg:#F7F4EE; --surface:#FFFFFF; --sunk:#EFEBE3; --line:#E2DCD0;
   --fg:#1A1D21; --muted:#5E636B; --brand:#13233A; --brand-2:#1F3757; --brand-fg:#F7F4EE;
   --gold:#B08A3E; --gold-soft:#EFE4CC; --gold-fg:#6B5320;
-  --good:#1E6B4A; --good-bg:#E3F0E8; --warn:#8A5A00; --warn-bg:#F6EAD0; --bad:#B23A30; --bad-bg:#F8E3E0; --info:#2A4F7A; --info-bg:#E6ECF4;
+  --chart-1:#2F6BA8; --chart-2:#B08A3E; --good:#1E6B4A; --good-bg:#E3F0E8; --warn:#8A5A00; --warn-bg:#F6EAD0; --bad:#B23A30; --bad-bg:#F8E3E0; --info:#2A4F7A; --info-bg:#E6ECF4;
   --display:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --font:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --r:14px; color-scheme:light;
@@ -13,13 +13,13 @@
   --bg:#0E1622; --surface:#16202E; --sunk:#0B121C; --line:#283446;
   --fg:#ECE8DF; --muted:#A3A9B3; --brand:#101B2B; --brand-2:#9DB4D3; --brand-fg:#ECE8DF;
   --gold:#C9A45A; --gold-soft:#33291A; --gold-fg:#E6CB8F;
-  --good:#7CCB9F; --good-bg:#16301F; --warn:#E9C06A; --warn-bg:#352A12; --bad:#F2928A; --bad-bg:#3A1C1A; --info:#9DB9DE; --info-bg:#172A42;
+  --chart-1:#4F86C6; --chart-2:#B08C42; --good:#7CCB9F; --good-bg:#16301F; --warn:#E9C06A; --warn-bg:#352A12; --bad:#F2928A; --bad-bg:#3A1C1A; --info:#9DB9DE; --info-bg:#172A42;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E1622; --surface:#16202E; --sunk:#0B121C; --line:#283446;
   --fg:#ECE8DF; --muted:#A3A9B3; --brand:#101B2B; --brand-2:#9DB4D3; --brand-fg:#ECE8DF;
   --gold:#C9A45A; --gold-soft:#33291A; --gold-fg:#E6CB8F;
-  --good:#7CCB9F; --good-bg:#16301F; --warn:#E9C06A; --warn-bg:#352A12; --bad:#F2928A; --bad-bg:#3A1C1A; --info:#9DB9DE; --info-bg:#172A42;
+  --chart-1:#4F86C6; --chart-2:#B08C42; --good:#7CCB9F; --good-bg:#16301F; --warn:#E9C06A; --warn-bg:#352A12; --bad:#F2928A; --bad-bg:#3A1C1A; --info:#9DB9DE; --info-bg:#172A42;
   color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -795,3 +795,25 @@ input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date
 .pubcover img{width:100%;height:100%;object-fit:cover;display:block}
 .itemthumb{flex:none;width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--surface);padding:0}
 .itemthumb img{width:100%;height:100%;object-fit:cover;display:block}
+/* ---------- Grafik (warna tervalidasi: terang #2F6BA8/#B08A3E, gelap #4F86C6/#B08C42) ---------- */
+.chart{display:flex;flex-direction:column;gap:8px}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.chart-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.chart-plot{position:relative;height:150px;margin-left:44px}
+.chart-grid{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.chart-grid span{position:absolute;right:calc(100% + 6px);top:-7px;font-size:10px;color:var(--muted);white-space:nowrap}
+.chart-cols{position:absolute;inset:0;display:flex;align-items:flex-end}
+.chart-col{flex:1;min-width:0;height:100%;display:flex;align-items:flex-end;justify-content:center;gap:2px;background:none;border:0;padding:0 2px;cursor:pointer;border-radius:6px;min-height:0}
+.chart-col.on{background:color-mix(in srgb,var(--fg) 6%,transparent)}
+.chart-col i{display:block;width:100%;max-width:24px;border-radius:4px 4px 0 0;min-height:0}
+.chart-x{display:flex;margin-left:44px}
+.chart-x span{flex:1;min-width:0;text-align:center;font-size:10px;color:var(--muted);white-space:nowrap;overflow:visible}
+.chart-read{font-size:13px;min-height:20px}
+.chart-read b{font-weight:700}
+.barlist{display:flex;flex-direction:column;gap:8px}
+.barlist-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;font-size:13px}
+.barlist-row .t{grid-column:1/3;height:8px;border-radius:0 4px 4px 0;background:var(--sunk);overflow:hidden}
+.barlist-row .t i{display:block;height:100%;background:var(--chart-1);border-radius:0 4px 4px 0}
+.barlist-row .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.emptyart{display:block;opacity:.95;margin-bottom:-2px}
+.empty h3{margin:0}

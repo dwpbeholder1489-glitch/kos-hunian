@@ -5,6 +5,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Loading, Tile } from '@/components/ui';
 import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from '@/lib/format';
+import { DayColumns, BarList } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { makeXlsx } from '@/lib/xlsx';
 import { download } from '@/lib/zip';
@@ -52,17 +53,18 @@ export default function LaporanJasa() {
         </section>
         <section className="panel">
           <h3>Per layanan</h3>
-          {r.layanan.length === 0 ? <span className="small muted">Belum ada pesanan diserahkan bulan ini.</span> : <div className="list">{r.layanan.map((x) => (
-            <div className="li" key={x.name + x.unit}><div className="main"><b className="small">{x.name}</b><span className="small muted">{angka(x.qty)} {x.unit} · {angka(x.pesanan)} pesanan</span></div><b className="small">{rp(x.pendapatan)}</b></div>
-          ))}</div>}
+          {r.layanan.length === 0 ? <span className="small muted">Belum ada pesanan diserahkan bulan ini.</span>
+            : <BarList limit={8} items={r.layanan.map((x) => ({ label: x.name, sub: `${angka(x.qty)} ${x.unit} · ${angka(x.pesanan)} pesanan`, value: Number(x.pendapatan) }))} />}
         </section>
         {r.pelanggan.length > 0 && <section className="panel">
           <h3>Pelanggan teratas</h3>
           <div className="list">{r.pelanggan.map((x) => <div className="li" key={x.name}><span className="small">{x.name} · {angka(x.n)} pesanan</span><b className="small">{rp(x.pendapatan)}</b></div>)}</div>
         </section>}
         {r.harian.length > 1 && <section className="panel">
-          <h3>Harian</h3>
-          <div className="list">{r.harian.map((x) => <div className="li" key={x.d}><span className="small">{tgl(x.d)} · {angka(x.n)} pesanan</span><b className="small">{rp(x.pendapatan)}</b></div>)}</div>
+          <h3>Pendapatan harian</h3>
+          <DayColumns title={`Pendapatan harian ${bulan(ym)}`} data={r.harian.map((x) => ({ key: x.d, label: tgl(x.d), short: String(+x.d.slice(8)), value: Number(x.pendapatan), note: `${angka(x.n)} pesanan` }))} />
+          <details><summary className="small">Lihat tabel harian</summary><div className="list">{r.harian.map((x) => <div className="li" key={x.d}><span className="small">{tgl(x.d)} · {angka(x.n)} pesanan</span><b className="small">{rp(x.pendapatan)}</b></div>)}</div>
+        </details>
         </section>}
       </>}
     </div>

@@ -7,6 +7,7 @@ import Locked from '@/components/Locked';
 import { useKos } from '@/components/KosProvider';
 import { hasFeature } from '@/lib/plan';
 import { rp, tgl, thisMonth, bulan, addMonthsYm, BLN, METHOD, ENTRY } from '@/lib/format';
+import { CompareBars, BarList } from '@/components/Charts';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma untuk Excel berbahasa Indonesia)
 function downloadCsv(name, rows) {
@@ -120,9 +121,16 @@ export default function Laporan() {
           <tr className="total"><td>Arus kas bersih</td><td className="n">{rp(r.kas)}</td></tr>
         </tbody></table>
       </section>
+      {r.ops > 0 && <section className="panel"><h3>Biaya operasional per kategori · {bulan(ym)}</h3>
+        <BarList items={Object.values(d.expenses.filter((x) => x.kind === 'operasional' && x.date.startsWith(ym)).reduce((g, x) => {
+          const k = d.catById.get(x.category_id)?.name || 'Tanpa kategori'; g[k] = g[k] || { label: k, value: 0 }; g[k].value += Number(x.amount) || 0; return g; }, {}))} />
+      </section>}
       {full ? (
         <>
         <section className="panel"><h3>6 bulan terakhir</h3>
+          <CompareBars title="Pendapatan dan biaya 6 bulan terakhir" a="Pendapatan" b="Biaya operasional"
+            data={rows.map(([m, x]) => ({ key: m, label: bulan(m), short: `${BLN[+m.slice(5) - 1]}`, a: x.income, b: x.ops, laba: x.laba }))}
+            read={(c) => <> · laba <b style={{ color: c.laba < 0 ? 'var(--bad)' : undefined }}>{rp(c.laba)}</b></>} />
           <div style={{ overflowX: 'auto' }}><table>
             <thead><tr><th>Bulan</th><th className="n">Pendapatan</th><th className="n">Biaya</th><th className="n">Laba</th></tr></thead>
             <tbody>{rows.map(([m, x]) => (
