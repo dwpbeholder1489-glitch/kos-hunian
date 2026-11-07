@@ -6,8 +6,10 @@ import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp } from '@/lib/format';
 import { qtyNum } from '@/lib/retail';
+import { terms } from '@/lib/jasa';
 
 const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
+const UNITS_K = ['porsi', 'pcs', 'gelas', 'cup', 'botol', 'bungkus', 'box', 'paket', 'kg', 'loyang'];
 import { canArea } from '@/lib/business';
 
 // Katalog layanan (harga, minimal, lama pengerjaan) & tahap proses yang bisa diatur — dasar "Configure Many"
@@ -36,18 +38,19 @@ export default function Layanan() {
     toast('Tahap proses disimpan'); load();
   };
   const groups = [...new Set(svc.map((s) => s.category || 'Lainnya'))];
+  const T = terms(kos);
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Layanan & tahap</h2><PageHelp page="layanan" /></div>{can && <button className="primary" onClick={() => setEdit({})}>+ Layanan</button>}</div>
+      <div className="row between"><div className="row"><h2>{T.svcs}</h2><PageHelp page="layanan" /></div>{can && <button className="primary" onClick={() => setEdit({})}>+ {T.svc}</button>}</div>
       <p className="small muted" style={{ margin: 0 }}>Harga di sini dipakai otomatis saat menerima pesanan (kasir tidak bisa mengubah harga satuan; potongan lewat diskon yang tercatat).</p>
-      {svc.length === 0 && <div className="notice">Belum ada layanan. {can ? 'Tekan + Layanan untuk menambah (mis. Jahit celana, Rp15.000/pcs).' : 'Minta pemilik menambahkan layanan.'}</div>}
+      {svc.length === 0 && <div className="notice">Belum ada {T.svc.toLowerCase()}. {can ? (T.kul ? 'Tekan + Menu untuk menambah (mis. Nasi goreng, Rp15.000/porsi).' : 'Tekan + Layanan untuk menambah (mis. Jahit celana, Rp15.000/pcs).') : `Minta pemilik menambahkan ${T.svc.toLowerCase()}.`}</div>}
       {groups.map((g) => (
         <section className="panel" key={g}>
           <h3>{g}</h3>
           <div className="list">{svc.filter((s) => (s.category || 'Lainnya') === g).map((s) => (
             <button key={s.id} className="li click" disabled={!can} onClick={() => setEdit(s)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', opacity: s.active ? 1 : 0.55 }}>
-              <div className="main"><b className="small">{s.name}{!s.active && ' (tidak tersedia)'}</b><span className="small muted">{Number(s.min_qty) > 0 ? `minimal ${angka(s.min_qty)} ${s.unit} · ` : ''}selesai ±{s.hours} jam{s.description ? ` · ${s.description}` : ''}</span>{s.requirements && <span className="small muted">Syarat: {s.requirements}</span>}</div>
+              <div className="main"><b className="small">{s.name}{!s.active && ' (tidak tersedia)'}</b><span className="small muted">{Number(s.min_qty) > 0 ? `minimal ${angka(s.min_qty)} ${s.unit} · ` : ''}{T.kul ? `siap ±${s.hours} jam` : `selesai ±${s.hours} jam`}{s.description ? ` · ${s.description}` : ''}</span>{s.requirements && <span className="small muted">Syarat: {s.requirements}</span>}</div>
               <b className="small">{rp(s.price)}/{s.unit}</b>
             </button>
           ))}</div>
@@ -55,7 +58,7 @@ export default function Layanan() {
       ))}
       <section className="panel">
         <h3>Tahap proses</h3>
-        <span className="small muted">Urutan tahap antara "Diterima" dan "Siap". Contoh laundry: Cuci → Kering → Setrika → QC → Kemas. Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan.</span>
+        <span className="small muted">Urutan tahap antara "Diterima" dan "Siap". {T.kul ? 'Contoh kuliner: Dimasak → Siap saji.' : 'Contoh laundry: Cuci → Kering → Setrika → QC → Kemas.'} Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan.</span>
         {st.map((x, i) => (
           <div className="row" key={x.id || 'n' + i} style={{ flexWrap: 'nowrap', alignItems: 'center' }}>
             <span className="small muted" style={{ width: 18 }}>{i + 1}</span>
@@ -72,44 +75,45 @@ export default function Layanan() {
           <button className="primary" disabled={busy} onClick={saveStages}>{busy ? 'Menyimpan…' : 'Simpan tahap'}</button>
         </div>}
       </section>
-      {edit && <ServiceForm kosId={kosId} s={edit} cats={groups} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); load(); }} />}
+      {edit && <ServiceForm kosId={kosId} T={T} s={edit} cats={groups} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); load(); }} />}
     </div>
   );
 }
 
-function ServiceForm({ kosId, s, cats, onClose, onSaved }) {
-  const [f, setF] = useState({ name: s.name || '', category: s.category || cats[0] || 'Kiloan', unit: s.unit || 'kg', price: s.price ? String(Math.round(s.price)) : '', min_qty: s.min_qty ? String(Number(s.min_qty)) : '', hours: String(s.hours || 48), active: s.active !== false, description: s.description || '', requirements: s.requirements || '', info: s.info || '' });
+function ServiceForm({ kosId, T, s, cats, onClose, onSaved }) {
+  const U = T.kul ? UNITS_K : UNITS;
+  const [f, setF] = useState({ name: s.name || '', category: s.category || cats[0] || (T.kul ? 'Makanan' : 'Kiloan'), unit: s.unit || (T.kul ? 'porsi' : 'kg'), price: s.price ? String(Math.round(s.price)) : '', min_qty: s.min_qty ? String(Number(s.min_qty)) : '', hours: String(s.hours || (T.kul ? 1 : 48)), active: s.active !== false, description: s.description || '', requirements: s.requirements || '', info: s.info || '' });
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setF({ ...f, [k]: v });
   const save = async () => {
-    if (f.name.trim().length < 2) return toast('Isi nama layanan.');
+    if (f.name.trim().length < 2) return toast(`Isi nama ${T.svc.toLowerCase()}.`);
     if (!f.unit.trim()) return toast('Isi satuan.');
     if (!(parseRp(f.price) >= 0) || f.price === '') return toast('Isi harga.');
     setBusy(true);
-    const { error } = await supabase.rpc('svc_service_save', { p_kos: kosId, p_id: s.id || null, p: { ...f, price: parseRp(f.price), min_qty: qtyNum(f.min_qty) || 0, hours: parseInt(f.hours, 10) || 48 } });
+    const { error } = await supabase.rpc('svc_service_save', { p_kos: kosId, p_id: s.id || null, p: { ...f, price: parseRp(f.price), min_qty: qtyNum(f.min_qty) || 0, hours: parseInt(f.hours, 10) || (T.kul ? 1 : 48) } });
     setBusy(false);
     if (error) return toast(errMsg(error));
-    toast('Layanan disimpan'); onSaved();
+    toast(`${T.svc} disimpan`); onSaved();
   };
   return (
-    <Sheet title={s.id ? 'Ubah layanan' : 'Layanan baru'} onClose={onClose}>
-      <Field label="Nama layanan"><input value={f.name} onChange={(e) => set('name', e.target.value)} maxLength={80} placeholder="mis. Cuci kering setrika" /></Field>
+    <Sheet title={s.id ? `Ubah ${T.svc.toLowerCase()}` : `${T.svc} baru`} onClose={onClose}>
+      <Field label={`Nama ${T.svc.toLowerCase()}`}><input value={f.name} onChange={(e) => set('name', e.target.value)} maxLength={80} placeholder={T.kul ? 'mis. Nasi goreng spesial' : 'mis. Cuci kering setrika'} /></Field>
       <div className="row">
         <Field label="Kelompok"><input value={f.category} onChange={(e) => set('category', e.target.value)} maxLength={40} list="svc-cats" /></Field>
-        <Field label="Satuan"><select value={UNITS.includes(f.unit) ? f.unit : '__'} onChange={(e) => set('unit', e.target.value === '__' ? '' : e.target.value)}>{UNITS.map((u) => <option key={u}>{u}</option>)}<option value="__">lainnya…</option></select></Field>
+        <Field label="Satuan"><select value={U.includes(f.unit) ? f.unit : '__'} onChange={(e) => set('unit', e.target.value === '__' ? '' : e.target.value)}>{U.map((u) => <option key={u}>{u}</option>)}<option value="__">lainnya…</option></select></Field>
       </div>
       <datalist id="svc-cats">{cats.map((c) => <option key={c} value={c} />)}</datalist>
       <div className="row">
-        {!UNITS.includes(f.unit) && <Field label="Satuan lain"><input value={f.unit} maxLength={20} placeholder="mis. lembar" onChange={(e) => set('unit', e.target.value)} /></Field>}
+        {!U.includes(f.unit) && <Field label="Satuan lain"><input value={f.unit} maxLength={20} placeholder="mis. lembar" onChange={(e) => set('unit', e.target.value)} /></Field>}
         <Field label={`Harga per ${f.unit || 'satuan'}`}><input inputMode="numeric" value={f.price} onChange={(e) => set('price', e.target.value)} /></Field>
-        <Field label={`Minimal (${f.unit})`} hint="mis. 3 kg; kosongkan bila tidak ada"><input inputMode="decimal" value={f.min_qty} onChange={(e) => set('min_qty', e.target.value)} /></Field>
+        <Field label={`Minimal (${f.unit})`} hint={T.kul ? 'mis. katering minimal 20 porsi; kosongkan bila tidak ada' : 'mis. 3 kg; kosongkan bila tidak ada'}><input inputMode="decimal" value={f.min_qty} onChange={(e) => set('min_qty', e.target.value)} /></Field>
       </div>
-      <Field label="Lama pengerjaan (jam)" hint="untuk janji selesai otomatis, mis. 48 = 2 hari, 6 = kilat"><input inputMode="numeric" value={f.hours} onChange={(e) => set('hours', e.target.value)} /></Field>
-      <Field label="Deskripsi (opsional)" hint="tampil di halaman bisnis"><input value={f.description} maxLength={300} onChange={(e) => set('description', e.target.value)} placeholder="mis. cuci, kering, lipat rapi" /></Field>
-      <Field label="Persyaratan (opsional)"><input value={f.requirements} maxLength={300} onChange={(e) => set('requirements', e.target.value)} placeholder="mis. pakaian luntur dipisah, tidak menerima kulit" /></Field>
-      <Field label="Info tambahan (opsional)"><input value={f.info} maxLength={300} onChange={(e) => set('info', e.target.value)} placeholder="mis. pewangi bisa dipilih" /></Field>
+      <Field label="Lama pengerjaan (jam)" hint={T.kul ? 'perkiraan siap; 1 jam untuk menu biasa, 24+ untuk katering' : 'untuk janji selesai otomatis, mis. 48 = 2 hari, 6 = kilat'}><input inputMode="numeric" value={f.hours} onChange={(e) => set('hours', e.target.value)} /></Field>
+      <Field label="Deskripsi (opsional)" hint="tampil di halaman bisnis"><input value={f.description} maxLength={300} onChange={(e) => set('description', e.target.value)} placeholder={T.kul ? 'mis. nasi, telur, kerupuk' : 'mis. cuci, kering, lipat rapi'} /></Field>
+      <Field label="Persyaratan (opsional)"><input value={f.requirements} maxLength={300} onChange={(e) => set('requirements', e.target.value)} placeholder={T.kul ? 'mis. pesan H-1 untuk katering' : 'mis. pakaian luntur dipisah, tidak menerima kulit'} /></Field>
+      <Field label="Info tambahan (opsional)"><input value={f.info} maxLength={300} onChange={(e) => set('info', e.target.value)} placeholder={T.kul ? 'mis. level pedas 0–5' : 'mis. pewangi bisa dipilih'} /></Field>
       {s.id && <div className="seg">{[[true, 'Tersedia'], [false, 'Tidak tersedia sementara']].map(([k, l]) => <button key={l} className={f.active === k ? 'on' : ''} onClick={() => set('active', k)}>{l}</button>)}</div>}
-      {s.id && <span className="small muted">Layanan yang tidak tersedia tidak bisa dipilih saat menerima pesanan dan tidak tampil di halaman bisnis.</span>}
+      {s.id && <span className="small muted">{T.svc} yang tidak tersedia tidak bisa dipilih saat menerima pesanan dan tidak tampil di halaman bisnis.</span>}
       <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
     </Sheet>
   );

@@ -139,7 +139,7 @@ export default function Mulai() {
         {(b.relation === 'pengelola' || b.relation === 'perwakilan') && <span className="small muted">Bila bisnis ini <b>sudah</b> memakai PRASARA, jangan buat baru — minta pemiliknya mengundang Anda di menu Karyawan.</span>}
         {engine && <div className="panel" style={{ gap: 6 }}>
           <span className="label">Yang akan disiapkan</span>
-          <span className="small">{ENGINE_NOTE[engine]}{tpl ? ` · template ${tpl.name}` : ''}</span>
+          <span className="small">{tpl?.code === 'kuliner' ? 'Menu & harga, pesanan makan di tempat/bungkus/antar, layar dapur, bahan baku, kas' : ENGINE_NOTE[engine]}{tpl ? ` · template ${tpl.name}` : ''}</span>
           {note && <span className="small muted">{note}</span>}
         </div>}
         {(tpl?.spec?.questions || []).map((q) => <Question key={q.key} q={q} value={b.answers?.[q.key]} onChange={(v) => setA(code, q.key, v)} />)}
@@ -180,7 +180,7 @@ export default function Mulai() {
           <div className="panel" key={code} style={{ gap: 4 }}>
             <div className="row between"><b>{c.icon} {b.name}</b>{done[code] ? <span className="chip good">Draf dibuat</span> : <button className="sm ghost" onClick={() => setStep(i + 1)}>Ubah</button>}</div>
             <span className="small muted">{c.name}{s ? ` · ${s.name}` : ''} · {STAGES.find(([k]) => k === (b.stage || 'berjalan'))[1]} · {RELATIONS.find(([k]) => k === (b.relation || 'pemilik'))[1]}{Number(b.branches) > 0 ? ` · ${b.branches} cabang` : ''}</span>
-            <span className="small">Disiapkan: {tpl?.name || '—'} — modul yang disarankan, {tpl?.engine === 'jasa' ? 'layanan yang Anda pilih (tanpa harga), tahap proses' : tpl?.engine === 'properti' ? 'kamar (harga sewa Anda isi)' : tpl?.engine === 'retail' ? 'cara jual & gudang (barang Anda isi setelah aktif)' : 'data & alur di Business Builder'}, daftar informasi yang perlu dilengkapi{tpl?.spec?.portal ? ', draf halaman bisnis' : ''}.</span>
+            <span className="small">Disiapkan: {tpl?.name || '—'} — modul yang disarankan, {tpl?.code === 'kuliner' ? 'tahap dapur (Dimasak → Siap saji), jumlah meja; menu & harga Anda isi sendiri' : tpl?.engine === 'jasa' ? 'layanan yang Anda pilih (tanpa harga), tahap proses' : tpl?.engine === 'properti' ? 'kamar (harga sewa Anda isi)' : tpl?.engine === 'retail' ? 'cara jual & gudang (barang Anda isi setelah aktif)' : 'data & alur di Business Builder'}, daftar informasi yang perlu dilengkapi{tpl?.spec?.portal ? ', draf halaman bisnis' : ''}.</span>
             {note && <span className="small muted">{note}</span>}
             {errs[code] && <div className="notice bad">{errs[code]}</div>}
           </div>

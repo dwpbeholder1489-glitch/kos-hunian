@@ -14,11 +14,11 @@ function steps(o) {
   const picked = !o.pickup || o.pickup_status === 'dijemput';
   const s = [['Permintaan masuk', true, waktu(o.received_at)], ['Dikonfirmasi', rank >= 1, waktu(o.confirmed_at)]];
   if (o.pickup) s.push([o.pickup_status === 'dijemput' ? 'Sudah dijemput' : `Menunggu penjemputan${o.pickup_date ? ` · ${tgl(o.pickup_date)}${o.pickup_slot ? ' ' + o.pickup_slot : ''}` : ''}`, rank >= 1 && picked, '']);
-  s.push([rank === 2 && o.stage ? `Sedang diproses · ${o.stage}` : 'Sedang diproses', rank >= 2, '']);
+  s.push([rank === 2 && o.stage ? `${o.kuliner ? 'Sedang dimasak' : 'Sedang diproses'} · ${o.stage}` : o.kuliner ? 'Sedang dimasak' : 'Sedang diproses', rank >= 2, '']);
   if (o.deliver) {
     s.push(['Siap diantar', rank >= 3, '']);
     s.push([`Dalam pengantaran${o.delivery_date ? ` · ${tgl(o.delivery_date)}${o.delivery_slot ? ' ' + o.delivery_slot : ''}` : ''}`, o.delivery_status === 'dalam_pengantaran' || rank >= 4, '']);
-  } else s.push(['Siap diambil', rank >= 3, '']);
+  } else s.push([o.kuliner && o.dine === 'tempat' ? 'Siap disajikan' : 'Siap diambil', rank >= 3, '']);
   s.push(['Selesai', rank >= 4, waktu(o.completed_at)]);
   return s;
 }

@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -37,6 +37,7 @@ const MENUS_JASA = [
   ['Laporan', 'Pendapatan, laba perkiraan, per layanan, pelanggan, ketepatan waktu, keluhan'],
   ['Layanan & tahap', 'Harga per kg/pcs, minimal, lama pengerjaan; urutan tahap proses'],
   ['Bahan & stok', 'Deterjen, pewangi, plastik: stok, belanja, pemakaian'],
+  ['Dapur (Kuliner)', 'Layar dapur: pesanan per tahap, meja/bungkus/antar, catatan menu, tombol tahap berikutnya'],
 ];
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
@@ -485,6 +486,19 @@ const PARTS = [
       <>Pelanggan bisa membuka <b>Cek status pesanan</b> di halaman bisnis dengan nomor pesanan + No. WhatsApp yang sama: terlihat menunggu konfirmasi, dijemput, tahap proses, siap, dalam pengantaran, selesai, serta lunas/belum.</>,
     ], <>Permintaan belum bisa diproses sebelum dikonfirmasi. Harga dihitung server dari daftar layanan yang tersedia; layanan nonaktif tidak bisa dipesan. Pelanggan baru masuk daftar pelanggan saat Anda mengonfirmasi. Pembayaran tetap langsung ke Anda (tidak ada pembayaran online). Kiriman dibatasi per perangkat agar tidak di-spam.</>, 'warn', null],
   ]],
+  ['M', 'Kuliner & jenis usaha lain', [
+    ['Kuliner: menu, pesanan meja/bungkus & dapur', 'Pesanan › + Pesanan baru · Dapur', [
+      <>Daftar di <b>/mulai</b> › kategori <b>Kuliner</b> (warung, kafe, katering). Di Pusat Konfirmasi isi alamat, WhatsApp, jam buka, cara bayar, <b>jumlah meja</b>, tahap dapur (awal: Dimasak → Siap saji), lalu <b>+ Menu</b> untuk tiap menu beserta harganya (per porsi/gelas/cup…). Aktifkan.</>,
+      <>Saat pelanggan memesan: <b>Pesanan › + Pesanan baru</b> › pilih <b>Makan di tempat</b> (ketuk nomor meja), <b>Bungkus</b>, atau <b>Diantar</b> (bila pengantaran disetujui) › ketuk menu, isi jumlah dan catatan (mis. pedas, tanpa bawang) › bayar sekarang atau nanti › <b>Simpan pesanan</b>. Nama pelanggan boleh kosong untuk makan di tempat (tercatat "Meja 3").</>,
+      <>Di dapur buka menu <b>Dapur</b>: pesanan terlama paling atas, berwarna merah bila lebih dari 30 menit. Tekan tombol besar <b>→ Dimasak</b> / <b>→ Siap saji</b> / <b>→ Siap</b>. Layar memuat ulang sendiri tiap 20 detik.</>,
+      <>Kasir menyerahkan di <b>Pesanan</b>: <b>+ Bayar</b> bila belum, lalu <b>Sudah diserahkan</b> (atau <b>Sudah diantar</b>). Pesanan dari halaman bisnis masuk sebagai <b>Permintaan masuk</b> seperti Langkah 66 (tanpa jemput).</>,
+    ], <>Harga dihitung server dari daftar menu; kasir tidak bisa mengubah harga satuan (potongan lewat diskon yang tercatat). Pendapatan diakui saat pesanan diserahkan. Petugas dapur (peran Petugas proses) hanya melihat pesanan & tahap, tidak melihat uang. Bahan baku dicatat di <b>Bahan & stok</b>. <b>Dalam rencana</b>: reservasi meja, split bill, QR menu per meja, cetak ke printer dapur. Bukan sistem POS restoran besar — cocok untuk warung, kafe kecil, dan katering.</>, 'warn', <ScrDapur />],
+    ['Jenis usaha lain: template siap pakai', '/mulai › pilih kategori', [
+      <>Pendidikan/kursus, event & sewa perlengkapan, konstruksi/proyek, rental kendaraan/alat, travel, produksi/UMKM, pertanian/peternakan, klinik/praktik, komunitas/koperasi, dan ekspedisi kini disiapkan dengan <b>template Business Builder</b> sesuai jenisnya (mis. Rental: Penyewa, Sewa dengan harga & status Dipesan → Berjalan → Kembali; Kursus: Siswa, Kelas, Pembayaran).</>,
+      <>Setelah daftar, buka <b>Pusat Konfirmasi</b> untuk melengkapi profil, lalu <b>Business Builder</b> untuk menyesuaikan field, status, dan peran (Langkah 55–62). Aktifkan.</>,
+      <>Catat kegiatan sehari-hari di <b>Catatan</b>, uang masuk lewat field uang pada catatan, dan lihat <b>Laporan</b>.</>,
+    ], <>Template hanya titik awal — semua bisa diubah, tidak ada data atau harga yang diisi otomatis. Fitur khusus per jenis (mis. jadwal kelas otomatis, rekam medis, pelacakan resi) belum ada; yang tersedia adalah pencatatan, alur status, peran, dan laporan dari Business Builder.</>, 'warn', null],
+  ]],
 ];
 
 const RULES = [
@@ -541,6 +555,7 @@ export default function Panduan() {
           <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
           <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
+          <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–68</a><br />Menu, meja/bungkus/antar, layar dapur; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

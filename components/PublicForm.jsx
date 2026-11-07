@@ -22,6 +22,7 @@ export default function PublicForm({ page }) {
   const [err, setErr] = useState('');
   // jasa: pesanan langsung (status "Permintaan masuk" sampai dikonfirmasi pemilik)
   const ord = jasa ? page.order : null;
+  const kul = Boolean(ord?.kuliner); // kuliner: tidak ada jemput, "menu" bukan "layanan"
   const [pickup, setPickup] = useState(false);
   const [deliver, setDeliver] = useState(false);
   const [zone, setZone] = useState('');
@@ -75,7 +76,7 @@ export default function PublicForm({ page }) {
     <section className="panel">
       <h3>Pesanan terkirim, {name.trim()}!</h3>
       <p style={{ margin: 0 }}>Nomor pesanan Anda <b>{done.number}</b>. Status: <b>Menunggu konfirmasi</b> dari {page.name}.</p>
-      {page.show_prices && done.total != null && <span className="small">Perkiraan total {rp(done.total)} — dihitung ulang saat barang diterima (mis. berat sebenarnya).</span>}
+      {page.show_prices && done.total != null && <span className="small">Perkiraan total {rp(done.total)}{kul ? ' (belum termasuk ongkos antar bila ada).' : ' — dihitung ulang saat barang diterima (mis. berat sebenarnya).'}</span>}
       <span className="small muted">Pembayaran dilakukan langsung ke {page.name}; pesanan belum dibayar. Simpan nomor pesanan untuk cek status.</span>
       <a href={`/b/${page.slug}/cek?no=${encodeURIComponent(done.number)}`}><button className="primary">Cek status pesanan</button></a>
     </section>
@@ -89,11 +90,11 @@ export default function PublicForm({ page }) {
   );
   return (
     <form className="panel stack" onSubmit={send}>
-      <h3>{retail ? 'Pesan / tanya barang' : jasa ? 'Pesan / tanya layanan' : 'Tanya / booking kamar'}</h3>
-      {ord && <span className="small muted">Pilih layanan untuk memesan langsung, atau kosongkan untuk bertanya saja.</span>}
+      <h3>{retail ? 'Pesan / tanya barang' : jasa ? (kul ? 'Pesan menu' : 'Pesan / tanya layanan') : 'Tanya / booking kamar'}</h3>
+      {ord && <span className="small muted">Pilih {kul ? 'menu' : 'layanan'} untuk memesan langsung, atau kosongkan untuk bertanya saja.</span>}
       {page.form_intro && <p className="small" style={{ margin: 0 }}><Linkify text={page.form_intro} /></p>}
       {items.length > 0 && <>
-        <span className="label">{retail ? 'Pilih barang (opsional)' : jasa ? 'Pilih layanan (opsional)' : 'Pilih kamar (opsional)'}</span>
+        <span className="label">{retail ? 'Pilih barang (opsional)' : jasa ? (kul ? 'Pilih menu' : 'Pilih layanan (opsional)') : 'Pilih kamar (opsional)'}</span>
         <div className="list">{items.map((it) => {
           const v = pick[it.id];
           return (
@@ -112,9 +113,9 @@ export default function PublicForm({ page }) {
         {total > 0 && <span className="small">Perkiraan: <b>{rp(total)}</b> (belum termasuk ongkos; dikonfirmasi penjual)</span>}
       </>}
       {ordering && ord.logistics && <>
-        <span className="label">Antar jemput (opsional)</span>
+        <span className="label">{kul ? 'Diantar? (opsional — tanpa centang = ambil sendiri)' : 'Antar jemput (opsional)'}</span>
         <div className="row">
-          <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pickup} onChange={(e) => setPickup(e.target.checked)} />Dijemput</label>
+          {!kul && <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pickup} onChange={(e) => setPickup(e.target.checked)} />Dijemput</label>}
           <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={deliver} onChange={(e) => setDeliver(e.target.checked)} />Diantar</label>
         </div>
         {logi && <>
@@ -130,11 +131,11 @@ export default function PublicForm({ page }) {
             <label className="f" style={{ flex: 1 }}>Tanggal antar<input type="date" value={dDate} min={minDate} onChange={(e) => setDDate(e.target.value)} /></label>
             {(ord.slots || []).some((s) => s.kind !== 'jemput') && <label className="f" style={{ flex: 1 }}>Jam antar<select value={dSlot} onChange={(e) => setDSlot(e.target.value)}><option value="">— bebas —</option>{ord.slots.filter((s) => s.kind !== 'jemput').map((s) => <option key={s.label}>{s.label}</option>)}</select></label>}
           </div>}
-          {zoneObj && page.show_prices && <span className="small">Ongkos antar jemput: <b>{Number(zoneObj.fee) > 0 ? rp(zoneObj.fee) : 'gratis'}</b></span>}
+          {zoneObj && page.show_prices && <span className="small">{kul ? 'Ongkos antar' : 'Ongkos antar jemput'}: <b>{Number(zoneObj.fee) > 0 ? rp(zoneObj.fee) : 'gratis'}</b></span>}
         </>}
       </>}
       {!retail && !ordering && <label className="f">{jasa ? 'Tanggal jemput / diantar (opsional)' : 'Rencana mulai tinggal'}<input type="date" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} /></label>}
-      <label className="f">{ordering ? 'Catatan (opsional)' : retail || jasa ? 'Pesan / kebutuhan' : 'Pesan (mis. berapa orang, pertanyaan)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : jasa ? 'mis. bisa dijemput hari ini? Alamat Jl. Melati 12.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
+      <label className="f">{ordering ? 'Catatan (opsional)' : retail || jasa ? 'Pesan / kebutuhan' : 'Pesan (mis. berapa orang, pertanyaan)'}<textarea rows={3} maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={retail ? 'mis. bisa antar ke Desa X? Butuh untuk warung.' : kul && ordering ? 'mis. pedas sedang, tanpa bawang, ambil jam 12' : jasa ? 'mis. bisa dijemput hari ini? Alamat Jl. Melati 12.' : 'mis. mulai 1 Desember, 1 orang, mahasiswi'} /></label>
       <label className="f">Nama<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required autoComplete="name" /></label>
       <label className="f">No. WhatsApp<input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} required autoComplete="tel" placeholder="08…" /></label>
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>

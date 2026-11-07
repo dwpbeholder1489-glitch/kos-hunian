@@ -9,7 +9,7 @@ import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, today, errMsg, parseRp, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
-import { PICKUP, DELIVERY, tgl2, mapsLink, hari } from '@/lib/jasa';
+import { PICKUP, DELIVERY, tgl2, mapsLink, hari, isKul } from '@/lib/jasa';
 
 const addDays = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
 const KIND = { jemput: 'Jemput', antar: 'Antar', keduanya: 'Jemput & antar' };
@@ -18,7 +18,8 @@ export default function Antar() {
   const { kos, kosId, ver } = useKos();
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
-  const [tab, setTab] = useState('jemput');
+  const kul = isKul(kos);
+  const [tab, setTab] = useState(kul ? 'antar' : 'jemput');
   const [plan, setPlan] = useState(null);   // {o, leg}
   const [zone, setZone] = useState(null);
   const [slot, setSlot] = useState(null);
@@ -80,8 +81,8 @@ export default function Antar() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Antar jemput</h2><PageHelp page="antar" /></div>{money && <Link href="/pesanan?baru=1"><button className="primary">+ Pesanan</button></Link>}</div>
-      <div className="seg">{[['jemput', `Jemput (${jemput.length})`], ['antar', `Antar (${antar.length})`], ...(settings ? [['atur', 'Wilayah & jadwal']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
+      <div className="row between"><div className="row"><h2>{kul ? 'Pengantaran' : 'Antar jemput'}</h2><PageHelp page="antar" /></div>{money && <Link href="/pesanan?baru=1"><button className="primary">+ Pesanan</button></Link>}</div>
+      <div className="seg">{[...(kul ? [] : [['jemput', `Jemput (${jemput.length})`]]), ['antar', `Antar (${antar.length})`], ...(settings ? [['atur', 'Wilayah & jadwal']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
       {tab !== 'atur' && d.zones.filter((z) => z.active).length === 0 && <div className="notice">Wilayah layanan belum diatur{settings ? <> — buka <b>Wilayah & jadwal</b>. Tanpa daftar wilayah, alamat mana pun bisa dicatat.</> : '. Minta pemilik mengaturnya.'}</div>}
       {tab === 'jemput' && <List rows={jemput} leg="jemput" key2="pickup_date" />}
       {tab === 'antar' && <List rows={antar} leg="antar" key2="delivery_date" />}

@@ -509,3 +509,23 @@ export function ScrAntar() {
     </Phone>
   );
 }
+
+export function ScrDapur() {
+  const R = [['Meja 3', 'PSN-014 · 12 mnt', [['2×', 'Nasi goreng', 'pedas sedang'], ['2×', 'Es teh manis', '']], 'Siap saji'], ['🥡 Bungkus', 'PSN-015 · 5 mnt', [['1×', 'Mie ayam', 'tanpa sawi']], 'Siap saji']];
+  return (
+    <Phone tab="Dapur" tabs={['Dashboard', 'Pesanan', 'Dapur', 'Kas']} name="Warung Contoh">
+      <Title>Dapur</Title>
+      <span className="small muted">Pesanan terlama di atas.</span>
+      <span className="label">Dimasak (2)</span>
+      {R.map(([m, n, lines, nx]) => (
+        <div className="panel" key={n} style={{ gap: 4 }}>
+          <div className="row between"><b>{m}</b><span className="small muted">{n.split(' · ')[1]}</span></div>
+          <span className="small muted">{n.split(' · ')[0]}</span>
+          {lines.map(([q, x, c]) => <span className="small" key={x}><b>{q}</b> {x}{c ? <span style={{ color: 'var(--gold)' }}> ↳ {c}</span> : null}</span>)}
+          <span className="mini-btn">→ {nx}</span>
+        </div>
+      ))}
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

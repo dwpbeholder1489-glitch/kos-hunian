@@ -17,7 +17,8 @@ import { SETUP_STATUS, homeOf } from '@/lib/business';
 const ST = SETUP_STATUS;
 const ITEM_ST = { ...ST, draft: ['Disiapkan sistem', 'void'], active: ['Aktif', 'good'] };
 const SECTIONS = [['info', 'Profil & informasi bisnis'], ['layanan', 'Layanan'], ['alur', 'Alur kerja'], ['modul', 'Modul & menu'], ['portal', 'Portal pelanggan']];
-const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
+const UNITS_J = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
+const UNITS_K = ['porsi', 'pcs', 'gelas', 'cup', 'botol', 'bungkus', 'box', 'paket', 'kg', 'loyang'];
 const num = (v) => (v === '' || v == null ? null : Number(String(v).replace(/\./g, '').replace(',', '.')));
 
 // Ringkasan isi item untuk ditampilkan
@@ -38,7 +39,9 @@ function show(it) {
   }
 }
 
-function Editor({ it, onSave, onClose, owner }) {
+function Editor({ it, onSave, onClose, owner, kul }) {
+  const UNITS = kul ? UNITS_K : UNITS_J;
+  const W = kul ? 'menu' : 'layanan';
   const [v, setV] = useState(() => {
     const x = it.value || {};
     if (it.input === 'service') return { ...x, price: x.price ?? '', hours: x.hours ?? '', min_qty: Number(x.min_qty) > 0 ? x.min_qty : '' };
@@ -69,19 +72,19 @@ function Editor({ it, onSave, onClose, owner }) {
       {it.input === 'multi' && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{choices.map((c) => { const on = v.v.includes(c); return <button key={c} className={'sm' + (on ? ' primary' : '')} aria-pressed={on} onClick={() => set('v', on ? v.v.filter((x) => x !== c) : [...v.v, c])}>{on ? '✓ ' : ''}{c}</button>; })}</div>}
       {it.input === 'choice' && <div className="seg">{choices.map((c) => <button key={c} className={v.v === c ? 'on' : ''} onClick={() => set('v', c)}>{c}</button>)}</div>}
       {it.input === 'service' && <>
-        <Field label="Nama layanan"><input value={v.name || ''} maxLength={80} onChange={(e) => set('name', e.target.value)} /></Field>
+        <Field label={`Nama ${W}`}><input value={v.name || ''} maxLength={80} onChange={(e) => set('name', e.target.value)} /></Field>
         <div className="row" style={{ alignItems: 'flex-start' }}>
           <Field label="Harga (Rp)" hint="Wajib diisi pemilik"><input inputMode="numeric" value={v.price} placeholder="mis. 7000" onChange={(e) => set('price', e.target.value.replace(/[^\d]/g, ''))} /></Field>
           <Field label="Per satuan"><select value={UNITS.includes(v.unit) ? v.unit : '__'} onChange={(e) => set('unit', e.target.value === '__' ? '' : e.target.value)}>{UNITS.map((u) => <option key={u} value={u}>{u}</option>)}<option value="__">lainnya…</option></select></Field>
         </div>
         {!UNITS.includes(v.unit) && <Field label="Satuan lain"><input value={v.unit || ''} maxLength={20} onChange={(e) => set('unit', e.target.value)} placeholder="mis. lembar" /></Field>}
         <div className="row" style={{ alignItems: 'flex-start' }}>
-          <Field label="Estimasi pengerjaan (jam)" hint="48 = 2 hari"><input inputMode="numeric" value={v.hours} onChange={(e) => set('hours', e.target.value.replace(/\D/g, ''))} /></Field>
+          <Field label="Estimasi pengerjaan (jam)" hint={kul ? '1 = sejam; katering 24+' : '48 = 2 hari'}><input inputMode="numeric" value={v.hours} onChange={(e) => set('hours', e.target.value.replace(/\D/g, ''))} /></Field>
           <Field label="Minimal (opsional)" hint={`mis. 3 ${v.unit || ''}`}><input inputMode="decimal" value={v.min_qty} onChange={(e) => set('min_qty', e.target.value)} /></Field>
         </div>
-        <Field label="Kategori layanan (opsional)"><input value={v.category || ''} maxLength={40} onChange={(e) => set('category', e.target.value)} placeholder="mis. Kiloan, Satuan" /></Field>
+        <Field label={`Kategori ${W} (opsional)`}><input value={v.category || ''} maxLength={40} onChange={(e) => set('category', e.target.value)} placeholder={kul ? 'mis. Makanan, Minuman' : 'mis. Kiloan, Satuan'} /></Field>
         <Field label="Deskripsi (opsional)"><input value={v.description || ''} maxLength={300} onChange={(e) => set('description', e.target.value)} /></Field>
-        <Field label="Persyaratan / info tambahan (opsional)"><input value={v.requirements || ''} maxLength={300} onChange={(e) => set('requirements', e.target.value)} placeholder="mis. pakaian luntur dipisah" /></Field>
+        <Field label="Persyaratan / info tambahan (opsional)"><input value={v.requirements || ''} maxLength={300} onChange={(e) => set('requirements', e.target.value)} placeholder={kul ? 'mis. pesan H-1 untuk katering' : 'mis. pakaian luntur dipisah'} /></Field>
       </>}
       {it.input === 'rooms' && <>
         <div className="row" style={{ alignItems: 'flex-start' }}>
@@ -112,14 +115,15 @@ function Editor({ it, onSave, onClose, owner }) {
   );
 }
 
-function AddService({ kosId, onDone, onClose }) {
+function AddService({ kosId, onDone, onClose, kul }) {
   const [name, setName] = useState('');
+  const W = kul ? 'menu' : 'layanan';
   const save = async () => {
-    const { error } = await supabase.rpc('setup_add_service', { p_kos: kosId, p: { name, unit: 'pcs' } });
+    const { error } = await supabase.rpc('setup_add_service', { p_kos: kosId, p: { name, unit: kul ? 'porsi' : 'pcs', ...(kul ? { hours: 1 } : {}) } });
     if (error) return toast(errMsg(error));
-    toast('Layanan ditambahkan — isi harga & estimasinya'); onDone();
+    toast(`${kul ? 'Menu' : 'Layanan'} ditambahkan — isi harganya`); onDone();
   };
-  return <Sheet title="Tambah layanan" onClose={onClose}><Field label="Nama layanan"><input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="mis. Cuci karpet" /></Field>
+  return <Sheet title={`Tambah ${W}`} onClose={onClose}><Field label={`Nama ${W}`}><input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder={kul ? 'mis. Es teh manis' : 'mis. Cuci karpet'} /></Field>
     <button className="primary" disabled={name.trim().length < 2} onClick={save}>Tambah</button></Sheet>;
 }
 
@@ -136,7 +140,7 @@ export default function Konfirmasi() {
   useEffect(() => { load(); }, [kosId, ver]);
   if (err) return <div className="notice bad">{/setup_state|function/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
-  const b = d.business; const owner = b.is_owner; const active = b.status === 'active';
+  const b = d.business; const owner = b.is_owner; const active = b.status === 'active'; const kul = b.type === 'jasa' && b.category?.code === 'kuliner';
   const items = d.items;
   if (!items.length) return <div className="stack"><h2>Pusat Konfirmasi</h2><div className="notice">{kos.name} dibuat sebelum Pusat Konfirmasi ada. Pengaturan modul & profilnya ada di <Link href="/konfigurasi">Konfigurasi</Link>.</div></div>;
 
@@ -222,11 +226,11 @@ export default function Konfirmasi() {
         if (!xs.length && !(k === 'layanan' && b.type === 'jasa')) return null;
         return (
           <section className="panel" key={k}>
-            <div className="row between"><h3>{title}</h3>
+            <div className="row between"><h3>{k === 'layanan' && kul ? 'Menu' : title}</h3>
               {k === 'modul' && owner && xs.some((x) => x.value?.recommended && !['approved', 'active'].includes(x.status)) && <button className="sm" onClick={approveReco}>Setujui semua yang disarankan</button>}
-              {k === 'layanan' && b.type === 'jasa' && b.status !== 'rejected' && b.status !== 'paused' && <button className="sm" onClick={() => setAdding(true)}>+ Layanan lain</button>}</div>
+              {k === 'layanan' && b.type === 'jasa' && b.status !== 'rejected' && b.status !== 'paused' && <button className="sm" onClick={() => setAdding(true)}>{kul ? '+ Menu' : '+ Layanan lain'}</button>}</div>
             {k === 'modul' && <span className="small muted">Modul yang tidak disetujui tidak diaktifkan (menunya tidak muncul). Bisa diubah kapan saja.</span>}
-            {k === 'layanan' && b.type === 'jasa' && <span className="small muted">Hanya layanan yang disetujui yang aktif dan bisa dipesan. Minimal satu layanan dengan harga.</span>}
+            {k === 'layanan' && b.type === 'jasa' && <span className="small muted">{kul ? 'Hanya menu yang disetujui yang aktif dan bisa dipesan. Minimal satu menu dengan harga.' : 'Hanya layanan yang disetujui yang aktif dan bisa dipesan. Minimal satu layanan dengan harga.'}</span>}
             <div className="list">{xs.map((it) => <Item key={it.code} it={it} />)}</div>
           </section>
         );
@@ -245,8 +249,8 @@ export default function Konfirmasi() {
         </> : <button className="primary" onClick={() => bizAction('lanjut')}>Lanjutkan setup</button>}
       </>}
 
-      {edit && <Editor it={edit} owner={owner} onClose={() => setEdit(null)} onSave={(it, v, a) => act(it, v, a)} />}
-      {adding && <AddService kosId={kosId} onClose={() => setAdding(false)} onDone={() => { setAdding(false); load(); }} />}
+      {edit && <Editor it={edit} owner={owner} kul={kul} onClose={() => setEdit(null)} onSave={(it, v, a) => act(it, v, a)} />}
+      {adding && <AddService kosId={kosId} kul={kul} onClose={() => setAdding(false)} onDone={() => { setAdding(false); load(); }} />}
       {review && (
         <Sheet title="Tinjau sebelum aktivasi" onClose={() => setReview(false)}>
           <span className="label">Akan diaktifkan ({willOn.length})</span>
