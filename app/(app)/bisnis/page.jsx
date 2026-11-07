@@ -34,7 +34,8 @@ export default function Bisnis() {
   const go = (b, href) => { pickKos(b.id); router.push(href || homeOf(list?.find((x) => x.id === b.id) || b)); };
   const fin = d.businesses.filter((b) => b.access);
   const att = fin.flatMap((b) => b.attention.map((a) => ({ ...a, b })));
-  const groups = Object.values(fin.reduce((g, b) => {
+  const money = fin.filter((b) => b.business_type !== 'kustom'); // bisnis kustom belum punya angka keuangan
+  const groups = Object.values(money.reduce((g, b) => {
     const key = b.legal_entity?.id || 'none';
     (g[key] ||= { le: b.legal_entity, items: [] }).items.push(b);
     return g;
@@ -90,6 +91,14 @@ export default function Bisnis() {
             <button className="sm" onClick={() => go(b)}>Buka bisnis</button>
           </section>
         );
+        if (b.business_type === 'kustom') return (
+          <section className="panel" key={b.id} style={b.id === kosId ? { borderColor: 'var(--brand)' } : undefined}>
+            <div className="stack" style={{ gap: 0 }}><b>{t.icon} {b.name}</b><span className="small muted">{t.name} · {b.plan_name || b.plan}</span></div>
+            {b.attention?.length > 0 && <div className="list">{b.attention.map((a) => <button key={a.text} className="li click" onClick={() => go(b, a.href)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}><span className="small">{a.text}</span><b className="small">›</b></button>)}</div>}
+            <span className="small muted">Bisnis kustom: angka keuangan belum dihitung PRASARA dan tidak ikut dijumlahkan di bawah. Lihat menu Laporan bisnis ini.{b.last_activity ? ` Catatan terakhir ${tgl(String(b.last_activity).slice(0, 10))}.` : ''}</span>
+            <button className="sm" onClick={() => go(b, '/kerja')}>Buka {b.name}</button>
+          </section>
+        );
         const retail = b.business_type === 'retail';
         const jasa = b.business_type === 'jasa';
         const dagang = retail || jasa; // punya kas/bank & utang supplier
@@ -124,13 +133,13 @@ export default function Bisnis() {
         );
       })}
 
-      {fin.length > 1 && <>
+      {money.length > 1 && <>
         <h3 style={{ marginTop: 8 }}>Ringkasan manajemen</h3>
         {groups.length > 1 && groups.map((g) => (
           <Total key={g.le?.id || 'none'} items={g.items} title={g.le ? `${g.le.name} (${LEGAL_KIND[g.le.kind] || g.le.kind})` : 'Badan usaha belum diatur'}
             note="Jumlah bisnis dalam satu badan usaha." />
         ))}
-        <Total items={fin} title="Semua bisnis" note={groups.length > 1 ? 'Gabungan beberapa badan usaha — bukan laporan konsolidasi resmi (transaksi antarbisnis tidak dieliminasi).' : 'Bukan laporan konsolidasi resmi; ketuk angka di tiap bisnis untuk melihat transaksinya.'} />
+        <Total items={money} title="Semua bisnis" note={groups.length > 1 ? 'Gabungan beberapa badan usaha — bukan laporan konsolidasi resmi (transaksi antarbisnis tidak dieliminasi).' : 'Bukan laporan konsolidasi resmi; ketuk angka di tiap bisnis untuk melihat transaksinya.'} />
         {groups.some((g) => !g.le) && <span className="small muted">Atur badan usaha tiap bisnis di Lainnya › Konfigurasi › Profil agar ringkasan bisa dipisah per badan usaha.</span>}
       </>}
 

@@ -31,7 +31,7 @@ export default function Pengaturan() {
   if (!d.ready || !kos) return <Loading />;
   const isOwner = kos.owner_id === user?.id;
   const canEdit = canArea(kos, 'settings'); // pemilik & pengelola
-  const jasa = kos.business_type === 'jasa';
+  const jasa = ['jasa', 'kustom'].includes(kos.business_type); // jasa & bisnis kustom: profil usaha umum
   const retail = kos.business_type === 'retail' || jasa; // toko & jasa: profil dengan WA + tulisan di struk/nota
   const noun = jasa ? 'usaha' : retail ? 'toko' : 'kos';
 

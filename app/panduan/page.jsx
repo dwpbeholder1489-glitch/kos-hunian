@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -407,6 +407,39 @@ const PARTS = [
       <>Tidak jadi? <b>Batalkan booking</b>: tulis alasan dan berapa DP yang dikembalikan; sisanya <b>hangus</b> menjadi pendapatan lain.</>,
     ], <>DP booking bukan pendapatan sampai penghuni masuk atau DP hangus (di Pembukuan dicatat sebagai uang muka). Booking ber-DP hanya bisa dibatalkan pemilik/pengelola. Booking dari Prospek otomatis menandai prospek <b>Jadi</b> saat check-in.</>, 'warn', <ScrBooking />],
   ]],
+  ['I', 'Business Builder (bisnis kustom)', [
+    ['Buat bisnis kustom', 'Ketuk nama bisnis › + Tambah bisnis › Bisnis lain (Business Builder)', [
+      <>Pilih <b>Template Bengkel motor</b>, <b>Template Salon & barbershop</b>, atau <b>Bangun sendiri</b>. (<b>Bangun dengan AI</b> belum tersedia.)</>,
+      <>Isi nama usaha, lalu <b>Setujui & buat bisnis</b>. Bisnis dibuat sebagai <b>draf</b> dan Anda langsung masuk ke <b>Business Builder</b>.</>,
+      <>Langkah <b>1. Profil</b>: isi deskripsi, model pendapatan (dari mana uang masuk), proses utama, dan lokasi.</>,
+    ], <>Semua isi template bisa diubah. Selama draf, tim belum bisa mencatat.</>, null, <ScrBuilder />],
+    ['Data & formulir (custom field)', 'Business Builder › 2. Data & formulir', [
+      <><b>Jenis data</b> = hal yang dicatat, mis. Pelanggan, Kendaraan, Servis. Tekan <b>+ Jenis data</b>, pilih ikon dan awalan nomor (mis. SRV).</>,
+      <>Tekan <b>+ Field</b>: nama, tipe (teks, angka, uang, tanggal, tanggal & jam, pilihan satu/banyak, ya/tidak, No. HP, <b>rujukan</b> ke jenis data lain), wajib, nilai bawaan, batas minimal/maksimal.</>,
+      <>Atur <b>Tampil di daftar</b>, <b>Bisa dicari</b>, <b>Bisa disaring</b>, dan <b>Sembunyikan dari peran</b> (mis. harga modal tidak terlihat petugas). Urutkan dengan ↑ ↓.</>,
+      <>Di <b>Ubah</b> jenis data, pilih <b>Field judul</b> (mis. Plat nomor) dan apakah memakai status & alur. Cek dengan <b>Pratinjau formulir</b>.</>,
+    ], <>Field yang sudah berisi data tidak bisa diganti tipenya; nonaktifkan dan buat field baru (isi lama tidak hilang). Nama field yang sama di satu jenis data ditolak (konflik). Lampiran file belum tersedia.</>, 'warn', null],
+    ['Alur status & peran (workflow)', 'Business Builder › 3. Alur & peran', [
+      <>Susun <b>status</b> (mis. Antre → Dikerjakan → Selesai → Diambil, Batal). Tandai satu <b>Awal</b> dan minimal satu <b>Akhir</b>; isi <b>batas jam</b> bila ada target waktu.</>,
+      <>Tambah <b>aturan</b>: dari status apa ke status apa. Centang peran yang boleh (kosong = semua), <b>Wajib catatan</b>, dan <b>Perlu persetujuan</b> (selain pemilik, dikirim ke menu Persetujuan).</>,
+      <>Tekan <b>Simpan alur</b>. Undang karyawan sebagai <b>Pengelola</b> atau <b>Petugas proses</b> di menu Karyawan.</>,
+    ], <>Langkah yang tidak ada aturannya ditolak server, apa pun tampilannya. Pemilik selalu boleh.</>, null, null],
+    ['Laporan (Report Builder)', 'Business Builder › 4. Laporan', [
+      <>Tekan <b>+ Laporan</b>: pilih jenis data, metrik (<b>jumlah catatan</b>, <b>total</b> atau <b>rata-rata</b> field angka/uang), kelompok (per status, bulan, hari, atau field), periode bawaan, dan filter status.</>,
+      <>Lihat hasilnya di menu <b>Laporan</b>: pilih laporan & periode; ada batang perbandingan dan <b>Unduh Excel</b> <Std />.</>,
+    ], <>Laporan dihitung server dari catatan yang tidak diarsipkan (tanpa rumus bebas). Angka uang di bisnis kustom belum menjadi pembukuan resmi.</>, null, null],
+    ['Validasi & aktifkan', 'Business Builder › 5. Validasi & aktifkan', [
+      <>Lihat <b>Pratinjau workspace</b>: jenis data, field, status, aturan, laporan, peran, dan menu.</>,
+      <>Perbaiki semua yang bertanda <b>Wajib</b> (tombol <b>Perbaiki</b> membawa ke langkahnya); <b>Saran</b> boleh diabaikan.</>,
+      <>Pemilik menekan <b>Aktifkan bisnis</b>. Konfigurasi tetap bisa diubah setelah aktif.</>,
+    ], <>Batas Business Builder: tidak bisa mengubah struktur inti, kode, keamanan, atau data bisnis lain. Kebutuhan di luar itu = pengembangan khusus.</>, null, null],
+    ['Catatan harian & dashboard', 'Catatan · Dashboard', [
+      <>Buka <b>Catatan</b>, pilih jenis data, tekan <b>+ [nama jenis]</b>, isi formulir, pilih <b>Penanggung jawab</b> bila perlu.</>,
+      <>Ketuk catatan › tombol <b>→ [status]</b> untuk memindahkan sesuai alur. Langkah wajib catatan meminta alasan; langkah perlu persetujuan dikirim ke pemilik.</>,
+      <>Saring per status atau field, cari, <b>Ubah isi</b>, lihat <b>Riwayat</b> dan <b>Dipakai di</b> (mis. riwayat servis sebuah kendaraan). Data salah? <b>Arsipkan</b> (pemilik/pengelola).</>,
+      <><b>Dashboard</b> menampilkan jumlah per status, <b>Tugas saya</b>, dan <b>Lewat batas waktu</b>.</>,
+    ], <>Notifikasi saat ini tampil di Dashboard & Ringkasan pemilik; email/WhatsApp otomatis untuk bisnis kustom belum tersedia. Catatan yang masih dirujuk catatan lain tidak bisa diarsipkan.</>, null, <ScrCatatan />],
+  ]],
 ];
 
 const RULES = [
@@ -458,6 +491,7 @@ export default function Panduan() {
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
           <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–44</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek, halaman bisnis</span></div>
           <div><b>Jasa & Laundry</b><span><a href="#bagian-G">Langkah 45–50</a><br />Layanan & tahap, pesanan, nota, proses, bayar, keluhan, bahan, laporan</span></div>
+          <div><b>Business Builder</b><span><a href="#bagian-I">Langkah 55–60</a><br />Bisnis kustom: data & field, alur & peran, laporan, validasi, catatan</span></div>
           <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–54</a><br />Deposit, keluhan & perbaikan, meteran listrik/air, booking kamar</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

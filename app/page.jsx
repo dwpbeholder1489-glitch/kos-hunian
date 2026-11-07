@@ -43,6 +43,7 @@ const VALUES = [
 const CATS = [
   ['🏠', 'Properti & Sewa', 'Kos, kontrakan, homestay: kamar, penghuni, tagihan bulanan otomatis, booking, deposit, keluhan & perbaikan, meteran listrik/air, verifikasi pembayaran, laba rugi.', 'ready'],
   ['🛒', 'Retail & Grosir', 'Toko sembako, minimarket, grosir: kasir eceran & grosir, stok multi-satuan, barcode, belanja ke supplier, kasbon, laporan laba.', 'ready'],
+  ['🧩', 'Bisnis lain (Business Builder)', 'Bengkel, salon, katering, dan usaha lain: susun sendiri data, formulir, alur status, peran, dan laporan. Keuangan/pembukuan otomatis belum untuk jenis ini.', 'ready'],
   ['🧺', 'Jasa & Laundry', 'Laundry kiloan & satuan (dan jasa lain): pesanan, tahap cuci–kering–setrika–QC, nota, DP, antar-jemput, keluhan, bahan, laporan.', 'ready'],
   ['🍳', 'Kuliner', 'Menu, resep, bahan baku, dan pesanan dapur.', 'plan'],
   ['🏭', 'Produksi', 'Produksi, daftar bahan (BOM), bahan baku, kontrol mutu.', 'plan'],
@@ -92,7 +93,7 @@ const TRUST = [
 ];
 
 const FAQ = [
-  ['Bisnis apa saja yang sudah bisa dikelola?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay), Retail & Grosir (toko sembako, minimarket, grosir), dan Jasa & Laundry (laundry kiloan/satuan, juga jasa lain seperti jahit atau servis). Jenis lain seperti kuliner, produksi, dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
+  ['Bisnis apa saja yang sudah bisa dikelola?', 'Saat ini Properti & Sewa (kos, kontrakan, homestay), Retail & Grosir (toko sembako, minimarket, grosir), Jasa & Laundry (laundry kiloan/satuan, juga jasa lain seperti jahit atau servis), dan usaha lain lewat Business Builder (susun sendiri data, alur, dan laporan). Jenis lain seperti kuliner, produksi, dan distribusi masih dalam rencana — kami tidak menjanjikan tanggal sebelum fiturnya siap.'],
   ['Apakah satu akun bisa untuk kos dan toko sekaligus?', 'Bisa. Tambahkan bisnis kedua dari menu bisnis (ketuk nama bisnis di kiri atas). Data tiap bisnis terpisah, dan Anda bisa melihat ringkasan semuanya dalam satu layar.'],
   ['Apakah harus memasang aplikasi?', 'Tidak. PRASARA dibuka lewat browser di HP atau laptop. Agar terasa seperti aplikasi, tambahkan ke layar utama: di Safari ketuk Bagikan › Tambah ke Layar Utama, di Chrome ketuk ⋮ › Tambahkan ke layar utama.'],
   ['Bagaimana cara mencoba gratis?', `Daftar dengan email, pilih jenis bisnis, lalu isi namanya. Setiap bisnis baru mendapat ${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit. Setelah itu otomatis menjadi paket Gratis kecuali Anda berlangganan.`],
@@ -194,22 +195,23 @@ export default async function Landing() {
           </div>
         </section>
 
-        {/* 5. BUSINESS BUILDER (belum tersedia) */}
+        {/* 5. BUSINESS BUILDER */}
         <section className="ln-sec ln-sec-alt" id="builder" aria-labelledby="h-builder">
           <div className="ln-wrap">
             <div className="ln-builder">
               <div>
-                <span className="ln-kicker">Business Builder <Badge t="Segera hadir" /></span>
+                <span className="ln-kicker">Business Builder</span>
                 <h2 id="h-builder" style={{ marginTop: 8 }}>Usaha Anda tidak ada di daftar?</h2>
-                <p className="ln-p" style={{ marginTop: 12 }}>Kami sedang merancang Business Builder: menyusun alur bisnis sendiri dari template, memilih modul yang dibutuhkan, dan memakai istilah yang biasa Anda pakai. Fitur ini <b>belum tersedia</b>.</p>
+                <p className="ln-p" style={{ marginTop: 12 }}>Bangun sendiri dari aplikasi: jenis data (mis. Pelanggan, Kendaraan, Servis), formulir dengan field pilihan Anda, status & alur kerja dengan aturan per peran dan persetujuan, serta laporan. Mulai dari template <b>Bengkel motor</b> atau <b>Salon</b>, atau dari nol. <b>Bangun dengan AI</b> <Badge t="Segera hadir" />.</p>
               </div>
               <div>
-                <h3>Rencana alurnya</h3>
+                <h3>Alurnya</h3>
                 <ol style={{ marginTop: 10 }}>
-                  <li>Pilih jenis usaha atau template terdekat.</li>
-                  <li>Pilih modul: penjualan, stok, sewa, pesanan, keuangan.</li>
-                  <li>Sesuaikan istilah, status, dan alur kerja.</li>
-                  <li>Tinjau, lalu aktifkan.</li>
+                  <li>Tambah bisnis › Bisnis lain › pilih template atau bangun sendiri.</li>
+                  <li>Atur jenis data & field (teks, angka, uang, tanggal, pilihan, ya/tidak, rujukan).</li>
+                  <li>Atur status, langkah yang boleh per peran, catatan wajib, persetujuan, batas waktu.</li>
+                  <li>Buat laporan (jumlah, total, rata-rata per status/bulan/field).</li>
+                  <li>Validasi otomatis, lalu aktifkan.</li>
                 </ol>
                 <a href={WA} target="_blank" rel="noreferrer" className="ln-btn ln-btn-outline" style={{ marginTop: 16 }}><Icon name="message" size={18} />Ceritakan usaha Anda</a>
               </div>

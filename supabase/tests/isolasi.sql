@@ -39,6 +39,10 @@ begin
       ('maint_create', format('select public.maint_create(gen_random_uuid(), %L, ''{"title":"uji isolasi"}'')', k)),
       ('utility_type_save', format('select public.utility_type_save(%L, null, ''{"name":"Uji","price":1}'')', k)),
       ('lease_set_end', format('select public.lease_set_end((select id from public.leases where kos_id = %L limit 1), null)', k)),
+      ('bb_validate', format('select public.bb_validate(%L)', k)),
+      ('bb_dashboard', format('select public.bb_dashboard(%L)', k)),
+      ('bb_object_save', format('select public.bb_object_save(%L, null, ''{"name":"uji"}'')', k)),
+      ('bb_people', format('select public.bb_people(%L)', k)),
       ('booking_create', format('select public.booking_create(gen_random_uuid(), %L, ''{"name":"uji"}'')', k)),
       ('meter_record', format('select public.meter_record(%L, (select id from public.utility_types where kos_id = %L limit 1), current_date, current_date, ''[]'')', k, k))
     ) v(name, q) loop

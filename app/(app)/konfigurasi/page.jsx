@@ -143,7 +143,7 @@ function ModuleSheet({ m, owner, kosId, onClose, onDone }) {
 }
 
 function ProfileTab({ kos, owner, onSaved }) {
-  const [groups, setGroups] = useState(kos.business_groups?.length ? kos.business_groups : [{ retail: 'retail_trading', jasa: 'services' }[kos.business_type] || 'property_rental']);
+  const [groups, setGroups] = useState(kos.business_groups?.length ? kos.business_groups : [{ retail: 'retail_trading', jasa: 'services', kustom: 'lainnya' }[kos.business_type] || 'property_rental']);
   const [prof, setProf] = useState(kos.profile || {});
   const [le, setLe] = useState(kos.legal_entity_id || '');
   const [ents, setEnts] = useState([]);

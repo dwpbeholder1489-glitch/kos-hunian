@@ -18,6 +18,7 @@ export default function Mulai() {
   const [count, setCount] = useState('10');
   const [prefix, setPrefix] = useState('A');
   const [tpl, setTpl] = useState('laundry'); // contoh awal bisnis jasa
+  const [ktpl, setKtpl] = useState('bengkel'); // template Business Builder
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -46,12 +47,12 @@ export default function Mulai() {
     if (!name.trim()) return setErr(type === 'properti' ? 'Isi nama kos / properti.' : 'Isi nama usaha.');
     if (!(n >= 0 && n <= 300)) return setErr('Jumlah kamar 0 sampai 300.');
     setBusy(true);
-    const { data, error } = await supabase.rpc('create_business', { p_type: type, p_name: name, p_address: addr, p_room_count: n, p_prefix: type === 'jasa' ? tpl : prefix || 'A' });
+    const { data, error } = await supabase.rpc('create_business', { p_type: type, p_name: name, p_address: addr, p_room_count: n, p_prefix: type === 'jasa' ? tpl : type === 'kustom' ? ktpl : prefix || 'A' });
     if (error) { setErr(errMsg(error)); setBusy(false); return; }
     if (mods && mods.length) await supabase.rpc('business_modules_init', { p_kos: data, p_codes: [...chosen] }); // pemilik menyetujui modul awal
     await loadKos();
     pickKos(data);
-    router.replace(type === 'properti' ? '/kamar' : BUSINESS_TYPES[type].home);
+    router.replace(type === 'properti' ? '/kamar' : type === 'kustom' ? '/builder' : BUSINESS_TYPES[type].home);
   }
 
   if (!type) {
@@ -78,11 +79,13 @@ export default function Mulai() {
       <p className="hello">{t.icon} {t.name}</p>
       {type === 'properti'
         ? <p className="muted" style={{ margin: 0 }}>Kamar dibuat otomatis dengan kode berurutan (mis. A01–A10). Harga sewa diisi nanti per kamar.</p>
+        : type === 'kustom'
+        ? <p className="muted" style={{ margin: 0 }}>Bisnis dibuat sebagai <b>draf</b>. Setelah dibuat Anda masuk ke <b>Business Builder</b>: sesuaikan jenis data, formulir, alur status, peran, dan laporan, lalu <b>Validasi & Aktifkan</b>.</p>
         : type === 'jasa'
         ? <p className="muted" style={{ margin: 0 }}>Setelah dibuat: cek harga di <b>Layanan & tahap</b>, lalu tekan <b>+ Pesanan baru</b> saat pelanggan datang. Semua harga & tahap contoh bisa diubah.</p>
         : <p className="muted" style={{ margin: 0 }}>Setelah dibuat: masukkan barang di <b>Barang & stok</b>, catat uang awal laci di <b>Kas & kasbon</b>, lalu mulai jualan di <b>Kasir</b>.</p>}
       <form className="stack" onSubmit={submit}>
-        <Field label={type === 'properti' ? 'Nama kos / properti' : 'Nama usaha'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'properti' ? 'mis. Kos Melati' : type === 'jasa' ? 'mis. Laundry Bersih' : 'mis. Toko Subur'} /></Field>
+        <Field label={type === 'properti' ? 'Nama kos / properti' : 'Nama usaha'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'properti' ? 'mis. Kos Melati' : type === 'jasa' ? 'mis. Laundry Bersih' : type === 'kustom' ? 'mis. Bengkel Jaya Motor' : 'mis. Toko Subur'} /></Field>
         <Field label="Alamat (opsional)"><input value={addr} onChange={(e) => setAddr(e.target.value)} /></Field>
         {type === 'properti' && (
           <div className="row">
@@ -94,6 +97,20 @@ export default function Mulai() {
           <Field label="Mulai dari contoh" hint="Isi awal layanan & tahap proses; bisa diubah kapan saja">
             <div className="seg">{[['laundry', 'Laundry'], ['umum', 'Jasa umum']].map(([k, l]) => <button type="button" key={k} className={tpl === k ? 'on' : ''} onClick={() => setTpl(k)}>{l}</button>)}</div>
             <span className="small muted">{tpl === 'laundry' ? 'Tahap Cuci → Kering → Setrika → Cek kualitas → Kemas; layanan kiloan & satuan (bed cover, selimut, jas, sepatu) dengan harga contoh.' : 'Tahap Dikerjakan → Dicek; layanan & harga diisi sendiri di Layanan & tahap. Cocok untuk jahit, servis, cetak, dll.'}</span>
+          </Field>
+        )}
+        {type === 'kustom' && (
+          <Field label="Cara membuat">
+            <div className="stack" style={{ gap: 8 }}>
+              {[['bengkel', '🔧 Template Bengkel motor', 'Pelanggan, Kendaraan, Servis (Antre → Dikerjakan → Menunggu spare part → Selesai → Diambil), laporan jasa & spare part.'],
+                ['salon', '💇 Template Salon & barbershop', 'Pelanggan, Janji temu (Dijadwalkan → Datang → Selesai / Tidak datang), laporan per stylist.'],
+                ['kosong', '🧩 Bangun sendiri (manual)', 'Mulai dari satu jenis data contoh; tambah sendiri field, status, dan laporan.']].map(([k, l, d]) => (
+                <button type="button" key={k} className={'typecard' + (ktpl === k ? ' on' : '')} onClick={() => setKtpl(k)} style={ktpl === k ? { borderColor: 'var(--brand)', boxShadow: 'inset 0 0 0 1px var(--brand)' } : undefined}>
+                  <span style={{ flex: 1, textAlign: 'left' }}><b>{l}</b><br /><span className="small muted" style={{ fontWeight: 500 }}>{d}</span></span>
+                </button>
+              ))}
+              <div className="typecard" style={{ opacity: 0.6 }} aria-disabled="true"><span style={{ flex: 1, textAlign: 'left' }}><b>✨ Bangun dengan AI</b> <span className="chip gold">Segera hadir</span><br /><span className="small muted" style={{ fontWeight: 500 }}>Ceritakan usaha dengan bahasa sehari-hari, AI menyusun usulan konfigurasi. Belum tersedia.</span></span></div>
+            </div>
           </Field>
         )}
         {mods && mods.length > 0 && <>

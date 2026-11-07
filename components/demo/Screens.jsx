@@ -426,3 +426,33 @@ export function ScrBooking() {
     </Phone>
   );
 }
+
+// Business Builder — DATA CONTOH
+const KUSTOM_TABS = ['Dashboard', 'Catatan', 'Laporan', 'Builder'];
+export function ScrBuilder() {
+  return (
+    <Phone tab="Builder" tabs={KUSTOM_TABS} name="Bengkel Jaya">
+      <div className="row between"><Title>Business Builder</Title><span className="chip gold">Draf</span></div>
+      <div className="seg"><button>1. Profil</button><button className="on">2. Data</button><button>3. Alur</button></div>
+      <div className="panel">
+        <b>🔧 Servis</b><span className="small muted">Nomor SRV-… · judul: Kendaraan · pakai alur status</span>
+        <div className="list">{[['Kendaraan *', 'Rujukan → Kendaraan'], ['Keluhan / pekerjaan *', 'Teks panjang'], ['Mekanik', 'Teks singkat'], ['Biaya jasa', 'Uang (Rp)'], ['Sudah dibayar', 'Ya / tidak']].map(([a, b]) => (
+          <div className="li" key={a}><div className="main"><b className="small">{a}</b><span className="small muted">{b}</span></div><span className="small muted">↑ ↓</span></div>))}</div>
+        <div className="row"><span className="mini-btn sm">+ Field</span><span className="mini-btn sm">Pratinjau formulir</span></div>
+      </div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}
+export function ScrCatatan() {
+  const R = [['E 1234 AB', 'SRV-001 · Ganti oli · Asep', 'Dikerjakan', 'gold'], ['E 5678 CD', 'SRV-002 · Rem blong · Ujang', 'Menunggu spare part', 'gold'], ['E 9012 EF', 'SRV-003 · Servis rutin', 'Antre', 'info']];
+  return (
+    <Phone tab="Catatan" tabs={KUSTOM_TABS} name="Bengkel Jaya">
+      <div className="row between"><Title>🔧 Servis</Title><span className="mini-btn primary">+ Servis</span></div>
+      <div className="seg"><button className="on">Belum selesai 3</button><button>Antre 1</button><button>Dikerjakan 1</button></div>
+      <div className="panel"><div className="list">{R.map(([t, s, st, tone]) => (
+        <div className="li" key={t}><div className="main"><b className="small">{t}</b><span className="small muted">{s}</span></div><span className={'chip ' + tone}>{st}</span></div>))}</div></div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

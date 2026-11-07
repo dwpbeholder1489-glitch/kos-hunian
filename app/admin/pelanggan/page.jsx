@@ -48,7 +48,7 @@ export default function Pelanggan() {
       <div className="row"><h2>Pelanggan</h2><PageHelp page="admin-pelanggan" /></div>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama bisnis atau email" aria-label="Cari pelanggan" />
       <div className="seg">{FILTERS.map(([k, l, fn]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l} ({all.filter(fn).length})</button>)}</div>
-      <div className="seg">{[['semua', 'Semua jenis'], ['properti', '🏠 Properti'], ['retail', '🛒 Retail'], ['jasa', '🧺 Jasa']].map(([k, l]) => <button key={k} className={type === k ? 'on' : ''} onClick={() => setType(k)}>{l}</button>)}</div>
+      <div className="seg">{[['semua', 'Semua jenis'], ['properti', '🏠 Properti'], ['retail', '🛒 Retail'], ['jasa', '🧺 Jasa'], ['kustom', '🧩 Kustom']].map(([k, l]) => <button key={k} className={type === k ? 'on' : ''} onClick={() => setType(k)}>{l}</button>)}</div>
       <p className="small muted" style={{ margin: 0 }}>Diurutkan dari skor kesehatan terendah. Skor versi awal: penggunaan laporan belum dilacak.</p>
       {shown.length === 0 ? <Empty title={all.length ? 'Tidak ada yang cocok' : 'Belum ada pelanggan'} /> : (
         <section className="panel"><div className="list">{shown.map((c) => (
