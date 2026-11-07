@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import LokasiBar from '@/components/LokasiBar';
+import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, today } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, unitPrice, uid, PAY } from '@/lib/retail';
@@ -24,6 +25,7 @@ export default function Kasir() {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(null);
   const [shift, setShift] = useState(undefined);
+  const thumbs = useThumbs(kosId, 'product', ver);
   useEffect(() => { supabase.rpc('shift_current', { p_kos: kosId }).then(({ data, error }) => setShift(error ? undefined : data)); }, [kosId, ver, done]);
 
   const load = async () => {
@@ -92,11 +94,12 @@ export default function Kasir() {
       </div>
       {!q.trim() && (() => {
         const fav = d.products.filter((p) => p.favorite);
+        const anyPic = fav.some((p) => thumbs[p.id]);
         return fav.length > 0 ? (
           <div className="quickgrid" aria-label="Tombol barang cepat">{fav.map((p) => {
             const u = unitsOf(p, d.units)[0];
             const pr = u ? unitPrice(u, tier) : 0;
-            return <button key={p.id} className="quick" onClick={() => u && add(p, u)} disabled={!(pr > 0)}><b>{p.name}</b><span>{u?.name} · {pr > 0 ? rp(pr) : 'harga kosong'}</span></button>;
+            return <button key={p.id} className="quick" onClick={() => u && add(p, u)} disabled={!(pr > 0)}>{thumbs[p.id] ? <ListThumb path={thumbs[p.id]} radius={8} /> : anyPic && <span className="quickini" aria-hidden="true">{p.name.trim().slice(0, 1).toUpperCase()}</span>}<b>{p.name}</b><span>{u?.name} · {pr > 0 ? rp(pr) : 'harga kosong'}</span></button>;
           })}</div>
         ) : <span className="small muted">Tip: beri tanda ☆ di Barang & stok untuk barang yang sering dijual — muncul sebagai tombol cepat di sini.</span>;
       })()}
@@ -105,7 +108,7 @@ export default function Kasir() {
           const us = unitsOf(p, d.units);
           return (
             <section className="panel" key={p.id} style={{ padding: 12, gap: 8 }}>
-              <div className="row between" style={{ flexWrap: 'nowrap' }}><b>{p.name}</b>
+              <div className="row between" style={{ flexWrap: 'nowrap' }}><span className="row" style={{ flexWrap: 'nowrap', gap: 10, minWidth: 0 }}>{thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={40} />}<b>{p.name}</b></span>
                 <span className="small" style={{ color: Number(p.stock) <= 0 || isLow(p) ? 'var(--bad)' : 'var(--muted)', whiteSpace: 'nowrap', fontWeight: 600 }}>{Number(p.stock) <= 0 ? 'stok habis' : stockText(p.stock, us, p.base_unit)}</span></div>
               <div className="unitbtns">{us.map((u) => (
                 <button key={u.name} onClick={() => add(p, u)} disabled={!(unitPrice(u, tier) > 0)} title={unitPrice(u, tier) > 0 ? '' : 'Harga belum diisi'}>

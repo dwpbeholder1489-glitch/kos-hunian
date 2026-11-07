@@ -10,6 +10,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import LokasiBar from '@/components/LokasiBar';
 import EntityPhotos from '@/components/media/EntityPhotos';
+import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, MOVE } from '@/lib/retail';
@@ -40,6 +41,7 @@ export default function Barang() {
   const [f, setF] = useState('aktif');
   const [edit, setEdit] = useState(null);   // null | 'new' | product
   const [adj, setAdj] = useState(null);
+  const thumbs = useThumbs(kosId, 'product', `${ver}:${edit ? 1 : 0}`);
   if (err) return <div className="notice bad">{err.includes('products') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -79,14 +81,15 @@ export default function Barang() {
         <section className="panel"><div className="list">{shown.map((p) => {
           const us = unitsOf(p, d.units);
           return (
-            <div className="li" key={p.id} style={{ alignItems: 'flex-start' }}>
+            <div className="li" key={p.id} style={{ alignItems: 'flex-start', flexWrap: 'wrap', rowGap: 6 }}>
+              <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: '1 1 220px', minWidth: 0 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={48} />}
               <div className="main">
                 <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}</b>
                 {p.sku && <span className="small muted">Kode {p.sku}</span>}
                 <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>
                 <span className="small muted">{us.map((u) => bahan ? `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''}` : `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
-              </div>
-              <div className="row" style={{ flexWrap: 'nowrap' }}>
+              </div></div>
+              <div className="row" style={{ flexWrap: 'nowrap', marginLeft: 'auto' }}>
                 {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
                   onClick={async () => { if (await run(() => supabase.rpc('product_set_favorite', { p_product: p.id, p_on: !p.favorite }), p.favorite ? 'Dihapus dari tombol cepat' : 'Jadi tombol cepat di Kasir', errMsg)) reload(); }}
                   style={{ fontSize: 18, color: p.favorite ? 'var(--gold, #C9A227)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}

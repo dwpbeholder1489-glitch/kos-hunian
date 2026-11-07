@@ -10,11 +10,14 @@ import { rp, tgl, angka, parseRp, ROOM_ST, errMsg } from '@/lib/format';
 import Link from 'next/link';
 import { moduleOn, canArea } from '@/lib/business';
 import EntityPhotos from '@/components/media/EntityPhotos';
+import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 
 export default function Kamar() {
   const d = useData();
   const [filter, setFilter] = useState('');
   const [sheet, setSheet] = useState(null);
+  const { kosId, ver } = useKos();
+  const thumbs = useThumbs(kosId, 'room', `${ver}:${sheet ? 1 : 0}`);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const list = d.rooms.filter((r) => !filter || r.status === filter);
@@ -35,7 +38,7 @@ export default function Kamar() {
             const debt = l ? d.outByOcc.get(l.occupant_id) || 0 : 0;
             return (
               <button key={r.id} className={'room ' + r.status} onClick={() => setSheet({ t: 'detail', id: r.id })}>
-                <span className="code">{r.code}<span className={'dot ' + r.status} /></span>
+                <span className="code" style={{ gap: 8 }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>{thumbs[r.id] && <ListThumb path={thumbs[r.id]} size={34} radius={6} />}{r.code}</span><span className={'dot ' + r.status} /></span>
                 <span className="who">{l ? d.occName(l.occupant_id) : ROOM_ST[r.status]}</span>
                 <span className="small muted">{r.rent ? rp(r.rent) : 'Harga belum diisi'}</span>
                 {debt > 0 && <span className="small" style={{ color: 'var(--bad)', fontWeight: 800 }}>Tunggak {rp(debt)}</span>}

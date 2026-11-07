@@ -817,3 +817,8 @@ input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date
 .barlist-row .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .emptyart{display:block;opacity:.95;margin-bottom:-2px}
 .empty h3{margin:0}
+/* foto kecil di daftar */
+.listthumb{flex:none;object-fit:cover;display:block;background:var(--sunk);border:1px solid var(--line)}
+
+.quick .listthumb{width:100%!important;height:56px!important;margin-bottom:4px}
+.quickini{display:grid;place-items:center;width:100%;height:56px;margin-bottom:4px;border-radius:8px;background:var(--sunk);color:var(--muted)!important;font-weight:800;font-size:20px!important}

@@ -3,6 +3,7 @@ import IsianTambahan from '@/components/IsianTambahan';
 import Lampiran from '@/components/Lampiran';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -105,6 +106,7 @@ function NewOrder({ kosId, onClose, onSaved }) {
   const [method, setMethod] = useState('tunai');
   const [busy, setBusy] = useState(false);
   const [id] = useState(uid);
+  const thumbs = useThumbs(kosId, 'service', 0);
   useEffect(() => {
     supabase.from('svc_services').select('*').eq('kos_id', kosId).eq('active', true).order('sort').then(({ data }) => setSvc(data || []));
     if (logi) {
@@ -160,7 +162,7 @@ function NewOrder({ kosId, onClose, onSaved }) {
         <span className="small muted">Dengan No. HP, pelanggan tersimpan otomatis (dicocokkan lewat nomor, tidak dobel).</span>
       </>}
       <span className="label">{T.svc}</span>
-      <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{svc.map((s) => <button key={s.id} className="sm" onClick={() => addSvc(s)}>+ {s.name}</button>)}</div>
+      <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{svc.map((s) => <button key={s.id} className="sm" onClick={() => addSvc(s)} style={thumbs[s.id] ? { display: 'inline-flex', alignItems: 'center', gap: 6, paddingLeft: 4 } : undefined}>{thumbs[s.id] ? <ListThumb path={thumbs[s.id]} size={26} radius={6} /> : '+ '}{s.name}</button>)}</div>
       {priced.map((l, i) => (
         <div key={i} className="unitbox">
           <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{l.s?.name}</b><button className="sm ghost" onClick={() => setLines(lines.filter((_, j) => j !== i))} aria-label="Hapus">✕</button></div>

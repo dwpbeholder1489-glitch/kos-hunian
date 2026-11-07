@@ -8,6 +8,7 @@ import { rp, angka, errMsg, parseRp } from '@/lib/format';
 import { qtyNum } from '@/lib/retail';
 import { terms } from '@/lib/jasa';
 import EntityPhotos from '@/components/media/EntityPhotos';
+import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 
 const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
 const UNITS_K = ['porsi', 'pcs', 'gelas', 'cup', 'botol', 'bungkus', 'box', 'paket', 'kg', 'loyang'];
@@ -21,6 +22,7 @@ export default function Layanan() {
   const [st, setSt] = useState(null);
   const [edit, setEdit] = useState(null);
   const [busy, setBusy] = useState(false);
+  const thumbs = useThumbs(kosId, 'service', `${ver}:${edit ? 1 : 0}`);
   const load = async () => {
     const [a, b] = await Promise.all([
       supabase.from('svc_services').select('*').eq('kos_id', kosId).order('sort'),
@@ -51,7 +53,7 @@ export default function Layanan() {
           <h3>{g}</h3>
           <div className="list">{svc.filter((s) => (s.category || 'Lainnya') === g).map((s) => (
             <button key={s.id} className="li click" disabled={!can} onClick={() => setEdit(s)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', opacity: s.active ? 1 : 0.55 }}>
-              <div className="main"><b className="small">{s.name}{!s.active && ' (tidak tersedia)'}</b><span className="small muted">{Number(s.min_qty) > 0 ? `minimal ${angka(s.min_qty)} ${s.unit} · ` : ''}{T.kul ? `siap ±${s.hours} jam` : `selesai ±${s.hours} jam`}{s.description ? ` · ${s.description}` : ''}</span>{s.requirements && <span className="small muted">Syarat: {s.requirements}</span>}</div>
+              <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: 1, minWidth: 0 }}>{thumbs[s.id] && <ListThumb path={thumbs[s.id]} size={44} />}<div className="main"><b className="small">{s.name}{!s.active && ' (tidak tersedia)'}</b><span className="small muted">{Number(s.min_qty) > 0 ? `minimal ${angka(s.min_qty)} ${s.unit} · ` : ''}{T.kul ? `siap ±${s.hours} jam` : `selesai ±${s.hours} jam`}{s.description ? ` · ${s.description}` : ''}</span>{s.requirements && <span className="small muted">Syarat: {s.requirements}</span>}</div></div>
               <b className="small">{rp(s.price)}/{s.unit}</b>
             </button>
           ))}</div>
