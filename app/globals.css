@@ -825,3 +825,5 @@ input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date
 .quickini{display:grid;place-items:center;width:100%;height:56px;margin-bottom:4px;border-radius:8px;background:var(--sunk);color:var(--muted)!important;font-weight:800;font-size:20px!important}
 /* angka uang di ujung baris daftar tidak dipatah ke dua baris */
 .li > b:last-child,.li .num,.li > .chip:last-child{white-space:nowrap}
+.li .row > b{white-space:nowrap}
+.li > .stack button.sm,.li > .row button.sm,.li > button.sm{white-space:nowrap}
