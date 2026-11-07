@@ -9,6 +9,8 @@ export const DEMO_TOKEN = 'contoh';
 
 export const DEMO_PORTAL = {
   locked: false, demo: true,
+  deposit: 500000, can_report: true,
+  tickets: [{ number: 'KLH-CONTOH-001', category: 'air', title: 'Kran kamar mandi bocor', status: 'dikerjakan', resolution: null, created_at: `${ym(0)}-01T08:00:00+07:00` }],
   today: `${ym(0)}-${p2(now.getDate())}`,
   kos: {
     name: 'Kos Melati', address: 'Jl. Contoh No. 7, Majalengka', contact_phone: '081222206149',

@@ -7,6 +7,8 @@ import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet } from '@/components/LeaseForms';
 import { rp, tgl, angka, parseRp, ROOM_ST, errMsg } from '@/lib/format';
+import Link from 'next/link';
+import { moduleOn } from '@/lib/business';
 
 export default function Kamar() {
   const d = useData();
@@ -50,6 +52,7 @@ export default function Kamar() {
 }
 
 function RoomDetail({ d, room, go, onClose }) {
+  const { kos } = useKos();
   if (!room) return null;
   const l = d.activeByRoom.get(room.id);
   const occ = l && d.occById.get(l.occupant_id);
@@ -72,12 +75,14 @@ function RoomDetail({ d, room, go, onClose }) {
             <dt>Masuk</dt><dd>{tgl(l.start_date)}</dd>
             <dt>Sewa</dt><dd>{rp(l.rent)}/bulan</dd>
             <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
+            {(d.depByLease?.get(l.id) || 0) > 0 && <><dt>Deposit dipegang</dt><dd>{rp(d.depByLease.get(l.id))}</dd></>}
           </dl>
           <button className="danger" onClick={() => go({ t: 'end', lease: l })}>Akhiri sewa</button>
         </section>
       ) : room.status === 'tersedia' ? (
         <button className="cta" onClick={() => go({ t: 'start', id: room.id })}>Isi kamar ini</button>
       ) : null}
+      {moduleOn(kos, 'p_perbaikan') && <Link href={`/perbaikan?kamar=${room.id}`} className="small" style={{ textAlign: 'center' }}>🔧 Catat keluhan / kerusakan kamar ini</Link>}
       {hist.length > 0 && (
         <section className="panel"><span className="label">Penghuni sebelumnya</span>
           <div className="list">{hist.map((h) => <div className="li" key={h.id}><span>{d.occName(h.occupant_id)}</span><span className="small muted">{tgl(h.start_date)} – {tgl(h.end_date)}</span></div>)}</div>

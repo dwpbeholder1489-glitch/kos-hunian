@@ -361,3 +361,52 @@ Status: Setrika
     </Phone>
   );
 }
+
+// Kos lanjutan — DATA CONTOH
+export function ScrDeposit() {
+  return (
+    <Phone tab="Penghuni">
+      <h2>Rina Wulandari</h2>
+      <div className="panel">
+        <div className="row between"><span className="label">Deposit / uang jaminan</span><b>{rp(300000)}</b></div>
+        <div className="list">
+          <div className="li"><div className="main"><b className="small">Diterima</b><span className="small muted">2 Jan · Kas (tunai)</span></div><span className="num">+{rp(500000)}</span></div>
+          <div className="li"><div className="main"><b className="small">Dipotong</b><span className="small muted">5 Nov · kunci lemari hilang</span></div><span className="num">−{rp(50000)}</span></div>
+          <div className="li"><div className="main"><b className="small">Dipotong</b><span className="small muted">5 Nov · untuk tagihan</span></div><span className="num">−{rp(150000)}</span></div>
+        </div>
+        <div className="row"><span className="mini-btn sm">+ Terima deposit</span><span className="mini-btn sm">Kembalikan</span><span className="mini-btn sm">Potong</span></div>
+      </div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}
+export function ScrPerbaikan() {
+  const T = [['Kran kamar mandi bocor', 'KLH-001 · Kamar A03 · Air · dari penghuni', 'Baru', 'info', true], ['Lampu lorong mati', 'KLH-002 · Area umum · Listrik · Pak Ujang', 'Dikerjakan', 'gold', false], ['Engsel pintu lepas', 'KLH-003 · Kamar B01 · Bangunan', 'Menunggu', 'gold', false]];
+  return (
+    <Phone tab="Penghuni">
+      <div className="row between"><Title>Keluhan & perbaikan</Title><span className="mini-btn primary">+ Catat</span></div>
+      <div className="seg"><button className="on">Belum selesai 3</button><button>Baru</button><button>Selesai</button></div>
+      <div className="panel"><div className="list">{T.map(([t, s, st, tone, hi]) => (
+        <div className="li" key={t}><div className="main"><b className="small">{t}</b><span className="small muted">{s}</span></div>
+          <div style={{ textAlign: 'right' }}><span className={'chip ' + tone}>{st}</span>{hi && <div><span className="chip bad">Penting</span></div>}</div></div>
+      ))}</div></div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}
+export function ScrMeteran() {
+  const R = [['A01', 'Rina', 1200, '1266', '66 kWh = Rp99.000'], ['A02', 'Dimas', 845, '903', '58 kWh = Rp87.000'], ['A03', 'Kosong', 50, '55', 'kamar kosong, tidak ditagih']];
+  return (
+    <Phone tab="Tagihan">
+      <Title>Meteran listrik & air</Title>
+      <div className="seg"><button className="on">Listrik</button><button>Air</button></div>
+      <span className="small muted">Tarif Rp1.500/kWh · minimal Rp20.000</span>
+      <div className="panel"><div className="list">{R.map(([c, w, prev, now, res]) => (
+        <div className="li" key={c}><div className="main"><b className="small">{c}</b><span className="small muted">{w} · lalu {prev}</span></div>
+          <div style={{ textAlign: 'right' }}><span className="mini-input r" style={{ minWidth: 80 }}>{now}</span><div className="small muted">{res}</div></div></div>
+      ))}</div></div>
+      <span className="mini-btn cta">Simpan & buat tagihan · Rp186.000</span>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

@@ -1,5 +1,6 @@
 'use client';
 import PortalBox from '@/components/PortalBox';
+import DepositBox from '@/components/DepositBox';
 import { moduleOn } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
@@ -59,6 +60,8 @@ function OccDetail({ d, occ, go, onClose }) {
   const { kos, user } = useKos();
   if (!occ) return null;
   const l = d.activeByOcc.get(occ.id);
+  // sewa untuk deposit: yang aktif, atau sewa terakhir bila masih ada catatan deposit
+  const depLease = l || d.leases.find((x) => x.occupant_id === occ.id && (d.deposits || []).some((y) => y.lease_id === x.id));
   const invs = d.invoices.filter((i) => i.occupant_id === occ.id && i.status !== 'batal').slice(0, 12);
   const debt = d.outByOcc.get(occ.id) || 0;
   const unpaid = invs.filter((i) => i.outstanding > 0);
@@ -77,6 +80,7 @@ function OccDetail({ d, occ, go, onClose }) {
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
       </dl>
       {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
+      {depLease && <DepositBox d={d} lease={depLease} />}
       {moduleOn(kos, 'p_portal') && <PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />}
       {kos.owner_id === user?.id && <Link href="/pengaturan#pesan" className="small" style={{ textAlign: 'center' }}>Ubah teks pesan WhatsApp</Link>}
       <section className="panel"><span className="label">Tagihan terakhir</span>

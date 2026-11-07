@@ -56,8 +56,8 @@ export default function Portal() {
             <div className="brand"><span className="mark">P</span><div><h1>{p.kos.name}</h1><small>Portal penghuni</small></div></div>
             {p.kos.contact_phone && <a className="helpbtn" style={{ width: 'auto', padding: '0 12px', borderRadius: 999, fontSize: 13 }} href={waLink(p.kos.contact_phone, `Halo, saya ${p.occupant.name}${p.lease ? ' kamar ' + p.lease.room : ''}.`)} target="_blank" rel="noreferrer">Hubungi</a>}
           </div>
-          <nav className="tabs">
-            {[['tagihan', 'Tagihan'], ['riwayat', 'Riwayat'], ['info', 'Info kos'], ...(ai ? [['tanya', 'Tanya asisten']] : [])].map(([k, l]) => (
+          <nav className="tabs ptabs">
+            {[['tagihan', 'Tagihan'], ['riwayat', 'Riwayat'], ...(p.can_report ? [['lapor', 'Lapor kerusakan']] : []), ['info', 'Info kos'], ...(ai ? [['tanya', 'Tanya asisten']] : [])].map(([k, l]) => (
               <a key={k} href={'#' + k} className={tab === k ? 'on' : ''} onClick={(e) => { e.preventDefault(); setTab(k); }}>{l}</a>
             ))}
           </nav>
@@ -105,12 +105,14 @@ export default function Portal() {
 
         {tab === 'info' && (
           <>
-            {p.lease && <section className="panel"><span className="label">Kamar Anda</span><dl className="kv"><dt>Kamar</dt><dd>{p.lease.room}</dd><dt>Sewa</dt><dd>{rp(p.lease.rent)}/bulan</dd><dt>Mulai</dt><dd>{tgl(p.lease.start_date)}</dd>{p.lease.facilities?.length > 0 && <><dt>Fasilitas</dt><dd>{p.lease.facilities.join(', ')}</dd></>}</dl></section>}
+            {p.lease && <section className="panel"><span className="label">Kamar Anda</span><dl className="kv"><dt>Kamar</dt><dd>{p.lease.room}</dd><dt>Sewa</dt><dd>{rp(p.lease.rent)}/bulan</dd><dt>Mulai</dt><dd>{tgl(p.lease.start_date)}</dd>{Number(p.deposit) > 0 && <><dt>Deposit dipegang</dt><dd>{rp(p.deposit)}</dd></>}{p.lease.facilities?.length > 0 && <><dt>Fasilitas</dt><dd>{p.lease.facilities.join(', ')}</dd></>}</dl></section>}
             {p.kos.house_rules && <section className="panel"><span className="label">Peraturan kos</span><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{p.kos.house_rules}</p></section>}
             {p.kos.payment_info && <section className="panel"><span className="label">Cara bayar</span><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{p.kos.payment_info}</p></section>}
             <section className="panel"><span className="label">Alamat & kontak</span><p style={{ margin: 0 }}>{p.kos.address || '—'}</p>{p.kos.contact_phone && <a href={waLink(p.kos.contact_phone, 'Halo, saya ' + p.occupant.name + '.')} target="_blank" rel="noreferrer">WhatsApp pengelola: {p.kos.contact_phone}</a>}</section>
           </>
         )}
+
+        {tab === 'lapor' && p.can_report && <Report demo={demo} token={token} tickets={p.tickets || []} active={p.lease?.status === 'aktif'} onDone={load} />}
 
         {tab === 'tanya' && ai && <Chat demo={demo} token={token} name={p.occupant.name} kos={p.kos.name} />}
       </main>
@@ -164,6 +166,46 @@ function PaySheet({ demo, token, inv, info, qris, onClose, onDone }) {
       <button className="cta" onClick={send} disabled={busy}>{busy ? 'Mengirim…' : 'Kirim ke pengelola'}</button>
       <p className="small muted" style={{ margin: 0 }}>Tagihan berubah menjadi lunas setelah pengelola memeriksa uang masuk.</p>
     </Sheet>
+  );
+}
+
+const CAT = [['listrik', 'Listrik'], ['air', 'Air / kamar mandi'], ['bangunan', 'Bangunan / pintu / atap'], ['perabot', 'Perabot'], ['kebersihan', 'Kebersihan'], ['internet', 'Internet / WiFi'], ['keamanan', 'Keamanan'], ['lainnya', 'Lainnya']];
+const TST = { baru: ['Diterima', 'info'], dikerjakan: ['Sedang ditangani', 'gold'], menunggu: ['Menunggu bahan/tukang', 'gold'], selesai: ['Selesai', 'good'], batal: ['Dibatalkan', 'void'] };
+
+// Penghuni melapor kerusakan/keluhan → masuk ke menu Keluhan & perbaikan pengelola
+function Report({ demo, token, tickets, active, onDone }) {
+  const [cat, setCat] = useState('lainnya');
+  const [title, setTitle] = useState('');
+  const [detail, setDetail] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function send() {
+    if (title.trim().length < 3) return toast('Tulis keluhannya dulu.');
+    if (demo) return toast('Ini halaman contoh — laporan tidak dikirim.');
+    setBusy(true);
+    const { data, error } = await supabase.rpc('portal_report_issue', { p_token: token, p_category: cat, p_title: title.trim(), p_detail: detail.trim() || null });
+    setBusy(false);
+    if (error) return toast(error.message || 'Gagal mengirim');
+    toast(`Laporan ${data} terkirim ke pengelola`); setTitle(''); setDetail(''); onDone();
+  }
+  return (
+    <>
+      {active ? <section className="panel">
+        <h3>Lapor kerusakan / keluhan</h3>
+        <Field label="Jenis"><select value={cat} onChange={(e) => setCat(e.target.value)}>{CAT.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+        <Field label="Apa masalahnya?"><input value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="mis. Lampu kamar mandi mati" /></Field>
+        <Field label="Keterangan (opsional)"><textarea rows={3} maxLength={1000} value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="mis. sejak kemarin malam" /></Field>
+        <button className="cta" disabled={busy} onClick={send}>{busy ? 'Mengirim…' : 'Kirim laporan'}</button>
+        <span className="small muted">Pengelola akan melihat laporan ini dan memperbarui statusnya di sini. Untuk keadaan darurat, hubungi pengelola lewat WhatsApp.</span>
+      </section> : <p className="muted small" style={{ margin: 0 }}>Laporan hanya untuk penghuni yang masih menyewa.</p>}
+      {tickets.length > 0 && <section className="panel"><h3>Laporan Anda</h3>
+        <div className="list">{tickets.map((t) => (
+          <div className="li" key={t.number} style={{ alignItems: 'flex-start' }}>
+            <div className="main"><b className="small">{t.title}</b><span className="small muted">{t.number} · {tgl(String(t.created_at).slice(0, 10))}{t.resolution ? ` · ${t.resolution}` : ''}</span></div>
+            <span className={'chip ' + (TST[t.status]?.[1] || '')}>{TST[t.status]?.[0] || t.status}</span>
+          </div>
+        ))}</div>
+      </section>}
+    </>
   );
 }
 

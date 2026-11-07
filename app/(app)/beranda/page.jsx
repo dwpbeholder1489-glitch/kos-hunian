@@ -8,10 +8,18 @@ import { useKos } from '@/components/KosProvider';
 import { RecHint } from '@/components/Rekomendasi';
 import CrmHint from '@/components/CrmHint';
 import { rp, tgl, today, thisMonth, bulan, invTitle } from '@/lib/format';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { moduleOn } from '@/lib/business';
 
 export default function Beranda() {
   const d = useData();
-  const { kosId } = useKos();
+  const { kos, kosId, ver } = useKos();
+  const [tix, setTix] = useState(null); // keluhan belum selesai
+  useEffect(() => {
+    if (!kosId || !moduleOn(kos, 'p_perbaikan')) return;
+    supabase.from('maint_tickets').select('id,priority,source,status').eq('kos_id', kosId).in('status', ['baru', 'dikerjakan', 'menunggu']).then(({ data }) => setTix(data || null));
+  }, [kosId, ver]);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const t = today(), ym = thisMonth();
@@ -22,7 +30,12 @@ export default function Beranda() {
 
   const live = d.invoices.filter((i) => i.status !== 'batal');
   const billedMonth = live.filter((i) => i.due_date.startsWith(ym)).reduce((s, i) => s + i.amount, 0);
-  const cashIn = d.payments.filter((p) => p.status === 'terverifikasi' && p.paid_at.startsWith(ym)).reduce((s, p) => s + p.amount, 0);
+  const paidMonth = d.payments.filter((p) => p.status === 'terverifikasi' && p.paid_at.startsWith(ym));
+  const collected = paidMonth.reduce((s, p) => s + p.amount, 0);
+  const cashIn = paidMonth.filter((p) => p.method !== 'deposit').reduce((s, p) => s + p.amount, 0); // dibayar dari deposit = bukan uang masuk baru
+  const depM = (d.deposits || []).filter((x) => x.status === 'aktif' && x.date.startsWith(ym));
+  const depIn = depM.filter((x) => x.kind === 'terima').reduce((s, x) => s + x.amount, 0);
+  const depOut = depM.filter((x) => x.kind === 'kembali').reduce((s, x) => s + x.amount, 0);
   const cashOut = d.expenses.filter((x) => x.date.startsWith(ym)).reduce((s, x) => s + x.amount, 0);
   const entIn = d.entries.filter((x) => x.date.startsWith(ym) && ['pendapatan_lain', 'setoran_modal', 'pinjaman_masuk'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
   const entOut = d.entries.filter((x) => x.date.startsWith(ym) && ['prive', 'bayar_pinjaman'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
@@ -46,12 +59,17 @@ export default function Beranda() {
       <CrmHint />
       <RecHint />
       <div className="grid">
-        <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn - cashOut - entOut)} sub={`Masuk ${rp(cashIn + entIn)} · keluar ${rp(cashOut + entOut)}`} />
+        <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn + depIn - cashOut - entOut - depOut)} sub={`Masuk ${rp(cashIn + entIn + depIn)} · keluar ${rp(cashOut + entOut + depOut)}${depIn || depOut ? ' (termasuk deposit)' : ''}`} />
         <Tile label="Hunian" value={`${occ}%`} sub={`${filled} dari ${rentable.length} kamar terisi`} />
-        <Tile label="Tagihan bulan ini" value={rp(billedMonth)} sub={`Terkumpul ${rp(cashIn)}`} />
+        <Tile label="Tagihan bulan ini" value={rp(billedMonth)} sub={`Terkumpul ${rp(collected)}`} />
         <Tile tone={arrears > 0 ? 'bad' : ''} label="Tunggakan" value={rp(arrears)} sub={`${overdue.length} tagihan lewat jatuh tempo`} />
       </div>
 
+      {tix && tix.length > 0 && (
+        <Link href="/perbaikan" className={'notice ' + (tix.some((x) => x.priority === 'tinggi') ? 'bad' : 'info')} style={{ textDecoration: 'none' }}>
+          🔧 {tix.length} keluhan/perbaikan belum selesai{tix.filter((x) => x.status === 'baru' && x.source === 'penghuni').length ? ` · ${tix.filter((x) => x.status === 'baru' && x.source === 'penghuni').length} baru dari penghuni` : ''} →
+        </Link>
+      )}
       {pending.length > 0 && (
         <Link href="/pembayaran" className="notice info" style={{ textDecoration: 'none' }}>
           {pending.length} pembayaran menunggu verifikasi →

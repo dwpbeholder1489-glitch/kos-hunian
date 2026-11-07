@@ -35,7 +35,10 @@ begin
       ('svc_report', format('select public.svc_report(%L, current_date - 30, current_date)', k)),
       ('svc_order_create', format('select public.svc_order_create(gen_random_uuid(), %L, ''{"name":"x","lines":[]}'')', k)),
       ('svc_service_save', format('select public.svc_service_save(%L, null, ''{"name":"x","price":1}'')', k)),
-      ('svc_stages_save', format('select public.svc_stages_save(%L, ''[]'')', k))
+      ('svc_stages_save', format('select public.svc_stages_save(%L, ''[]'')', k)),
+      ('maint_create', format('select public.maint_create(gen_random_uuid(), %L, ''{"title":"uji isolasi"}'')', k)),
+      ('utility_type_save', format('select public.utility_type_save(%L, null, ''{"name":"Uji","price":1}'')', k)),
+      ('meter_record', format('select public.meter_record(%L, (select id from public.utility_types where kos_id = %L limit 1), current_date, current_date, ''[]'')', k, k))
     ) v(name, q) loop
     begin
       execute t.q;

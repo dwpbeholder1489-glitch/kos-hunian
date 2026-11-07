@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -41,9 +41,11 @@ const MENUS_JASA = [
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
   ['Kamar', 'Peta kamar, harga sewa, fasilitas, dan memasukkan penghuni'],
-  ['Penghuni', 'Data penghuni, tunggakan, pengingat WhatsApp, dan akhiri sewa'],
+  ['Penghuni', 'Data penghuni, tunggakan, deposit/uang jaminan, pengingat WhatsApp, dan akhiri sewa'],
   ['Tagihan', 'Tagihan sewa otomatis, tagihan tambahan, dan mencatat pembayaran'],
   ['Pembayaran', 'Memverifikasi pembayaran dan riwayat uang masuk per bulan'],
+  ['Keluhan & perbaikan', 'Kerusakan/keluhan per kamar, penanggung jawab, status, biaya perbaikan'],
+  ['Meteran listrik/air', 'Angka meter per kamar tiap bulan → tagihan tambahan otomatis'],
   ['Pengeluaran', 'Biaya kos (termasuk gaji pengelola) dan uang yang diambil pemilik'],
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
@@ -79,7 +81,7 @@ const PARTS = [
     ['Masukkan penghuni', 'Kamar › ketuk kamar Tersedia › Isi kamar ini', [
       <>Pilih <b>Penghuni baru</b>, isi <b>Nama lengkap</b> dan <b>No. WhatsApp</b>.</>,
       <>Isi <b>Harga sewa per bulan</b> dan <b>Tanggal masuk</b>.</>,
-      <>Isi <b>Tagihan pertama jatuh tempo</b>, lalu tekan <b>Mulai sewa</b>.</>,
+      <>Isi <b>Tagihan pertama jatuh tempo</b>. Ada uang jaminan? Isi <b>Deposit diterima</b> (lihat Langkah 51). Tekan <b>Mulai sewa</b>.</>,
       <>Tagihan sewa langsung terbit otomatis dan kamar menjadi <b>Terisi</b>.</>,
     ], <><b>Penghuni lama</b> (sudah tinggal sebelum memakai aplikasi): isi tagihan pertama dengan jatuh tempo <b>berikutnya yang belum dibayar</b>. Jika diisi tanggal masuk dulu, bulan-bulan yang sudah lunas ikut ditagih.</>, 'warn', <ScrStartLease />],
     ['Periksa peta kamar', 'Kamar', [
@@ -96,7 +98,7 @@ const PARTS = [
     ], null, null, <ScrInvoices />],
     ['Catat pembayaran', 'Tagihan › ketuk tagihan › Catat pembayaran', [
       <>Isi <b>Jumlah</b>. Bayar sebagian boleh — sisanya tetap tercatat.</>,
-      <>Isi <b>Tanggal bayar</b> dan <b>Metode</b>: tunai, transfer, atau QRIS.</>,
+      <>Isi <b>Tanggal bayar</b> dan <b>Metode</b>: tunai, transfer, QRIS, atau <b>Dipotong dari deposit</b> (muncul bila penghuni punya deposit).</>,
       <>Centang <b>Uang sudah saya terima</b> bila uang sudah dicek masuk.</>,
       <>Tekan <b>Simpan pembayaran</b>. Status tagihan berubah otomatis.</>,
     ], <>Untuk transfer dan QRIS, centang <b>Uang sudah saya terima</b> hanya setelah notifikasi uang masuk muncul di aplikasi bank Anda.</>, 'warn', <ScrPay />],
@@ -131,11 +133,13 @@ const PARTS = [
       <>Isi <b>Tanggal keluar</b> dan alasan bila perlu.</>,
       <>Tekan <b>Akhiri sewa</b>. Kamar kembali <b>Tersedia</b>.</>,
       <>Tagihan bulan berikutnya yang belum dibayar dibatalkan otomatis. Tunggakan lama tetap tercatat.</>,
+      <>Masih ada deposit? Selesaikan di <b>Penghuni › Deposit</b>: kembalikan, potong untuk kerusakan, atau lunasi tunggakan dari deposit (Langkah 51).</>,
     ], null, null, <ScrEndLease />],
   ]],
   ['C', 'Pengecekan', [
     ['Pantau kondisi kos di Dashboard', 'Dashboard', [
-      <><b>Kas bersih</b> = uang masuk − pengeluaran bulan ini.</>,
+      <><b>Kas bersih</b> = uang masuk − pengeluaran bulan ini (deposit yang diterima/dikembalikan ikut dihitung).</>,
+      <>Kotak <b>🔧 keluhan</b> muncul bila ada keluhan/perbaikan yang belum selesai.</>,
       <><b>Hunian</b> = kamar terisi dibanding kamar yang bisa disewakan.</>,
       <><b>Tunggakan</b> dan daftar <b>penghuni menunggak</b> untuk ditindaklanjuti.</>,
     ], 'Kas bersih bukan laba. Untuk laba yang benar, lihat Laporan.', null, <ScrDashboard />],
@@ -143,7 +147,7 @@ const PARTS = [
       <>Pilih bulan dengan tombol <b>‹ ›</b>.</>,
       <><b>Laba operasional</b> = pendapatan − biaya operasional.</>,
       <><b>Arus kas bersih</b> = laba − belanja modal − pengeluaran non-operasional.</>,
-      <>Tren 6 bulan dan pendapatan per kamar <Std /></>,
+      <>Tren 6 bulan dan <b>pendapatan per kamar</b> (sewa, tambahan listrik/air, dan sisa belum dibayar tiap kamar) <Std /></>,
     ], 'Laporan berbasis kas: pendapatan dihitung saat uang diterima, bukan saat ditagih.', null, <ScrReport />],
     ['Ekspor Excel dan PDF', 'Laporan › Ekspor', [
       <><b>Laporan 12 bulan</b>: rekap pendapatan, biaya, dan laba per bulan.</>,
@@ -177,7 +181,7 @@ const PARTS = [
     ['Portal penghuni & asisten 24 jam', 'Penghuni › ketuk penghuni › Portal penghuni', [
       <>Isi dulu <b>Info untuk penghuni</b> di Pengaturan: nomor WhatsApp pengelola, <b>cara bayar</b>, <b>peraturan kos</b>, dan unggah <b>QRIS kos</b> agar penghuni bisa langsung scan.</>,
       <>Buka penghuni, tekan <b>Kirim link via WhatsApp</b>. Penghuni menerima link pribadi tanpa perlu daftar. Kata-kata pesannya bisa diubah di <b>Pengaturan › Teks pesan WhatsApp</b>; link selalu ikut terkirim.</>,
-      <>Penghuni bisa melihat tagihan, <b>mengirim bukti transfer</b>, dan <b>bertanya ke asisten</b> soal tagihan, cara bayar, dan peraturan.</>,
+      <>Penghuni bisa melihat tagihan, <b>mengirim bukti transfer</b>, <b>melapor kerusakan</b> (tab Lapor kerusakan), dan <b>bertanya ke asisten</b> soal tagihan, cara bayar, dan peraturan.</>,
       <>Bukti yang dikirim muncul di <b>Pembayaran › Menunggu verifikasi</b> dengan tombol <b>Lihat bukti</b>.</>,
     ], <>Asisten hanya menjawab urusan kos dan hanya memakai data penghuni itu sendiri. Jika link tersebar ke orang lain, tekan <b>Ganti link</b>.</>, 'warn', <ScrPortal />, 'pro'],
     ['Pengingat jatuh tempo otomatis', 'Pengaturan › Info untuk penghuni', [
@@ -375,6 +379,26 @@ const PARTS = [
       <><b>Laporan</b>: pendapatan per bulan, laba perkiraan (pendapatan − bahan − biaya), uang masuk, belum lunas, uang muka, per layanan, pelanggan teratas, ketepatan waktu, dan keluhan. <b>Unduh Excel</b> (Standar ke atas).</>,
     ], <>Pembukuan otomatis: pesanan diserahkan → Pendapatan jasa & Piutang jasa; pembayaran → Kas/Bank; pemakaian bahan → Beban bahan. Belum tersedia: komisi/penugasan per karyawan, pengingat otomatis jasa, dan stok per cabang untuk bisnis jasa.</>, null, null],
   ]],
+  ['H', 'Kos lanjutan: deposit, keluhan & meteran', [
+    ['Deposit / uang jaminan', 'Penghuni › ketuk penghuni › Deposit', [
+      <>Saat <b>Isi kamar</b>, isi <b>Deposit diterima</b> dan pilih masuk ke kas atau bank. Penghuni lama: buka penghuninya › <b>+ Terima deposit</b>.</>,
+      <>Saldo deposit tampil di Penghuni, di detail Kamar, dan di portal penghuni.</>,
+      <>Saat penghuni keluar: <b>Kembalikan</b> (sebagian atau semua), <b>Potong (kerusakan dll.)</b> dengan alasan, atau lunasi tunggakan lewat <b>Tagihan › Catat pembayaran › Metode: Dipotong dari deposit</b>.</>,
+      <>Salah catat? Tekan <b>✕</b> di riwayat deposit dan tulis alasannya.</>,
+    ], <>Deposit <b>bukan pendapatan</b>: dicatat sebagai titipan (utang ke penghuni) di Pembukuan. Potongan untuk kerusakan menjadi pendapatan lain; potongan untuk tunggakan menjadi pembayaran sewa tanpa uang masuk baru. Mengembalikan, memotong, dan membatalkan hanya bisa oleh pemilik/pengelola; penjaga bisa mencatat deposit diterima.</>, 'warn', <ScrDeposit />],
+    ['Keluhan & perbaikan', 'Lainnya › Keluhan & perbaikan (atau Kamar › Catat keluhan)', [
+      <>Tekan <b>+ Catat keluhan</b>: pilih kamar (atau area umum), jenis (listrik, air, bangunan, …), tulis masalahnya, prioritas, dan siapa yang menangani.</>,
+      <>Kamar kosong yang rusak bisa <b>ditutup sementara</b> (status Perbaikan) agar tidak terisi; otomatis kembali Tersedia saat selesai.</>,
+      <>Ikuti statusnya: <b>Mulai dikerjakan</b>, <b>Menunggu…</b> (bahan/tukang), lalu <b>Selesai</b> dengan apa yang dikerjakan dan biayanya — centang <b>Catat biaya di Pengeluaran</b> agar masuk laporan.</>,
+      <>Penghuni (portal Pro) bisa melapor sendiri dari tab <b>Lapor kerusakan</b> dan melihat statusnya. Kabari penghuni dengan tombol <b>WA penghuni</b>.</>,
+    ], <>Semua perubahan tercatat di <b>Riwayat</b> (siapa & kapan). Laporan dari portal dibatasi (maks 3 yang belum selesai per penghuni) agar tidak disalahgunakan. Penjaga bisa menutup keluhan, tetapi biaya hanya dicatat ke Pengeluaran oleh pemilik/pengelola.</>, null, <ScrPerbaikan />],
+    ['Meteran listrik & air', 'Lainnya › Meteran listrik/air', [
+      <>Pertama kali: tekan <b>+ Listrik (kWh)</b> atau <b>+ Air (m³)</b>, isi tarif per satuan dan tagihan minimal (bila ada).</>,
+      <>Bulan pertama: isi angka meter tiap kamar sebagai <b>angka awal</b> (belum ditagih).</>,
+      <>Bulan berikutnya: isi angka sekarang. Pemakaian dan tagihan tampil langsung (angka sekarang − bulan lalu × tarif). Isi jatuh tempo, lalu <b>Simpan & buat tagihan</b>.</>,
+      <>Tagihan masuk ke <b>Tagihan</b> sebagai tagihan tambahan dan ikut pengingat WhatsApp/portal. Salah angka? Tekan <b>Batalkan</b> di kamar itu (tagihannya ikut batal bila belum dibayar), lalu isi ulang.</>,
+    ], <>Kamar kosong tetap dicatat angkanya tetapi tidak ditagih. Angka lebih kecil dari bulan lalu ditolak — bila meteran diganti, centang <b>Meteran baru</b>. Listrik token/prabayar tidak perlu dicatat di sini.</>, null, <ScrMeteran />],
+  ]],
 ];
 
 const RULES = [
@@ -426,6 +450,7 @@ export default function Panduan() {
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
           <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–44</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek, halaman bisnis</span></div>
           <div><b>Jasa & Laundry</b><span><a href="#bagian-G">Langkah 45–50</a><br />Layanan & tahap, pesanan, nota, proses, bayar, keluhan, bahan, laporan</span></div>
+          <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–53</a><br />Deposit, keluhan & perbaikan, meteran listrik/air</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 
