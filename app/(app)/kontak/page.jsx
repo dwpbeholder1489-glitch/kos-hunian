@@ -1,4 +1,5 @@
 'use client';
+import IsianTambahan from '@/components/IsianTambahan';
 import { withApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -80,6 +81,7 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
       {!isNew && (c.archived_at
         ? <button onClick={restore}>Pulihkan dari arsip</button>
         : <button className="ghost danger" onClick={del}>Hapus {c.kind === 'supplier' ? 'supplier' : 'pelanggan'}</button>)}
+      {!isNew && <IsianTambahan entity="contact" id={c.id} area="sell,stock,finance" />}
       {!isNew && c.kind === 'pelanggan' && !c.archived_at && moduleOn(kos, 'u_crm') && canArea(kos, 'sell,rent') && <>
         <h3 style={{ margin: '8px 0 0' }}>Catatan & tindak lanjut</h3>
         <CrmTimeline kosId={kosId} contact={c.id} />

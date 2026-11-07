@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Tile, Loading } from '@/components/ui';
-import { angka, errMsg } from '@/lib/format';
+import { angka, rp, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { useBuilder, statusesOf, statusById, umur } from '@/lib/builder';
 
@@ -42,6 +42,7 @@ export default function Kerja() {
         <Tile label="Lewat batas waktu" value={angka(d.overdue.length)} tone={d.overdue.length ? 'bad' : undefined} sub="sesuai batas per status" />
         <Tile label="Tugas saya" value={angka(d.mine.length)} sub="ditugaskan ke Anda" />
         <Tile label="Dicatat hari ini" value={angka(d.today)} />
+        {d.money && <Tile label="Uang masuk hari ini" value={rp(d.money.hari_ini)} sub={`bulan ini ${rp(d.money.bulan_ini)}`} />}
       </div>
       {!draft && <div className="row">{objects.map((o) => <Link key={o.id} href={`/catatan?jenis=${o.key}`}><button className="sm">{o.icon} {o.name} ({angka(n(o.id))})</button></Link>)}</div>}
       {d.overdue.length > 0 && <section className="panel"><h3>Lewat batas waktu</h3><div className="list">{d.overdue.slice(0, 8).map((r) => <Item key={r.id} r={r} extra={` · batas ${r.hours} jam${r.assigned_to ? ` · ${r.assigned_to}` : ''}`} />)}</div></section>}

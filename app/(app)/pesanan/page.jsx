@@ -1,4 +1,5 @@
 'use client';
+import IsianTambahan from '@/components/IsianTambahan';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -250,6 +251,7 @@ function Detail({ o, d, kos, onClose, onChanged }) {
           <div className="li" key={p.id}><span className="small" style={{ textDecoration: p.status === 'batal' ? 'line-through' : 'none' }}>{p.kind === 'bayar' ? 'Bayar' : 'Dikembalikan'} {rp(p.amount)} · {PAYM[p.method]} · {p.paid_at}{p.void_reason ? ` · batal: ${p.void_reason}` : ''}</span>
             {p.status === 'selesai' && <button className="sm ghost" onClick={() => voidPay(p)} aria-label="Batalkan pembayaran">✕</button>}</div>
         ))}</div></>}
+        <IsianTambahan entity="svc_order" id={o.id} area="sell" />
         <span className="label">Riwayat</span>
         <div className="list">{x.events.map((e, i) => <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span className="small">{e.text}</span><span className="small muted" style={{ textAlign: 'right' }}>{waktu(e.at)}<br />{e.actor}</span></div>)}</div>
       </>}

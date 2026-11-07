@@ -10,7 +10,7 @@ import { rp, bulan, today, errMsg, tgl } from '@/lib/format';
 import { typeOf, homeOf, ROLES } from '@/lib/business';
 import { LEGAL_KIND } from '@/lib/modules';
 
-const BASIS = { kas: 'dicatat saat uang diterima (basis kas)', penjualan: 'dicatat saat penjualan terjadi, termasuk kasbon', 'pesanan selesai': 'dicatat saat pesanan diserahkan ke pelanggan, termasuk yang belum lunas' };
+const BASIS = { kas: 'dicatat saat uang diterima (basis kas)', penjualan: 'dicatat saat penjualan terjadi, termasuk kasbon', 'pesanan selesai': 'dicatat saat pesanan diserahkan ke pelanggan, termasuk yang belum lunas', 'status catatan': 'dicatat saat catatan mencapai status uang masuk yang diatur di Business Builder' };
 const ACT = { aktifkan_modul: 'mengaktifkan modul', nonaktifkan_modul: 'menonaktifkan modul', minta_persetujuan: 'meminta persetujuan', tolak_persetujuan: 'menolak permintaan',
   konfigurasi_awal: 'konfigurasi awal', terbitkan_halaman: 'menerbitkan halaman bisnis', sembunyikan_halaman: 'menyembunyikan halaman bisnis', ubah_halaman: 'mengubah halaman bisnis', rekomendasi_diterima: 'menerapkan saran', rekomendasi_diabaikan: 'mengabaikan saran', ekspor_data: 'mengunduh semua data', tutup_bisnis: 'menutup bisnis', buka_bisnis: 'membuka kembali bisnis', lokasi_karyawan: 'menetapkan lokasi kerja karyawan', jurnal_manual: 'membuat jurnal manual', tutup_periode: 'menutup periode buku', buka_periode: 'membuka kembali periode buku', arsip_kontak: 'mengarsipkan kontak', hapus_kontak: 'menghapus kontak', pulihkan_kontak: 'memulihkan kontak', ubah_profil: 'mengubah profil', tambah_cabang: 'menambah cabang/gudang', ubah_cabang: 'mengubah cabang/gudang', ubah_layanan: 'mengubah layanan/harga jasa', ubah_tahap_jasa: 'mengubah tahap proses', ubah_tarif_meteran: 'mengubah tarif meteran' };
 const jam = (ts) => new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
@@ -34,7 +34,7 @@ export default function Bisnis() {
   const go = (b, href) => { pickKos(b.id); router.push(href || homeOf(list?.find((x) => x.id === b.id) || b)); };
   const fin = d.businesses.filter((b) => b.access);
   const att = fin.flatMap((b) => b.attention.map((a) => ({ ...a, b })));
-  const money = fin.filter((b) => b.business_type !== 'kustom'); // bisnis kustom belum punya angka keuangan
+  const money = fin.filter((b) => b.revenue != null); // bisnis kustom tanpa pengaturan uang masuk tidak ikut dijumlahkan
   const groups = Object.values(money.reduce((g, b) => {
     const key = b.legal_entity?.id || 'none';
     (g[key] ||= { le: b.legal_entity, items: [] }).items.push(b);
@@ -91,18 +91,19 @@ export default function Bisnis() {
             <button className="sm" onClick={() => go(b)}>Buka bisnis</button>
           </section>
         );
-        if (b.business_type === 'kustom') return (
+        if (b.business_type === 'kustom' && b.revenue == null) return (
           <section className="panel" key={b.id} style={b.id === kosId ? { borderColor: 'var(--brand)' } : undefined}>
             <div className="stack" style={{ gap: 0 }}><b>{t.icon} {b.name}</b><span className="small muted">{t.name} · {b.plan_name || b.plan}</span></div>
             {b.attention?.length > 0 && <div className="list">{b.attention.map((a) => <button key={a.text} className="li click" onClick={() => go(b, a.href)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}><span className="small">{a.text}</span><b className="small">›</b></button>)}</div>}
-            <span className="small muted">Bisnis kustom: angka keuangan belum dihitung PRASARA dan tidak ikut dijumlahkan di bawah. Lihat menu Laporan bisnis ini.{b.last_activity ? ` Catatan terakhir ${tgl(String(b.last_activity).slice(0, 10))}.` : ''}</span>
+            <span className="small muted">Uang masuk belum diatur (Business Builder › Data & formulir › Uang masuk), jadi bisnis ini belum ikut dijumlahkan.{b.last_activity ? ` Catatan terakhir ${tgl(String(b.last_activity).slice(0, 10))}.` : ''}</span>
             <button className="sm" onClick={() => go(b, '/kerja')}>Buka {b.name}</button>
           </section>
         );
         const retail = b.business_type === 'retail';
         const jasa = b.business_type === 'jasa';
-        const dagang = retail || jasa; // punya kas/bank & utang supplier
-        const lap = retail ? '/laporan-toko' : jasa ? '/laporan-jasa' : '/laporan';
+        const dagang = retail || jasa || b.business_type === 'kustom'; // punya kas/bank
+        const kustom = b.business_type === 'kustom';
+        const lap = retail ? '/laporan-toko' : jasa ? '/laporan-jasa' : kustom ? '/laporan-kustom' : '/laporan';
         const Row = ({ l, v, href, tone, hint }) => (
           <button className="li click" onClick={() => go(b, href)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}>
             <span className="small">{l}{hint && <span className="muted"> · {hint}</span>}</span>
@@ -116,13 +117,13 @@ export default function Bisnis() {
               <span className={'chip ' + (b.complete ? 'good' : 'gold')}>{b.complete ? 'Lengkap' : 'Perkiraan'}</span>
             </div>
             <div className="list">
-              <Row l="Pendapatan" v={rp(b.revenue)} href={lap} hint={retail ? 'penjualan bersih' : jasa ? 'pesanan diserahkan' : 'uang diterima'} />
+              <Row l="Pendapatan" v={rp(b.revenue)} href={lap} hint={retail ? 'penjualan bersih' : jasa ? 'pesanan diserahkan' : kustom ? 'uang masuk catatan' : 'uang diterima'} />
               {retail && <Row l="Modal barang terjual" v={rp(b.cogs)} href="/laporan-toko" />}
               {jasa && <Row l="Pemakaian bahan" v={rp(b.cogs)} href="/laporan-jasa" />}
               <Row l="Biaya operasional" v={rp(b.ops)} href={dagang ? '/kas' : '/pengeluaran'} />
               <Row l="Laba operasional" v={rp(b.profit)} href={lap} tone={Number(b.profit) < 0 ? 'bad' : undefined} />
-              <Row l={retail ? 'Kasbon pelanggan' : jasa ? 'Belum lunas pelanggan' : 'Tunggakan sewa'} v={rp(b.receivables)} href={retail ? '/kas' : jasa ? '/pesanan' : '/tagihan'} tone={Number(b.receivables) > 0 ? 'bad' : undefined} hint="saat ini" />
-              {dagang && <Row l="Utang ke supplier" v={rp(b.payables)} href="/kas" hint="saat ini" />}
+              {!kustom && <Row l={retail ? 'Kasbon pelanggan' : jasa ? 'Belum lunas pelanggan' : 'Tunggakan sewa'} v={rp(b.receivables)} href={retail ? '/kas' : jasa ? '/pesanan' : '/tagihan'} tone={Number(b.receivables) > 0 ? 'bad' : undefined} hint="saat ini" />}
+              {dagang && !kustom && <Row l="Utang ke supplier" v={rp(b.payables)} href="/kas" hint="saat ini" />}
               {dagang && <Row l="Kas / bank" v={`${rp(b.cash)} / ${rp(b.bank)}`} href="/kas" hint="saat ini" />}
               {!dagang && <Row l="Kamar terisi" v={`${b.occupied}/${b.rooms}`} href="/kamar" />}
             </div>

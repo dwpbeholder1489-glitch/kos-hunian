@@ -13,7 +13,7 @@ import { multiLoc } from '@/lib/business';
 
 const ACC = { kas: 'Kas (laci)', bank: 'Bank' };
 const OTHER = {
-  setoran_modal: ['Setor modal / uang awal toko', 'masuk'],
+  setoran_modal: ['Setor modal / uang awal', 'masuk'],
   prive: ['Diambil pemilik untuk pribadi (prive)', 'keluar'],
   pendapatan_lain: ['Pemasukan lain (bukan jualan)', 'masuk'],
   setor_bank: ['Setor uang kas ke bank', 'pindah'],
@@ -45,7 +45,8 @@ export default function Kas() {
   if (err) return <div className="notice bad">{err.includes('retail_ledger') || err.includes('debt_payments') || err.includes('account') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
   const { led } = d;
-  const jasa = kos.business_type === 'jasa'; // bisnis jasa: piutang pelanggan ada di Pesanan (sisa bayar), bukan kasbon
+  const kustom = kos.business_type === 'kustom'; // bisnis kustom: uang masuk dari catatan (Business Builder), tanpa kasbon & utang supplier
+  const jasa = kos.business_type === 'jasa' || kustom; // bisnis jasa: piutang pelanggan ada di Pesanan (sisa bayar), bukan kasbon
   const totKasbon = led.kasbon.reduce((a, x) => a + Number(x.sisa), 0);
   const totUtang = led.utang.reduce((a, x) => a + Number(x.sisa), 0);
   const catName = new Map(d.cats.map((c) => [c.id, c.name]));
@@ -65,12 +66,12 @@ export default function Kas() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>{jasa ? 'Kas' : 'Kas & kasbon'}</h2><PageHelp page={jasa ? 'kas-jasa' : 'kas'} /></div>
+      <div className="row"><h2>{kustom ? 'Kas & biaya' : jasa ? 'Kas' : 'Kas & kasbon'}</h2><PageHelp page={kustom ? 'kas-kustom' : jasa ? 'kas-jasa' : 'kas'} /></div>
       <div className="grid">
         <Tile label="Kas (laci)" value={rp(led.kas)} sub={Number(led.kas) < 0 ? 'minus: ada uang masuk yang belum dicatat?' : 'menurut catatan'} tone={Number(led.kas) < 0 ? 'bad' : ''} />
         <Tile label="Bank" value={rp(led.bank)} />
         {!jasa && <Tile label="Kasbon pelanggan" value={rp(totKasbon)} sub={`${led.kasbon.length} orang`} />}
-        <Tile label="Utang ke supplier" value={rp(totUtang)} sub={`${led.utang.length} supplier`} />
+        {!kustom && <Tile label="Utang ke supplier" value={rp(totUtang)} sub={`${led.utang.length} supplier`} />}
       </div>
       <LokasiBar note="Biaya, uang masuk/keluar lain, dan pembayaran kasbon/utang dicatat di lokasi ini." />
       {multi && tab === 'kas' && <section className="panel">
@@ -78,11 +79,11 @@ export default function Kas() {
         <div className="list">{d.loc.map((b) => <div className="li" key={b.id}><span className="small">{b.name}{b.is_main ? ' (utama)' : ''}{!b.active ? ' · nonaktif' : ''}</span><b className="small" style={{ color: Number(b.kas) < 0 ? 'var(--bad)' : undefined }}>{rp(b.kas)}</b></div>)}</div>
         <span className="small muted">Uang laci di tiap lokasi menurut catatan (penjualan tunai, belanja tunai, biaya, kasbon, dan pindah kas). Bank tetap satu untuk seluruh bisnis.</span>
       </section>}
-      <div className="seg">{[['kas', 'Kas & bank'], ...(jasa ? [] : [['kasbon', 'Kasbon pelanggan']]), ['utang', 'Utang supplier']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
+      <div className="seg">{[['kas', 'Kas & bank'], ...(jasa ? [] : [['kasbon', 'Kasbon pelanggan']]), ...(kustom ? [] : [['utang', 'Utang supplier']])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
 
       {tab === 'kas' && <>
         <div className="row"><button className="primary" onClick={() => setSheet({ t: 'exp' })}>+ Biaya</button><button onClick={() => setSheet({ t: 'cash' })}>+ Uang masuk/keluar lain</button></div>
-        <p className="small muted" style={{ margin: 0 }}>Saldo dihitung dari {jasa ? 'pembayaran pesanan' : 'penjualan tunai/transfer'}, belanja, biaya, pelunasan, dan catatan di bawah.{jasa && <> Sisa bayar pelanggan ada di <Link href="/pesanan">Pesanan</Link>.</>} Mulai pakai? Catat <b>Setor modal</b> sebesar uang di laci sekarang.</p>
+        <p className="small muted" style={{ margin: 0 }}>Saldo dihitung dari {kustom ? <>uang masuk catatan (diatur di <Link href="/builder?langkah=data">Business Builder › Uang masuk</Link>)</> : jasa ? 'pembayaran pesanan' : 'penjualan tunai/transfer'}, {kustom ? '' : 'belanja, '}biaya, {kustom ? '' : 'pelunasan, '}dan catatan di bawah.{jasa && !kustom && <> Sisa bayar pelanggan ada di <Link href="/pesanan">Pesanan</Link>.</>} Mulai pakai? Catat <b>Setor modal</b> sebesar uang di laci sekarang.</p>
         {feed.length === 0 ? <Empty title="Belum ada catatan kas" /> : (
           <section className="panel"><div className="list">{feed.map((f) => (
             <div className="li" key={f.t + f.id}>

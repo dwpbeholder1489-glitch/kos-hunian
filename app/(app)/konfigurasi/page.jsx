@@ -8,13 +8,14 @@ import Rekomendasi from '@/components/Rekomendasi';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { tgl, errMsg } from '@/lib/format';
 import { canArea, BUSINESS_TYPES } from '@/lib/business';
+import { ENTITY, ENTITY_FOR, CF_TYPES } from '@/components/IsianTambahan';
 import { FEATURE_CODES } from '@/lib/plan';
 import { GROUPS, LEGAL_KIND, PROFILE_Q, qFor } from '@/lib/modules';
 
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
 const ACT = {
   aktifkan_modul: 'Mengaktifkan modul', nonaktifkan_modul: 'Menonaktifkan modul', minta_persetujuan: 'Meminta persetujuan', tolak_persetujuan: 'Menolak permintaan',
-  konfigurasi_awal: 'Konfigurasi awal', terbitkan_halaman: 'Menerbitkan halaman bisnis', sembunyikan_halaman: 'Menyembunyikan halaman bisnis', ubah_halaman: 'Mengubah halaman bisnis', rekomendasi_diterima: 'Menerapkan saran', rekomendasi_diabaikan: 'Mengabaikan saran', ekspor_data: 'Mengunduh semua data', tutup_bisnis: 'Menutup bisnis', buka_bisnis: 'Membuka kembali bisnis', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang', ubah_layanan: 'Mengubah layanan/harga jasa', ubah_tahap_jasa: 'Mengubah tahap proses', ubah_tarif_meteran: 'Mengubah tarif meteran',
+  konfigurasi_awal: 'Konfigurasi awal', terbitkan_halaman: 'Menerbitkan halaman bisnis', sembunyikan_halaman: 'Menyembunyikan halaman bisnis', ubah_halaman: 'Mengubah halaman bisnis', rekomendasi_diterima: 'Menerapkan saran', rekomendasi_diabaikan: 'Mengabaikan saran', ekspor_data: 'Mengunduh semua data', tutup_bisnis: 'Menutup bisnis', buka_bisnis: 'Membuka kembali bisnis', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang', ubah_layanan: 'Mengubah layanan/harga jasa', ubah_tahap_jasa: 'Mengubah tahap proses', ubah_tarif_meteran: 'Mengubah tarif meteran', isian_tambahan: 'Mengubah isian tambahan', builder_uang: 'Mengatur uang masuk (Builder)', builder_profil: 'Mengubah profil (Builder)', builder_jenis_data: 'Mengubah jenis data (Builder)', builder_field: 'Mengubah field (Builder)', builder_alur: 'Mengubah alur (Builder)', builder_aktifkan: 'Mengaktifkan bisnis (Builder)',
 };
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 
@@ -52,9 +53,10 @@ export default function Konfigurasi() {
       <div className="row"><h2>Pusat konfigurasi</h2><PageHelp page="konfigurasi" /></div>
       <p className="small muted" style={{ margin: 0 }}>Atur profil, modul, dan struktur {kos.name}. Perubahan penting dicatat dan {owner ? 'langsung diterapkan setelah Anda konfirmasi' : 'menunggu persetujuan pemilik'}.</p>
       <div className="seg" style={{ overflowX: 'auto' }}>
-        {[['modul', 'Modul'], ['saran', 'Saran'], ['profil', 'Profil'], ['cabang', 'Cabang & gudang'], ['setuju', 'Persetujuan'], ['riwayat', 'Riwayat']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['modul', 'Modul'], ['saran', 'Saran'], ['profil', 'Profil'], ...(ENTITY_FOR[kos.business_type] ? [['isian', 'Isian tambahan']] : []), ['cabang', 'Cabang & gudang'], ['setuju', 'Persetujuan'], ['riwayat', 'Riwayat']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
 
+      {tab === 'isian' && <IsianTab kos={kos} owner={canArea(kos, 'settings')} onSaved={refresh} />}
       {tab === 'modul' && <>
         {['aktif', 'tersedia', 'segera'].map((g) => {
           const list = cat.filter((m) => (g === 'aktif' ? m.active : g === 'tersedia' ? !m.active && m.status === 'available' : m.status === 'segera'));
@@ -223,5 +225,59 @@ function BranchTab({ kosId, owner, branches, onSaved }) {
         </Sheet>
       )}
     </>
+  );
+}
+
+// Custom Field Builder untuk menu bawaan
+function IsianTab({ kos, owner, onSaved }) {
+  const [list, setList] = useState(null);
+  const [edit, setEdit] = useState(null);
+  const load = () => supabase.from('cf_fields').select('*').eq('kos_id', kos.id).order('sort').then(({ data }) => setList(data || []));
+  useEffect(() => { load(); }, [kos.id]);
+  if (!list) return <Loading />;
+  return (
+    <>
+      <p className="small muted" style={{ margin: 0 }}>Tambahkan isian sendiri ke menu bawaan, mis. "Asal kampus" di Penghuni atau "Merek" di Barang. Isian tampil di detail datanya dan ikut terunduh di ekspor. Maksimal 20 isian per menu.</p>
+      {ENTITY_FOR[kos.business_type].map((e) => (
+        <section className="panel" key={e}>
+          <div className="row between"><h3>{ENTITY[e]}</h3>{owner && <button className="sm primary" onClick={() => setEdit({ entity: e })}>+ Isian</button>}</div>
+          {list.filter((f) => f.entity === e).length === 0 ? <span className="small muted">Belum ada isian tambahan.</span> : (
+            <div className="list">{list.filter((f) => f.entity === e).map((f) => (
+              <button key={f.id} className="li click" disabled={!owner} onClick={() => setEdit(f)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', opacity: f.active ? 1 : 0.55 }}>
+                <div className="main"><b className="small">{f.label}{f.required ? ' *' : ''}{!f.active && ' (nonaktif)'}</b><span className="small muted">{CF_TYPES[f.type]}{f.choices?.length ? ` · ${f.choices.join(', ')}` : ''}</span></div>
+              </button>))}</div>)}
+        </section>
+      ))}
+      {edit && <CfForm kos={kos} f={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); load(); onSaved(); }} />}
+    </>
+  );
+}
+
+function CfForm({ kos, f, onClose, onSaved }) {
+  const [p, setP] = useState({ label: f.label || '', type: f.type || 'text', help: f.help || '', required: Boolean(f.required), choices: (f.choices || []).join('\n'), min_value: f.min_value ?? '', max_value: f.max_value ?? '', active: f.active !== false });
+  const [busy, setBusy] = useState(false);
+  const set = (k, v) => setP({ ...p, [k]: v });
+  const save = async () => {
+    if (!p.label.trim()) return toast('Isi nama isian.');
+    setBusy(true);
+    const { error } = await supabase.rpc('cf_field_save', { p_kos: kos.id, p_id: f.id || null, p: { ...p, entity: f.entity, choices: p.choices.split('\n').map((x) => x.trim()).filter(Boolean), min_value: p.min_value === '' ? null : p.min_value, max_value: p.max_value === '' ? null : p.max_value } });
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    toast('Isian disimpan'); onSaved();
+  };
+  return (
+    <Sheet title={f.id ? `Isian: ${f.label}` : `Isian baru · ${ENTITY[f.entity]}`} onClose={onClose}>
+      <Field label="Nama isian"><input value={p.label} maxLength={60} onChange={(e) => set('label', e.target.value)} placeholder="mis. Asal kampus" /></Field>
+      <Field label="Tipe" hint={f.id ? 'Tipe tidak bisa diubah bila sudah berisi data' : undefined}><select value={p.type} onChange={(e) => set('type', e.target.value)}>{Object.entries(CF_TYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+      {['select', 'multiselect'].includes(p.type) && <Field label="Pilihan (satu per baris)"><textarea rows={4} value={p.choices} onChange={(e) => set('choices', e.target.value)} /></Field>}
+      {['number', 'currency'].includes(p.type) && <div className="row">
+        <Field label="Minimal (opsional)"><input inputMode="decimal" value={p.min_value} onChange={(e) => set('min_value', e.target.value)} /></Field>
+        <Field label="Maksimal (opsional)"><input inputMode="decimal" value={p.max_value} onChange={(e) => set('max_value', e.target.value)} /></Field>
+      </div>}
+      <Field label="Keterangan untuk pengisi (opsional)"><input value={p.help} maxLength={200} onChange={(e) => set('help', e.target.value)} /></Field>
+      <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={p.required} onChange={(e) => set('required', e.target.checked)} />Wajib diisi (diperiksa saat isian tambahan disimpan)</label>
+      {f.id && <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={p.active} onChange={(e) => set('active', e.target.checked)} />Aktif (nonaktif = disembunyikan, isi lama tetap tersimpan)</label>}
+      <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
+    </Sheet>
   );
 }

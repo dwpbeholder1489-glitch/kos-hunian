@@ -43,7 +43,7 @@ const VALUES = [
 const CATS = [
   ['🏠', 'Properti & Sewa', 'Kos, kontrakan, homestay: kamar, penghuni, tagihan bulanan otomatis, booking, deposit, keluhan & perbaikan, meteran listrik/air, verifikasi pembayaran, laba rugi.', 'ready'],
   ['🛒', 'Retail & Grosir', 'Toko sembako, minimarket, grosir: kasir eceran & grosir, stok multi-satuan, barcode, belanja ke supplier, kasbon, laporan laba.', 'ready'],
-  ['🧩', 'Bisnis lain (Business Builder)', 'Bengkel, salon, katering, dan usaha lain: susun sendiri data, formulir, alur status, peran, dan laporan. Keuangan/pembukuan otomatis belum untuk jenis ini.', 'ready'],
+  ['🧩', 'Bisnis lain (Business Builder)', 'Bengkel, salon, katering, dan usaha lain: susun sendiri data, formulir, alur status, peran, dan laporan. Uang masuk per status langsung ke kas & pembukuan.', 'ready'],
   ['🧺', 'Jasa & Laundry', 'Laundry kiloan & satuan (dan jasa lain): pesanan, tahap cuci–kering–setrika–QC, nota, DP, antar-jemput, keluhan, bahan, laporan.', 'ready'],
   ['🍳', 'Kuliner', 'Menu, resep, bahan baku, dan pesanan dapur.', 'plan'],
   ['🏭', 'Produksi', 'Produksi, daftar bahan (BOM), bahan baku, kontrol mutu.', 'plan'],

@@ -61,6 +61,7 @@ function DataStep({ kosId, cfg, onSaved }) {
   const [objEdit, setObjEdit] = useState(null);
   const [fieldEdit, setFieldEdit] = useState(null); // { o, f }
   const [preview, setPreview] = useState(null);
+  const [money, setMoney] = useState(null);
   const moveField = async (o, f, dir) => {
     const list = fieldsOf(cfg, o.id); const i = list.findIndex((x) => x.id === f.id); const j = i + dir;
     if (j < 0 || j >= list.length) return;
@@ -87,6 +88,7 @@ function DataStep({ kosId, cfg, onSaved }) {
               </div>
             ))}</div>
             {cfg.fields.some((f) => f.object_id === o.id && !f.active) && <span className="small muted">Nonaktif: {cfg.fields.filter((f) => f.object_id === o.id && !f.active).map((f) => <button key={f.id} className="sm ghost" onClick={() => setFieldEdit({ o, f })}>{f.label}</button>)}</span>}
+            {(o.money_field || fs.some((f) => f.type === 'currency')) && <div className="li" style={{ alignItems: 'flex-start' }}><span className="small">💰 <b>Uang masuk:</b> {o.money_field ? `${fs.find((f) => f.key === o.money_field)?.label || '?'} → ${o.money_account === 'bank' ? 'bank' : 'kas'}${o.workflow ? `, dihitung saat status ${(o.money_statuses || []).map((id) => cfg.statuses.find((s) => s.id === id)?.label).filter(Boolean).join(' / ') || '?'}` : ', dihitung saat dicatat'}` : 'tidak dihitung'}</span><button className="sm ghost" onClick={() => setMoney(o)}>Atur</button></div>}
             <div className="row"><button className="sm" onClick={() => setFieldEdit({ o, f: null })}>+ Field</button><button className="sm ghost" onClick={() => setPreview(o)}>Pratinjau formulir</button></div>
           </section>
         );
@@ -94,11 +96,41 @@ function DataStep({ kosId, cfg, onSaved }) {
       <button className="primary" onClick={() => setObjEdit({})}>+ Jenis data</button>
       {objEdit && <ObjectForm kosId={kosId} cfg={cfg} o={objEdit} onClose={() => setObjEdit(null)} onSaved={() => { setObjEdit(null); onSaved(); }} />}
       {fieldEdit && <FieldForm kosId={kosId} cfg={cfg} o={fieldEdit.o} f={fieldEdit.f} onClose={() => setFieldEdit(null)} onSaved={() => { setFieldEdit(null); onSaved(); }} />}
+      {money && <MoneyForm kosId={kosId} cfg={cfg} o={money} onClose={() => setMoney(null)} onSaved={() => { setMoney(null); onSaved(); }} />}
       {preview && <Sheet title={`Pratinjau: ${preview.name} baru`} onClose={() => setPreview(null)}>
         <span className="small muted">Seperti inilah formulir yang dilihat tim (contoh, tidak disimpan).</span>
         {(() => { const fs = fieldsOf(cfg, preview.id); const d = initialData(fs, {}); return fs.map((f) => f.type === 'boolean' ? <FieldInput key={f.key} f={f} value={d[f.key]} onChange={() => {}} /> : <Field key={f.key} label={`${f.label}${f.required ? ' *' : ''}`} hint={f.help}><FieldInput f={f} value={d[f.key]} onChange={() => {}} refOpts={[]} /></Field>); })()}
       </Sheet>}
     </>
+  );
+}
+
+// Uang masuk: field uang mana yang menjadi pemasukan, kapan dihitung, masuk ke kas atau bank
+function MoneyForm({ kosId, cfg, o, onClose, onSaved }) {
+  const cur = fieldsOf(cfg, o.id).filter((f) => f.type === 'currency');
+  const sts = statusesOf(cfg, o.id);
+  const [field, setField] = useState(o.money_field || '');
+  const [st, setSt] = useState(o.money_statuses || []);
+  const [acc, setAcc] = useState(o.money_account || 'kas');
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('bb_money_save', { p_kos: kosId, p_object: o.id, p: { money_field: field || null, money_statuses: st, money_account: acc } }), field ? 'Uang masuk diatur' : 'Uang masuk dimatikan', errMsg);
+    setBusy(false);
+    if (ok) onSaved();
+  };
+  return (
+    <Sheet title={`Uang masuk · ${o.name}`} onClose={onClose}>
+      <span className="small muted">Bila diatur, nilai field uang ini masuk ke Kas, Pembukuan, Laporan keuangan, dan Ringkasan pemilik pada saat yang Anda tentukan. Biaya dicatat di menu Kas & biaya.</span>
+      <Field label="Field uang"><select value={field} onChange={(e) => setField(e.target.value)}><option value="">— tidak dihitung —</option>{cur.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}</select></Field>
+      {cur.length === 0 && <span className="small" style={{ color: 'var(--bad)' }}>Belum ada field bertipe Uang (Rp) di {o.name}. Tambahkan dulu.</span>}
+      {field && o.workflow && <Field label="Dihitung saat status" hint="Pilih status ketika uang benar-benar diterima (mis. Diambil / Lunas). Bila catatan keluar dari status ini, uangnya tidak dihitung lagi.">
+        <div className="stack" style={{ gap: 6 }}>{sts.map((s) => <label key={s.id} className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={st.includes(s.id)} onChange={(e) => setSt(e.target.checked ? [...st, s.id] : st.filter((x) => x !== s.id))} />{s.label}{s.is_final ? ' (akhir)' : ''}</label>)}</div>
+      </Field>}
+      {field && !o.workflow && <span className="small muted">Jenis data ini tanpa status: uang dihitung saat catatan dibuat.</span>}
+      {field && <div className="seg">{[['kas', 'Masuk ke kas (tunai)'], ['bank', 'Masuk ke bank']].map(([k, l]) => <button key={k} className={acc === k ? 'on' : ''} onClick={() => setAcc(k)}>{l}</button>)}</div>}
+      <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
+    </Sheet>
   );
 }
 

@@ -1,4 +1,5 @@
 'use client';
+import IsianTambahan from '@/components/IsianTambahan';
 import { withApproval } from '@/lib/approval';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
@@ -170,6 +171,7 @@ function ProductForm({ kosId, p, units, bahan, onClose, onSaved }) {
       })}
       {rows.length < 6 && <button onClick={() => setRows([...rows, blankUnit()])}>+ Tambah satuan</button>}
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : p ? 'Simpan perubahan' : 'Simpan barang'}</button>
+      {p?.id && <IsianTambahan entity="product" id={p.id} extra={p.extra} area="stock" />}
       {p && <p className="small muted" style={{ margin: 0 }}>Stok diubah lewat tombol Stok, supaya setiap selisih tercatat.</p>}
       {p && <button className="ghost" onClick={archive}>{p.active ? 'Arsipkan barang (tidak dijual lagi)' : 'Aktifkan lagi'}</button>}
     </Sheet>

@@ -10,15 +10,15 @@ import { canArea } from '@/lib/business';
 
 const TYPE = { aset: 'Aset', kewajiban: 'Kewajiban', ekuitas: 'Ekuitas', pendapatan: 'Pendapatan', beban: 'Beban' };
 const KIND = { posting: ['Otomatis', ''], koreksi: ['Koreksi', 'gold'], manual: ['Manual', 'void'] };
-const SRC = { sale: 'Penjualan', return: 'Retur', purchase: 'Belanja', debt_payment: 'Kasbon/utang', stock_move: 'Stok', expense: 'Pengeluaran', cash_entry: 'Kas', payment: 'Pembayaran sewa', purchase_return: 'Retur ke supplier', svc_order: 'Pesanan jasa', svc_payment: 'Pembayaran jasa', deposit: 'Deposit penghuni', booking: 'Booking kamar' };
-const srcHref = (t, id, retail) => ({ sale: `/struk/${id}`, return: '/penjualan', purchase: '/belanja', debt_payment: '/kas', stock_move: '/barang', expense: retail ? '/kas' : '/pengeluaran', cash_entry: '/kas', payment: '/pembayaran', purchase_return: '/belanja', svc_order: `/nota/${id}`, svc_payment: '/pesanan', deposit: '/penghuni', booking: '/booking' }[t]);
+const SRC = { sale: 'Penjualan', return: 'Retur', purchase: 'Belanja', debt_payment: 'Kasbon/utang', stock_move: 'Stok', expense: 'Pengeluaran', cash_entry: 'Kas', payment: 'Pembayaran sewa', purchase_return: 'Retur ke supplier', svc_order: 'Pesanan jasa', svc_payment: 'Pembayaran jasa', deposit: 'Deposit penghuni', booking: 'Booking kamar', bb_record: 'Uang masuk catatan' };
+const srcHref = (t, id, retail) => ({ sale: `/struk/${id}`, return: '/penjualan', purchase: '/belanja', debt_payment: '/kas', stock_move: '/barang', expense: retail ? '/kas' : '/pengeluaran', cash_entry: '/kas', payment: '/pembayaran', purchase_return: '/belanja', svc_order: `/nota/${id}`, svc_payment: '/pesanan', deposit: '/penghuni', booking: '/booking', bb_record: `/catatan?buka=${id}` }[t]);
 const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
 
 // Pembukuan (blueprint 5.1, 22): jurnal double-entry otomatis dari transaksi, laporan per bisnis atau per badan usaha
 export default function Pembukuan() {
   const { kos, kosId, ver } = useKos();
   const owner = canArea(kos, 'team');
-  const retail = ['retail', 'jasa'].includes(kos?.business_type); // biaya dicatat di Kas
+  const retail = ['retail', 'jasa', 'kustom'].includes(kos?.business_type); // biaya dicatat di Kas
   const [tab, setTab] = useState('laporan');
   const [ym, setYm] = useState(today().slice(0, 7));
   const [ytd, setYtd] = useState(false);

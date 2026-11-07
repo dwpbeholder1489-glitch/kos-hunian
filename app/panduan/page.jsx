@@ -439,6 +439,17 @@ const PARTS = [
       <>Saring per status atau field, cari, <b>Ubah isi</b>, lihat <b>Riwayat</b> dan <b>Dipakai di</b> (mis. riwayat servis sebuah kendaraan). Data salah? <b>Arsipkan</b> (pemilik/pengelola).</>,
       <><b>Dashboard</b> menampilkan jumlah per status, <b>Tugas saya</b>, dan <b>Lewat batas waktu</b>.</>,
     ], <>Notifikasi saat ini tampil di Dashboard & Ringkasan pemilik; email/WhatsApp otomatis untuk bisnis kustom belum tersedia. Catatan yang masih dirujuk catatan lain tidak bisa diarsipkan.</>, null, <ScrCatatan />],
+    ['Uang masuk, kas & biaya bisnis kustom', 'Business Builder › 2. Data & formulir › 💰 Uang masuk › Atur · menu Kas & biaya', [
+      <>Pada jenis data yang menghasilkan uang (mis. Servis), tekan <b>Atur</b> di baris <b>Uang masuk</b>: pilih field uang (mis. Biaya jasa), <b>status kapan dihitung</b> (mis. Diambil), dan masuk ke kas atau bank.</>,
+      <>Setiap catatan yang mencapai status itu otomatis menambah saldo <b>Kas</b>, tercatat di <b>Pembukuan</b> (Kas/Bank vs Pendapatan jasa), dan muncul di <b>Laporan › Keuangan</b> serta Ringkasan pemilik.</>,
+      <>Catat biaya (gaji, sewa, bahan) di <b>Kas & biaya › + Biaya</b>; modal awal di <b>+ Uang masuk/keluar lain › Setor modal</b>.</>,
+      <>Dashboard menampilkan <b>Uang masuk hari ini</b> (untuk pemilik/pengelola).</>,
+    ], <>Bila catatan dipindah keluar dari status uang masuk (mis. dibatalkan) atau diarsipkan, uangnya tidak dihitung lagi. Template Bengkel & Salon sudah terisi (Biaya jasa saat Diambil, Harga saat Selesai). Petugas proses tidak melihat angka keuangan.</>, 'warn', null],
+    ['Isian tambahan di menu bawaan', 'Lainnya › Konfigurasi › Isian tambahan', [
+      <>Untuk kos (Penghuni), toko & laundry (Barang/bahan, Pelanggan & supplier) dan laundry (Pesanan jasa): tekan <b>+ Isian</b>, isi nama (mis. Asal kampus, Merek, Ukuran), tipe, pilihan, wajib, dan batas angka.</>,
+      <>Isian muncul di bagian <b>Isian tambahan</b> pada detail data (Penghuni › ketuk nama, Barang › ketuk barang, Pesanan › ketuk pesanan, Kontak). Tekan <b>Ubah</b> untuk mengisi.</>,
+      <>Isian ikut terunduh di <b>Unduh semua data</b> (lembar Isian tambahan).</>,
+    ], <>Isian yang dinonaktifkan disembunyikan, isinya tetap tersimpan. Tipe tidak bisa diganti bila sudah berisi data. Maksimal 20 isian per menu. Belum bisa dipakai untuk mencari/menyaring di daftar.</>, null, null],
   ]],
 ];
 
@@ -491,7 +502,7 @@ export default function Panduan() {
           <div><b>Toko</b><span><a href="#bagian-E">Langkah 25–30</a><br />Barang, kasir, belanja, kas, laporan</span></div>
           <div><b>Karyawan & lainnya</b><span><a href="#bagian-F">Langkah 31–44</a><br />Karyawan, kontak, shift, label, konfigurasi, persetujuan, otomatisasi, pembukuan, lokasi, saran, ekspor & tutup bisnis, prospek, halaman bisnis</span></div>
           <div><b>Jasa & Laundry</b><span><a href="#bagian-G">Langkah 45–50</a><br />Layanan & tahap, pesanan, nota, proses, bayar, keluhan, bahan, laporan</span></div>
-          <div><b>Business Builder</b><span><a href="#bagian-I">Langkah 55–60</a><br />Bisnis kustom: data & field, alur & peran, laporan, validasi, catatan</span></div>
+          <div><b>Business Builder</b><span><a href="#bagian-I">Langkah 55–62</a><br />Bisnis kustom: data & field, alur & peran, laporan, validasi, catatan, uang masuk & kas; isian tambahan di menu bawaan</span></div>
           <div><b>Kos lanjutan</b><span><a href="#bagian-H">Langkah 51–54</a><br />Deposit, keluhan & perbaikan, meteran listrik/air, booking kamar</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
