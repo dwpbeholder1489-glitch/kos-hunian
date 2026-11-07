@@ -17,6 +17,34 @@ export async function POST(req) {
   const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || req.headers.get('x-real-ip') || 'tanpa-ip';
   const ipHash = createHash('sha256').update(ip + '|' + key.slice(-16)).digest('hex').slice(0, 32);
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  // Reservasi meja (kuliner): masuk sebagai permintaan, dikonfirmasi kasir lewat WhatsApp
+  if (b.reserve) {
+    const str = (v, n) => String(v ?? '').slice(0, n);
+    const { data, error } = await sb.rpc('public_resv_create', {
+      p_slug: str(b.slug, 40), p_ip_hash: ipHash, p_elapsed: Math.min(Number(b.elapsed) || 0, 100000),
+      p: { name: str(b.name, 80), phone: str(b.phone, 20), note: str(b.note, 300), consent: b.consent === true, party: str(b.party, 4), starts_at: str(b.starts_at, 40) },
+    });
+    if (error) { console.error('[publik] reservasi gagal', error.message); return json({ ok: false, error: 'Gagal menyimpan reservasi. Coba lagi nanti.' }, 500); }
+    if (!data?.ok) return json({ ok: false, error: data?.error || 'Gagal mengirim' }, 400);
+    try {
+      if (mailConfigured()) {
+        const [{ data: kos }, { data: pg }] = await Promise.all([
+          sb.from('kos').select('name, owner_id').eq('id', data.kos_id).single(),
+          sb.from('public_pages').select('email_notify').eq('kos_id', data.kos_id).single(),
+        ]);
+        const { data: owner } = pg?.email_notify ? await sb.auth.admin.getUserById(kos.owner_id) : { data: null };
+        const to = owner?.user?.email;
+        if (to) {
+          const link = `${new URL(req.url).origin}/meja?tab=reservasi`;
+          const when = new Date(data.starts_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+          await sendMail({ to, subject: `Permintaan reservasi ${data.number} — ${kos.name}`,
+            text: `Permintaan reservasi ${data.number} di ${kos.name}.\nNama: ${b.name}\nWhatsApp: ${b.phone}\nWaktu: ${when}\nJumlah orang: ${data.party}\nCatatan: ${b.note || '-'}\n\nBuka ${link} lalu Konfirmasi atau Tolak.`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:520px;color:#1A1D21"><p>Permintaan reservasi <b>${esc(data.number)}</b> di <b>${esc(kos.name)}</b>.</p><p>Nama: <b>${esc(b.name)}</b><br>WhatsApp: <b>${esc(b.phone)}</b><br>Waktu: <b>${esc(when)}</b><br>Jumlah orang: <b>${esc(data.party)}</b><br>Catatan: ${esc(b.note || '-')}</p><p><a href="${link}" style="display:inline-block;background:#B88A2E;color:#1D2A21;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:10px">Konfirmasi reservasi</a></p><p style="font-size:12px;color:#5A675F">Email ini dikirim otomatis oleh PRASARA. Matikan di menu Halaman bisnis.</p></div>` });
+        }
+      }
+    } catch (e) { console.error('[publik] email gagal', e); }
+    return json({ ok: true, number: data.number });
+  }
   // Pesanan langsung (bisnis jasa): masuk sebagai "Permintaan masuk" sampai dikonfirmasi pemilik
   if (b.order) {
     const str = (v, n) => String(v ?? '').slice(0, n);

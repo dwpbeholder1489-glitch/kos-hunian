@@ -36,6 +36,7 @@ const P = {
   '/bisnis': <><path d="M4 7h16v13H4z" /><path d="M9 7V4h6v3" /></>,
   '/admin': <><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /></>,
   '/bantuan': <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01" /></>,
+  '/meja': <><rect x="4" y="9" width="16" height="4" rx="1" /><path d="M7 13v7M17 13v7M8 5h8" /></>,
   '/dapur': <><path d="M6 13a6 6 0 0 1 12 0z" /><path d="M4 13h16M12 7V5M8 17h8M10 20h4" /></>,
   '/antar': <><path d="M3 7h11v9H3z" /><path d="M14 10h4l3 3v3h-7" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /></>,
   '/konfirmasi': <><path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" /></>,

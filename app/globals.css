@@ -758,3 +758,9 @@ nav.tabs.ptabs{display:flex} /* portal penghuni tidak punya navigasi bawah: tab 
   .qrprint.meja .cta{font-size:11pt;font-weight:700}
   .qrprint.meja .pay{font-size:9pt;color:#555}
 }
+/* ---------- Meja (Kuliner) ---------- */
+.tablegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tablecell{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px;min-height:86px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:inherit;font:inherit;text-align:left}
+.tablecell.gold{border-color:var(--gold)}.tablecell.good{border-color:var(--good)}.tablecell.bad{border-color:var(--bad)}.tablecell.info{border-color:var(--info)}
+.tablecell .chip{font-size:11px;max-width:100%;white-space:normal}
+@media (min-width:700px){.tablegrid{grid-template-columns:repeat(5,minmax(0,1fr))}}

@@ -78,7 +78,8 @@ function NewOrder({ kosId, onClose, onSaved }) {
   const T = terms(kos);
   const tables = Math.max(0, Math.min(200, Math.floor(Number(kos?.profile?.tables) || 0)));
   const [dine, setDine] = useState(T.kul ? 'tempat' : null); // kuliner: tempat | bungkus | antar
-  const [table, setTable] = useState('');
+  // dari Meja & reservasi: /pesanan?baru=1&meja=N → meja sudah terpilih
+  const [table, setTable] = useState(() => { try { const m = new URLSearchParams(window.location.search).get('meja'); return T.kul && /^\d{1,3}$/.test(m || '') ? m : ''; } catch { return ''; } });
   const [zones, setZones] = useState([]);
   const [slots, setSlots] = useState([]);
   const [zoneId, setZoneId] = useState('');

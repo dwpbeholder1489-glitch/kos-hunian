@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -38,6 +38,7 @@ const MENUS_JASA = [
   ['Layanan & tahap', 'Harga per kg/pcs, minimal, lama pengerjaan; urutan tahap proses'],
   ['Bahan & stok', 'Deterjen, pewangi, plastik: stok, belanja, pemakaian'],
   ['Dapur (Kuliner)', 'Layar dapur: pesanan per tahap, meja/bungkus/antar, catatan menu, tombol tahap berikutnya'],
+  ['Meja & reservasi (Kuliner)', 'Status tiap meja, tagihan per meja (bayar semua / bagi rata / per item), tutup meja, reservasi'],
 ];
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
@@ -493,12 +494,18 @@ const PARTS = [
       <>Di dapur buka menu <b>Dapur</b>: pesanan terlama paling atas, berwarna merah bila lebih dari 30 menit. Tekan tombol besar <b>→ Dimasak</b> / <b>→ Siap saji</b> / <b>→ Siap</b>. Layar memuat ulang sendiri tiap 20 detik.</>,
       <>Kasir menyerahkan di <b>Pesanan</b>: <b>+ Bayar</b> bila belum, lalu <b>Sudah diserahkan</b> (atau <b>Sudah diantar</b>). Pesanan dari halaman bisnis masuk sebagai <b>Permintaan masuk</b> seperti Langkah 66 (tanpa jemput).</>,
       <><b>QR per meja</b>: isi <b>Jumlah meja</b> di <b>Menu & tahap</b>, terbitkan Halaman bisnis, lalu ketuk ikon <b>Bagikan</b> (pojok kanan atas) › <b>Cetak QR semua meja</b> (4 kartu per A4; bisa juga satu meja saja). Tempel di tiap meja. Tamu memindai, memilih menu, dan mengirim pesanan untuk mejanya (nama & WhatsApp boleh kosong). Pesanan muncul di Pesanan sebagai <b>Pesanan dari QR Meja N</b> dan di Dapur sebagai pemberitahuan; kasir <b>Konfirmasi</b> → masuk antrean Dapur.</>,
-    ], <>Harga dihitung server dari daftar menu; kasir tidak bisa mengubah harga satuan (potongan lewat diskon yang tercatat). Pendapatan diakui saat pesanan diserahkan. Petugas dapur (peran Petugas proses) hanya melihat pesanan & tahap, tidak melihat uang. Bahan baku dicatat di <b>Bahan & stok</b>. Nomor meja dari QR dicek server (meja yang tidak ada ditolak); pesanan QR tetap menunggu konfirmasi kasir agar tidak ada pesanan iseng, dan tidak dikirim lewat email. <b>Dalam rencana</b>: reservasi meja, split bill, pembayaran online dari meja, cetak ke printer dapur. Bukan sistem POS restoran besar — cocok untuk warung, kafe kecil, dan katering.</>, 'warn', <ScrDapur />],
+    ], <>Harga dihitung server dari daftar menu; kasir tidak bisa mengubah harga satuan (potongan lewat diskon yang tercatat). Pendapatan diakui saat pesanan diserahkan. Petugas dapur (peran Petugas proses) hanya melihat pesanan & tahap, tidak melihat uang. Bahan baku dicatat di <b>Bahan & stok</b>. Nomor meja dari QR dicek server (meja yang tidak ada ditolak); pesanan QR tetap menunggu konfirmasi kasir agar tidak ada pesanan iseng, dan tidak dikirim lewat email. Tagihan per meja, split bill &amp; reservasi: Langkah 69. <b>Dalam rencana</b>: pembayaran online dari meja, cetak ke printer dapur. Bukan sistem POS restoran besar — cocok untuk warung, kafe kecil, dan katering.</>, 'warn', <ScrDapur />],
     ['Jenis usaha lain: template siap pakai', '/mulai › pilih kategori', [
       <>Pendidikan/kursus, event & sewa perlengkapan, konstruksi/proyek, rental kendaraan/alat, travel, produksi/UMKM, pertanian/peternakan, klinik/praktik, komunitas/koperasi, dan ekspedisi kini disiapkan dengan <b>template Business Builder</b> sesuai jenisnya (mis. Rental: Penyewa, Sewa dengan harga & status Dipesan → Berjalan → Kembali; Kursus: Siswa, Kelas, Pembayaran).</>,
       <>Setelah daftar, buka <b>Pusat Konfirmasi</b> untuk melengkapi profil, lalu <b>Business Builder</b> untuk menyesuaikan field, status, dan peran (Langkah 55–62). Aktifkan.</>,
       <>Catat kegiatan sehari-hari di <b>Catatan</b>, uang masuk lewat field uang pada catatan, dan lihat <b>Laporan</b>.</>,
     ], <>Template hanya titik awal — semua bisa diubah, tidak ada data atau harga yang diisi otomatis. Fitur khusus per jenis (mis. jadwal kelas otomatis, rekam medis, pelacakan resi) belum ada; yang tersedia adalah pencatatan, alur status, peran, dan laporan dari Business Builder.</>, 'warn', null],
+    ['Kuliner: meja, tagihan per meja & reservasi', 'Lainnya › Meja & reservasi', [
+      <>Tab <b>Meja</b>: semua meja tampil dengan status — <b>Kosong</b>, <b>Terisi</b>, <b>Siap saji</b>, <b>QR baru</b>, <b>Belum lunas</b>, atau <b>Dipesan 19.00</b> (reservasi). Ketuk meja untuk melihat pesanannya dan <b>+ Pesanan untuk Meja N</b> (meja langsung terpilih).</>,
+      <>Menagih: <b>Bayar semua</b> (satu kali bayar untuk semua pesanan meja); <b>Bagi rata</b> — isi jumlah orang, tekan <b>Catat bayar 1 orang</b> untuk tiap orang (orang terakhir membayar sisanya); atau <b>Per item</b> — centang yang dimakan satu orang, lalu bayar, ulangi untuk orang berikutnya. Pilih cara bayar (tunai/transfer/QRIS) tiap kali.</>,
+      <>Setelah tamu selesai: <b>Tutup meja</b> — semua pesanan meja yang sudah Siap diserahkan (pendapatan tercatat) dan meja kembali Kosong.</>,
+      <>Tab <b>Reservasi</b>: <b>+ Reservasi</b> untuk pesanan lewat telepon/WA (nama, jam, jumlah orang, meja bila sudah ditentukan). Tamu juga bisa menekan <b>Reservasi meja</b> di halaman bisnis — masuk sebagai <b>Permintaan</b>: pilih meja › <b>Konfirmasi</b> › <b>WA: konfirmasi</b>. Saat tamu tiba: <b>Tamu datang</b>; tidak muncul: <b>Tidak datang</b>.</>,
+    ], <>Meja yang sudah dipesan di jam yang bertumpuk ditolak otomatis. Bayar gabungan dicatat sekaligus — bila salah satu gagal, tidak ada yang tercatat; ketukan ganda tidak tercatat dua kali. Diskon/ongkos dibagi sebanding harga saat bayar per item. Tutup meja dengan sisa tagihan menjadikan sisa itu piutang (ada peringatan). Reservasi tanpa uang muka; <b>Dalam rencana</b>: DP reservasi dan pembayaran online.</>, 'warn', <ScrMeja />],
   ]],
 ];
 
@@ -557,7 +564,7 @@ export default function Panduan() {
           <div><b>Lampiran</b><span><a href="#bagian-J">Langkah 63</a><br />Foto nota, kerusakan, dokumen penghuni, foto pesanan</span></div>
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
           <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
-          <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–68</a><br />Menu, meja/bungkus/antar, layar dapur; template kursus, rental, klinik, dll.</span></div>
+          <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
 

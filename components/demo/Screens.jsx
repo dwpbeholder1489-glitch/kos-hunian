@@ -529,3 +529,20 @@ export function ScrDapur() {
     </Phone>
   );
 }
+
+export function ScrMeja() {
+  const T = [['Meja 1', 'Kosong', ''], ['Meja 2', 'Siap saji', 'good'], ['Meja 3', 'Terisi', 'gold'], ['Meja 4', 'Belum lunas', 'bad'], ['Meja 5', 'Dipesan 19.00', 'info'], ['Meja 6', 'Kosong', '']];
+  return (
+    <Phone tab="Meja & reservasi" tabs={['Dashboard', 'Pesanan', 'Dapur', 'Kas']} name="Warung Contoh">
+      <Title>Meja & reservasi</Title>
+      <div className="seg"><button className="on">Meja</button><button>Reservasi (1 baru)</button></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>{T.map(([m, s, c]) => (
+        <div key={m} className="panel" style={{ padding: 8, gap: 4, borderColor: c ? `var(--${c})` : undefined }}><b className="small">{m}</b><span className={'chip ' + c} style={{ fontSize: 10 }}>{s}</span></div>
+      ))}</div>
+      <div className="panel" style={{ gap: 4 }}><b className="small">Meja 3 · sisa Rp 75.000</b>
+        <div className="row" style={{ gap: 4 }}><span className="mini-btn ghost">Bayar semua</span><span className="mini-btn">Bagi rata</span><span className="mini-btn ghost">Per item</span></div>
+        <span className="small">3 orang · <b>Rp 25.000</b> per orang</span></div>
+      <span className="small muted">DATA CONTOH</span>
+    </Phone>
+  );
+}

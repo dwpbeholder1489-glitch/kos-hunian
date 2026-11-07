@@ -34,6 +34,7 @@ export default function PublicForm({ page }) {
       if (kul && /^\d{1,3}$/.test(m) && n >= 1 && n <= Number(ord?.tables || 0)) { setMeja(String(n)); setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300); } else setMejaBad(true);
     } catch {}
   }, []);
+  const [resv, setResv] = useState(false); // kuliner: tab Reservasi meja
   const [pickup, setPickup] = useState(false);
   const [deliver, setDeliver] = useState(false);
   const [zone, setZone] = useState('');
@@ -85,6 +86,9 @@ export default function PublicForm({ page }) {
     setBusy(false);
   };
 
+  const canResv = kul && !meja && Number(ord?.tables || 0) > 0;
+  const tabs = canResv && <div className="seg"><button type="button" className={!resv ? 'on' : ''} onClick={() => setResv(false)}>Pesan menu</button><button type="button" className={resv ? 'on' : ''} onClick={() => setResv(true)}>Reservasi meja</button></div>;
+  if (resv && canResv && !done) return <section className="stack" style={{ gap: 10 }}>{tabs}<ResvPublic page={page} /></section>;
   if (done?.meja) return (
     <section className="panel">
       <h3>Pesanan Meja {done.meja} terkirim!</h3>
@@ -110,7 +114,7 @@ export default function PublicForm({ page }) {
     </section>
   );
   return (
-    <form className="panel stack" onSubmit={send} ref={formRef}>
+    <>{tabs}<form className="panel stack" onSubmit={send} ref={formRef}>
       {meja && <div className="notice good" style={{ fontSize: 16 }}>🍽 Anda memesan untuk <b>Meja {meja}</b>. Pilih menu, lalu Kirim pesanan.</div>}
       {mejaBad && <div className="notice bad">Nomor meja di QR tidak dikenal. Tanyakan ke kasir, atau pesan biasa di bawah.</div>}
       <h3>{retail ? 'Pesan / tanya barang' : jasa ? (kul ? 'Pesan menu' : 'Pesan / tanya layanan') : 'Tanya / booking kamar'}</h3>
@@ -172,6 +176,58 @@ export default function PublicForm({ page }) {
       {ordering && (meja ? <span className="small muted">Pesanan dikonfirmasi kasir dulu, lalu disiapkan. Bayar di kasir.</span>
         : <span className="small muted">Pesanan masuk sebagai <b>menunggu konfirmasi</b>. {page.name} mengonfirmasi lewat WhatsApp; pembayaran langsung ke {page.name}.</span>)}
       <button className="cta" type="submit" disabled={busy || !canSend || (meja && !ordering)}>{busy ? 'Mengirim…' : ordering ? 'Kirim pesanan' : 'Kirim permintaan'}</button>
+    </form></>
+  );
+}
+
+// Reservasi meja dari halaman bisnis (kuliner): masuk sebagai permintaan, dikonfirmasi lewat WhatsApp
+function ResvPublic({ page }) {
+  const started = useRef(Date.now());
+  const today = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
+  const [f, setF] = useState({ date: today, time: '19:00', party: '2', name: '', phone: '', note: '' });
+  const [consent, setConsent] = useState(false);
+  const [hp, setHp] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [done, setDone] = useState(null);
+  const set = (k, v) => setF({ ...f, [k]: v });
+  const send = async (e) => {
+    e.preventDefault(); setErr(''); setBusy(true);
+    try {
+      const r = await fetch('/api/publik/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        reserve: true, slug: page.slug, name: f.name, phone: f.phone, party: f.party, note: f.note, starts_at: `${f.date}T${f.time}:00+07:00`, consent, website: hp,
+        elapsed: Math.round((Date.now() - started.current) / 1000) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.'); else setDone(d.number);
+    } catch { setErr('Koneksi terputus. Coba lagi.'); }
+    setBusy(false);
+  };
+  if (done) return (
+    <section className="panel">
+      <h3>Permintaan reservasi terkirim!</h3>
+      <p style={{ margin: 0 }}>Nomor <b>{done}</b> untuk <b>{f.party} orang</b>, {new Date(`${f.date}T12:00:00+07:00`).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long' })} jam {f.time.replace(':', '.')}.</p>
+      <span className="small muted">Reservasi belum pasti sampai {page.name} mengonfirmasi lewat WhatsApp {f.phone}.</span>
+    </section>
+  );
+  return (
+    <form className="panel stack" onSubmit={send}>
+      <h3>Reservasi meja</h3>
+      <div className="row">
+        <label className="f" style={{ flex: 1 }}>Tanggal<input type="date" value={f.date} min={today} onChange={(e) => set('date', e.target.value)} required /></label>
+        <label className="f" style={{ flex: 1 }}>Jam<input type="time" value={f.time} onChange={(e) => set('time', e.target.value)} required /></label>
+      </div>
+      <label className="f">Jumlah orang<input inputMode="numeric" value={f.party} onChange={(e) => set('party', e.target.value.replace(/\D/g, ''))} required /></label>
+      <label className="f">Catatan (opsional)<textarea rows={2} maxLength={300} value={f.note} onChange={(e) => set('note', e.target.value)} placeholder="mis. ulang tahun, butuh kursi bayi" /></label>
+      <label className="f">Nama<input value={f.name} onChange={(e) => set('name', e.target.value)} maxLength={80} required autoComplete="name" /></label>
+      <label className="f">No. WhatsApp<input inputMode="tel" value={f.phone} onChange={(e) => set('phone', e.target.value)} maxLength={20} required autoComplete="tel" placeholder="08…" /></label>
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}><label>Website<input tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} /></label></div>
+      <label className="row small" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+        <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+        <span>Saya setuju nama dan No. WhatsApp ini disimpan {page.name} hanya untuk mengurus reservasi ini.</span>
+      </label>
+      {err && <div className="notice bad">{err}</div>}
+      <span className="small muted">Reservasi dikonfirmasi {page.name} lewat WhatsApp. Tanpa uang muka.</span>
+      <button className="cta" type="submit" disabled={busy || !consent || f.name.trim().length < 2 || f.phone.replace(/\D/g, '').length < 9 || !(Number(f.party) > 0)}>{busy ? 'Mengirim…' : 'Kirim permintaan reservasi'}</button>
     </form>
   );
 }

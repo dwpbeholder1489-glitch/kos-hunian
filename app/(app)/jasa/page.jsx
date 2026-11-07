@@ -18,7 +18,13 @@ export default function JasaHome() {
   const [r, setR] = useState(null);
   const [s, setS] = useState(null);
   const [err, setErr] = useState(null);
+  const [rv, setRv] = useState(null); // kuliner: reservasi hari ini & permintaan
   useEffect(() => {
+    if (terms(kos).kul && canArea(kos, 'sell')) {
+      const d0 = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) + 'T00:00:00+07:00');
+      supabase.from('kul_reservations').select('id,status,starts_at,party,name,table_no').eq('kos_id', kosId).in('status', ['permintaan', 'dipesan', 'datang']).gte('starts_at', d0.toISOString()).order('starts_at').limit(200)
+        .then(({ data }) => setRv(data || []));
+    }
     supabase.rpc('svc_board', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
     supabase.rpc('svc_report', { p_kos: kosId, p_from: today(), p_to: today() }).then(({ data }) => setR(data || null));
     supabase.rpc('svc_dashboard', { p_kos: kosId }).then(({ data }) => setS(data || null));
@@ -64,6 +70,9 @@ export default function JasaHome() {
           {canArea(kos, 'settings') && moduleOn(kos, 'u_halaman') && <Link href="/halaman" className="li" style={{ textDecoration: 'none', color: 'inherit' }}><span className="small">4. Terbitkan halaman bisnis untuk pelanggan</span><span className="small">→</span></Link>}
         </div>
       </section>}
+      {rv && (rv.some((x) => x.status === 'permintaan') || rv.some((x) => jakartaDate(x.starts_at) === t)) && <Link href="/meja?tab=reservasi" className="notice" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <b>Reservasi hari ini: {rv.filter((x) => jakartaDate(x.starts_at) === t && x.status !== 'permintaan').length}</b>{rv.filter((x) => jakartaDate(x.starts_at) === t && x.status !== 'permintaan').slice(0, 3).map((x) => ` · ${new Date(x.starts_at).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' })} ${x.name} (${x.party})`).join('')}
+        {rv.some((x) => x.status === 'permintaan') && <><br />{rv.filter((x) => x.status === 'permintaan').length} permintaan reservasi menunggu konfirmasi</>} →</Link>}
       {Number(s?.permintaan) > 0 && d.money && <Link href="/pesanan" className="notice" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}><b>{s.permintaan} pesanan dari halaman bisnis</b> menunggu konfirmasi →</Link>}
       <div className="grid">
         <Tile label="Pesanan baru hari ini" value={angka(s?.baru_hari_ini ?? 0)} sub={`${angka(s?.selesai_hari_ini ?? 0)} selesai hari ini`} />
