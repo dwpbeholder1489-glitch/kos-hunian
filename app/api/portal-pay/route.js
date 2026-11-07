@@ -48,13 +48,13 @@ async function notifyOwner(paymentId, origin) {
     subject: `Bukti transfer ${rp(pay.amount)} dari ${occ?.name || 'penghuni'} (${room?.code || ''}) · ${kos.name}`,
     text: `Ada konfirmasi pembayaran baru di ${kos.name}.\n\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nCocokkan dengan mutasi rekening Anda, lalu buka ${link} dan tekan "Uang sudah masuk" atau "Tolak".`,
     html: `<div style="font-family:Arial,sans-serif;max-width:520px;color:#1A1D21">
-      <div style="background:#13233A;color:#F7F4EE;padding:14px 18px;border-radius:12px 12px 0 0"><b style="font-size:18px">${esc(kos.name)}</b><br><span style="opacity:.8;font-size:13px">Konfirmasi pembayaran dari portal penghuni</span></div>
+      <div style="background:#0B2A21;color:#E9F5EF;padding:14px 18px;border-radius:12px 12px 0 0"><b style="font-size:18px">${esc(kos.name)}</b><br><span style="opacity:.8;font-size:13px">Konfirmasi pembayaran dari portal penghuni</span></div>
       <div style="border:1px solid #DEDACB;border-top:0;border-radius:0 0 12px 12px;padding:18px">
         <p style="margin:0 0 12px">Ada bukti transfer baru yang perlu Anda periksa:</p>
         <table style="width:100%;border-collapse:collapse;font-size:14px">${rows.map(([k, v]) => `<tr><td style="padding:6px 0;color:#5A675F">${esc(k)}</td><td style="padding:6px 0;text-align:right;font-weight:bold">${esc(v)}</td></tr>`).join('')}</table>
         ${attachments.length ? '<p style="margin:16px 0 6px;font-size:13px;color:#5A675F">Foto bukti:</p><img src="cid:bukti" style="max-width:100%;border:1px solid #DEDACB;border-radius:8px">' : '<p style="margin:16px 0 0;font-size:13px;color:#8A5A00">Penghuni tidak melampirkan foto bukti.</p>'}
         <p style="margin:18px 0 8px;font-size:14px">Cocokkan dengan mutasi rekening, lalu verifikasi di aplikasi:</p>
-        <a href="${link}" style="display:inline-block;background:#B88A2E;color:#1D2A21;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:10px">Buka menu Pembayaran</a>
+        <a href="${link}" style="display:inline-block;background:#0F7A4E;color:#FFFFFF;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:10px">Buka menu Pembayaran</a>
         <p style="margin:18px 0 0;font-size:12px;color:#5A675F">Email ini dikirim otomatis oleh PRASARA. Matikan di Pengaturan › Info untuk penghuni.</p>
       </div></div>`,
     attachments,

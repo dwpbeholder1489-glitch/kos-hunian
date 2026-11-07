@@ -2,21 +2,21 @@
 import { useEffect, useState } from 'react';
 import { THEME_KEY } from '@/lib/theme';
 
-// Tampilan: Otomatis (ikuti HP) / Terang / Gelap. Disimpan di perangkat ini saja.
+// Tampilan: Gelap (bawaan) / Terang / Ikuti HP. Disimpan di perangkat ini saja.
 
 export default function ThemeSwitch() {
-  const [t, setT] = useState('auto');
-  useEffect(() => { try { setT(localStorage.getItem(THEME_KEY) || 'auto'); } catch {} }, []);
+  const [t, setT] = useState('dark');
+  useEffect(() => { try { setT(localStorage.getItem(THEME_KEY) || 'dark'); } catch {} }, []);
   const pick = (v) => {
     setT(v);
-    try { v === 'auto' ? localStorage.removeItem(THEME_KEY) : localStorage.setItem(THEME_KEY, v); } catch {}
-    if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
+    try { v === 'dark' ? localStorage.removeItem(THEME_KEY) : localStorage.setItem(THEME_KEY, v); } catch {}
+    document.documentElement.dataset.theme = v;
   };
   return (
     <div className="stack" style={{ gap: 6 }}>
       <span className="label">Tampilan</span>
       <div className="seg" role="radiogroup" aria-label="Tampilan">
-        {[['auto', 'Ikuti HP'], ['light', 'Terang'], ['dark', 'Gelap']].map(([k, l]) => <button key={k} role="radio" aria-checked={t === k} className={t === k ? 'on' : ''} onClick={() => pick(k)}>{l}</button>)}
+        {[['dark', 'Gelap'], ['light', 'Terang'], ['auto', 'Ikuti HP']].map(([k, l]) => <button key={k} role="radio" aria-checked={t === k} className={t === k ? 'on' : ''} onClick={() => pick(k)}>{l}</button>)}
       </div>
     </div>
   );

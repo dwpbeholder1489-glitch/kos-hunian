@@ -1,3 +1,4 @@
+import { LogoMark } from '@/components/Logo';
 import { SITE_HOST } from '@/lib/plan';
 // Mockup hero: tampilan Dashboard aplikasi asli (versi lebar) + HP dengan peta kamar. Data contoh.
 import { ScrRooms } from '@/components/demo/Screens';
@@ -14,7 +15,7 @@ export default function HeroMock() {
         <div className="ln-browser-bar"><i /><i /><i /><span>{SITE_HOST}/beranda</span></div>
         <div className="ln-app">
           <div className="ln-app-top">
-            <div className="ln-app-brand"><span className="mark">P</span><b>{KOS.name}</b></div>
+            <div className="ln-app-brand"><LogoMark size={30} /><b>{KOS.name}</b></div>
             <div className="ln-app-tabs">{TABS.map((t, i) => <span key={t} className={i === 0 ? 'on' : ''}>{t}</span>)}</div>
           </div>
           <div className="ln-app-body">

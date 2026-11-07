@@ -6,7 +6,7 @@ import { SITE_URL as SITE } from '@/lib/plan';
 import { themeScript } from '@/lib/theme';
 const TITLE = 'PRASARA — Kelola Bisnis Lebih Terarah. Kembangkan dengan Lebih Cerdas.';
 const DESC = 'Adaptive Business System untuk mengelola bisnis dari HP: kos & properti sewa, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain. Coba gratis 30 hari.';
-const IMAGE = { url: '/og.jpg?v=2', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' };
+const IMAGE = { url: '/og.jpg?v=3', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' };
 
 // Judul, deskripsi & gambar pratinjau saat link dibagikan (WhatsApp, Facebook, Telegram, X)
 export const metadata = {
@@ -19,7 +19,7 @@ export const metadata = {
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: [IMAGE.url] },
 };
 
-export const viewport = { width: 'device-width', initialScale: 1, themeColor: [{ media: '(prefers-color-scheme: light)', color: '#13233A' }, { media: '(prefers-color-scheme: dark)', color: '#0E1622' }] };
+export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#08110F' };
 
 export default function RootLayout({ children }) {
   return (

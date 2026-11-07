@@ -30,7 +30,7 @@ PRASARA: platform bisnis multi-usaha, berawal dari SaaS manajemen kos (Next.js A
 - Peran karyawan: RLS memakai `member_can(kos_id, 'area')`; RPC memeriksa `member_in('area', p_kos)` (area: sell, stock, finance, rent, team; lihat migrasi `20261106200000_karyawan.sql`). `is_member` = anggota peran apa pun — jangan dipakai untuk data uang/stok. `ALTER FUNCTION ... SET` variabel kustom ditolak di Supabase (bukan superuser).
 
 ## Wajib dari blueprint PRASARA (baca sebelum tiap tahap; pemilik tidak mau ada yang terlewat)
-- Brand: midnight navy, charcoal, ivory, warm grey, muted gold; minimalis, tanpa gradient; sans-serif (Plus Jakarta Sans). Dark mode didukung penuh + light mode; mobile-first dengan navigasi bawah.
+- Brand (diperbarui 7 Nov 2026 atas permintaan pemilik, mengikuti contoh desain): charcoal hijau-tua + **emerald** sebagai aksen utama (variabel CSS `--gold` = aksen, sekarang hijau; `--att*` = amber untuk perhatian/peringatan). **Gelap = tampilan bawaan** (app & landing; `data-theme` diset `lib/theme.js`, terang/ikuti HP bisa dipilih); logo P di `components/Logo.jsx`. Minimalis, tanpa gradient mencolok; Plus Jakarta Sans; mobile-first dengan navigasi bawah.
 - Tagline: "One Intelligence. Every Business." / "A smarter way to manage life and business."
 - Jangan klaim fitur yang belum ada: tandai "Segera hadir"/"Dalam rencana" (AI, Business Builder, WhatsApp otomatis, jenis bisnis lain). Data contoh selalu diberi label DATA CONTOH.
 - Menu menyesuaikan jenis bisnis & peran; jangan tampilkan menu yang tidak relevan.

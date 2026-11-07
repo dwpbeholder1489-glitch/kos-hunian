@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { LogoMark } from '@/components/Logo';
 import { useParams } from 'next/navigation';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
@@ -51,7 +52,7 @@ export default function Kwitansi() {
 
       <section className="panel" style={{ gap: 16 }}>
         <div className="row between" style={{ alignItems: 'flex-start' }}>
-          <div className="brand"><span className="mark">P</span><div><b style={{ fontSize: 18 }}>{kos.name}</b>{kos.address && <div className="small muted">{kos.address}</div>}</div></div>
+          <div className="brand"><LogoMark size={30} /><div><b style={{ fontSize: 18 }}>{kos.name}</b>{kos.address && <div className="small muted">{kos.address}</div>}</div></div>
           <div style={{ textAlign: 'right' }}><div style={{ fontFamily: 'var(--display)', fontSize: 28, lineHeight: 1 }}>Kwitansi</div><div className="small muted">No. {no}</div></div>
         </div>
         <dl className="kv" style={{ fontSize: 15 }}>

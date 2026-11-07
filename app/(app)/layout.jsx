@@ -1,5 +1,6 @@
 'use client';
 import Bagikan from '@/components/Bagikan';
+import { LogoMark } from '@/components/Logo';
 import Link from 'next/link';
 import { ClosedBar } from '@/components/DataTutup';
 import { useState } from 'react';
@@ -58,7 +59,7 @@ export default function AppLayout({ children }) {
         <div className="wrap">
           <div className="brandrow">
             <button className="bizbtn" onClick={() => setSheet('biz')} aria-label={`${kos.name}, ganti bisnis`}>
-              {logoUrl(kos.profile?.logo_path) ? <img className="mark" src={logoUrl(kos.profile.logo_path)} alt="" style={{ objectFit: 'cover', padding: 0 }} /> : <span className="mark">P</span>}
+              {logoUrl(kos.profile?.logo_path) ? <img className="mark" src={logoUrl(kos.profile.logo_path)} alt="" style={{ objectFit: 'cover', padding: 0 }} /> : <LogoMark size={30} />}
               <span className="t"><b>{kos.name}</b><small>{type.name}{role !== 'pemilik' ? ` · ${ROLES[role]?.name || role}` : ''}</small></span>
               <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>

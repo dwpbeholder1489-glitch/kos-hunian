@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { LogoMark } from '@/components/Logo';
 import Link from 'next/link';
 import { useKos } from '@/components/KosProvider';
 import Icon from '@/components/landing/Icon';
@@ -32,7 +33,7 @@ export default function LandingNav({ theme = false }) {
   return (
     <header className="ln-nav">
       <div className="ln-wrap ln-nav-in">
-        <Link href="/" className="ln-logo" aria-label="PRASARA, beranda"><span className="ln-logo-mark">P</span><b>PRASARA</b></Link>
+        <Link href="/" className="ln-logo" aria-label="PRASARA, beranda"><LogoMark size={34} /><span className="ln-logo-t"><b>PRASARA</b><small>Adaptive Business System</small></span></Link>
         <nav className="ln-nav-links" aria-label="Navigasi utama">
           {LINKS.map(([h, l]) => (h.startsWith('/#') ? <a key={l} href={h}>{l}</a> : <Link key={l} href={h}>{l}</Link>))}
         </nav>
@@ -43,7 +44,7 @@ export default function LandingNav({ theme = false }) {
           ) : (
             <>
               <Link href="/masuk" className="ln-btn ln-btn-ghost ln-btn-sm ln-hide-xs">Masuk</Link>
-              <Link href="/masuk?daftar=1" className="ln-btn ln-btn-primary ln-btn-sm">Mulai Sekarang</Link>
+              <Link href="/masuk?daftar=1" className="ln-btn ln-btn-primary ln-btn-sm">Mulai<span className="ln-hide-xs">&nbsp;Sekarang</span></Link>
             </>
           )}
           <button className="ln-burger ln-menu-btn" aria-label={open ? 'Tutup menu' : 'Buka menu'} aria-expanded={open} aria-controls="ln-mobile" onClick={() => setOpen(!open)}>

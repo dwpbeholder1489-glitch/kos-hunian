@@ -6,8 +6,8 @@ export default function manifest() {
     description: 'One Intelligence. Every Business. Kelola kos, toko & bisnis Anda dari HP.',
     start_url: '/buka',
     display: 'standalone',
-    background_color: '#F7F4EE',
-    theme_color: '#13233A',
+    background_color: '#08110F',
+    theme_color: '#08110F',
     lang: 'id',
     icons: [
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },

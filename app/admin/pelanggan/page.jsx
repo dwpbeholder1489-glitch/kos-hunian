@@ -57,7 +57,7 @@ export default function Pelanggan() {
               <b>{TYPE_ICON[c.business_type]} {c.name}</b>
               <span className="small muted">{c.owner_email}</span>
               <span className="small">{PLANS[c.plan]?.name || c.plan}{!c.paid && c.trial_left != null && c.trial_left >= 0 ? ` · coba sisa ${c.trial_left} hari` : ''} · aktivitas {ago(c.idle_days)}</span>
-              {c.h.reasons[0] && <span className="small" style={{ color: 'var(--gold-fg)' }}>{c.h.reasons[0]}</span>}
+              {c.h.reasons[0] && <span className="small" style={{ color: 'var(--att-fg)' }}>{c.h.reasons[0]}</span>}
             </div>
             <span className={'chip ' + c.h.tone} title="Skor kesehatan">{c.h.score != null ? `${c.h.score} · ${c.h.label}` : c.h.label}</span>
           </Link>

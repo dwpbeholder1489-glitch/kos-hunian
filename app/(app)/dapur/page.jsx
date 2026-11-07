@@ -54,9 +54,9 @@ export default function Dapur() {
               </div>
               <span className="small muted">{o.number} · {o.customer_name}</span>
               <div className="list">{(o.lines || []).map((l, i) => (
-                <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span style={{ fontSize: 16 }}><b>{angka(l.qty)}×</b> {l.name}{l.note ? <span className="small" style={{ display: 'block', color: 'var(--gold)' }}>↳ {l.note}</span> : null}</span></div>
+                <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span style={{ fontSize: 16 }}><b>{angka(l.qty)}×</b> {l.name}{l.note ? <span className="small" style={{ display: 'block', color: 'var(--att-fg)' }}>↳ {l.note}</span> : null}</span></div>
               ))}</div>
-              {o.note && <span className="small" style={{ color: 'var(--gold)' }}>Catatan: {o.note}</span>}
+              {o.note && <span className="small" style={{ color: 'var(--att-fg)' }}>Catatan: {o.note}</span>}
               <div className="row" style={{ flexWrap: 'nowrap' }}>
                 <button className="cta" style={{ flex: 1 }} disabled={busy === o.id} onClick={() => move(o)}>→ {next(o)}</button>
                 {o.status === 'proses' && <button className="sm ghost" disabled={busy === o.id} onClick={() => move(o, 'siap')}>Langsung siap</button>}

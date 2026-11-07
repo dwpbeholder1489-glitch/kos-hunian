@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { LogoMark } from '@/components/Logo';
 import { usePathname } from 'next/navigation';
 import { useKos } from '@/components/KosProvider';
 import { ROLE, can } from '@/lib/admin';
@@ -41,7 +42,7 @@ export default function AdminLayout({ children }) {
       <header className="top">
         <div className="wrap">
           <div className="brandrow">
-            <div className="brand"><span className="mark">P</span><div><h1>Management Center</h1><small>PRASARA · {ROLE[adminMe.role] || adminMe.role}</small></div></div>
+            <div className="brand"><LogoMark size={30} /><div><h1>Management Center</h1><small>PRASARA · {ROLE[adminMe.role] || adminMe.role}</small></div></div>
             {list?.length > 0 ? <Link href="/beranda" className="small" style={{ color: 'var(--brand-fg)', opacity: 0.85 }}>← Aplikasi</Link>
               : <button className="ghost sm" style={{ color: 'var(--brand-fg)' }} onClick={() => supabase.auth.signOut()}>Keluar</button>}
           </div>

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { LogoMark } from '@/components/Logo';
 import { useRouter } from 'next/navigation';
 import { supabase, configured } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -45,7 +46,7 @@ export default function Masuk() {
 
   return (
     <div className="auth">
-      <a href="/" className="brand" style={{ textDecoration: 'none', color: 'inherit' }}><span className="mark">P</span><div><b>PRASARA</b><div className="small muted">One Intelligence. Every Business.</div></div></a>
+      <a href="/" className="brand" style={{ textDecoration: 'none', color: 'inherit' }}><LogoMark size={30} /><div><b>PRASARA</b><div className="small muted">One Intelligence. Every Business.</div></div></a>
       <p className="hello">{mode === 'masuk' ? 'Selamat datang kembali' : 'Kelola bisnis jadi lebih rapi'}</p>
       <p className="muted" style={{ margin: 0 }}>Kos, toko, dan usaha Anda lainnya dalam satu aplikasi. Karyawan yang diundang: daftar dengan email undangan.</p>
       <div className="seg">

@@ -42,7 +42,7 @@ export default function Kamar() {
                 <span className="who">{l ? d.occName(l.occupant_id) : ROOM_ST[r.status]}</span>
                 <span className="small muted">{r.rent ? rp(r.rent) : 'Harga belum diisi'}</span>
                 {debt > 0 && <span className="small" style={{ color: 'var(--bad)', fontWeight: 800 }}>Tunggak {rp(debt)}</span>}
-                {d.bookByRoom?.get(r.id) && <span className="small" style={{ color: 'var(--gold-fg)', fontWeight: 800 }}>Dibooking · masuk {tgl(d.bookByRoom.get(r.id).check_in)}</span>}
+                {d.bookByRoom?.get(r.id) && <span className="small" style={{ color: 'var(--att-fg)', fontWeight: 800 }}>Dibooking · masuk {tgl(d.bookByRoom.get(r.id).check_in)}</span>}
               </button>
             );
           })}

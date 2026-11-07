@@ -1,7 +1,10 @@
 import Link from 'next/link';
+import { LogoMark } from '@/components/Logo';
 import LandingNav from '@/components/LandingNav';
 import Icon from '@/components/landing/Icon';
-import HeroMulti, { KasirMock } from '@/components/landing/HeroMulti';
+import { KasirMock } from '@/components/landing/HeroMulti';
+import DashMock from '@/components/landing/DashMock';
+import CapsFilter from '@/components/landing/CapsFilter';
 import Showcase from '@/components/landing/Showcase';
 import { PLANS, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell } from '@/lib/plan';
 import { TESTIMONIALS } from '@/lib/testimonials';
@@ -11,8 +14,8 @@ const DESC = 'Adaptive Business System: satu platform untuk operasional, pelangg
 export const metadata = {
   title: TITLE,
   description: DESC,
-  openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'PRASARA', url: '/', images: [{ url: '/og.jpg?v=2', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' }] },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: ['/og.jpg?v=2'] },
+  openGraph: { title: TITLE, description: DESC, type: 'website', locale: 'id_ID', siteName: 'PRASARA', url: '/', images: [{ url: '/og.jpg?v=3', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' }] },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: ['/og.jpg?v=3'] },
 };
 
 export const revalidate = 300;
@@ -34,13 +37,12 @@ const START = '/masuk?daftar=1';
 
 // Masalah umum → apa yang dilakukan PRASARA (tanpa klaim hasil finansial)
 const PROBLEMS = [
-  ['Pencatatan tersebar di buku, spreadsheet, dan chat', 'Satu tempat per bisnis: transaksi, pelanggan, stok, dan kas tersusun rapi, bisa dibuka dari HP.'],
-  ['Transaksi sulit dipantau', 'Kasir, pesanan, dan tagihan tercatat dengan nomor, waktu, dan petugasnya; pembatalan butuh alasan dan tercatat.'],
-  ['Data pelanggan tidak terorganisasi', 'Kontak pelanggan & penghuni, riwayat transaksi, kasbon, serta prospek dan tindak lanjutnya.'],
-  ['Stok sulit dikontrol', 'Stok multi-satuan & per lokasi, belanja ke supplier, stok opname, dan peringatan barang menipis.'],
-  ['Laporan memakan waktu', 'Laporan laba, kas, dan per layanan tersusun otomatis dari transaksi harian — tinggal pilih bulan, bisa diunduh Excel.'],
-  ['Operasional bergantung pada catatan manual', 'Tagihan sewa terbit otomatis, tahap pesanan jelas, pengingat & daftar tindak lanjut harian.'],
-  ['Sulit mengetahui kondisi bisnis', 'Dashboard per bisnis dan ringkasan semua bisnis: uang masuk, tunggakan, pesanan, dan hal yang perlu ditindaklanjuti.'],
+  ['file', 'Pencatatan masih tersebar'], ['receipt', 'Transaksi sulit dipantau'], ['users', 'Data pelanggan tidak teratur'], ['box', 'Inventaris sulit dikontrol'],
+  ['chart', 'Laporan butuh waktu lama'], ['notebook', 'Operasional serba manual'], ['compass', 'Sulit membaca kondisi bisnis'],
+];
+const SOLVES = [
+  ['layers', 'Operasional lebih terstruktur'], ['receipt', 'Transaksi tercatat rapi & tertelusur'], ['users', 'Pelanggan terkelola dengan baik'], ['box', 'Stok lebih terkontrol'],
+  ['chart', 'Laporan tersusun otomatis'], ['flow', 'Proses bisnis lebih efisien'], ['trend', 'Perkembangan bisnis lebih jelas'],
 ];
 
 // Kemampuan inti (status jujur: ready = tersedia, part = sebagian, soon = segera hadir)
@@ -56,7 +58,6 @@ const CAPS = [
   ['chart', 'Laporan & analitik', 'ready', 'Laporan per jenis bisnis dengan grafik, tren 6 bulan, barang terlaris, ketepatan waktu, ekspor Excel/PDF.', 'Melihat bulan mana biaya operasional paling besar.'],
   ['sparkles', 'Asisten AI bisnis', 'soon', 'Membaca laporan, merangkum aktivitas, dan menjawab pertanyaan dari data yang diizinkan.', 'Belum aktif — lihat bagian AI di bawah.'],
 ];
-const CAP_ST = { ready: ['Tersedia', 'ok'], part: ['Sebagian tersedia', 'std'], soon: ['Segera hadir', 'soon'] };
 
 // Sistem adaptif: alur nyata (/mulai → setup_items → Pusat Konfirmasi → setup_activate)
 const FLOW = ['Identifikasi bisnis', 'Analisis kebutuhan', 'Rekomendasi modul', 'Persetujuan pemilik', 'Aktivasi konfigurasi', 'Dashboard bisnis'];
@@ -195,50 +196,40 @@ export default async function Landing() {
         <section className="ln-hero" id="beranda">
           <div className="ln-wrap ln-hero-grid">
             <div className="ln-hero-text ln-rise">
-              <span className="ln-eyebrow">One Intelligence. Every Business.</span>
-              <h1>Kelola Bisnis Lebih Terarah. <span>Kembangkan dengan Lebih Cerdas.</span></h1>
+              <span className="ln-eyebrow">Adaptive Business System</span>
+              <h1>Kelola Bisnis Lebih Terarah. Kembangkan dengan <span>Lebih Cerdas.</span></h1>
               <p className="ln-lead">Mulai dari operasional harian hingga pengambilan keputusan, PRASARA membantu menyatukan kebutuhan bisnis Anda dalam satu sistem yang adaptif.</p>
               <div className="ln-cta-row">
                 <Link href={START} className="ln-btn ln-btn-primary ln-btn-lg">Mulai Sekarang <Icon name="arrow" size={18} /></Link>
-                <a href="#demo" className="ln-btn ln-btn-outline ln-btn-lg">Lihat Demo</a>
+                <a href="#demo" className="ln-btn ln-btn-outline ln-btn-lg">▶&nbsp; Lihat Demo</a>
               </div>
-              <p className="ln-support">Gratis {BUSINESS.trialDays} hari semua fitur, tanpa kartu kredit. Untuk kos & properti, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain.</p>
+              <ul className="ln-hero-checks">{['Sistem adaptif', 'Modular & fleksibel', 'Terintegrasi', 'Siap berkembang'].map((t) => <li key={t}><Icon name="check" size={16} />{t}</li>)}</ul>
+              <p className="ln-support">Gratis {BUSINESS.trialDays} hari semua fitur, tanpa kartu kredit.</p>
             </div>
-            <div className="ln-rise ln-rise-2"><HeroMulti /></div>
+            <div className="ln-rise ln-rise-2"><DashMock /></div>
           </div>
         </section>
 
         {/* 2. MASALAH & SOLUSI */}
-        <section className="ln-sec" id="masalah" aria-labelledby="h-masalah">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Masalah yang sering terjadi</span><h2 id="h-masalah">Dari catatan yang tercecer ke satu sistem yang tertata.</h2>
-              <p>Bukan janji angka — ini yang berubah dalam cara Anda bekerja setiap hari.</p></div>
-            <div className="ln-ba" role="list">
-              <div className="ln-ba-h" aria-hidden="true"><span>Sebelum</span><span>Dengan PRASARA</span></div>
-              {PROBLEMS.map(([b4, af]) => (
-                <div key={b4} className="ln-ba-row" role="listitem">
-                  <div className="ln-ba-b"><Icon name="x" size={16} /><span><span className="ln-sr">Sebelum: </span>{b4}</span></div>
-                  <div className="ln-ba-a"><Icon name="check" size={16} /><span><span className="ln-sr">Dengan PRASARA: </span>{af}</span></div>
-                </div>
-              ))}
-            </div>
+        <section className="ln-sec ln-force-light ln-sec-tight" id="masalah" aria-labelledby="h-masalah">
+          <div className="ln-wrap ln-strip">
+            <h2 id="h-masalah">Sering Mengalami Tantangan Ini dalam Bisnis?</h2>
+            <ul className="ln-tiles">{PROBLEMS.map(([ic, t]) => <li key={t}><Icon name={ic} size={26} /><span>{t}</span></li>)}</ul>
+          </div>
+        </section>
+        <section className="ln-sec ln-force-dark ln-sec-tight" aria-labelledby="h-solusi-band">
+          <div className="ln-wrap ln-strip">
+            <h2 id="h-solusi-band">PRASARA Membantu Anda <span>Mengatasinya</span></h2>
+            <ul className="ln-tiles dark">{SOLVES.map(([ic, t]) => <li key={t}><Icon name={ic} size={26} /><span>{t}</span></li>)}</ul>
           </div>
         </section>
 
         {/* 3. PRODUK — KEMAMPUAN INTI */}
-        <section className="ln-sec ln-sec-alt" id="produk" aria-labelledby="h-produk">
+        <section className="ln-sec ln-force-light" id="produk" aria-labelledby="h-produk">
           <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Produk</span><h2 id="h-produk">Kemampuan inti dalam satu platform.</h2>
-              <p>Status setiap kemampuan ditulis apa adanya: <b>Tersedia</b>, <b>Sebagian tersedia</b>, atau <b>Segera hadir</b>.</p></div>
-            <div className="ln-caps">
-              {CAPS.map(([ic, t, st, d, ex]) => (
-                <div key={t} className={'ln-cap' + (st === 'soon' ? ' soon' : '')}>
-                  <div className="ln-cap-h"><span className="ln-ico-wrap sm"><Icon name={ic} size={18} /></span><h3>{t}</h3><span className={'ln-badge ' + CAP_ST[st][1]}>{CAP_ST[st][0]}</span></div>
-                  <p>{d}</p>
-                  <p className="ln-cap-ex"><b>Contoh:</b> {ex}</p>
-                </div>
-              ))}
-            </div>
+            <div className="ln-head"><span className="ln-kicker">Produk</span><h2 id="h-produk">Fitur Utama PRASARA</h2>
+              <p>Modul yang dapat disesuaikan dengan kebutuhan dan karakteristik bisnis Anda. Status ditulis apa adanya: <b>Tersedia</b>, <b>Sebagian tersedia</b>, atau <b>Segera hadir</b>.</p></div>
+            <CapsFilter caps={CAPS} />
             <p className="ln-small" style={{ marginTop: 18 }}><a href="#fitur" className="ln-textlink">Lihat rincian fitur per jenis bisnis <Icon name="arrow" size={16} /></a></p>
           </div>
         </section>
@@ -461,7 +452,7 @@ export default async function Landing() {
       <footer className="ln-foot">
         <div className="ln-wrap ln-foot-grid">
           <div className="ln-foot-brand">
-            <div className="ln-logo"><span className="ln-logo-mark">P</span><b>PRASARA</b></div>
+            <div className="ln-logo"><LogoMark size={34} /><span className="ln-logo-t"><b>PRASARA</b><small>Adaptive Business System</small></span></div>
             <p>Adaptive Business System untuk mengelola operasional, pelanggan, transaksi, keuangan, dan layanan dalam satu tempat.</p>
             <p className="ln-small" style={{ marginTop: 8 }}>One Intelligence. Every Business.</p>
           </div>

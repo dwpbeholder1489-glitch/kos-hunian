@@ -92,7 +92,7 @@ export default function Barang() {
               <div className="row" style={{ flexWrap: 'nowrap', marginLeft: 'auto' }}>
                 {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
                   onClick={async () => { if (await run(() => supabase.rpc('product_set_favorite', { p_product: p.id, p_on: !p.favorite }), p.favorite ? 'Dihapus dari tombol cepat' : 'Jadi tombol cepat di Kasir', errMsg)) reload(); }}
-                  style={{ fontSize: 18, color: p.favorite ? 'var(--gold, #C9A227)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}
+                  style={{ fontSize: 18, color: p.favorite ? 'var(--att)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}
                 <button className="sm" onClick={() => setAdj(p)}>Stok</button>
                 <button className="sm ghost" onClick={() => setEdit(p)}>Ubah</button>
               </div>
