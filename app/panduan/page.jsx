@@ -340,6 +340,7 @@ const PARTS = [
     ['Halaman bisnis untuk pelanggan', 'Lainnya › Halaman bisnis (pemilik)', [
       <>Isi <b>alamat halaman</b> (mis. toko-subur), kalimat singkat, tentang, alamat, jam buka, dan No. WhatsApp untuk pelanggan.</>,
       <>Pilih yang ditampilkan: toko — <b>barang cepat (★)</b> atau <b>semua barang aktif</b>; kos — <b>kamar yang tersedia</b>. Centang <b>Tampilkan harga jual</b> bila ingin harganya terlihat.</>,
+      <>Tambahkan <b>Tautan</b> (maks 6): ketuk <b>+ 📍 Lokasi (Google Maps)</b>, <b>+ 📷 Instagram</b>, <b>+ 🖼️ Foto</b> atau <b>+ Tautan lain</b>, lalu tempel alamatnya (di aplikasi Maps/Instagram: <b>Bagikan › Salin tautan</b>). Tampil sebagai tombol di halaman. Alamat https:// yang Anda tulis di Tentang/Ketentuan juga bisa diketuk.</>,
       <>Tekan <b>Terbitkan</b>. Baca daftar yang akan terlihat publik, lalu setujui. Setelah terbit: <b>Salin tautan</b> atau <b>Bagikan ke WhatsApp</b> (status WA, grup, bio Instagram).</>,
       <>Pelanggan membuka tautan tanpa memasang aplikasi, memilih barang/kamar, mengisi nama & WhatsApp, menyetujui dihubungi, lalu <b>Kirim permintaan</b>. Mereka mendapat nomor permintaan (mis. PRM-261107-001).</>,
       <>Permintaan masuk ke <b>Prospek & tindak lanjut</b> (tahap Baru, label nomor permintaan) dan muncul kotak <b>📨</b> di dashboard; email ke Anda bila dicentang. Hubungi lewat WA, konfirmasi harga & stok, lalu catat penjualannya di Kasir seperti biasa.</>,

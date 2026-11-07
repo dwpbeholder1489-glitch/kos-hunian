@@ -1,4 +1,5 @@
 'use client';
+import Linkify from '@/components/Linkify';
 import { useMemo, useRef, useState } from 'react';
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
@@ -50,7 +51,7 @@ export default function PublicForm({ page }) {
   return (
     <form className="panel stack" onSubmit={send}>
       <h3>{retail ? 'Pesan / tanya barang' : jasa ? 'Pesan / tanya layanan' : 'Tanya / booking kamar'}</h3>
-      {page.form_intro && <p className="small" style={{ margin: 0 }}>{page.form_intro}</p>}
+      {page.form_intro && <p className="small" style={{ margin: 0 }}><Linkify text={page.form_intro} /></p>}
       {items.length > 0 && <>
         <span className="label">{retail ? 'Pilih barang (opsional)' : jasa ? 'Pilih layanan (opsional)' : 'Pilih kamar (opsional)'}</span>
         <div className="list">{items.map((it) => {

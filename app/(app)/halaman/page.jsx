@@ -8,6 +8,7 @@ import { Field, Loading, Tile, toast } from '@/components/ui';
 import { errMsg, angka, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
 
+const LINK_PRESETS = [['📍 Lokasi (Google Maps)', 'Lokasi (Google Maps)'], ['📷 Instagram', 'Instagram'], ['🖼️ Foto (Google Drive/Photos)', 'Foto'], ['🎵 TikTok', 'TikTok']];
 const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 
 // Halaman bisnis publik (blueprint 24, Phase 1): pemilik mengisi & menerbitkan profil, katalog, formulir; permintaan masuk ke Prospek
@@ -29,7 +30,7 @@ export default function Halaman() {
       supabase.rpc('public_page_stats', { p_kos: kosId }),
     ]);
     if (p.error) return setErr(errMsg(p.error));
-    const d = p.data || { slug: slugify(kos.name), enabled: false, catalog_mode: retail ? 'favorit' : 'semua', show_prices: true, email_notify: true, wa_phone: kos.contact_phone || '', address: kos.address || '' };
+    const d = p.data ? { ...p.data, links: p.data.links || [] } : { links: [], slug: slugify(kos.name), enabled: false, catalog_mode: retail ? 'favorit' : 'semua', show_prices: true, email_notify: true, wa_phone: kos.contact_phone || '', address: kos.address || '' };
     setSaved(p.data); setF(d); setStats(s.data);
   };
   useEffect(() => { load(); }, [kosId, ver]);
@@ -40,7 +41,7 @@ export default function Halaman() {
   const save = async (enabled) => {
     if (enabled && !saved?.enabled && !window.confirm(`Terbitkan halaman ${kos.name}?\n\nYang terlihat oleh siapa saja yang membuka tautan:\n• nama, keterangan, alamat, jam buka, WhatsApp\n• ${f.catalog_mode === 'tidak' ? 'tanpa daftar' : retail ? `daftar barang (${f.catalog_mode === 'semua' ? 'semua barang aktif' : 'barang cepat/favorit'}) dan status tersedia/habis` : jasa ? 'daftar layanan aktif' : 'kamar yang tersedia'}${f.show_prices ? ' beserta harga' : ', tanpa harga'}\n\nHarga modal, laba, stok persis, dan data pelanggan TIDAK pernah ditampilkan.`)) return;
     setBusy(true);
-    const { error } = await supabase.rpc('public_page_save', { p_kos: kosId, p: { ...f, enabled } });
+    const { error } = await supabase.rpc('public_page_save', { p_kos: kosId, p: { ...f, enabled, links: (f.links || []).filter((l) => l.url.trim()) } });
     setBusy(false);
     if (error) return toast(errMsg(error));
     toast(enabled ? (saved?.enabled ? 'Perubahan diterbitkan' : 'Halaman diterbitkan') : saved?.enabled ? 'Halaman disembunyikan' : 'Disimpan (belum diterbitkan)');
@@ -84,6 +85,24 @@ export default function Halaman() {
           <option value="tidak">Jangan tampilkan daftar</option>
         </select></Field>
         <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.show_prices} onChange={(e) => set('show_prices', e.target.checked)} disabled={!owner} />Tampilkan harga {retail ? 'jual (eceran)' : jasa ? 'layanan' : 'sewa (per bulan)'}</label>
+        <div className="stack" style={{ gap: 6 }}>
+          <span className="label">Tautan (opsional)</span>
+          <span className="small muted">Mis. lokasi Google Maps, Instagram, atau album foto {retail ? 'toko' : jasa ? 'hasil kerja' : 'kamar'}. Tampil sebagai tombol di halaman. Cara salin di iPhone: buka aplikasinya › <b>Bagikan</b> › <b>Salin tautan</b>, lalu tempel di kolom alamat.</span>
+          {(f.links || []).map((l, i) => (
+            <div key={i} className="row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+              <div className="stack" style={{ gap: 4, flex: 1, minWidth: 0 }}>
+                <input value={l.label} maxLength={40} placeholder="Nama tombol, mis. Lokasi" onChange={(e) => set('links', f.links.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} disabled={!owner} aria-label={`Nama tautan ${i + 1}`} />
+                <input value={l.url} maxLength={300} inputMode="url" type="url" autoCapitalize="none" autoCorrect="off" placeholder="https://…" onChange={(e) => set('links', f.links.map((x, j) => (j === i ? { ...x, url: e.target.value.trim() } : x)))} disabled={!owner} aria-label={`Alamat tautan ${i + 1}`} />
+              </div>
+              {owner && <button className="sm ghost" aria-label={`Hapus tautan ${i + 1}`} onClick={() => set('links', f.links.filter((_, j) => j !== i))}>✕</button>}
+            </div>
+          ))}
+          {owner && (f.links || []).length < 6 && <div className="row" style={{ flexWrap: 'wrap' }}>
+            {LINK_PRESETS.filter(([, lb]) => !(f.links || []).some((x) => x.label === lb)).map(([t, lb]) => <button key={lb} className="sm ghost" onClick={() => set('links', [...(f.links || []), { label: lb, url: '' }])}>+ {t}</button>)}
+            <button className="sm ghost" onClick={() => set('links', [...(f.links || []), { label: '', url: '' }])}>+ Tautan lain</button>
+          </div>}
+          <span className="small muted">Alamat https:// di kolom Tentang, Kalimat di atas formulir, dan Ketentuan juga bisa diketuk pengunjung.</span>
+        </div>
         <Field label="Kalimat di atas formulir (opsional)"><input value={f.form_intro || ''} maxLength={300} onChange={(e) => set('form_intro', e.target.value)} disabled={!owner} placeholder={retail ? 'mis. Pesan sebelum jam 10, diantar siang' : jasa ? 'mis. Jemput gratis radius 2 km' : 'mis. Survei kamar bisa setiap hari'} /></Field>
         <Field label="Ketentuan (opsional)"><textarea rows={2} maxLength={1000} value={f.policy || ''} onChange={(e) => set('policy', e.target.value)} disabled={!owner} placeholder={retail ? 'mis. Ongkir gratis radius 2 km' : jasa ? 'mis. Minimal 3 kg; cucian tidak diambil 30 hari di luar tanggung jawab' : 'mis. Deposit 1 bulan, khusus putri'} /></Field>
         <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.email_notify} onChange={(e) => set('email_notify', e.target.checked)} disabled={!owner} />Kirim email ke saya setiap ada permintaan baru</label>

@@ -2,6 +2,7 @@
 // Hanya data yang boleh dipublikasikan yang diambil (lewat fungsi public_page_view); tanpa harga modal, margin, atau stok persis.
 import { notFound } from 'next/navigation';
 import PublicForm from '@/components/PublicForm';
+import Linkify from '@/components/Linkify';
 
 export const revalidate = 60;
 
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }) {
 }
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
+const ICON = (l) => (/maps|goo\.gl\/maps|maps\.app/i.test(l.url) ? '📍' : /instagram|tiktok|facebook|fb\.com/i.test(l.url) ? '📱' : /drive\.google|photos/i.test(l.url) ? '🖼️' : /youtu/i.test(l.url) ? '▶️' : '🔗');
 const wa = (phone, text) => `https://wa.me/${String(phone || '').replace(/\D/g, '').replace(/^0/, '62')}?text=${encodeURIComponent(text)}`;
 
 export default async function PublicPage({ params }) {
@@ -38,8 +40,11 @@ export default async function PublicPage({ params }) {
         {p.tagline && <p style={{ margin: 0, fontSize: 16 }}>{p.tagline}</p>}
         <span className="small muted">{[p.address, p.hours].filter(Boolean).join(' · ')}</span>
         {p.wa_phone && <a href={wa(p.wa_phone, `Halo ${p.name}, saya lihat halaman Anda.`)} target="_blank" rel="noreferrer" style={{ alignSelf: 'flex-start' }}><button className="primary">Chat WhatsApp</button></a>}
+        {p.links?.length > 0 && <div className="row" style={{ flexWrap: 'wrap' }}>{p.links.filter((l) => /^https?:\/\//i.test(l.url)).map((l) => (
+          <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer nofollow"><button className="sm">{ICON(l)} {l.label}</button></a>
+        ))}</div>}
       </header>
-      {p.about && <section className="panel"><h3>Tentang kami</h3><p style={{ margin: 0, whiteSpace: 'pre-line' }}>{p.about}</p></section>}
+      {p.about && <section className="panel"><h3>Tentang kami</h3><p style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.about} /></p></section>}
       {p.items?.length > 0 && (
         <section className="panel">
           <h3>{retail ? 'Barang' : p.type === 'jasa' ? 'Layanan' : 'Kamar tersedia'}</h3>
@@ -56,7 +61,7 @@ export default async function PublicPage({ params }) {
         </section>
       )}
       <PublicForm page={p} />
-      {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}>{p.policy}</p></section>}
+      {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.policy} /></p></section>}
       <footer className="small muted" style={{ textAlign: 'center' }}>Halaman ini dikelola {p.name} dengan <a href="/">PRASARA</a></footer>
     </main>
   );
