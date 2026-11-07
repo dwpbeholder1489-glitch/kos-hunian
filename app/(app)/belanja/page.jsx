@@ -1,5 +1,6 @@
 'use client';
 import { withApproval } from '@/lib/approval';
+import { useBaru } from '@/lib/useBaru';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -21,6 +22,7 @@ export default function Belanja() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(false);
+  useBaru(() => setForm(true));
   const [open, setOpen] = useState(null);
   const load = async () => {
     const [b, p, u, c, pl, rt] = await Promise.all([

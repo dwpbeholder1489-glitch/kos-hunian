@@ -942,3 +942,94 @@ header.top,.ph,.ph-screen{--logo-1:#3DD68C;--logo-2:#A7F3CB;--logo-3:#22A86A}
 .ln-cap-more{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:4px 0;font:inherit;font-size:14px;font-weight:700;color:var(--ln-em);cursor:pointer;min-height:0}
 @media (max-width:420px){.ln-logo-t small{display:none}}
 @media (min-width:1000px){.ln-tiles{grid-template-columns:repeat(7,minmax(0,1fr))}}
+
+/* ===================== Shell aplikasi (desain baru: header bersih, menu bawah dengan tombol +, menu samping) ===================== */
+header.top{background:color-mix(in srgb,var(--bg) 92%,transparent);color:var(--fg);border-bottom:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:12}
+header.top .wrap{padding-top:10px}
+header.top{padding-bottom:8px}
+.bizbtn{color:var(--fg)}
+.bizbtn .t b{font-size:16.5px}
+.bizbtn small{opacity:1;color:var(--muted)}
+header.top .right{gap:2px}
+.helpbtn{width:40px;height:40px;min-height:40px;border:0;border-radius:12px;color:var(--fg);background:transparent}
+.helpbtn:hover{background:var(--sunk)}
+.helpbtn.menubtn{background:var(--surface);border:1px solid var(--line)}
+:root[data-theme="light"] header.top{--logo-1:#0F7A4E;--logo-2:#2FBF7C;--logo-3:#0A5A39}
+@media (prefers-color-scheme: light){:root[data-theme="auto"] header.top{--logo-1:#0F7A4E;--logo-2:#2FBF7C;--logo-3:#0A5A39}}
+nav.tabs a{color:var(--muted);opacity:1}
+nav.tabs a.on{color:var(--fg);border-bottom-color:var(--gold)}
+.iconbtn{width:40px;height:40px;min-height:40px;padding:0;border:0;border-radius:12px;background:transparent;color:var(--fg);display:inline-grid;place-items:center}
+
+/* menu bawah: kartu melayang + tombol + di tengah */
+.bnav{left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));border:1px solid var(--line);border-radius:22px;padding:6px;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.bnav a,.bnav button{min-height:54px;border-radius:14px;font-size:11.5px}
+.bnav a.on,.bnav button.on{color:var(--gold);background:var(--gold-soft)}
+:root[data-theme="dark"] .bnav a.on,:root[data-theme="dark"] .bnav button.on{color:var(--gold)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .bnav a.on,:root:not([data-theme="light"]) .bnav button.on{color:var(--gold)}}
+.bnav .fab{align-self:center;justify-self:center;width:54px;height:54px;min-height:54px;border-radius:50%;background:var(--gold);color:var(--accent-ink);box-shadow:0 6px 18px var(--glow),0 0 0 4px var(--bg);padding:0;margin-top:-18px}
+.bnav .fab:active{transform:scale(.96)}
+main{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+
+/* menu samping */
+.drawer-bg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);display:flex}
+.drawer{width:min(86vw,340px);height:100%;background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));overflow-y:auto;animation:drawerIn .18s ease-out}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.drawer{animation:none}}
+.drawer-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 4px 16px}
+.logo{display:inline-flex;align-items:center;gap:10px;min-width:0}
+.logo-t{display:flex;flex-direction:column;line-height:1.15}
+.logo-t b{font-size:19px;letter-spacing:.01em}
+.logo-t small{font-size:11.5px;color:var(--muted);font-weight:600}
+.drawer-nav{display:flex;flex-direction:column;gap:2px;flex:1}
+.drawer-i{display:flex;align-items:center;gap:14px;min-height:50px;padding:0 14px;border-radius:14px;color:var(--fg);text-decoration:none;font-weight:600;font-size:15.5px;background:none;border:0;width:100%;text-align:left;font-family:inherit;cursor:pointer}
+.drawer-i svg{color:var(--muted);flex:none}
+.drawer-i.on,.drawer-i.cur{background:var(--gold-soft);color:var(--gold-fg)}
+.drawer-i.on svg,.drawer-i.cur svg{color:var(--gold)}
+.drawer-i .chev{margin-left:auto;transition:transform .15s}
+.drawer-i[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.drawer-i.off{color:var(--muted);cursor:default}
+.drawer-i.off .chip{margin-left:auto}
+.drawer-sub{display:flex;flex-direction:column;padding:2px 0 6px 50px}
+.drawer-sub a{padding:9px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:14.5px;font-weight:600}
+.drawer-sub a.on{color:var(--gold-fg);background:var(--gold-soft)}
+.drawer-nav hr{border:0;border-top:1px solid var(--line);margin:10px 4px}
+.drawer-biz{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--fg);font:inherit;text-align:left;cursor:pointer;min-height:64px}
+.drawer-biz .ic{width:42px;height:42px;border-radius:12px;background:var(--gold-soft);display:grid;place-items:center;font-size:20px;flex:none}
+.drawer-biz .t{display:flex;flex-direction:column;min-width:0;flex:1}
+.drawer-biz small{color:var(--muted);font-size:12.5px}
+
+/* Beranda: sapaan, pintasan, kartu AI */
+.hometop{display:flex;flex-direction:column;gap:14px;margin-bottom:18px}
+.hello-row{display:flex;align-items:center;gap:12px}
+.hello-ic{width:48px;height:48px;border-radius:50%;background:var(--gold-soft);display:grid;place-items:center;font-size:22px;flex:none}
+.hello-row b{display:block;font-size:19px}
+.hello-row span{color:var(--muted);font-size:14px}
+.hometop-h{margin:4px 0 0;font-size:16px}
+.opsgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.opsgrid a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:84px;padding:10px 4px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--fg);text-decoration:none;font-size:12px;font-weight:600;text-align:center;line-height:1.2}
+.opsgrid a svg{color:var(--fg)}
+.opsgrid a:active{transform:scale(.97)}
+@media (min-width:700px){.opsgrid{grid-template-columns:repeat(8,minmax(0,1fr))}}
+.aicard{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent)}
+.aicard-ic{width:48px;height:48px;border-radius:50%;background:color-mix(in srgb,var(--gold) 20%,transparent);color:var(--gold);display:grid;place-items:center;flex:none}
+.aicard b{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:16px}
+.aicard span{color:var(--muted);font-size:13.5px}
+
+/* Modul Bisnis */
+.searchbox{display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.searchbox input{border:0;background:transparent;min-height:50px;padding:0;flex:1;outline:none;box-shadow:none}
+.searchbox:focus-within{border-color:var(--gold)}
+.modlist{display:flex;flex-direction:column;gap:10px}
+.modgroup{border-radius:18px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+.modgroup .modrow{border:0;border-radius:0;background:transparent}
+.modrow{display:flex;align-items:center;gap:14px;min-height:72px;padding:12px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--line);color:var(--fg);text-decoration:none;font:inherit;text-align:left;width:100%;cursor:pointer}
+.modic{width:46px;height:46px;border-radius:14px;background:var(--gold-soft);color:var(--gold);display:grid;place-items:center;flex:none}
+.modrow .t,.modsub .t{display:flex;flex-direction:column;min-width:0;flex:1}
+.modrow b{font-size:16px}
+.modrow small,.modsub small{color:var(--muted);font-size:13px;font-weight:500}
+.modrow .chev,.modsub .chev{color:var(--muted);flex:none;margin-left:auto}
+.modsub{display:flex;flex-direction:column;border-top:1px solid var(--line);padding:4px 0}
+.modsub a{display:flex;align-items:center;gap:14px;padding:11px 16px 11px 20px;color:var(--fg);text-decoration:none}
+.modsub a svg:first-child{color:var(--gold);flex:none}
+.modsub b{font-size:15px;font-weight:700}
+.btn-danger,.ghost.danger{color:var(--bad)}

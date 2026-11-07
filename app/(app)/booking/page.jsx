@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useBaru } from '@/lib/useBaru';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
@@ -20,6 +21,7 @@ export default function Booking() {
   const { kos, kosId } = useKos();
   const [f, setF] = useState('aktif');
   const [neu, setNeu] = useState(null);
+  useBaru(() => setNeu({}));
   const [open, setOpen] = useState(null);
   useEffect(() => {
     try {

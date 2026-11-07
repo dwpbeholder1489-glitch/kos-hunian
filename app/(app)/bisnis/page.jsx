@@ -149,7 +149,7 @@ export default function Bisnis() {
             note="Jumlah bisnis dalam satu badan usaha." />
         ))}
         <Total items={money} title="Semua bisnis" note={groups.length > 1 ? 'Gabungan beberapa badan usaha — bukan laporan konsolidasi resmi (transaksi antarbisnis tidak dieliminasi).' : 'Bukan laporan konsolidasi resmi; ketuk angka di tiap bisnis untuk melihat transaksinya.'} />
-        {groups.some((g) => !g.le) && <span className="small muted">Atur badan usaha tiap bisnis di Lainnya › Konfigurasi › Profil agar ringkasan bisa dipisah per badan usaha.</span>}
+        {groups.some((g) => !g.le) && <span className="small muted">Atur badan usaha tiap bisnis di Operasional › Konfigurasi › Profil agar ringkasan bisa dipisah per badan usaha.</span>}
       </>}
 
       {d.activity?.length > 0 && (

@@ -1,5 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
+import { useBaru } from '@/lib/useBaru';
 import { Fragment, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -13,6 +14,7 @@ export default function Pengeluaran() {
   const [ym, setYm] = useState(thisMonth());
   const [tab, setTab] = useState('biaya');
   const [sheet, setSheet] = useState(null);
+  useBaru(() => setSheet({ t: 'exp', x: null }));
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const list = d.expenses.filter((x) => x.date.startsWith(ym));

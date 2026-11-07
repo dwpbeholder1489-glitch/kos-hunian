@@ -1,5 +1,6 @@
 'use client';
 import IsianTambahan from '@/components/IsianTambahan';
+import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
@@ -40,6 +41,7 @@ export default function Barang() {
   const [q, setQ] = useState('');
   const [f, setF] = useState('aktif');
   const [edit, setEdit] = useState(null);   // null | 'new' | product
+  useBaru(() => setEdit('new'));
   const [adj, setAdj] = useState(null);
   const thumbs = useThumbs(kosId, 'product', `${ver}:${edit ? 1 : 0}`);
   if (err) return <div className="notice bad">{err.includes('products') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;

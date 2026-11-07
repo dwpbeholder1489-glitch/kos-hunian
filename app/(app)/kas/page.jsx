@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +29,7 @@ export default function Kas() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sheet, setSheet] = useState(null);
+  useBaru(() => setSheet({ t: 'exp' }));
   const load = async () => {
     const multi = multiLoc(kos);
     const [l, e, c, p, cat, loc] = await Promise.all([

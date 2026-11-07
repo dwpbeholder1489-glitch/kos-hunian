@@ -1,5 +1,6 @@
 'use client';
 import IsianTambahan from '@/components/IsianTambahan';
+import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function Kontak() {
   const [tab, setTab] = useState(fin ? 'pelanggan' : 'supplier');
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
+  useBaru(() => setOpen({ kind: tab }));
   const [arsip, setArsip] = useState(false);
   const load = () => supabase.rpc('contacts_overview', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data)));
   useEffect(() => { setRows(null); load(); }, [kosId, ver]);

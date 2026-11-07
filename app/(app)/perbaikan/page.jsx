@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useBaru } from '@/lib/useBaru';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
@@ -27,6 +28,7 @@ export default function Perbaikan() {
   const [f, setF] = useState('terbuka');
   const [q, setQ] = useState('');
   const [neu, setNeu] = useState(null); // { room_id }
+  useBaru(() => setNeu({}));
   const [open, setOpen] = useState(null);
   const load = () => supabase.from('maint_tickets').select('*').eq('kos_id', kosId).order('created_at', { ascending: false }).limit(300)
     .then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data || [])));

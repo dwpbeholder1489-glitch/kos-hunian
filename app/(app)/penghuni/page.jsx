@@ -1,5 +1,6 @@
 'use client';
 import PortalBox from '@/components/PortalBox';
+import { useBaru } from '@/lib/useBaru';
 import DepositBox from '@/components/DepositBox';
 import IsianTambahan from '@/components/IsianTambahan';
 import Lampiran from '@/components/Lampiran';
@@ -20,6 +21,7 @@ export default function Penghuni() {
   const [f, setF] = useState('aktif');
   const [q, setQ] = useState('');
   const [sheet, setSheet] = useState(null);
+  useBaru(() => setSheet({ t: 'edit', occ: null }));
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const list = d.occupants

@@ -1,5 +1,6 @@
 'use client';
 import IsianTambahan from '@/components/IsianTambahan';
+import { useBaru } from '@/lib/useBaru';
 import Lampiran from '@/components/Lampiran';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function Pesanan() {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
   const [neu, setNeu] = useState(false);
+  useBaru(() => setNeu(true));
   const load = () => supabase.rpc('svc_board', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
   useEffect(() => { load(); }, [kosId, ver]);
   useEffect(() => { try { if (new URLSearchParams(window.location.search).get('baru')) setNeu(true); } catch {} }, []);
