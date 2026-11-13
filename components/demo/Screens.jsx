@@ -382,6 +382,25 @@ export function ScrAnggaran() {
   );
 }
 
+// Keuangan › Analisis bisnis (contoh): bulan ini vs lalu + perbandingan cabang (Paket Pro)
+export function ScrAnalisis() {
+  const bars = [42, 48, 45, 55, 52, 60, 58, 63, 61, 70, 66, 78];
+  return (
+    <Phone bare>
+      <h3>Analisis bisnis</h3>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Pendapatan</span><span className="v">{rp(18400000)}</span><span className="s" style={{ color: 'var(--gold)' }}>▲ 18%</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Laba</span><span className="v">{rp(3150000)}</span><span className="s" style={{ color: 'var(--gold)' }}>▲ 9%</span></div>
+      </div>
+      <b className="small">Tren 12 bulan</b>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 60 }}>{bars.map((h, i) => <div key={i} style={{ flex: 1, height: `${h}%`, background: i === 11 ? 'var(--gold)' : 'color-mix(in srgb, var(--gold) 50%, transparent)', borderRadius: '3px 3px 0 0' }} />)}</div>
+      <b className="small">Perbandingan cabang</b>
+      <div className="row between small"><span>Pusat · 72%</span><span>Laba {rp(2600000)}</span></div>
+      <div className="row between small"><span>Cabang Pasar · 28%</span><span>Laba {rp(550000)}</span></div>
+    </Phone>
+  );
+}
+
 // Karyawan › Atur akses: modul (Paket Bisnis), izin per tindakan & penyetuju (Paket Pro) — contoh
 export function ScrAksesKaryawan() {
   const cek = (on, t, d) => <div className="row" style={{ gap: 8, flexWrap: 'nowrap', alignItems: 'flex-start' }}><span className="mini-btn" style={{ minWidth: 22, padding: '0 4px' }}>{on ? '✓' : ' '}</span><span style={{ display: 'flex', flexDirection: 'column' }}><b className="small">{t}</b><span className="small muted">{d}</span></span></div>;

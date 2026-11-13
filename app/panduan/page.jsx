@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -59,6 +59,7 @@ const MENUS = [
   ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan/mingguan, penjualan turun, anggaran'],
   ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
   ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, rekonsiliasi bank & anggaran (Paket Bisnis)'],
+  ['Analisis bisnis', 'Bulan ini vs lalu; tren 12 bulan (Paket Bisnis); perbandingan cabang & tahun lalu (Paket Pro)'],
 ];
 
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
@@ -548,6 +549,14 @@ const PARTS = [
       <>Di halaman bisnis publik: cover di atas, galeri yang bisa digeser, dan foto kecil di samping tiap kamar/barang/layanan — ketuk untuk memperbesar. Foto kamar hanya tampil bila kamar tersedia.</>,
     ], <>Foto di sini bersifat <b>publik</b> (untuk ditampilkan ke pelanggan). Dokumentasi internal — nota, bukti transfer, kondisi kamar/barang — tetap lewat <b>📎 Lampiran</b> di tiap data (privat). Foto dikecilkan di HP sebelum dikirim (maks 1600 px + thumbnail) agar hemat kuota dan cepat dibuka; kuota dihitung bersama lampiran sesuai paket.</>, 'warn', <ScrMedia />],
   ]],
+  ['P', 'Analisis bisnis', [
+    ['Membaca analisis bisnis', 'Keuangan › Analisis bisnis (pemilik & bagian keuangan)', [
+      <>Buka <b>Keuangan › Analisis bisnis</b> dan pilih bulan dengan tombol <b>‹ ›</b>. Kotak <b>Bulan ini vs bulan lalu</b> menampilkan pendapatan, laba, HPP, biaya, jumlah transaksi, rata-rata per transaksi, dan margin laba — dengan panah naik/turun. Kos juga melihat persentase <b>hunian</b>.</>,
+      <><b>Temuan dari data</b> merangkum perubahan besar: pendapatan naik/turun ≥20%, bulan rugi, biaya yang melonjak, atau cabang yang rugi. Semua dihitung dari angka di halaman itu; cek rinciannya di Pembukuan sebelum memutuskan.</>,
+      <><b>Paket Bisnis</b>: <b>Tren 12 bulan</b> (batang = pendapatan, garis = laba; ketuk <b>Lihat tabel</b> untuk angkanya), rata-rata 3 bulan sebelumnya, <b>pendapatan & biaya per jenis</b> dibanding bulan lalu, dan 5 <b>barang/layanan paling menghasilkan</b>.</>,
+      <><b>Paket Pro</b>: <b>bulan yang sama tahun lalu</b>, <b>Perbandingan cabang</b> (kontribusi pendapatan, laba, transaksi, tren 6 bulan, 3 barang teratas per cabang), dan <b>pola hari</b> 90 hari terakhir untuk mengatur jadwal & stok.</>,
+    ], <>Angka uang diambil dari jurnal Pembukuan (otomatis dari setiap penjualan, pembayaran, dan pengeluaran), jadi sama dengan laporan keuangan; jumlah transaksi dari menu operasional. Laba di sini sebelum pajak. Perbandingan cabang muncul bila Anda punya lebih dari satu lokasi.</>, null, <ScrAnalisis />],
+  ]],
 ];
 
 const RULES = [
@@ -608,6 +617,7 @@ export default function Panduan() {
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
           <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
           <div><b>Foto & media</b><span><a href="#bagian-O">Langkah 71</a><br />Foto kamar, barang, layanan, cover & galeri; pustaka media</span></div>
+          <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
