@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { Field, Loading, Sheet, toast } from '@/components/ui';
+import { Field, Loading, toast } from '@/components/ui';
+import { GrowthSheet } from '@/components/GrowthOffer';
 import { tgl, rp, errMsg } from '@/lib/format';
 import { ROLES, multiLoc } from '@/lib/business';
-import { SITE_URL, PLANS, PLAN_ORDER, FEATURE_CODES } from '@/lib/plan';
+import { SITE_URL } from '@/lib/plan';
 import { useRouter } from 'next/navigation';
 
 // Karyawan: undang lewat email, atur peran, nonaktifkan, hapus. Izin tiap peran ditegakkan di database.
@@ -19,8 +20,7 @@ export default function Karyawan() {
   const [busy, setBusy] = useState(false);
   const multi = multiLoc(kos);
   const router = useRouter();
-  const [upg, setUpg] = useState(false);     // modal upgrade saat batas karyawan tercapai (UPGRADE.EMPLOYEE.LIMIT)
-  const [quote, setQuote] = useState(null);  // paket & harga dari database (plan_quote)
+  const [offer, setOffer] = useState(null);  // penawaran upgrade dari server saat batas karyawan penuh (UPGRADE.EMPLOYEE.LIMIT)
   const [mloc, setMloc] = useState({});   // user_id → lokasi yang ditetapkan
   const load = () => {
     if (multi) supabase.from('member_locations').select('user_id,branch_id,locked').eq('kos_id', kosId).then(({ data }) => setMloc(Object.fromEntries((data || []).filter((x) => x.locked).map((x) => [x.user_id, x.branch_id]))));
@@ -30,7 +30,6 @@ export default function Karyawan() {
     });
   };
   useEffect(() => { setD(null); load(); }, [kosId]);
-  useEffect(() => { if (upg && !quote) supabase.rpc('plan_quote', { p_kos: kosId }).then(({ data }) => setQuote(data || [])); }, [upg, kosId]); // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="notice bad">{/team_list/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -44,7 +43,13 @@ export default function Karyawan() {
   };
   const invite = async (e) => {
     e.preventDefault();
-    if (full) return setUpg(true);
+    if (full) {
+      // Penawaran dari server (batas & frekuensi dicek di sana); tanpa penawaran, cukup pesan batas
+      const { data: o } = await supabase.rpc('growth_offer', { p_kos: kosId, p_context: 'karyawan' });
+      if (!o) return toast('Batas karyawan paket ini sudah tercapai. Hapus karyawan yang tidak dipakai, atau upgrade paket di Langganan.');
+      supabase.rpc('growth_track', { p_kos: kosId, p_rule: o.id, p_action: 'shown', p_event: 'EMPLOYEE.CREATE_REQUESTED' }).then(() => {}, () => {});
+      return setOffer(o);
+    }
     await call('team_invite', { p_kos: kosId, p_email: email, p_role: role }, 'Undangan dibuat');
     setEmail('');
   };
@@ -112,29 +117,7 @@ export default function Karyawan() {
         <span className="small muted">Batasan ini diperiksa di database, bukan hanya disembunyikan dari menu.</span>
       </section>
 
-      {upg && (() => {
-        const cur = quote?.find((x) => x.key === kos.plan)?.name || PLANS[kos.plan]?.name || 'Gratis';
-        const nk = PLAN_ORDER[PLAN_ORDER.indexOf(kos.plan) + 1];
-        const next = nk && quote?.find((x) => x.key === nk);
-        return (
-          <Sheet title="Bisnis Anda mulai berkembang!" onClose={() => setUpg(false)}>
-            <p className="small" style={{ margin: 0 }}>Anda sudah menggunakan seluruh kapasitas karyawan Paket {cur}. {next ? `Upgrade ke Paket ${next.name} untuk mengelola hingga ${next.limits?.karyawan} akun karyawan.` : 'Hapus karyawan yang tidak dipakai untuk menambah yang baru.'}</p>
-            <div className="tile"><span className="label">Paket saat ini</span><span className="v">{cur}</span><span className="s">{d.used} dari {d.limit} karyawan</span></div>
-            {!quote && <Loading />}
-            {next && (
-              <div className="tile" style={{ borderColor: 'var(--gold)', borderWidth: 2 }}>
-                <span className="label">Paket rekomendasi: {next.name}</span>
-                {Number(next.list_price) > Number(next.price) && <span className="small"><s>{rp(next.list_price)}</s></span>}
-                <span className="v">{rp(next.price)}<span className="small muted"> /bulan</span></span>
-                <span className="s">Hingga {next.limits?.karyawan} akun karyawan</span>
-                <ul className="small" style={{ margin: '6px 0 0', paddingLeft: 18 }}>{(next.features || []).map((c) => <li key={c}>{FEATURE_CODES[c] || c}</li>)}</ul>
-              </div>
-            )}
-            {next && <button className="cta" style={{ width: '100%' }} onClick={() => router.push('/langganan')}>Upgrade ke Paket {next.name}</button>}
-            <button className="ghost" style={{ width: '100%' }} onClick={() => setUpg(false)}>Tetap menggunakan Paket {cur}</button>
-          </Sheet>
-        );
-      })()}
+      {offer && <GrowthSheet offer={offer} kosId={kosId} onDone={() => setOffer(null)} />}
     </div>
   );
 }

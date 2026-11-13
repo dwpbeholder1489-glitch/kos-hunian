@@ -30,6 +30,7 @@ export default function Langganan() {
   const [sent, setSent] = useState(null);
   const [inv, setInv] = useState(null);
   const [lynkUrl, setLynkUrl] = useState(null);
+  const [trig, setTrig] = useState(null);   // penawaran yang membawa pemilik ke sini (?trig=), untuk pencatatan checkout
   const [pendingUrl, setPendingUrl] = useState(null);
 
   // Tagihan + ID transaksi & status pembayaran dari server; cadangan: tabel tagihan saja
@@ -47,6 +48,18 @@ export default function Langganan() {
       setPlan((cur) => cur || (list.find((x) => x.key === kos.plan && !p.free) || list[0])?.key);
     });
   }, [kos.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Dari penawaran (GrowthSheet): paket & durasi dipilihkan sesuai penawaran
+  useEffect(() => {
+    if (!plans) return;
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const p = q.get('paket'); const b = Number(q.get('bulan'));
+      if (p && plans.some((x) => x.key === p)) setPlan(p);
+      if (DUR.includes(b)) setMonths(b);
+      setTrig(q.get('trig'));
+    } catch {}
+  }, [plans]);
 
   // Link Lynk: hanya ada bila harganya masih sama dengan link yang dipasang (dicek server)
   const pendingReq = reqs?.find((r) => r.status === 'menunggu');
@@ -100,6 +113,7 @@ export default function Langganan() {
     const { data: id, error } = await supabase.rpc('request_plan', { p_kos: kos.id, p_plan: sel.key, p_months: months, p_method: metode, p_note: note });
     setBusy(false);
     if (error) return toast(errMsg(error));
+    if (trig) supabase.rpc('growth_track', { p_kos: kos.id, p_rule: trig, p_action: 'checkout', p_event: null }).then(() => {}, () => {});
     if (metode === 'gateway') { toast('Tagihan dibuat. Ketuk Buka halaman Lynk.id untuk membayar.'); loadReqs(); return; }
     const { data: r } = await supabase.from('plan_requests').select('number').eq('id', id).maybeSingle();
     const msg = `Halo, saya sudah membayar langganan PRASARA.\n\nInvoice: ${r?.number || '-'}\nBisnis: ${kos.name}\nAkun: ${user?.email}\nPaket: ${sel.name} ${months === 12 && term ? '1 tahun' : months + ' bulan'}\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
