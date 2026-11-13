@@ -1,4 +1,4 @@
-// Alamat webhook pembayaran: POST /api/bayar/<kode penyedia>. Tahap D — hanya mencatat (lihat lib/bayarWebhook.js).
+// Alamat webhook pembayaran: POST /api/bayar/<kode penyedia>. Verifikasi + aktivasi bila tagihan cocok (lihat lib/bayarWebhook.js).
 import { catatWebhook } from '@/lib/bayarWebhook';
 
 export const dynamic = 'force-dynamic';

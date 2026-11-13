@@ -71,7 +71,7 @@ select source, plan, months, before->>'berlaku' seb, after->>'berlaku' ses, acto
 select admin_decide_request(:'r2',true);
 select count(*) aktivasi_r2 from plan_activations where invoice_id=:'r2';
 select admin_override(:'K3','beri_paket','pro',1,'kompensasi gangguan'); select source, reason from plan_activations where kos_id=:'K3';
-\echo == F. Webhook (penyedia belum aktif -> diabaikan)
+\echo == F. Webhook (notifikasi tanpa tagihan yang cocok -> tidak mengaktifkan apa pun; lihat webhook_aktivasi.sql)
 reset role;
 select set_config('request.jwt.claim.sub','',false), set_config('request.jwt.claims','',false) \g /dev/null
 select set_config('request.jwt.claim.sub',:'owner',false) \g /dev/null
