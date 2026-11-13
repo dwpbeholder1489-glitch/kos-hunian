@@ -48,7 +48,7 @@ export default function Pembukuan() {
         <button className="sm ghost" disabled={ym >= today().slice(0, 7)} onClick={() => setYm(addMonthsYm(ym, 1))}>›</button>
         <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={ytd} onChange={(e) => setYtd(e.target.checked)} />Sejak awal tahun</label>
       </div>
-      {kos?.legal_entity_id && <div className="seg">
+      {kos?.legal_entity_id && hasFeature(kos, 'laporan_lanjutan') && <div className="seg">
         <button className={!entity ? 'on' : ''} onClick={() => setEntity(false)}>Bisnis ini</button>
         <button className={entity ? 'on' : ''} onClick={() => setEntity(true)}>Seluruh badan usaha</button>
       </div>}
@@ -58,8 +58,10 @@ export default function Pembukuan() {
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
       {!d && !err ? <Loading /> : d && <>
         <Meta d={d} entity={entity} />
-        {tab === 'laporan' && <Laporan d={d} period={period} />}
-        {tab === 'buku' && <BukuBesar d={d} kosId={kosId} entity={entity} from={from} to={to} retail={retail} />}
+        {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} />}
+        {tab === 'buku' && (d.ringkas
+          ? <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Rincian buku besar tersedia mulai Paket Bisnis" text="Lihat setiap mutasi dan saldo per akun (mis. Kas, Bank, Piutang), lengkap dengan transaksi asalnya. Laba rugi dan neraca ringkas tetap ada di tab Laporan." />
+          : <BukuBesar d={d} kosId={kosId} entity={entity} from={from} to={to} retail={retail} />)}
         {tab === 'jurnal' && <Jurnal kosId={kosId} from={from} to={to} retail={retail} ver={ver} />}
         {tab === 'periode' && owner && <Periode d={d} kosId={kosId} ym={ym} onDone={load} />}
         {tab === 'bank' && <RekonBank kosId={kosId} ym={ym} owner={owner} ver={ver} />}
@@ -87,13 +89,13 @@ function Meta({ d, entity }) {
 function Rows({ list, field, sign = 1, total }) {
   return (
     <div className="list">
-      {list.map((a) => <div className="li" key={a.code}><span className="small">{a.name} <span className="muted">{a.code}</span></span><b className="small">{rp(sign * a[field])}</b></div>)}
+      {list.map((a) => <div className="li" key={a.code}><span className="small">{a.name} {!a.ringkas && <span className="muted">{a.code}</span>}</span><b className="small">{rp(sign * a[field])}</b></div>)}
       {total != null && <div className="li"><b className="small">Total</b><b>{rp(total)}</b></div>}
     </div>
   );
 }
 
-function Laporan({ d, period }) {
+function Laporan({ d, period, kosId, owner }) {
   // gabungkan akun dengan kode sama (lintas bisnis dalam satu badan usaha)
   const map = {};
   for (const a of d.accounts) { const m = (map[a.code] ||= { ...a, period: 0, balance: 0 }); m.period += Number(a.period); m.balance += Number(a.balance); }
@@ -127,11 +129,12 @@ function Laporan({ d, period }) {
       <Rows list={kew} field="balance" sign={-1} total={kewT} />
       <span className="label">Ekuitas</span>
       <div className="list">
-        {eku.map((a) => <div className="li" key={a.code}><span className="small">{a.name} <span className="muted">{a.code}</span></span><b className="small">{rp(-a.balance)}</b></div>)}
+        {eku.map((a) => <div className="li" key={a.code}><span className="small">{a.name} {!a.ringkas && <span className="muted">{a.code}</span>}</span><b className="small">{rp(-a.balance)}</b></div>)}
         <div className="li"><span className="small">Laba ditahan & laba berjalan</span><b className="small">{rp(labaBerjalan)}</b></div>
         <div className="li"><b className="small">Total kewajiban + ekuitas</b><b>{rp(kewT + ekuT + labaBerjalan)}</b></div>
       </div>
       {selisih === 0 ? <span className="chip good">Seimbang: aset = kewajiban + ekuitas</span> : <div className="notice bad">Tidak seimbang, selisih {rp(selisih)}. Hubungi bantuan.</div>}
+      {d.ringkas && <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Neraca rinci per akun tersedia mulai Paket Bisnis" text="Paket ini menampilkan neraca ringkas (total aset, kewajiban, dan modal). Paket Bisnis menampilkan setiap akun, laba rugi per lokasi, dan laporan gabungan badan usaha." />}
     </section>
     {Array.isArray(d.per_lokasi) && d.per_lokasi.length > 0 && <section className="panel">
       <h3>Laba rugi per lokasi · {period}</h3>

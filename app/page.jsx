@@ -52,7 +52,7 @@ const CAPS = [
   ['receipt', 'Transaksi', 'ready', 'Kasir eceran & grosir, pesanan jasa & kuliner, tagihan sewa, pembayaran sebagian, retur, dan pembatalan dengan alasan.', 'Kasir toko menjual per pcs atau per dus dengan harga masing-masing.'],
   ['users', 'Pelanggan', 'ready', 'Kontak pelanggan, penghuni & supplier, prospek dari halaman bisnis, tindak lanjut, kasbon.', 'Calon penghuni mendaftar online; pemilik tinggal mengonfirmasi.'],
   ['box', 'Inventaris', 'ready', 'Stok multi-satuan, barcode, per lokasi, belanja & terima barang, stok opname, bahan operasional.', 'Laundry mencatat pemakaian deterjen agar biaya bahan ikut terhitung.'],
-  ['wallet', 'Keuangan', 'ready', 'Kas & bank, biaya, deposit, utang-piutang, jurnal otomatis, laba rugi, dan neraca per badan usaha.', 'Uang jaminan penghuni dicatat terpisah dari pendapatan.'],
+  ['wallet', 'Keuangan', 'ready', 'Kas & bank, biaya, deposit, utang-piutang, jurnal otomatis, laba rugi, dan neraca. Paket Bisnis: anggaran, rekonsiliasi bank, dan laporan rinci per badan usaha.', 'Uang jaminan penghuni dicatat terpisah dari pendapatan.'],
   ['calendar', 'Booking & reservasi', 'ready', 'Booking kamar dengan uang tanda jadi, reservasi meja dengan cek bentrok, jadwal jemput-antar.', 'Kamar yang dibooking terkunci sampai penghuni check-in.'],
   ['flow', 'Layanan', 'ready', 'Pesanan per kg/item, tahap proses yang bisa diatur, keluhan & pengerjaan ulang, antar-jemput, layar dapur.', 'Petugas proses melihat tahap cucian tanpa melihat uang.'],
   ['shield', 'Karyawan & operasional', 'part', 'Peran & hak akses per karyawan, persetujuan untuk aksi penting, shift kasir, riwayat perubahan. Absensi & penggajian: dalam rencana.', 'Kasir tidak melihat harga modal dan laba.'],
