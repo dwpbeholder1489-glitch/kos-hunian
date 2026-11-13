@@ -7,9 +7,10 @@ import { Empty, Field, Loading, Sheet, toast } from '@/components/ui';
 import { errMsg, rp } from '@/lib/format';
 import { can } from '@/lib/admin';
 
-const KONTEKS = { karyawan: 'Saat batas karyawan penuh', portal: 'Saat fitur portal dibuka', umum: 'Otomatis (penawaran umum)' };
+const KONTEKS = { karyawan: 'Saat batas karyawan penuh', portal: 'Saat fitur portal dibuka', umum: 'Otomatis (penawaran umum)', aktivitas: 'Setelah kejadian di aplikasi' };
+const PERISTIWA = { 'TRANSAKSI.PERTAMA': 'Setelah transaksi pertama', 'LAPORAN.DIBUKA': 'Saat halaman laporan dibuka' };
 const JENIS = { upgrade: 'Upgrade paket', tahunan: 'Bulanan ke tahunan' };
-const KOSONG = { id: '', name: '', context: 'karyawan', kind: 'upgrade', from_plan: 'dasar', to_plan: 'bisnis', title: '', message: '', cta: '', cta_secondary: 'Nanti saja', priority: 100, frequency_days: 7, general: false, active: true, starts_on: '', ends_on: '' };
+const KOSONG = { id: '', name: '', context: 'karyawan', kind: 'upgrade', from_plan: 'dasar', to_plan: 'bisnis', trigger_event: 'LAPORAN.DIBUKA', title: '', message: '', cta: '', cta_secondary: 'Nanti saja', priority: 100, frequency_days: 7, general: false, active: true, starts_on: '', ends_on: '' };
 
 // Kampanye pertumbuhan (V2 §13): ubah pesan, paket tujuan, frekuensi, dan masa aktif tanpa mengubah kode.
 export default function Kampanye() {
@@ -39,6 +40,7 @@ export default function Kampanye() {
     const f = edit;
     const data = {
       name: f.name, context: f.context, kind: f.kind, from_plan: f.from_plan, to_plan: f.to_plan,
+      trigger_event: f.context === 'aktivitas' ? (f.trigger_event || 'LAPORAN.DIBUKA') : null,
       to_months: f.kind === 'tahunan' ? 12 : 1, title: f.title, message: f.message, cta: f.cta, cta_secondary: f.cta_secondary,
       priority: Number(f.priority) || 100, frequency_days: Number(f.frequency_days) || 7, general: !!f.general, active: !!f.active,
       starts_on: f.starts_on || null, ends_on: f.ends_on || null,
@@ -63,7 +65,7 @@ export default function Kampanye() {
             <div className="main">
               <b>{r.name}</b>
               <span className="small muted">{r.id}</span>
-              <span className="small">{KONTEKS[r.context]} · {JENIS[r.kind]} · {nama(r.from_plan)} → {nama(r.to_plan)}{r.to_months === 12 ? ' (12 bulan)' : ''}</span>
+              <span className="small">{KONTEKS[r.context]}{r.trigger_event ? ` (${PERISTIWA[r.trigger_event] || r.trigger_event})` : ''} · {JENIS[r.kind]} · {nama(r.from_plan)} → {nama(r.to_plan)}{r.to_months === 12 ? ' (12 bulan)' : ''}</span>
               <span className="small">Frekuensi: tiap {r.frequency_days} hari{r.general ? ' · ikut batas pop-up umum 7 hari' : ''}</span>
               {(r.starts_on || r.ends_on) && <span className="small muted">Periode: {r.starts_on || '…'} s/d {r.ends_on || 'tanpa akhir'}</span>}
               {isSuper && <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
@@ -84,6 +86,9 @@ export default function Kampanye() {
           <Field label="Kapan ditawarkan">
             <select value={edit.context} onChange={(e) => setEdit({ ...edit, context: e.target.value })}>{Object.entries(KONTEKS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
           </Field>
+          {edit.context === 'aktivitas' && <Field label="Peristiwa" hint="Penawaran muncul setelah kejadian ini">
+            <select value={edit.trigger_event || 'LAPORAN.DIBUKA'} onChange={(e) => setEdit({ ...edit, trigger_event: e.target.value })}>{Object.entries(PERISTIWA).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+          </Field>}
           <Field label="Jenis">
             <select value={edit.kind} onChange={(e) => setEdit({ ...edit, kind: e.target.value, to_plan: e.target.value === 'tahunan' ? edit.from_plan : edit.to_plan })}>{Object.entries(JENIS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
           </Field>

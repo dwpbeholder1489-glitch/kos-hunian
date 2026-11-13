@@ -115,7 +115,7 @@ export default function AppLayout({ children }) {
       {!path.startsWith('/langganan') && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
-      {role === 'pemilik' && <GrowthAuto kosId={kos.id} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
+      {role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
       <AnnounceBanner />
       <ClosedBar />
       <main className="wrap" key={kosId}>{kos.suspended_at ? (

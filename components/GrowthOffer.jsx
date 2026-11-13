@@ -36,25 +36,28 @@ export function GrowthSheet({ offer, kosId, onDone }) {
   );
 }
 
-// Penawaran umum otomatis (mis. Pro bulanan → tahunan). Server membatasi: paling banyak satu pop-up umum per 7 hari.
+// Penawaran otomatis: berbasis aktivitas (event: LAPORAN.DIBUKA / TRANSAKSI.PERTAMA) lalu penawaran umum
+// (mis. Pro bulanan → tahunan, atau paket Gratis → Dasar). Server membatasi: paling banyak satu pop-up umum per 7 hari.
 // Dilewati di halaman yang sedang dipakai untuk transaksi agar tidak mengganggu (V2 §8).
-export default function GrowthAuto({ kosId, skip }) {
-  const [offer, setOffer] = useOffer(kosId, skip);
+export default function GrowthAuto({ kosId, skip, event }) {
+  const [offer, setOffer] = useOffer(kosId, skip, event);
   if (!offer) return null;
   return <GrowthSheet offer={offer} kosId={kosId} onDone={() => setOffer(null)} />;
 }
 
-export function useOffer(kosId, skip) {
+export function useOffer(kosId, skip, event) {
   const [offer, setOffer] = useState(null);
   useEffect(() => {
     if (skip || !kosId) return undefined;
     let on = true;
-    supabase.rpc('growth_offer', { p_kos: kosId, p_context: 'umum' }).then(({ data, error }) => {
-      if (!on || error || !data) return;
+    const minta = (ctx, ev) => supabase.rpc('growth_offer', { p_kos: kosId, p_context: ctx, p_event: ev || null }).then(({ data, error }) => (error ? null : data));
+    (async () => {
+      const data = (event && await minta('aktivitas', event)) || await minta('umum', null);
+      if (!on || !data) return;
       setOffer(data);
-      supabase.rpc('growth_track', { p_kos: kosId, p_rule: data.id, p_action: 'shown', p_event: null }).then(() => {}, () => {});
-    });
+      supabase.rpc('growth_track', { p_kos: kosId, p_rule: data.id, p_action: 'shown', p_event: data.context === 'aktivitas' ? event : null }).then(() => {}, () => {});
+    })();
     return () => { on = false; };
-  }, [kosId, skip]);
+  }, [kosId, skip, event]);
   return [offer, setOffer];
 }
