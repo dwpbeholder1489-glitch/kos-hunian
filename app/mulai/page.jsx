@@ -2,6 +2,7 @@
 // Pendaftaran bisnis (Automatic Business Setup): pilih satu/lebih kategori → isi info tiap bisnis → PRASARA menyiapkan DRAF
 // per bisnis → pemilik meninjau & mengaktifkan di Pusat Konfirmasi. Semua validasi & pembuatan di server (setup_create).
 import { useEffect, useState } from 'react';
+import { useHitungKunjungan } from '@/components/HitungKunjungan';
 import Journey from '@/components/Journey';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -35,6 +36,7 @@ function Question({ q, value, onChange }) {
 }
 
 export default function Mulai() {
+  useHitungKunjungan('/mulai');   // jumlah kunjungan tanpa data pribadi (Growth Analytics)
   const router = useRouter();
   const { session, list, loadKos, pickKos } = useKos();
   const [cats, setCats] = useState(null);

@@ -14,6 +14,8 @@ export default function Privasi() {
         <li><b>Data bisnis yang Anda masukkan:</b> profil bisnis, transaksi, pelanggan/penghuni, stok, kas, foto, dan lampiran. Data pelanggan atau penghuni Anda dimasukkan oleh Anda sebagai pengelola bisnis.</li>
         <li><b>Data dari halaman bisnis publik:</b> isian formulir pemesanan, pendaftaran, atau permintaan yang dikirim pengunjung kepada bisnis yang bersangkutan.</li>
         <li><b>Catatan teknis:</b> waktu dan pelaku perubahan penting (riwayat/audit) untuk keamanan dan penelusuran.</li>
+        <li><b>Jumlah kunjungan halaman publik</b> (beranda, panduan, tentang, masuk, pendaftaran): hanya angka total per hari, tanpa identitas pengunjung, cookie pelacak, atau alamat IP.</li>
+        <li><b>Alasan berhenti berlangganan</b> bila Anda memilih mengisinya (opsional) saat menghentikan perpanjangan.</li>
       </ul>
       <h2>Untuk apa data dipakai</h2>
       <ul>

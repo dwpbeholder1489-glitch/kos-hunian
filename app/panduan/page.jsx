@@ -3,8 +3,9 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
+import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
   description: 'Panduan lengkap memakai PRASARA: kamar, penghuni, tagihan otomatis, pembayaran, pengeluaran, laporan, kwitansi, dan langganan.',
@@ -176,11 +177,11 @@ const PARTS = [
       <>Saat <b>akun karyawan</b> sudah penuh, penawaran <b>Paket Bisnis</b> muncul (hingga 5 karyawan). Ketuk <b>Upgrade</b> untuk langsung memilih paket itu, atau <b>Tetap menggunakan Paket Dasar</b>. Penawaran yang Anda tutup tidak muncul lagi selama 7 hari.</>,
       <>Pelanggan <b>Pro bulanan</b> yang sudah aktif 30 hari akan melihat penawaran <b>Pro Tahunan</b>: dibayar sekali untuk 12 bulan dengan harga yang tertulis di layar, dan hematnya ditampilkan. Penawaran ini muncul paling banyak sekali dalam 30 hari dan bisa ditutup kapan saja.</>,
       <>Pengguna <b>Gratis</b> bisa melihat penawaran <b>Paket Dasar</b>: setelah transaksi pertama tercatat, atau sebagai penawaran umum berkala (paling sering sekali dalam 30 hari). Pemilik <b>Paket Dasar</b> yang membuka <b>Laporan</b> bisa melihat penawaran <b>Paket Bisnis</b> (paling sering sekali dalam 14 hari). Penawaran aktivitas dan umum tidak muncul bersamaan dalam satu minggu, dan tidak pernah muncul di halaman kasir atau pembayaran.</>,
-      <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi.</>,
+      <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi. Sesudahnya muncul pertanyaan <b>Boleh tahu alasannya?</b> yang boleh dijawab atau <b>Lewati</b>; jawaban tidak mengubah apa pun.</>,
       <>Kuota paket dipantau otomatis. Saat <b>akun karyawan</b>, <b>kamar terisi</b>, <b>ruang foto & lampiran</b>, <b>produk/layanan aktif</b>, <b>pelanggan</b>, <b>supplier</b>, <b>cabang</b>, atau <b>ekspor laporan bulan ini</b> mencapai <b>80%</b>, muncul peringatan di atas halaman; pada <b>100%</b> peringatannya merah. Tekan <b>Tutup peringatan</b> untuk menyembunyikannya; peringatan muncul lagi setelah 7 hari.</>,
       <>Batas awal per paket (Gratis/Dasar · Bisnis · Pro): produk/layanan aktif 100 · 1.000 · 5.000; pelanggan 500 · 5.000 · 20.000; supplier 100 · 1.000 · 5.000; cabang 1 · 3 · 10 (lokasi utama ikut dihitung, gudang tidak); ekspor laporan Dasar 10 · Bisnis 100 · Pro 500 per bulan. Saat penuh, data lama <b>tetap ada dan bisa diubah</b>; yang ditahan hanya penambahan baru. Nonaktifkan barang/layanan atau arsipkan kontak yang tidak dipakai untuk memberi ruang, atau naik paket.</>,
       <>Masa coba (14 hari) punya pengingat di <b>hari ke-10</b>, <b>hari ke-12</b>, dan <b>hari terakhir</b>, lalu saat berakhir. Pengingat tiap tahap hanya sekali, dan paling banyak dua dalam tiga hari.</>,
-    ], <>Bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar (dihitung sejak bisnis diaktifkan). Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <><ScrPlan /><ScrPenawaran /><ScrUpgradeSukses /></>],
+    ], <>Bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar (dihitung sejak bisnis diaktifkan). Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <><ScrPlan /><ScrPenawaran /><ScrUpgradeSukses /><ScrAlasanBerhenti /></>],
     ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
       <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,
       <><b>Info untuk penghuni</b>: nomor WhatsApp, cara bayar, dan peraturan kos (tampil di portal), serta pilihan email <b>notifikasi bukti transfer</b> dan <b>daftar tagih setiap pagi</b>.</>,
@@ -548,6 +549,7 @@ export default function Panduan() {
   let n = 0;
   return (
     <div className="lp">
+      <HitungKunjungan path="/panduan" />
       <LandingNav />
       <div className="guide">
         <h1>Panduan PRASARA</h1>

@@ -33,7 +33,7 @@ select setup_item_save(:'kb','alamat','{"v":"Jl. Baru 1"}','setujui') \g /dev/nu
 select setup_item_save(:'kb','wa','{"v":"081200001111"}','setujui') \g /dev/null
 select setup_item_save(:'kb','rekening','{"v":"BCA 1 a.n. Dewi"}','setujui') \g /dev/null
 select setup_approve_recommended(:'kb') \g /dev/null
-select setup_refresh(:'kb') st;
+-- setup_refresh sudah fungsi internal (tidak bisa dipanggil pengguna); status dicek lewat setup_activate di bawah
 select setup_activate(:'kb')->>'ok' aktif;
 select trial_until - (now() at time zone 'Asia/Jakarta')::date hari_coba, trial_plan, kos_plan(id) berlaku, plan_limit(id,'karyawan') kary, plan_has(id,'portal_penghuni') portal from kos where id=:'kb';
 select string_agg((x->>'code')||':'||(x->>'done'),' ') ck from jsonb_array_elements(setup_checklist(:'kb')->'items') x;
@@ -42,7 +42,9 @@ select setup_checklist_skip(:'kb','semua',true); select setup_checklist(:'kb')->
 \echo == B. Harga & tagihan
 select string_agg((x->>'key')||'='||(x->>'price')||'/'||coalesce(x->>'list_price','-'),' ') q from jsonb_array_elements(plan_quote(:'kb')) x;
 select request_plan(:'kb','standar',1,'qris');
-select request_plan(:'kb','pro',12,'gateway');
+-- Lynk (gateway) membuat tagihan menunggu sejak migrasi 20261113160000; batalkan agar tagihan berikutnya bisa dibuat
+select request_plan(:'kb','pro',12,'gateway') as rg \gset
+select status gateway_menunggu from plan_requests where id=:'rg'; select plan_request_cancel(:'rg') \g /dev/null
 select request_plan(:'kb','pro',12,'qris') as r1 \gset
 select amount, unit_price, kind, number is not null no, status from plan_requests where id=:'r1';
 select t.code ~ '^TRX-' kode, t.status, t.amount, t.provider from pay_transactions t where invoice_id=:'r1';
@@ -122,7 +124,9 @@ select string_agg(x->>'reason', ',' order by x->>'reason') terbuka from jsonb_ar
 select (x->>'id') as cf from jsonb_array_elements(admin_recon_list()) x where x->>'reason'='aktivasi_gagal' \gset
 select admin_recon_resolve(:'cf','cocokkan',null,'x');
 select admin_recon_resolve(:'cf','cocokkan',null,'aktivasi diulang setelah perbaikan');
+reset role;   -- periksa sebagai sistem (RLS menyembunyikan kos & aktivasi pelanggan dari akun admin uji)
 select r.status inv, (select paid_until from kos where id=:'K3') > :'pu3'::date aktif, (select source from plan_activations where invoice_id=:'r5') sumber from plan_requests r where id=:'r5';
+set role authenticated;
 select (x->>'id') as cs from jsonb_array_elements(admin_recon_list()) x where x->>'reason'='tanda_tangan' limit 1 \gset
 select admin_recon_resolve(:'cs','cocokkan',:'r5','coba paksa');
 select admin_recon_resolve(:'cs','abaikan',null,'notifikasi palsu');
@@ -136,14 +140,17 @@ select admin_recon_resolve(:'ca','cocokkan',:'r6','email pembayar beda');
 select (x->>'id') as cb from jsonb_array_elements(admin_recon_list()) x where x->>'reason'='tidak_ada_tagihan' and x->'detail'->>'ref'='L-2' \gset
 select admin_recon_resolve(:'cb','cocokkan',:'r6','pelanggan bayar dengan email lain');
 select r.status, t.provider_ref, kos_plan(r.kos_id) from plan_requests r join pay_transactions t on t.invoice_id=r.id where r.id=:'r6';
-select count(*) log_rekon from admin_log where action='rekonsiliasi';
+reset role; select count(*) log_rekon from admin_log where action='rekonsiliasi';
+set role authenticated;
 \echo == H. Promosi berakhir bila admin mengisi tanggal; harga & pengaturan admin
 select admin_setting_save('promo_until', to_jsonb((current_date-1)::text));
 select string_agg((x->>'key')||'='||(x->>'price')||'/'||coalesce(x->>'list_price','-'),' ') from jsonb_array_elements(plans_public()) x;
 select admin_setting_save('promo_until', 'null'::jsonb);
 select string_agg((x->>'key')||'='||(x->>'price'),' ') from jsonb_array_elements(plans_public()) x;
 select admin_plan_version('dasar',59000,'{"karyawan":"1","lampiran_mb":"500"}','{ekspor}','harga_baru','uji harga',50000);
-select admin_plan_term_save('bisnis',12,990000,1188000,true,'uji tahunan bisnis'); select plan_total(:'K1','bisnis',12) t12, plan_total(:'K1','bisnis',3) t3;
+select admin_plan_term_save('bisnis',12,990000,1188000,true,'uji tahunan bisnis');
+reset role; select plan_total(:'K1','bisnis',12) t12, plan_total(:'K1','bisnis',3) t3;   -- plan_total fungsi internal
+set role authenticated;
 select (admin_overview()->'plans') plans;
 reset role;
 select count(*) trx, count(distinct code) kode_unik from pay_transactions;

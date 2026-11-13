@@ -8,6 +8,7 @@ import CapsFilter from '@/components/landing/CapsFilter';
 import Showcase from '@/components/landing/Showcase';
 import { PLANS, PLAN_ORDER, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell, savePct } from '@/lib/plan';
 import { TESTIMONIALS } from '@/lib/testimonials';
+import HitungKunjungan from '@/components/HitungKunjungan';
 
 const TITLE = 'PRASARA — Kelola Bisnis Lebih Terarah. Kembangkan dengan Lebih Cerdas.';
 const DESC = 'Adaptive Business System: satu platform untuk operasional, pelanggan, transaksi, keuangan, stok, dan layanan — kos & properti, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain. Sistem menyesuaikan jenis bisnis; pemilik yang menyetujui. Coba gratis 30 hari.';
@@ -184,6 +185,7 @@ export default async function Landing() {
     .filter(([f, v]) => v && (pl.is_free || typeof v === 'string' || !(free && featureCell(f, free) === true))).slice(0, 8);
   return (
     <div className="ln">
+      <HitungKunjungan path="/" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingNav theme />
 

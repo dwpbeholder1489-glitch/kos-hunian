@@ -2,11 +2,13 @@ import Link from 'next/link';
 import InfoPage from '@/components/landing/InfoPage';
 import { BUSINESS } from '@/lib/plan';
 
+import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = { title: 'Tentang Kami — PRASARA', description: 'PRASARA adalah Adaptive Business System untuk usaha kecil dan menengah di Indonesia: satu platform yang menyesuaikan diri dengan jenis bisnis, dengan pemilik sebagai pengambil keputusan.', alternates: { canonical: '/tentang' } };
 
 export default function Tentang() {
   return (
     <InfoPage kicker="Tentang Kami" title="Sistem yang mengikuti bisnis Anda, bukan sebaliknya.">
+      <HitungKunjungan path="/tentang" />
       <p>PRASARA berawal dari kebutuhan sederhana: mengelola kos tanpa buku catatan yang tercecer. Dari sana PRASARA berkembang menjadi <b>Adaptive Business System</b> — satu platform untuk mengelola operasional, pelanggan, transaksi, keuangan, stok, dan layanan, yang menyesuaikan diri dengan jenis usaha masing-masing.</p>
       <h2>Yang kami pegang</h2>
       <ul>

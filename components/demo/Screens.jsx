@@ -341,6 +341,23 @@ export function ScrUpgradeSukses() {
   );
 }
 
+// Sesudah Berhenti memperpanjang: alasan opsional, bisa dilewati (contoh)
+export function ScrAlasanBerhenti() {
+  return (
+    <Phone bare>
+      <h3>Boleh tahu alasannya?</h3>
+      <div className="notice good" style={{ margin: 0 }}>Langganan sudah dihentikan. Paket tetap aktif sampai {dFull(13, -1)}; data tidak dihapus.</div>
+      <p className="small muted" style={{ margin: 0 }}>Jawaban ini <b>opsional</b> dan tidak mengubah apa pun.</p>
+      <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+        <span className="mini-btn">Harga terlalu mahal</span><span className="mini-btn cta">Jarang dipakai</span><span className="mini-btn">Berhenti sementara</span>
+      </div>
+      <F label="Catatan (opsional)" value="Usaha sedang sepi, nanti lanjut lagi" />
+      <span className="mini-btn cta">Kirim</span>
+      <span className="mini-btn">Lewati</span>
+    </Phone>
+  );
+}
+
 export function ScrPortal() {
   return (
     <div className="mini" aria-label="Contoh portal penghuni">

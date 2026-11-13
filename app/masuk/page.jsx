@@ -2,6 +2,7 @@
 // Masuk · Daftar akun · Verifikasi email (kirim ulang) · Lupa & atur ulang kata sandi.
 // Autentikasi tetap memakai Supabase Auth (kata sandi di-hash di sana); nama & No. WhatsApp disimpan di profil akun.
 import { useEffect, useRef, useState } from 'react';
+import { useHitungKunjungan } from '@/components/HitungKunjungan';
 import Link from 'next/link';
 import { LogoMark } from '@/components/Logo';
 import { useRouter } from 'next/navigation';
@@ -36,6 +37,7 @@ function Strength({ pw }) {
 }
 
 export default function Masuk() {
+  useHitungKunjungan('/masuk');   // jumlah kunjungan tanpa data pribadi (Growth Analytics)
   const router = useRouter();
   const { session } = useKos();
   const [mode, setMode] = useState('masuk'); // masuk | daftar | cek | lupa | lupa_terkirim | reset

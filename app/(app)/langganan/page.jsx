@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { Field, Sheet, Loading, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg } from '@/lib/format';
-import { planOf, PLANS, FEATURES, FEATURE_CODES, BUSINESS, waTo, featureCell, termOf, totalOf, savePct } from '@/lib/plan';
+import { planOf, PLANS, FEATURES, FEATURE_CODES, BUSINESS, waTo, featureCell, termOf, totalOf, savePct, CANCEL_REASONS as ALASAN } from '@/lib/plan';
 
 const DUR = [1, 3, 6, 12];
 const REQ_ST = { menunggu: ['Menunggu diperiksa', 'gold'], disetujui: ['Lunas', 'good'], ditolak: ['Ditolak', 'bad'], batal: ['Dibatalkan', 'void'], kedaluwarsa: ['Kedaluwarsa', 'void'] };
@@ -73,6 +73,8 @@ export default function Langganan() {
   }, [kos.id, pendingReq?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Kartu "Upgrade Berhasil!" ada di components/UpgradeSukses.jsx (dari server, sekali per aktivasi, di semua perangkat)
+  // Alasan berhenti memperpanjang: ditanyakan SESUDAH pembatalan berhasil dan boleh dilewati (V2 §11, tanpa dark pattern)
+  const [alasan, setAlasan] = useState(null);   // { reason, note, busy }
 
   if (p.owner) return (
     <div className="stack">
@@ -115,7 +117,16 @@ export default function Langganan() {
   };
   const cancel = async (on) => {
     if (on && !window.confirm(`Berhenti memperpanjang? Paket ${p.name} tetap aktif sampai ${tgl(p.until)}, lalu bisnis menjadi paket Gratis. Data tidak dihapus.`)) return;
-    if (await run(() => supabase.rpc('plan_cancel', { p_kos: kos.id, p_cancel: on }), on ? 'Tidak akan diperpanjang' : 'Langganan dilanjutkan', errMsg)) loadKos();
+    if (await run(() => supabase.rpc('plan_cancel', { p_kos: kos.id, p_cancel: on }), on ? 'Tidak akan diperpanjang' : 'Langganan dilanjutkan', errMsg)) {
+      loadKos();
+      if (on) setAlasan({ reason: '', note: '', busy: false });
+    }
+  };
+  const kirimAlasan = async () => {
+    setAlasan({ ...alasan, busy: true });
+    const { error } = await supabase.rpc('plan_cancel_reason', { p_kos: kos.id, p_reason: alasan.reason, p_note: alasan.note || null });
+    if (error) { setAlasan({ ...alasan, busy: false }); return toast(errMsg(error)); }
+    setAlasan(null); toast('Terima kasih atas masukannya');
   };
 
   return (
@@ -276,6 +287,21 @@ export default function Langganan() {
             </div>
           </div>
           <button className="noprint" onClick={() => window.print()}>Cetak / simpan PDF</button>
+        </Sheet>
+      )}
+
+      {alasan && (
+        <Sheet title="Boleh tahu alasannya?" onClose={() => setAlasan(null)}>
+          <div className="notice good" style={{ margin: 0 }}>Langganan sudah dihentikan. Paket tetap aktif sampai {tgl(p.until)}; data tidak dihapus.</div>
+          <p className="small muted" style={{ margin: 0 }}>Jawaban ini <b>opsional</b> dan tidak mengubah apa pun. Kami memakainya untuk memperbaiki PRASARA.</p>
+          <div className="chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {Object.entries(ALASAN).map(([k, l]) => (
+              <button key={k} type="button" className={'sm ' + (alasan.reason === k ? 'primary' : 'ghost')} aria-pressed={alasan.reason === k} onClick={() => setAlasan({ ...alasan, reason: k })}>{l}</button>
+            ))}
+          </div>
+          <Field label="Catatan (opsional)"><textarea rows={3} maxLength={300} value={alasan.note} onChange={(e) => setAlasan({ ...alasan, note: e.target.value })} placeholder="Ceritakan bila ada yang bisa kami perbaiki" /></Field>
+          <button className="primary" style={{ width: '100%' }} disabled={!alasan.reason || alasan.busy} onClick={kirimAlasan}>{alasan.busy ? 'Mengirim…' : 'Kirim'}</button>
+          <button className="ghost" style={{ width: '100%' }} onClick={() => setAlasan(null)}>Lewati</button>
         </Sheet>
       )}
     </div>
