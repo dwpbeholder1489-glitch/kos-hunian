@@ -7,6 +7,8 @@ import PageHelp from '@/components/PageHelp';
 import { Field, Loading, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, angka, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
+import { hasFeature } from '@/lib/plan';
+import FiturUpgrade from '@/components/FiturUpgrade';
 
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 const RUN = { ok: ['Berhasil', 'good'], dilewati: ['Dilewati', 'void'], gagal: ['Gagal', 'bad'] };
@@ -15,6 +17,7 @@ const PARAM = { buat_draf: ['Buat draf pesanan ke supplier', 'bool'], kelipatan:
 // Otomatisasi (blueprint 7): resep pemicu → syarat → tindakan, log tiap jalan, jeda otomatis bila gagal, tindakan berisiko lewat Persetujuan
 export default function Otomatisasi() {
   const { kos, kosId, ver } = useKos();
+  const fitur = hasFeature(kos, 'otomatisasi');   // mulai Paket Bisnis (bisnis lama tetap); dicek juga di server
   const owner = canArea(kos, 'team');
   const [rows, setRows] = useState(null);
   const [notes, setNotes] = useState([]);
@@ -67,6 +70,8 @@ export default function Otomatisasi() {
         ))}</div>}
       </section>
 
+      {!fitur && <FiturUpgrade kosId={kosId} event="WORKFLOW.REQUESTED" title="Menyalakan otomatisasi tersedia mulai Paket Bisnis" text="Resep di bawah bisa dilihat, tetapi belum bisa dinyalakan di paket ini. Otomatisasi yang sudah menyala bisa dimatikan kapan saja." />}
+
       {rows.map((x) => {
         const on = Boolean(x.rule?.enabled);
         const params = { ...x.recipe.default_params, ...(x.rule?.params || {}) };
@@ -86,7 +91,7 @@ export default function Otomatisasi() {
                 : <Field key={k} label={PARAM[k][0]}><input inputMode="numeric" defaultValue={String(v)} onBlur={(e) => { const n = Number(e.target.value.replace(',', '.')); if (n > 0 && n !== Number(v)) toggle(x, on, { ...params, [k]: n }); }} /></Field>
             ))}</div>}
             {owner ? <div className="row">
-              <button className={on ? 'ghost' : 'primary'} onClick={() => toggle(x, !on)}>{on ? 'Matikan' : 'Nyalakan'}</button>
+              <button className={on ? 'ghost' : 'primary'} disabled={!on && !fitur} onClick={() => toggle(x, !on)}>{on ? 'Matikan' : 'Nyalakan'}</button>
               {x.rule && <button className="sm" disabled={busy === x.rule.id} onClick={() => runNow(x)}>{busy === x.rule.id ? 'Menjalankan…' : 'Jalankan sekarang'}</button>}
             </div> : <span className="small muted">Hanya pemilik yang bisa menyalakan atau mengubah.</span>}
             {x.runs?.length > 0 && <details><summary className="small">Riwayat jalan ({x.runs.length})</summary>

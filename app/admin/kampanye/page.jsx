@@ -7,8 +7,14 @@ import { Empty, Field, Loading, Sheet, toast } from '@/components/ui';
 import { errMsg, rp } from '@/lib/format';
 import { can } from '@/lib/admin';
 
-const KONTEKS = { karyawan: 'Saat batas karyawan penuh', portal: 'Saat fitur portal dibuka', umum: 'Otomatis (penawaran umum)', aktivitas: 'Setelah kejadian di aplikasi' };
-const PERISTIWA = { 'TRANSAKSI.PERTAMA': 'Setelah transaksi pertama', 'LAPORAN.DIBUKA': 'Saat halaman laporan dibuka' };
+const KONTEKS = { karyawan: 'Saat batas karyawan penuh', cabang: 'Saat batas cabang penuh', portal: 'Saat fitur portal dibuka', fitur: 'Saat fitur Paket Bisnis dibuka', umum: 'Otomatis (penawaran umum)', aktivitas: 'Setelah kejadian di aplikasi' };
+const PERISTIWA_KONTEKS = {
+  aktivitas: { 'TRANSAKSI.PERTAMA': 'Setelah transaksi pertama', 'LAPORAN.DIBUKA': 'Saat halaman laporan dibuka' },
+  fitur: { 'FINANCE.MANUAL_JOURNAL_REQUESTED': 'Jurnal manual', 'BUDGET.CREATE_REQUESTED': 'Anggaran & realisasi', 'TRANSACTION.APPROVAL_REQUESTED': 'Atur persetujuan', 'WORKFLOW.REQUESTED': 'Otomatisasi' },
+};
+const PERISTIWA = { ...PERISTIWA_KONTEKS.aktivitas, ...PERISTIWA_KONTEKS.fitur };
+const BUTUH_PERISTIWA = (c) => c === 'aktivitas' || c === 'fitur';
+const PERISTIWA_AWAL = { aktivitas: 'LAPORAN.DIBUKA', fitur: 'FINANCE.MANUAL_JOURNAL_REQUESTED' };
 const JENIS = { upgrade: 'Upgrade paket', tahunan: 'Bulanan ke tahunan' };
 const KOSONG = { id: '', name: '', context: 'karyawan', kind: 'upgrade', from_plan: 'dasar', to_plan: 'bisnis', trigger_event: 'LAPORAN.DIBUKA', title: '', message: '', cta: '', cta_secondary: 'Nanti saja', priority: 100, frequency_days: 7, general: false, active: true, starts_on: '', ends_on: '' };
 
@@ -40,7 +46,7 @@ export default function Kampanye() {
     const f = edit;
     const data = {
       name: f.name, context: f.context, kind: f.kind, from_plan: f.from_plan, to_plan: f.to_plan,
-      trigger_event: f.context === 'aktivitas' ? (f.trigger_event || 'LAPORAN.DIBUKA') : null,
+      trigger_event: BUTUH_PERISTIWA(f.context) ? (PERISTIWA_KONTEKS[f.context][f.trigger_event] ? f.trigger_event : PERISTIWA_AWAL[f.context]) : null,
       to_months: f.kind === 'tahunan' ? 12 : 1, title: f.title, message: f.message, cta: f.cta, cta_secondary: f.cta_secondary,
       priority: Number(f.priority) || 100, frequency_days: Number(f.frequency_days) || 7, general: !!f.general, active: !!f.active,
       starts_on: f.starts_on || null, ends_on: f.ends_on || null,
@@ -86,8 +92,8 @@ export default function Kampanye() {
           <Field label="Kapan ditawarkan">
             <select value={edit.context} onChange={(e) => setEdit({ ...edit, context: e.target.value })}>{Object.entries(KONTEKS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
           </Field>
-          {edit.context === 'aktivitas' && <Field label="Peristiwa" hint="Penawaran muncul setelah kejadian ini">
-            <select value={edit.trigger_event || 'LAPORAN.DIBUKA'} onChange={(e) => setEdit({ ...edit, trigger_event: e.target.value })}>{Object.entries(PERISTIWA).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+          {BUTUH_PERISTIWA(edit.context) && <Field label={edit.context === 'fitur' ? 'Fitur' : 'Peristiwa'} hint={edit.context === 'fitur' ? 'Penawaran muncul saat pemilik membuka fitur ini dan belum memilikinya' : 'Penawaran muncul setelah kejadian ini'}>
+            <select value={PERISTIWA_KONTEKS[edit.context][edit.trigger_event] ? edit.trigger_event : PERISTIWA_AWAL[edit.context]} onChange={(e) => setEdit({ ...edit, trigger_event: e.target.value })}>{Object.entries(PERISTIWA_KONTEKS[edit.context]).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
           </Field>}
           <Field label="Jenis">
             <select value={edit.kind} onChange={(e) => setEdit({ ...edit, kind: e.target.value, to_plan: e.target.value === 'tahunan' ? edit.from_plan : edit.to_plan })}>{Object.entries(JENIS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>

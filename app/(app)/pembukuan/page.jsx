@@ -7,6 +7,8 @@ import PageHelp from '@/components/PageHelp';
 import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
+import { hasFeature } from '@/lib/plan';
+import FiturUpgrade from '@/components/FiturUpgrade';
 
 const TYPE = { aset: 'Aset', kewajiban: 'Kewajiban', ekuitas: 'Ekuitas', pendapatan: 'Pendapatan', beban: 'Beban' };
 const KIND = { posting: ['Otomatis', ''], koreksi: ['Koreksi', 'gold'], manual: ['Manual', 'void'] };
@@ -231,6 +233,7 @@ function Periode({ d, kosId, ym, onDone }) {
 }
 
 function Manual({ d, kosId, onDone }) {
+  const { kos } = useKos();
   const codes = [...new Map(d.accounts.map((a) => [a.code, a])).values()].sort((a, b) => a.code.localeCompare(b.code));
   const blank = () => ({ code: codes[0]?.code || '', debit: '', credit: '', memo: '' });
   const [date, setDate] = useState(today());
@@ -248,6 +251,8 @@ function Manual({ d, kosId, onDone }) {
     if (error) return toast(errMsg(error));
     toast(`Jurnal ${data} disimpan`); setDesc(''); setLines([blank(), blank()]); onDone();
   };
+  // Jurnal manual mulai Paket Bisnis (bisnis lama tetap memakai); diperiksa juga di server (acct_manual)
+  if (!hasFeature(kos, 'jurnal_manual')) return <FiturUpgrade kosId={kosId} event="FINANCE.MANUAL_JOURNAL_REQUESTED" title="Jurnal manual tersedia mulai Paket Bisnis" text="Catat saldo awal, penyesuaian persediaan, atau penyusutan sendiri. Jurnal otomatis dari transaksi tetap berjalan di semua paket." />;
   return (
     <section className="panel">
       <h3>Jurnal manual</h3>

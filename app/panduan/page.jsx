@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -58,7 +58,7 @@ const MENUS = [
   ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan persetujuan'],
   ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan'],
   ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
-  ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode'],
+  ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, anggaran & realisasi (Paket Bisnis)'],
 ];
 
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
@@ -307,13 +307,14 @@ const PARTS = [
       <>Kasir bisa <b>meminta pembatalan</b> atau <b>meminta retur</b> untuk penjualannya sendiri dari menu Penjualan.</>,
       <>Pemilik membuka permintaan: terlihat <b>nomor</b>, siapa yang meminta, alasan, <b>data terdampak</b>, dan <b>estimasi nilai</b>. Tekan <b>Setujui & jalankan</b> atau <b>Tolak</b>.</>,
       <>Setelah disetujui, sistem langsung menjalankan tindakannya dan mencatat hasilnya (berhasil atau gagal beserta sebabnya) di <b>Riwayat</b>.</>,
-      <>Tab <b>Aturan</b> (pemilik): pilih tindakan mana yang wajib disetujui.</>,
+      <>Tab <b>Aturan</b> (pemilik): pilih tindakan mana yang wajib disetujui. Mengubah aturan sendiri tersedia mulai <b>Paket Bisnis</b>; di paket lain aturan bawaan tetap berlaku dan tampil apa adanya, dengan tombol <b>Lihat Paket Bisnis</b>. Bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa mengubahnya.</>,
     ], <>Pemilik selalu bisa langsung menjalankan tindakan tanpa persetujuan. Aturan bawaan: pembatalan penjualan/belanja/pelunasan, hapus kontak, dan ubah modul wajib disetujui; retur dan penyesuaian stok tidak.</>, null, null],
     ['Otomatisasi', 'Operasional › Otomatisasi (pemilik)', [
       <>Pilih resep, baca <b>pemicu → syarat → tindakan</b>-nya, lalu tekan <b>Nyalakan</b>. Semua resep berjalan setiap pagi pukul 07.00.</>,
       <>Toko: <b>stok menipis → draf pesanan</b> ke supplier terakhir (menunggu persetujuan Anda), <b>kasbon jatuh tempo</b>, <b>utang supplier jatuh tempo</b>, <b>shift lupa ditutup</b>. Kos: <b>pembayaran menunggu diperiksa</b>, <b>tagihan telat</b>. Semua: <b>ringkasan awal bulan</b>.</>,
       <>Hasilnya muncul di <b>Pemberitahuan</b> (dan email untuk resep tertentu). Tekan <b>Jalankan sekarang</b> untuk mencoba.</>,
       <>Buka <b>Riwayat jalan</b> untuk melihat kapan berjalan, hasilnya, atau kesalahannya.</>,
+      <>Menyalakan resep tersedia mulai <b>Paket Bisnis</b> (bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa). Mematikan selalu bisa. Bila paket turun, resep yang menyala tidak dijalankan lagi sampai paket naik.</>,
     ], <>Otomatisasi tidak pernah mengubah data sendiri: tindakan yang mengubah data (mis. membuat pesanan) masuk ke Persetujuan. Paling banyak sekali sehari, tidak membuat pesanan ganda, dan dijeda otomatis setelah 3 kali gagal. WhatsApp otomatis belum tersedia — pesan WA disiapkan untuk dikirim dengan satu ketukan.</>, null, null],
     ['Pembukuan', 'Operasional › Pembukuan (pemilik & pengelola)', [
       <>Tidak perlu mencatat dua kali: setiap penjualan, retur, belanja, kas, kasbon/utang, perubahan stok, pengeluaran, dan pembayaran sewa yang terverifikasi otomatis menjadi <b>jurnal</b> (debit & kredit seimbang). Jurnal diposting saat halaman dibuka dan setiap pagi.</>,
@@ -321,8 +322,10 @@ const PARTS = [
       <>Toko: <b>Cek kecocokan</b> membandingkan saldo buku dengan menu Kas, kasbon, utang, dan nilai stok. Selisih ditampilkan, tidak diubah diam-diam.</>,
       <>Tab <b>Buku besar</b>: pilih akun (mis. Kas) untuk melihat setiap mutasi dan saldonya; ketuk <b>lihat …</b> untuk membuka transaksi asalnya. Tab <b>Jurnal</b>: semua jurnal beserta baris debit/kreditnya.</>,
       <>Punya beberapa bisnis dalam satu badan usaha (atur di Konfigurasi › Profil)? Pilih <b>Seluruh badan usaha</b> untuk laporan gabungan bisnis-bisnis itu. Badan usaha berbeda tidak pernah digabung.</>,
-      <>Tab <b>Periode & manual</b> (pemilik): <b>Tutup</b> bulan yang sudah diperiksa (alasan wajib, tercatat). <b>Jurnal manual</b> untuk penyesuaian, mis. saldo awal rekening bank: debit Bank, kredit Ekuitas saldo awal.</>,
-    ], <>Jurnal tidak bisa dihapus atau diubah. Bila penjualan/belanja dibatalkan atau diubah, sistem membuat <b>jurnal pembalikan/koreksi</b>; untuk bulan yang sudah ditutup, koreksinya dicatat di bulan berjalan. Kos dicatat saat uang diterima (basis kas), toko saat transaksi terjadi — gabungan berbeda basis hanya indikasi, bukan konsolidasi resmi. Pajak & penyusutan otomatis belum tersedia.</>, null, null],
+      <>Tab <b>Periode & manual</b> (pemilik): <b>Tutup</b> bulan yang sudah diperiksa (alasan wajib, tercatat). <b>Jurnal manual</b> untuk penyesuaian, mis. saldo awal rekening bank: debit Bank, kredit Ekuitas saldo awal. Jurnal manual tersedia mulai <b>Paket Bisnis</b> (bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa).</>,
+      <><b>Keuangan › Anggaran</b> (Paket Bisnis): pilih bulan, isi anggaran tiap kategori biaya, lalu ketuk di luar kotak untuk menyimpan. Bilah menunjukkan terpakai (hijau), mendekati batas ≥80% (kuning), atau melebihi (merah). Realisasi dihitung otomatis dari pengeluaran yang tercatat.</>,
+      <>Bulan baru: tekan <b>Salin anggaran</b> bulan lalu, atau <b>Pakai Rp …</b> untuk memakai realisasi bulan lalu sebagai anggaran. Kosongkan isian untuk menghapus. Di paket lain menu ini tetap menampilkan pengeluaran per kategori.</>,
+    ], <>Jurnal tidak bisa dihapus atau diubah. Bila penjualan/belanja dibatalkan atau diubah, sistem membuat <b>jurnal pembalikan/koreksi</b>; untuk bulan yang sudah ditutup, koreksinya dicatat di bulan berjalan. Kos dicatat saat uang diterima (basis kas), toko saat transaksi terjadi — gabungan berbeda basis hanya indikasi, bukan konsolidasi resmi. Pajak & penyusutan otomatis belum tersedia.</>, null, <ScrAnggaran />],
     ['Stok per lokasi & mutasi', 'Konfigurasi › Cabang & gudang, lalu menu Mutasi stok (toko)', [
       <>Pemilik membuka <b>Operasional › Mutasi stok</b> › <b>+ Tambah gudang / cabang</b> (atau Konfigurasi › Cabang & gudang › + Tambah). Lokasi yang sudah ada otomatis bernama <b>Lokasi utama</b> (boleh diganti namanya) dan semua stok lama ada di sana.</>,
       <>Begitu ada lebih dari satu lokasi, muncul kotak <b>📍 Lokasi kerja</b> di Kasir, Barang & stok, dan Belanja. Pilih lokasi tempat Anda bekerja: penjualan, belanja, hitung ulang stok, dan barang rusak tercatat di lokasi itu.</>,

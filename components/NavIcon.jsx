@@ -48,6 +48,7 @@ const P = {
   '/crm': <><path d="M4 5h16v11H8l-4 4z" /><path d="M8 10h8" /></>,
   '/mutasi': <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
   '/pembukuan': <><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" /><path d="M9 8h5M9 12h5" /></>,
+  '/anggaran': <><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" /></>,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
   swap: <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
 };

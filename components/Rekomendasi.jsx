@@ -7,6 +7,7 @@ import { useKos } from '@/components/KosProvider';
 import { Loading, toast } from '@/components/ui';
 import { errMsg, angka } from '@/lib/format';
 import { canArea } from '@/lib/business';
+import { hasFeature } from '@/lib/plan';
 
 const RISK = { rendah: 'good', menengah: 'gold', tinggi: 'bad' };
 const KIND = { modul: 'Modul', otomatisasi: 'Otomatisasi', persetujuan: 'Aturan persetujuan', pembukuan: 'Pembukuan', data: 'Kualitas data' };
@@ -31,6 +32,9 @@ export default function Rekomendasi() {
   const apply = async (x) => {
     const a = x.action;
     if (a.type === 'link') { await decide(x, 'diterima', 7, 'dibuka'); return router.push(a.href); }
+    // Otomatisasi & aturan persetujuan sendiri mulai Paket Bisnis: buka menunya (di sana ada penjelasan & penawaran)
+    if (a.type === 'otomatisasi' && !hasFeature(kos, 'otomatisasi')) return router.push('/otomatisasi');
+    if (a.type === 'persetujuan' && !hasFeature(kos, 'persetujuan')) return router.push('/persetujuan');
     if (!window.confirm(`${x.title}?\n\nAlasan: ${x.why}\nDampak: ${x.impact}`)) return;
     setBusy(x.code);
     let r;

@@ -341,6 +341,26 @@ export function ScrUpgradeSukses() {
   );
 }
 
+// Anggaran & realisasi (Paket Bisnis): bilah hijau/kuning/merah per kategori biaya (contoh)
+export function ScrAnggaran() {
+  const bar = (p, c) => <div style={{ height: 8, borderRadius: 4, background: 'var(--line)', overflow: 'hidden' }}><div style={{ width: `${Math.min(p, 100)}%`, height: '100%', background: c }} /></div>;
+  const rows = [['Listrik dan air', 800000, 610000], ['Gaji karyawan', 3000000, 2700000], ['Perbaikan', 500000, 640000]];
+  return (
+    <Phone bare>
+      <h3>Anggaran</h3>
+      <div className="row between"><span className="mini-btn">‹</span><b className="small">{MONTH}</b><span className="mini-btn">›</span></div>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}><div className="tile" style={{ flex: 1 }}><span className="label">Anggaran</span><span className="v">{rp(4300000)}</span></div><div className="tile" style={{ flex: 1 }}><span className="label">Sisa</span><span className="v">{rp(350000)}</span></div></div>
+      {rows.map(([n, a, r]) => { const p = Math.round((r * 100) / a); return (
+        <div key={n} className="tile" style={{ gap: 4 }}>
+          <div className="row between"><b className="small">{n}</b><span className="small">{rp(r)} <span className="muted">/ {rp(a)}</span></span></div>
+          {bar(p, p >= 100 ? 'var(--bad)' : p >= 80 ? 'var(--att)' : 'var(--gold)')}
+          <span className="small" style={{ color: p >= 100 ? 'var(--bad)' : undefined }}>{p >= 100 ? `Melebihi ${rp(r - a)}` : `Sisa ${rp(a - r)}`} · {p}%</span>
+        </div>); })}
+      <span className="mini-btn">Salin anggaran bulan lalu</span>
+    </Phone>
+  );
+}
+
 // Sesudah Berhenti memperpanjang: alasan opsional, bisa dilewati (contoh)
 export function ScrAlasanBerhenti() {
   return (

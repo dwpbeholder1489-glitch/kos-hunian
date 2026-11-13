@@ -6,6 +6,8 @@ import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, angka } from '@/lib/format';
 import { canArea } from '@/lib/business';
+import { hasFeature } from '@/lib/plan';
+import FiturUpgrade from '@/components/FiturUpgrade';
 
 const ST = { menunggu: ['Menunggu', 'gold'], dijalankan: ['Disetujui & dijalankan', 'good'], ditolak: ['Ditolak', 'bad'], dibatalkan: ['Dibatalkan', 'void'], gagal: ['Gagal dijalankan', 'bad'] };
 const RISK = { rendah: 'good', menengah: 'gold', tinggi: 'bad' };
@@ -23,6 +25,7 @@ const val = (k, v) => {
 // Pusat Persetujuan (blueprint Bagian 11): permintaan tindakan berisiko, keputusan pemilik, dan hasil eksekusinya
 export default function Persetujuan() {
   const { kos, kosId, ver, loadKos } = useKos();
+  const fitur = hasFeature(kos, 'persetujuan');   // mengatur aturan sendiri: mulai Paket Bisnis (bisnis lama tetap)
   const owner = canArea(kos, 'team');
   const [rows, setRows] = useState(null);
   const [rules, setRules] = useState([]);
@@ -67,10 +70,11 @@ export default function Persetujuan() {
         <section className="panel">
           <h3>Wajib persetujuan pemilik</h3>
           <span className="small muted">Berlaku untuk karyawan (pengelola, kasir, gudang). Pemilik selalu bisa langsung menjalankan.</span>
+          {!fitur && <FiturUpgrade kosId={kosId} event="TRANSACTION.APPROVAL_REQUESTED" title="Mengatur aturan persetujuan tersedia mulai Paket Bisnis" text="Pengaman bawaan di bawah tetap berlaku di paket ini. Di Paket Bisnis Anda bisa menyalakan atau mematikan setiap aturan sendiri." />}
           {rules.map((x) => (
             <label key={x.code} className="row small" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
               <span>{x.label} <span className={'chip ' + RISK[x.risk]}>{x.risk}</span></span>
-              <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={x.required}
+              <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={x.required} disabled={!fitur}
                 onChange={async (e) => { if (await run(() => supabase.rpc('approval_rule_set', { p_kos: kosId, p_action: x.code, p_required: e.target.checked }), 'Aturan disimpan', errMsg)) load(); }} />
             </label>
           ))}
