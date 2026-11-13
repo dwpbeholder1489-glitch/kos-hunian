@@ -34,7 +34,7 @@ function PlanBar({ kos }) {
 }
 
 // Menu samping (☰): kelompok modul, bantuan, akun, dan kartu bisnis aktif
-function Drawer({ kos, on, onClose, onBiz }) {
+function Drawer({ kos, on, onClose, onBiz, admin }) {
   const groups = groupsFor(kos);
   const [open, setOpen] = useState(() => groups.find(([, , , items]) => items.some(([h]) => on(h)))?.[0] || groups[0]?.[0]);
   const home = homeOf(kos);
@@ -53,6 +53,7 @@ function Drawer({ kos, on, onClose, onBiz }) {
             </div>
           ))}
           <hr />
+          {admin && <Link href="/admin" className={'drawer-i' + (on('/admin') ? ' on' : '')} onClick={onClose}><NavIcon name="/admin" />Admin PRASARA</Link>}
           <Link href="/bantuan" className={'drawer-i' + (on('/bantuan') ? ' on' : '')} onClick={onClose}><NavIcon name="/bantuan" />Bantuan</Link>
           <Link href="/akun" className={'drawer-i' + (on('/akun') ? ' on' : '')} onClick={onClose}><NavIcon name="/karyawan" />Akun & tampilan</Link>
         </nav>
@@ -134,7 +135,7 @@ export default function AppLayout({ children }) {
         <Link href="/akun" className={on('/akun') ? 'on' : ''} aria-current={on('/akun') ? 'page' : undefined}><NavIcon name="/akun" />Akun</Link>
       </nav>
 
-      {sheet === 'menu' && <Drawer kos={kos} on={on} onClose={() => setSheet(null)} onBiz={() => setSheet('biz')} />}
+      {sheet === 'menu' && <Drawer kos={kos} on={on} onClose={() => setSheet(null)} onBiz={() => setSheet('biz')} admin={isAdmin} />}
       {sheet === 'quick' && (
         <Sheet title="Aksi cepat" onClose={() => setSheet(null)}>
           <div className="morelist">
