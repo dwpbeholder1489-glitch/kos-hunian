@@ -302,6 +302,26 @@ export function ScrPlan() {
   );
 }
 
+// Penawaran upgrade (Growth Trigger): kartu di atas lembar bawah, dengan harga dari paket (contoh)
+export function ScrPenawaran() {
+  return (
+    <Phone bare>
+      <h3>Bisnis Anda mulai berkembang!</h3>
+      <p className="small" style={{ margin: 0 }}>Anda sudah menggunakan seluruh kapasitas karyawan Paket Dasar. Upgrade ke Paket Bisnis untuk mengelola hingga 5 akun karyawan.</p>
+      <div className="tile"><span className="label">Paket saat ini</span><span className="v">Dasar</span><span className="s">1 dari 1 karyawan</span></div>
+      <div className="tile" style={{ borderColor: 'var(--gold)', borderWidth: 2 }}>
+        <span className="label">Paket Bisnis</span>
+        <span className="planwas"><s>Rp 139.000</s> /bulan · hemat 29%</span>
+        <span className="v">Rp 99.000<span className="small muted"> /bulan</span></span>
+        <span className="s">Hingga 5 akun karyawan</span>
+      </div>
+      <span className="mini-btn cta">Upgrade ke Paket Bisnis</span>
+      <span className="mini-btn">Tetap menggunakan Paket Dasar</span>
+      <span className="small muted">Anda bisa menutup penawaran ini kapan saja. Data dan paket Anda tidak berubah sebelum pembayaran disetujui.</span>
+    </Phone>
+  );
+}
+
 export function ScrPortal() {
   return (
     <div className="mini" aria-label="Contoh portal penghuni">

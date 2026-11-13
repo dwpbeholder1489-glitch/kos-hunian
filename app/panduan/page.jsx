@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 export const metadata = {
   title: 'Panduan PRASARA — Langkah demi Langkah',
@@ -178,7 +178,7 @@ const PARTS = [
       <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi.</>,
       <>Kuota paket dipantau otomatis. Saat <b>akun karyawan</b>, <b>kamar terisi</b>, atau <b>ruang foto & lampiran</b> mencapai <b>80%</b>, muncul peringatan di atas halaman; pada <b>100%</b> peringatannya merah. Tekan <b>Tutup peringatan</b> untuk menyembunyikannya; peringatan muncul lagi setelah 7 hari.</>,
       <>Masa coba (14 hari) punya pengingat di <b>hari ke-10</b>, <b>hari ke-12</b>, dan <b>hari terakhir</b>, lalu saat berakhir. Pengingat tiap tahap hanya sekali, dan paling banyak dua dalam tiga hari.</>,
-    ], <>Bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar (dihitung sejak bisnis diaktifkan). Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
+    ], <>Bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar (dihitung sejak bisnis diaktifkan). Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <><ScrPlan /><ScrPenawaran /></>],
     ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
       <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,
       <><b>Info untuk penghuni</b>: nomor WhatsApp, cara bayar, dan peraturan kos (tampil di portal), serta pilihan email <b>notifikasi bukti transfer</b> dan <b>daftar tagih setiap pagi</b>.</>,
