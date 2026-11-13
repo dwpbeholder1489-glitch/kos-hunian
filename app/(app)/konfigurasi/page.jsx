@@ -11,7 +11,7 @@ import { canArea, BUSINESS_TYPES } from '@/lib/business';
 import { ENTITY, ENTITY_FOR, CF_TYPES } from '@/components/IsianTambahan';
 import { FEATURE_CODES } from '@/lib/plan';
 import { GrowthSheet } from '@/components/GrowthOffer';
-import { GROUPS, LEGAL_KIND, PROFILE_Q, qFor } from '@/lib/modules';
+import { GROUPS, LEGAL_KIND, PROFILE_Q, qFor, recommend, MODULE_TYPES } from '@/lib/modules';
 
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
 const ACT = {
@@ -59,22 +59,8 @@ export default function Konfigurasi() {
       </div>
 
       {tab === 'isian' && <IsianTab kos={kos} owner={canArea(kos, 'settings')} onSaved={refresh} />}
+      {tab === 'modul' && <ModulTab cat={cat} kos={kos} onOpen={setOpen} />}
       {tab === 'modul' && <>
-        {['aktif', 'tersedia', 'segera'].map((g) => {
-          const list = cat.filter((m) => (g === 'aktif' ? m.active : g === 'tersedia' ? !m.active && m.status === 'available' : m.status === 'segera'));
-          if (!list.length) return null;
-          return (
-            <section className="panel" key={g}>
-              <h3>{g === 'aktif' ? 'Modul aktif' : g === 'tersedia' ? 'Bisa diaktifkan' : 'Segera hadir'}</h3>
-              <div className="list">{list.map((m) => (
-                <button key={m.code} className="li click" onClick={() => m.status === 'available' && setOpen(m)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}>
-                  <div className="main"><b>{m.name}</b><span className="small muted">{m.description}</span></div>
-                  {m.core ? <span className="chip">Inti</span> : m.pending ? <span className="chip gold">Menunggu</span> : m.status === 'segera' ? <span className="chip void">Segera</span> : m.active ? <span className="chip good">Aktif</span> : <span className="chip">Nonaktif</span>}
-                </button>
-              ))}</div>
-            </section>
-          );
-        })}
         <span className="small muted">Menonaktifkan modul hanya menyembunyikan menunya dan menolak pemakaiannya di server — data lama tidak dihapus dan kembali saat diaktifkan lagi.</span>
       </>}
 
@@ -112,10 +98,12 @@ export default function Konfigurasi() {
 function ModuleSheet({ m, owner, kosId, onClose, onDone }) {
   const [reason, setReason] = useState('');
   const turnOn = !m.active;
+  const [impact, setImpact] = useState(null);   // dampak menonaktifkan (module_impact), dibaca dari server
+  useEffect(() => { if (!turnOn && !m.core) supabase.rpc('module_impact', { p_kos: kosId, p_code: m.code }).then(({ data }) => setImpact(data || null)); }, [m.code]);
   const apply = async () => {
     const msg = turnOn
       ? `Aktifkan modul ${m.name}?\nMenu: ${m.paths.join(', ') || '-'}\nData yang dipakai: ${m.data_used || '-'}`
-      : `Nonaktifkan modul ${m.name}?\nMenunya disembunyikan dan pemakaiannya ditolak server. Data lama TIDAK dihapus.${m.open_items ? `\nPerhatian: ${m.open_items}.` : ''}`;
+      : `Nonaktifkan modul ${m.name}?\nMenunya disembunyikan dan pemakaiannya ditolak server. Data lama TIDAK dihapus.${m.open_items ? `\nPerhatian: ${m.open_items}.` : ''}${impact?.optional_for?.length ? `\nFitur tambahan di ${impact.optional_for.join(', ')} ikut tidak tersedia.` : ''}`;
     if (!window.confirm(msg)) return;
     const { data, error } = await supabase.rpc('module_set', { p_kos: kosId, p_code: m.code, p_on: turnOn, p_reason: reason });
     if (error) return toast(errMsg(error));
@@ -132,13 +120,22 @@ function ModuleSheet({ m, owner, kosId, onClose, onDone }) {
         <div className="li"><span className="small">Butuh modul</span><b className="small">{m.depends_names.length ? m.depends_names.join(', ') : '—'}</b></div>
         {m.dependents.length > 0 && <div className="li"><span className="small">Dipakai oleh</span><b className="small">{m.dependents.join(', ')}</b></div>}
         <div className="li"><span className="small">Paket</span><b className="small">{m.entitlement ? `${FEATURE_CODES[m.entitlement] || m.entitlement}: ${m.plan_ok ? 'termasuk paket Anda' : 'perlu paket lebih tinggi'}` : 'Semua paket'}</b></div>
+        <div className="li"><span className="small">Jenis</span><b className="small">{MODULE_TYPES[m.module_type] || m.module_type || '—'}</b></div>
         <div className="li"><span className="small">Versi</span><b className="small">{m.version}</b></div>
+        {m.config_path && <div className="li"><span className="small">Pengaturan</span><Link href={m.config_path} className="small">Buka →</Link></div>}
       </div>
       {m.open_items && !turnOn && <div className="notice">{m.open_items}.</div>}
+      {!turnOn && impact && !m.core && <div className="notice" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <b className="small">Dampak bila dinonaktifkan</b>
+        <span className="small">Menu yang disembunyikan: {impact.menus_hidden?.length ? impact.menus_hidden.join(', ') : '—'}</span>
+        <span className="small">Data tetap tersimpan: {impact.data_kept}</span>
+        {impact.dependents_active?.length > 0 && <span className="small" style={{ color: 'var(--bad)' }}>Nonaktifkan dulu modul yang bergantung: {impact.dependents_active.join(', ')}</span>}
+        {impact.optional_for?.length > 0 && <span className="small">Fitur tambahan yang ikut tidak tersedia di: {impact.optional_for.join(', ')}</span>}
+      </div>}
       {!m.core && !m.pending && <>
         {!turnOn && <Field label="Alasan (wajib, tercatat)"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. belum dipakai" /></Field>}
         {turnOn && !m.plan_ok ? <Link href="/langganan"><button className="primary" style={{ width: '100%' }}>Lihat paket</button></Link>
-          : <button className={turnOn ? 'primary' : 'danger'} onClick={apply} disabled={!turnOn && reason.trim().length < 3}>{owner ? (turnOn ? 'Aktifkan' : 'Nonaktifkan') : (turnOn ? 'Minta diaktifkan' : 'Minta dinonaktifkan')}</button>}
+          : <button className={turnOn ? 'primary' : 'danger'} onClick={apply} disabled={!turnOn && (reason.trim().length < 3 || impact?.dependents_active?.length > 0)}>{owner ? (turnOn ? 'Aktifkan' : 'Nonaktifkan') : (turnOn ? 'Minta diaktifkan' : 'Minta dinonaktifkan')}</button>}
         {!owner && <span className="small muted">Sebagai pengelola, perubahan modul dikirim ke pemilik untuk disetujui.</span>}
       </>}
       {m.pending && <div className="notice">Ada permintaan "{m.pending}" yang menunggu persetujuan pemilik.</div>}
@@ -301,4 +298,44 @@ function CfForm({ kos, f, onClose, onSaved }) {
       <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
     </Sheet>
   );
+}
+
+// Status aktivasi milik bisnis ini (terpisah dari status pengembangan platform). 'disarankan' dari jawaban profil usaha.
+const ACTIVATION = { aktif: ['Aktif', 'good'], menunggu: ['Menunggu', 'gold'], tersedia: ['Tersedia', ''], disarankan: ['Disarankan', 'gold'], terkunci_paket: ['Perlu paket lebih tinggi', ''], ditangguhkan: ['Ditangguhkan', 'bad'], dalam_rencana: ['Dalam rencana', 'void'] };
+
+function ModulTab({ cat, kos, onOpen }) {
+  const [q, setQ] = useState('');
+  const [jenis, setJenis] = useState('');
+  const saran = recommend(kos.business_type, kos.profile || {});
+  const rows = cat.map((m) => ({ ...m, act: m.activation === 'tersedia' && saran[m.code] ? 'disarankan' : (m.activation || (m.active ? 'aktif' : m.status === 'segera' ? 'dalam_rencana' : 'tersedia')), alasan: saran[m.code] }))
+    .filter((m) => (!jenis || m.module_type === jenis) && (!q || (m.name + ' ' + m.description).toLowerCase().includes(q.toLowerCase())));
+  const groups = [['aktif', 'Modul aktif', (m) => m.act === 'aktif' || m.act === 'menunggu' || m.act === 'ditangguhkan'],
+    ['tersedia', 'Bisa diaktifkan', (m) => ['tersedia', 'disarankan', 'terkunci_paket'].includes(m.act)],
+    ['rencana', 'Dalam rencana (belum bisa dipakai)', (m) => m.act === 'dalam_rencana']];
+  const types = [...new Set(cat.map((m) => m.module_type).filter(Boolean))];
+  return <>
+    <div className="row" style={{ gap: 6 }}>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari modul" aria-label="Cari modul" style={{ flex: 1, minWidth: 140 }} />
+      {types.length > 1 && <select value={jenis} onChange={(e) => setJenis(e.target.value)} aria-label="Jenis modul" style={{ flex: 1, minWidth: 140 }}>
+        <option value="">Semua jenis</option>{types.map((t) => <option key={t} value={t}>{MODULE_TYPES[t] || t}</option>)}</select>}
+    </div>
+    {groups.map(([g, title, fn]) => {
+      const list = rows.filter(fn).sort((a, b) => (b.act === 'disarankan') - (a.act === 'disarankan'));
+      if (!list.length) return null;
+      return (
+        <section className="panel" key={g}>
+          <h3>{title} ({list.length})</h3>
+          <div className="list">{list.map((m) => (
+            <button key={m.code} className="li click" onClick={() => m.act !== 'dalam_rencana' && onOpen(m)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
+              <div className="main"><b>{m.name}</b><span className="small muted">{m.description}</span>
+                <span className="small muted">{MODULE_TYPES[m.module_type] || m.module_type}{m.depends_names?.length ? ` · butuh ${m.depends_names.join(', ')}` : ''}</span>
+                {m.act === 'disarankan' && <span className="small" style={{ color: 'var(--gold)' }}>Disarankan karena: {m.alasan.join('; ')}</span>}</div>
+              {m.core && m.act === 'aktif' ? <span className="chip">Inti</span> : <span className={'chip ' + (ACTIVATION[m.act]?.[1] || '')}>{ACTIVATION[m.act]?.[0] || m.act}</span>}
+            </button>
+          ))}</div>
+        </section>
+      );
+    })}
+    {rows.length === 0 && <Empty title="Tidak ada modul yang cocok" />}
+  </>;
 }

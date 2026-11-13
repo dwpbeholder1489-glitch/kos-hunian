@@ -299,8 +299,8 @@ const PARTS = [
       <>Di Kasir, scan label itu dengan <b>📷 Pindai</b> atau scanner Bluetooth — barang langsung masuk keranjang.</>,
     ], <>Pertama kali memakai kamera, izinkan akses kamera untuk situs PRASARA. Coba scan satu label dulu sebelum mencetak banyak.</>, null, null],
     ['Pusat konfigurasi', 'Operasional › Konfigurasi (pemilik & pengelola)', [
-      <>Tab <b>Modul</b>: lihat modul aktif, yang bisa diaktifkan, dan yang segera hadir. Ketuk modul untuk melihat fungsinya, menu, data yang dipakai, modul yang dibutuhkan, dan paketnya.</>,
-      <>Tekan <b>Aktifkan</b> atau <b>Nonaktifkan</b> (wajib alasan). Modul nonaktif: menunya hilang dan pemakaiannya ditolak server, tetapi <b>data lama tidak dihapus</b>.</>,
+      <>Tab <b>Modul</b>: cari modul atau saring per jenis (Inti bisnis, Khusus industri, Operasional, Analisis, Otomatisasi, Portal, Administrasi). Statusnya: <b>Aktif</b>, <b>Tersedia</b>, <b>Disarankan</b> (dari jawaban profil usaha Anda — alasannya tertulis), <b>Perlu paket lebih tinggi</b>, atau <b>Dalam rencana</b> (belum bisa dipakai). Ketuk modul untuk melihat fungsi, menu, data, modul yang dibutuhkan, paket, dan tombol menuju pengaturannya.</>,
+      <>Tekan <b>Aktifkan</b> atau <b>Nonaktifkan</b> (wajib alasan). Sebelum menonaktifkan, kotak <b>Dampak bila dinonaktifkan</b> menunjukkan menu yang disembunyikan, data yang tetap tersimpan, dan modul lain yang bergantung (harus dinonaktifkan dulu). Modul nonaktif: menunya hilang dan pemakaiannya ditolak server, tetapi <b>data lama tidak dihapus</b>.</>,
       <>Pengelola hanya bisa <b>meminta</b>; pemilik menyetujui di tab <b>Persetujuan</b>.</>,
       <>Tab <b>Profil</b>: kelompok bisnis, karakteristik usaha, dan <b>badan usaha</b> (perorangan, CV, PT…). Tab <b>Cabang & gudang</b>: daftar lokasi (khusus pemilik). Jumlah cabang mengikuti paket (Gratis/Dasar 1, Bisnis 3, Pro 10; lokasi utama ikut dihitung, gudang tidak). Bila penuh, muncul penawaran naik paket; setelah upgrade, formulir cabang baru langsung terbuka.</>,
       <>Tab <b>Riwayat</b>: semua perubahan — siapa, kapan, alasan, dan tingkat risikonya.</>,

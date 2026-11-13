@@ -20,6 +20,7 @@ const NAV = [
   ['/admin/template', 'Template', 'templates.manage'],
   ['/admin/aktivitas', 'Catatan audit', 'audit.view'],
   ['/admin/staf', 'Staf & hak akses', 'staff.manage'],
+  ['/admin/modul', 'Registry modul', 'system.view'],
   ['/admin/sistem', 'Status sistem', 'system.view'],
 ];
 
