@@ -168,7 +168,7 @@ function AksesSheet({ m, d, kosId, onClose, onDone }) {
       {!f.modul && <FiturUpgrade kosId={kosId} event="ACCESS.MODULE.REQUESTED" title="Akses per modul tersedia mulai Paket Bisnis" text="Di paket ini setiap karyawan mendapat menu sesuai perannya. Di Paket Bisnis Anda memilih sendiri modul tiap karyawan." />}
       <label className="row small"><input type="radio" style={{ width: 22, minHeight: 22 }} checked={!custom} onChange={() => setCustom(false)} />Sesuai peran ({ROLES[m.role]?.desc})</label>
       <label className="row small"><input type="radio" style={{ width: 22, minHeight: 22 }} checked={custom} disabled={!f.modul && !m.areas} onChange={() => setCustom(true)} />Pilih sendiri</label>
-      {custom && <div className="list">{d.areas.map((a) => (
+      {custom && <div className="list">{(d.areas || []).map((a) => (
         <label key={a} className="li" style={{ alignItems: 'flex-start', gap: 10 }}>
           <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={areas.includes(a)} disabled={!f.modul} onChange={() => flip(a)} />
           <span style={{ display: 'flex', flexDirection: 'column' }}><b className="small">{AREA_NAMES[a]?.[0] || a}</b><span className="small muted">{AREA_NAMES[a]?.[1]}</span></span>
@@ -178,7 +178,7 @@ function AksesSheet({ m, d, kosId, onClose, onDone }) {
 
       <h3 style={{ margin: '8px 0 0' }}>Izin per tindakan</h3>
       {!f.granular && <FiturUpgrade kosId={kosId} plan="pro" event="ACCESS.GRANULAR.REQUESTED" title="Izin per tindakan tersedia di Paket Pro" text="Atur untuk tiap karyawan: boleh langsung, perlu persetujuan, atau tidak boleh sama sekali." />}
-      <div className="list">{d.actions.map((x) => (
+      <div className="list">{(d.actions || []).map((x) => (
         <label key={x.code} className="li" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
           <span className="small">{x.label} <span className="muted">· aturan bisnis: {x.required ? 'wajib persetujuan' : 'langsung'}</span></span>
           <select value={perms[x.code] || ''} disabled={!f.granular} onChange={(e) => setPerm(x.code, e.target.value)} aria-label={x.label}>
