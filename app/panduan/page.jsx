@@ -174,6 +174,7 @@ const PARTS = [
       <><b>Naik paket</b> berlaku sejak disetujui (sisa hari paket lama dihitung ulang dan ditambahkan). <b>Turun paket</b> berlaku setelah paket sekarang berakhir.</>,
       <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi.</>,
       <>Kuota paket dipantau otomatis. Saat <b>akun karyawan</b>, <b>kamar terisi</b>, atau <b>ruang foto & lampiran</b> mencapai <b>80%</b>, muncul peringatan di atas halaman; pada <b>100%</b> peringatannya merah. Tekan <b>Tutup peringatan</b> untuk menyembunyikannya; peringatan muncul lagi setelah 7 hari.</>,
+      <>Masa coba (14 hari) punya pengingat di <b>hari ke-10</b>, <b>hari ke-12</b>, dan <b>hari terakhir</b>, lalu saat berakhir. Pengingat tiap tahap hanya sekali, dan paling banyak dua dalam tiga hari.</>,
     ], <>Bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar (dihitung sejak bisnis diaktifkan). Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
     ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
       <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,

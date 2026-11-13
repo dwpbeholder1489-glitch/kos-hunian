@@ -1,5 +1,6 @@
 'use client';
 import KuotaBar from '@/components/KuotaBar';
+import TrialReminder from '@/components/TrialReminder';
 import Bagikan from '@/components/Bagikan';
 import { LogoMark } from '@/components/Logo';
 import Link from 'next/link';
@@ -112,6 +113,7 @@ export default function AppLayout({ children }) {
       </header>
       {!path.startsWith('/langganan') && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
+      {!path.startsWith('/langganan') && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
       <AnnounceBanner />
       <ClosedBar />
       <main className="wrap" key={kosId}>{kos.suspended_at ? (
