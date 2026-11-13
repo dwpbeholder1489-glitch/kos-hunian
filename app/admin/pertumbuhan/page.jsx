@@ -29,7 +29,7 @@ export default function Pertumbuhan() {
 
   const pemicu = d.pemicu || [];
   const dilihat = pemicu.filter((x) => x.tampil > 0);
-  const paling = [...dilihat].sort((a, b) => b.bayar / b.tampil - a.bayar / a.tampil)[0];
+  const efektif = [...dilihat].sort((a, b) => b.bayar / b.tampil - a.bayar / a.tampil)[0];
   const seringTolak = [...dilihat].sort((a, b) => b.ditolak / b.tampil - a.ditolak / a.tampil)[0];
 
   return (
