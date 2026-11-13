@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -30,6 +30,13 @@ export default function Karyawan() {
     });
   };
   useEffect(() => { setD(null); load(); }, [kosId]);
+  // Kembali dari "Upgrade Berhasil!" (/karyawan?tambah=1): formulir undangan langsung siap diisi
+  const emailRef = useRef(null);
+  const [fokus, setFokus] = useState(false);
+  useEffect(() => {
+    if (!d || fokus) return;
+    try { if (new URLSearchParams(window.location.search).get('tambah') === '1') { setFokus(true); emailRef.current?.scrollIntoView({ block: 'center' }); emailRef.current?.focus(); } } catch {}
+  }, [d, fokus]);
   if (err) return <div className="notice bad">{/team_list/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -65,7 +72,7 @@ export default function Karyawan() {
 
       <form className="panel" onSubmit={invite}>
         <h3>Undang karyawan</h3>
-        <Field label="Email karyawan"><input type="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@gmail.com" /></Field>
+        <Field label="Email karyawan"><input ref={emailRef} type="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@gmail.com" /></Field>
         <Field label="Peran"><select value={role} onChange={(e) => setRole(e.target.value)}>{d.roles.map((r) => <option key={r} value={r}>{ROLES[r]?.name || r}</option>)}</select></Field>
         <span className="small muted">{ROLES[role]?.desc}</span>
         {full && <div className="notice">Batas karyawan paket ini sudah tercapai. Hapus yang tidak dipakai atau upgrade paket di Langganan.</div>}

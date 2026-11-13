@@ -8,6 +8,7 @@ import { useKos } from '@/components/KosProvider';
 import { hasFeature } from '@/lib/plan';
 import { rp, tgl, thisMonth, bulan, addMonthsYm, BLN, METHOD, ENTRY } from '@/lib/format';
 import { CompareBars, BarList } from '@/components/Charts';
+import { useKuotaEkspor } from '@/lib/ekspor';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma untuk Excel berbahasa Indonesia)
 function downloadCsv(name, rows) {
@@ -26,6 +27,7 @@ export default function Laporan() {
   const { kos } = useKos();
   const full = hasFeature(kos, 'laporan_lengkap');
   const [ym, setYm] = useState(thisMonth());
+  const ek = useKuotaEkspor(full ? kos?.id : null);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const calc = (m) => {
@@ -150,10 +152,11 @@ export default function Laporan() {
           <section className="panel noprint"><h3>Ekspor</h3>
             <p className="small muted" style={{ margin: 0 }}>File CSV bisa dibuka langsung di Excel atau Google Sheets.</p>
             <div className="row">
-              <button onClick={exportReport}>⬇ Laporan 12 bulan (Excel)</button>
-              <button onClick={exportTx}>⬇ Transaksi {bulan(ym)} (Excel)</button>
-              <button onClick={() => window.print()}>🖨 Cetak / simpan PDF</button>
+              <button disabled={ek.habis} onClick={() => ek.jalankan('laporan_12_bulan', exportReport)}>⬇ Laporan 12 bulan (Excel)</button>
+              <button disabled={ek.habis} onClick={() => ek.jalankan('transaksi_bulan', exportTx)}>⬇ Transaksi {bulan(ym)} (Excel)</button>
+              <button disabled={ek.habis} onClick={() => ek.jalankan('cetak_pdf', () => window.print())}>🖨 Cetak / simpan PDF</button>
             </div>
+            {ek.habis ? <span className="small" style={{ color: 'var(--bad)' }}>{ek.q?.message}</span> : ek.info && <span className="small muted">{ek.info}</span>}
           </section>
         </>
       ) : (

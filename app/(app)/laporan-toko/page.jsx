@@ -9,6 +9,7 @@ import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from 
 import { DayColumns } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
+import { useKuotaEkspor } from '@/lib/ekspor';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma)
 function downloadCsv(name, rows) {
@@ -35,6 +36,7 @@ export default function LaporanToko() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sort, setSort] = useState('omzet');
+  const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);
   useEffect(() => {
     setD(null);
     const pm = addMonthsYm(ym, -1);
@@ -83,7 +85,8 @@ export default function LaporanToko() {
   return (
     <div className="stack">
       <div className="row between"><div className="row"><h2>Laporan toko</h2><PageHelp page="laporan-toko" /></div>
-        <div className="row noprint">{canExport ? <><button className="sm" onClick={exportCsv}>Unduh Excel</button><button className="sm" onClick={() => window.print()}>Cetak / PDF</button></> : null}</div></div>
+        <div className="row noprint">{canExport ? <><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('laporan_toko', exportCsv)}>Unduh Excel</button><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('cetak_pdf', () => window.print())}>Cetak / PDF</button></> : null}</div></div>
+      {canExport && (ek.habis ? <span className="small noprint" style={{ color: 'var(--bad)' }}>{ek.q?.message}</span> : ek.info && <span className="small muted noprint">{ek.info}</span>)}
       {nav}
       {!canExport && <Locked need="dasar" title="Unduh Excel & cetak PDF" text="Ekspor laporan toko tersedia mulai Paket Dasar." />}
       <div className="grid">

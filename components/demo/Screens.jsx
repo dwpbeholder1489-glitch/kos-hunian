@@ -322,6 +322,25 @@ export function ScrPenawaran() {
   );
 }
 
+// Setelah pembayaran terverifikasi: paket, masa aktif, kapasitas & fitur baru, lalu kembali ke aktivitas (contoh)
+export function ScrUpgradeSukses() {
+  return (
+    <Phone bare>
+      <h3>Upgrade Berhasil!</h3>
+      <div className="notice good" style={{ margin: 0 }}><b>Paket Bisnis</b> sudah aktif sampai {dFull(13, -1)}. Pembayaran Anda sudah diverifikasi.</div>
+      <div className="tile"><span className="label">Paket baru</span><span className="v">Bisnis</span><span className="s">Sebelumnya: Dasar · 1 bulan · dibayar {rp(99000)}</span></div>
+      <div className="tile">
+        <span className="label">Kapasitas baru</span>
+        <span className="small">Karyawan: <s className="muted">1</s> → <b>5</b></span>
+        <span className="small">Cabang: <s className="muted">1</s> → <b>3</b></span>
+        <span className="small">Produk/layanan aktif: <s className="muted">100</s> → <b>1.000</b></span>
+      </div>
+      <span className="mini-btn cta">Lanjut tambah karyawan</span>
+      <span className="mini-btn">Tutup</span>
+    </Phone>
+  );
+}
+
 export function ScrPortal() {
   return (
     <div className="mini" aria-label="Contoh portal penghuni">

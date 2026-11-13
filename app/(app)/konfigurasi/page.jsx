@@ -10,6 +10,7 @@ import { tgl, errMsg } from '@/lib/format';
 import { canArea, BUSINESS_TYPES } from '@/lib/business';
 import { ENTITY, ENTITY_FOR, CF_TYPES } from '@/components/IsianTambahan';
 import { FEATURE_CODES } from '@/lib/plan';
+import { GrowthSheet } from '@/components/GrowthOffer';
 import { GROUPS, LEGAL_KIND, PROFILE_Q, qFor } from '@/lib/modules';
 
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
@@ -201,13 +202,30 @@ function ProfileTab({ kos, owner, onSaved }) {
 
 function BranchTab({ kosId, owner, branches, onSaved }) {
   const [f, setF] = useState(null);
+  const [offer, setOffer] = useState(null);   // penawaran upgrade saat batas cabang paket penuh (BRANCH.CREATE_REQUESTED)
+  const [busy, setBusy] = useState(false);
+  const blank = { name: '', kind: 'cabang', address: '', active: true };
+  // Kembali dari upgrade (/konfigurasi?tab=cabang&baru=1): formulir cabang baru langsung terbuka
+  useEffect(() => { try { if (owner && new URLSearchParams(window.location.search).get('baru') === '1') setF(blank); } catch {} }, [owner]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = async () => {
-    if (await run(() => supabase.rpc('branch_save', { p_kos: kosId, p_id: f.id || null, p_name: f.name, p_kind: f.kind, p_address: f.address, p_active: f.active }), 'Disimpan', errMsg)) { setF(null); onSaved(); }
+    setBusy(true);
+    const { error } = await supabase.rpc('branch_save', { p_kos: kosId, p_id: f.id || null, p_name: f.name, p_kind: f.kind, p_address: f.address, p_active: f.active });
+    setBusy(false);
+    if (!error) { toast('Disimpan'); setF(null); onSaved(); return; }
+    if (/BATAS_PAKET: .*cabang/.test(error.message || '')) {
+      // Server yang memutuskan penawaran (batas & frekuensi); tanpa penawaran cukup pesan batas
+      const { data: o } = await supabase.rpc('growth_offer', { p_kos: kosId, p_context: 'cabang' });
+      if (o) {
+        supabase.rpc('growth_track', { p_kos: kosId, p_rule: o.id, p_action: 'shown', p_event: 'BRANCH.CREATE_REQUESTED' }).then(() => {}, () => {});
+        setF(null); setOffer(o); return;
+      }
+    }
+    toast(errMsg(error));
   };
   return (
     <>
       <section className="panel">
-        <div className="row between"><h3>Cabang & gudang</h3>{owner && <button className="sm primary" onClick={() => setF({ name: '', kind: 'cabang', address: '', active: true })}>+ Tambah</button>}</div>
+        <div className="row between"><h3>Cabang & gudang</h3>{owner && <button className="sm primary" onClick={() => setF(blank)}>+ Tambah</button>}</div>
         {branches.length === 0 ? <span className="small muted">Belum ada. Lokasi utama adalah alamat bisnis di Pengaturan.</span> : <div className="list">{branches.map((b) => (
           <button key={b.id} className="li click" disabled={!owner} onClick={() => setF({ ...b })} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}>
             <div className="main"><b>{b.name}{b.is_main && <span className="chip gold" style={{ marginLeft: 6 }}>Utama</span>}</b><span className="small muted">{b.kind === 'gudang' ? 'Gudang' : 'Cabang'}{b.address ? ` · ${b.address}` : ''}</span></div>
@@ -222,9 +240,11 @@ function BranchTab({ kosId, owner, branches, onSaved }) {
           <Field label="Jenis"><select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}><option value="cabang">Cabang</option><option value="gudang">Gudang</option></select></Field>
           <Field label="Alamat"><input value={f.address || ''} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
           {f.id && !f.is_main && <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} />Aktif</label>}
-          <button className="primary" onClick={save} disabled={f.name.trim().length < 2}>Simpan</button>
+          <button className="primary" onClick={save} disabled={busy || f.name.trim().length < 2}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
+          {!f.id && f.kind === 'cabang' && <span className="small muted">Jumlah cabang mengikuti paket (lokasi utama ikut dihitung, gudang tidak).</span>}
         </Sheet>
       )}
+      {offer && <GrowthSheet offer={offer} kosId={kosId} onDone={() => setOffer(null)} />}
     </>
   );
 }

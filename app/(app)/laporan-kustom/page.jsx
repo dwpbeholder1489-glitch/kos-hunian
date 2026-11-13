@@ -11,6 +11,7 @@ import { canArea } from '@/lib/business';
 import { makeXlsx } from '@/lib/xlsx';
 import { download } from '@/lib/zip';
 import { useBuilder } from '@/lib/builder';
+import { useKuotaEkspor } from '@/lib/ekspor';
 
 const addDays = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
 const PERIODS = [['def', 'Sesuai laporan'], ['bulan', 'Bulan ini'], ['30', '30 hari'], ['365', '12 bulan'], ['all', 'Semua'], ['custom', 'Pilih tanggal']];
@@ -26,6 +27,7 @@ export default function LaporanKustom() {
   const [to, setTo] = useState(today());
   const [res, setRes] = useState(null);
   const [fin, setFin] = useState(null); // ringkasan keuangan periode
+  const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);
   useEffect(() => { if (cfg && !rid && cfg.reports.length) setRid(cfg.reports[0].id); }, [cfg]);
   const range = () => per === 'bulan' ? [today().slice(0, 8) + '01', today()] : per === '30' ? [addDays(today(), -29), today()] : per === '365' ? [addDays(today(), -364), today()]
     : per === 'all' ? ['2000-01-01', today()] : per === 'custom' ? [from, to] : [null, null];
@@ -79,7 +81,7 @@ export default function LaporanKustom() {
             </div>
           ))}</div>}
         </section>
-        {hasFeature(kos, 'ekspor') && res.rows.length > 0 && <button className="sm" onClick={exportX}>Unduh Excel</button>}
+        {hasFeature(kos, 'ekspor') && res.rows.length > 0 && <button className="sm" onClick={() => ek.jalankan('laporan_kustom', exportX)}>Unduh Excel</button>}
         <span className="small muted">Laporan dihitung dari catatan yang tidak diarsipkan, berdasarkan tanggal catatan dibuat. Keuangan: uang masuk dihitung saat catatan mencapai status yang diatur di Business Builder; biaya dari menu Kas & biaya. Laporan per field di atas menghitung semua catatan apa pun statusnya.</span>
       </>}
     </div>

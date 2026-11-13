@@ -2,6 +2,7 @@
 import KuotaBar from '@/components/KuotaBar';
 import TrialReminder from '@/components/TrialReminder';
 import GrowthAuto from '@/components/GrowthOffer';
+import UpgradeSukses from '@/components/UpgradeSukses';
 import Bagikan from '@/components/Bagikan';
 import { LogoMark } from '@/components/Logo';
 import Link from 'next/link';
@@ -115,6 +116,7 @@ export default function AppLayout({ children }) {
       {!path.startsWith('/langganan') && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
+      {role === 'pemilik' && <UpgradeSukses kosId={kos.id} skip={/^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
       {role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
       <AnnounceBanner />
       <ClosedBar />

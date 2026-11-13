@@ -9,6 +9,7 @@ import { DayColumns, BarList } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { makeXlsx } from '@/lib/xlsx';
 import { download } from '@/lib/zip';
+import { useKuotaEkspor } from '@/lib/ekspor';
 
 // Laporan jasa: pendapatan diakui saat pesanan diserahkan; uang masuk, piutang, dan uang muka ditampilkan terpisah
 export default function LaporanJasa() {
@@ -16,6 +17,7 @@ export default function LaporanJasa() {
   const [ym, setYm] = useState(thisMonth());
   const [r, setR] = useState(null);
   const [err, setErr] = useState(null);
+  const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);
   useEffect(() => { setR(null); supabase.rpc('svc_report', { p_kos: kosId, p_from: ym + '-01', p_to: monthEnd(ym) }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setR(data))); }, [kosId, ver, ym]);
   if (err) return <div className="notice bad">{/svc_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   const N = (v) => Number(v) || 0;
@@ -32,8 +34,9 @@ export default function LaporanJasa() {
       <div className="row">
         <button className="sm ghost" onClick={() => setYm(addMonthsYm(ym, -1))}>‹</button><b>{bulan(ym)}</b>
         <button className="sm ghost" disabled={ym >= thisMonth()} onClick={() => setYm(addMonthsYm(ym, 1))}>›</button>
-        {r && hasFeature(kos, 'ekspor') && <button className="sm" onClick={exportX}>Unduh Excel</button>}
+        {r && hasFeature(kos, 'ekspor') && <button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('laporan_jasa', exportX)}>Unduh Excel</button>}
       </div>
+      {hasFeature(kos, 'ekspor') && (ek.habis ? <span className="small" style={{ color: 'var(--bad)' }}>{ek.q?.message}</span> : ek.info && <span className="small muted">{ek.info}</span>)}
       {!r ? <Loading /> : <>
         <div className="grid">
           <Tile label="Pendapatan" value={rp(r.pendapatan)} sub={`${angka(r.selesai)} pesanan diserahkan`} />

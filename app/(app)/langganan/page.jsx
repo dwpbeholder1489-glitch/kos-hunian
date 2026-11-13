@@ -72,18 +72,7 @@ export default function Langganan() {
     supabase.rpc('plan_pay_link', { p_kos: kos.id, p_plan: pendingReq.plan, p_months: pendingReq.months }).then(({ data }) => setPendingUrl(data || null));
   }, [kos.id, pendingReq?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Kartu "Upgrade berhasil": tampil sekali untuk setiap persetujuan baru (penanda per perangkat)
-  const [baru, setBaru] = useState(null);
-  useEffect(() => {
-    if (!reqs) return;
-    const key = `prasara-upgrade-${kos.id}`;
-    const ok = reqs.find((r) => r.status === 'disetujui');
-    if (!ok) return;
-    let seen = null; try { seen = localStorage.getItem(key); } catch {}
-    if (seen === null) { try { localStorage.setItem(key, ok.id); } catch {} return; }
-    if (seen !== ok.id) setBaru(ok);
-  }, [reqs, kos.id]);
-  const tutupBaru = () => { try { localStorage.setItem(`prasara-upgrade-${kos.id}`, baru.id); } catch {} setBaru(null); };
+  // Kartu "Upgrade Berhasil!" ada di components/UpgradeSukses.jsx (dari server, sekali per aktivasi, di semua perangkat)
 
   if (p.owner) return (
     <div className="stack">
@@ -150,21 +139,6 @@ export default function Langganan() {
           ? <button className="sm" onClick={() => cancel(false)}>Lanjutkan langganan</button>
           : <button className="sm ghost" onClick={() => cancel(true)}>Berhenti memperpanjang</button>)}
       </section>
-
-      {baru && (
-        <section className="panel" style={{ borderColor: 'var(--good)' }}>
-          <h3>Upgrade berhasil!</h3>
-          <div className="row between"><b>Paket {pname(baru.plan)}</b><span className="chip good">{baru.months === 12 ? '1 tahun' : `${baru.months} bulan`}</span></div>
-          <span className="small">Dibayar {rp(baru.amount)} (sekali bayar){baru.active_until ? ` · aktif s.d. ${tgl(String(baru.active_until).slice(0, 10))}` : ''}.</span>
-          {(() => { const pl = plans.find((x) => x.key === baru.plan); return pl ? (
-            <>
-              <span className="small">Kapasitas baru: karyawan {pl.limits?.karyawan ?? '—'}, ruang lampiran {pl.limits?.lampiran_mb ?? '—'} MB.</span>
-              <ul className="small" style={{ margin: '6px 0 0', paddingLeft: 18 }}>{(pl.features || []).map((c) => <li key={c}>{FEATURE_CODES[c] || c}</li>)}</ul>
-            </>
-          ) : null; })()}
-          <button className="cta" style={{ width: '100%', marginTop: 8 }} onClick={tutupBaru}>Mengerti</button>
-        </section>
-      )}
 
       {pending && !sent && (
         <div className="notice info">
