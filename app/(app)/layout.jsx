@@ -33,7 +33,7 @@ function PlanBar({ kos }) {
   return null;
 }
 
-// Menu samping (☰): kelompok modul, AI (segera hadir), bantuan, akun, dan kartu bisnis aktif
+// Menu samping (☰): kelompok modul, bantuan, akun, dan kartu bisnis aktif
 function Drawer({ kos, on, onClose, onBiz }) {
   const groups = groupsFor(kos);
   const [open, setOpen] = useState(() => groups.find(([, , , items]) => items.some(([h]) => on(h)))?.[0] || groups[0]?.[0]);
@@ -53,7 +53,6 @@ function Drawer({ kos, on, onClose, onBiz }) {
             </div>
           ))}
           <hr />
-          <span className="drawer-i off" aria-disabled="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /></svg>AI Asisten<span className="chip gold">Segera hadir</span></span>
           <Link href="/bantuan" className={'drawer-i' + (on('/bantuan') ? ' on' : '')} onClick={onClose}><NavIcon name="/bantuan" />Bantuan</Link>
           <Link href="/akun" className={'drawer-i' + (on('/akun') ? ' on' : '')} onClick={onClose}><NavIcon name="/karyawan" />Akun & tampilan</Link>
         </nav>

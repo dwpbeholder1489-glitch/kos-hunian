@@ -1,5 +1,5 @@
 'use client';
-// Bagian atas Beranda (semua jenis bisnis): sapaan, pintasan operasional sesuai peran, dan kartu Asisten AI (segera hadir).
+// Bagian atas Beranda (semua jenis bisnis): sapaan dan pintasan operasional sesuai peran.
 // Angka ringkasan tetap dari dashboard masing-masing jenis bisnis di bawahnya (data nyata, bukan contoh).
 import Link from 'next/link';
 import NavIcon from '@/components/NavIcon';
@@ -42,10 +42,6 @@ export default function HomeTop({ kos }) {
           <Link href="/operasional"><NavIcon name="/operasional" />Lainnya</Link>
         </div>
       </>}
-      <div className="aicard" aria-label="Asisten Bisnis AI, segera hadir">
-        <span className="aicard-ic" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2-2.2-.8 2.2-.8z" /></svg></span>
-        <div><b>Asisten Bisnis AI <span className="chip gold">Segera hadir</span></b><span>Nanti bisa ditanya, menganalisis, dan merangkum bisnis Anda — dari data yang Anda izinkan.</span></div>
-      </div>
     </section>
   );
 }

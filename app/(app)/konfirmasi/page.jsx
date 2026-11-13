@@ -240,7 +240,6 @@ export default function Konfirmasi() {
         <span className="small muted">Data operasional diisi di menunya masing-masing setelah bisnis aktif. Dicek dari data nyata.</span>
         <div className="list">{d.after.map((a) => <div className="li" key={a.code}><span className="small">{a.done ? '✓' : '○'} {a.label}</span>{active && !a.done ? <Link href={a.href} className="small">Isi →</Link> : <span className="small muted">{a.done ? 'Sudah ada' : 'Belum'}</span>}</div>)}</div></section>}
 
-      <section className="panel" style={{ opacity: 0.75 }}><span className="small"><b>✨ Asisten AI untuk mengisi draf</b> <span className="chip gold">Segera hadir</span><br /><span className="muted">Draf saat ini disusun dari template per jenis usaha, bukan AI. Rekomendasi tidak pernah dianggap keputusan Anda.</span></span></section>
 
       {!active && owner && <>
         {b.status !== 'paused' && b.status !== 'rejected' ? <>

@@ -74,7 +74,7 @@ export function ScrSignup() {
       <p className="mini-hello">Kenalkan bisnis Anda</p>
       <span className="small"><b>Apa jenis bisnis yang Anda miliki atau kelola?</b> Boleh lebih dari satu.</span>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>{C.map(([i, n, on]) => (
-        <div key={n} className="panel" style={{ padding: 8, gap: 2, ...(on ? { borderColor: 'var(--brand)' } : {}) }}><span>{i}{on ? ' ✓' : ''}</span><b className="small" style={{ fontSize: 11 }}>{n}</b></div>
+        <div key={n} className="panel" style={{ padding: 8, gap: 2, ...(on ? { borderColor: 'var(--gold)' } : {}) }}><span>{i}{on ? ' ✓' : ''}</span><b className="small" style={{ fontSize: 11 }}>{n}</b></div>
       ))}</div>
       <span className="mini-btn cta">Lanjut · 3 bisnis</span>
       <span className="small muted">DATA CONTOH</span>
@@ -175,7 +175,7 @@ export function ScrReminder() {
       <dl className="kv"><dt>Kamar</dt><dd>A02</dd><dt>WhatsApp</dt><dd>0813-xxxx-2211</dd><dt>Belum dibayar</dt><dd style={{ color: 'var(--bad)' }}>{rp(750000)}</dd></dl>
       <span className="mini-btn primary">Kirim pengingat via WhatsApp</span>
       <div className="mini-wa">Halo Budi Santoso, ini pengingat dari {KOS.name}. Tagihan yang belum dibayar:<br />• Sewa {d(1)} – {d(30)}: {rp(750000)}<br />Total {rp(750000)}. Terima kasih 🙏</div>
-      <span className="small" style={{ textAlign: 'center', color: 'var(--brand)', fontWeight: 700 }}>Ubah teks pesan WhatsApp</span>
+      <span className="small" style={{ textAlign: 'center', color: 'var(--gold)', fontWeight: 700 }}>Ubah teks pesan WhatsApp</span>
     </Phone>
   );
 }

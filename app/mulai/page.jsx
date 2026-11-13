@@ -2,6 +2,7 @@
 // Pendaftaran bisnis (Automatic Business Setup): pilih satu/lebih kategori → isi info tiap bisnis → PRASARA menyiapkan DRAF
 // per bisnis → pemilik meninjau & mengaktifkan di Pusat Konfirmasi. Semua validasi & pembuatan di server (setup_create).
 import { useEffect, useState } from 'react';
+import Journey from '@/components/Journey';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -41,6 +42,7 @@ export default function Mulai() {
   const [done, setDone] = useState({});        // kategori → id draf yang sudah dibuat
   const [errs, setErrs] = useState({});
   const [err, setErr] = useState(null);
+  const [welcomed, setWelcomed] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -76,6 +78,26 @@ export default function Mulai() {
     </div>
   );
 
+  // ---------- Sambutan (hanya untuk bisnis pertama) ----------
+  if (first && !welcomed && step === 0 && !employee) {
+    const nm = session.user?.user_metadata?.name;
+    return (
+      <div className="auth" style={{ maxWidth: 520 }}>
+        <Journey at={2} />
+        <p className="hello">Selamat datang di PRASARA{nm ? `, ${String(nm).split(' ')[0]}` : ''}.</p>
+        <p className="muted" style={{ margin: 0 }}>Mulai dengan mendaftarkan bisnis Anda. PRASARA akan membantu menyiapkan sistem berdasarkan jenis dan kebutuhan bisnis Anda.</p>
+        <ol className="welcome">
+          <li><i>1</i><div><b>Daftarkan bisnis Anda</b><span>Pilih jenis usaha dan isi info singkatnya — beberapa menit saja.</span></div></li>
+          <li><i>2</i><div><b>Bangun sistem bisnis Anda</b><span>PRASARA menyusun modul yang disarankan; Anda setujui, ubah, atau tolak satu per satu.</span></div></li>
+          <li><i>3</i><div><b>Mulai mengelola operasional</b><span>Catat transaksi pertama dari HP. Paket bisa dipilih belakangan.</span></div></li>
+        </ol>
+        <button className="cta" onClick={() => setWelcomed(true)}>Daftarkan Bisnis Saya</button>
+        <button type="button" className="ghost" onClick={() => { setWelcomed(true); setEmployee(true); }}>Saya karyawan di bisnis yang sudah memakai PRASARA</button>
+        <p className="small muted" style={{ margin: 0, textAlign: 'center' }}>Isian Anda bisa dilanjutkan nanti — akun tetap aktif walau bisnis belum selesai didaftarkan. <a href="/panduan" target="_blank" rel="noreferrer">Panduan</a></p>
+      </div>
+    );
+  }
+
   // ---------- Langkah 0: kategori (boleh lebih dari satu) ----------
   if (step === 0) {
     if (employee) return (
@@ -89,6 +111,7 @@ export default function Mulai() {
     );
     return (
       <div className="auth" style={{ maxWidth: 560 }}>
+        {first && <Journey at={2} />}
         <p className="hello">{first ? 'Kenalkan bisnis Anda' : 'Tambah bisnis'}</p>
         <p className="muted" style={{ margin: 0 }}><b>Apa jenis bisnis yang Anda miliki atau kelola?</b> Boleh pilih lebih dari satu — tiap bisnis dibuat terpisah dengan data sendiri. PRASARA menyiapkan draf konfigurasinya; Anda yang meninjau dan menyetujui.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
@@ -96,7 +119,7 @@ export default function Mulai() {
             const on = sel.includes(c.code);
             return (
               <button key={c.code} type="button" className="typecard" aria-pressed={on} onClick={() => setSel(on ? sel.filter((x) => x !== c.code) : [...sel, c.code])}
-                style={{ flexDirection: 'column', gap: 4, minHeight: 96, ...(on ? { borderColor: 'var(--brand)', boxShadow: 'inset 0 0 0 1px var(--brand)' } : {}) }}>
+                style={{ flexDirection: 'column', gap: 4, minHeight: 96, ...(on ? { borderColor: 'var(--gold)', boxShadow: 'inset 0 0 0 1px var(--gold)' } : {}) }}>
                 <span className="row between" style={{ width: '100%' }}><span style={{ fontSize: 22 }} aria-hidden="true">{c.icon}</span>{on && <span className="chip good">✓</span>}</span>
                 <b className="small" style={{ textAlign: 'left' }}>{c.name}</b>
                 <span className="small muted" style={{ fontWeight: 500, textAlign: 'left', fontSize: 12 }}>{c.description}</span>
@@ -186,7 +209,6 @@ export default function Mulai() {
           </div>
         );
       })}
-      <div className="panel" style={{ opacity: 0.75 }}><span className="small"><b>✨ Asisten AI untuk mengisi draf</b> <span className="chip gold">Segera hadir</span><br /><span className="muted">Saat ini draf disusun dari template per jenis usaha (bukan AI).</span></span></div>
       {err && <div className="notice bad">{err}</div>}
       <button className="cta" disabled={busy} onClick={create}>{busy ? 'Menyiapkan draf…' : `Buat ${n} draf bisnis`}</button>
       <button type="button" className="ghost" disabled={busy} onClick={() => setStep(n)}>← Kembali</button>

@@ -56,7 +56,6 @@ const CAPS = [
   ['flow', 'Layanan', 'ready', 'Pesanan per kg/item, tahap proses yang bisa diatur, keluhan & pengerjaan ulang, antar-jemput, layar dapur.', 'Petugas proses melihat tahap cucian tanpa melihat uang.'],
   ['shield', 'Karyawan & operasional', 'part', 'Peran & hak akses per karyawan, persetujuan untuk aksi penting, shift kasir, riwayat perubahan. Absensi & penggajian: dalam rencana.', 'Kasir tidak melihat harga modal dan laba.'],
   ['chart', 'Laporan & analitik', 'ready', 'Laporan per jenis bisnis dengan grafik, tren 6 bulan, barang terlaris, ketepatan waktu, ekspor Excel/PDF.', 'Melihat bulan mana biaya operasional paling besar.'],
-  ['sparkles', 'Asisten AI bisnis', 'soon', 'Membaca laporan, merangkum aktivitas, dan menjawab pertanyaan dari data yang diizinkan.', 'Belum aktif — lihat bagian AI di bawah.'],
 ];
 
 // Sistem adaptif: alur nyata (/mulai → setup_items → Pusat Konfirmasi → setup_activate)
@@ -69,9 +68,6 @@ const ADAPT = [
   ['shield', 'Perubahan penting butuh persetujuan', 'Aktivasi dan perubahan konfigurasi diperiksa di server, bukan hanya di tampilan. Admin platform tidak mengubah konfigurasi bisnis Anda.'],
   ['notebook', 'Tercatat di riwayat', 'Setiap perubahan konfigurasi tersimpan: siapa, kapan, dan alasannya.'],
 ];
-
-// AI: konsep (belum aktif)
-const AI_CAN = ['Membantu membaca laporan bisnis', 'Merangkum aktivitas operasional', 'Mengenali pola transaksi', 'Membantu menganalisis stok', 'Menyusun rekomendasi operasional', 'Menemukan potensi masalah lebih awal', 'Menjawab pertanyaan dari data yang diizinkan', 'Membantu pekerjaan administratif'];
 
 // Cara kerja (4 tahap, sesuai alur pendaftaran yang berjalan)
 const HOW4 = [
@@ -150,12 +146,10 @@ const FAQ = [
   ['Apakah PRASARA hanya untuk bisnis besar?', 'Tidak. PRASARA dirancang untuk usaha kecil dan menengah yang dikelola dari HP — ada paket Gratis untuk mulai. Saat bisnis tumbuh, Anda bisa menambah karyawan, cabang/gudang, modul, atau naik paket tanpa pindah aplikasi.'],
   ['Apakah setiap bisnis menggunakan fitur yang sama?', 'Tidak. Kos melihat kamar, penghuni, dan tagihan; toko melihat kasir, stok, dan belanja; laundry melihat pesanan dan tahap proses; kuliner melihat menu, dapur, dan meja. Menu yang tidak relevan tidak ditampilkan, dan karyawan hanya melihat menu sesuai perannya.'],
   ['Apakah saya dapat memilih modul sendiri?', 'Bisa. Saat mendaftar, setiap modul yang disarankan Anda setujui atau tolak di Pusat Konfirmasi. Setelah aktif, modul bisa dinyalakan atau dimatikan kapan saja di Pusat konfigurasi, dan setiap perubahan tercatat di riwayat.'],
-  ['Bagaimana sistem rekomendasi bekerja?', 'Saat ini rekomendasi disusun dari template per jenis usaha (aturan tetap, bukan AI) ditambah jawaban Anda saat mendaftar — misalnya jumlah kamar atau layanan yang ditawarkan. Setelah berjalan, PRASARA juga memberi saran fitur berdasarkan data bisnis Anda sendiri. Semua saran hanya berlaku bila Anda menyetujuinya.'],
+  ['Bagaimana sistem rekomendasi bekerja?', 'Saat ini rekomendasi disusun dari template per jenis usaha (aturan tetap) ditambah jawaban Anda saat mendaftar — misalnya jumlah kamar atau layanan yang ditawarkan. Setelah berjalan, PRASARA juga memberi saran fitur berdasarkan data bisnis Anda sendiri. Semua saran hanya berlaku bila Anda menyetujuinya.'],
   ['Apakah tersedia demo?', `Ya. Contoh tampilan di halaman ini memakai DATA CONTOH dan tidak tersambung ke data siapa pun. Anda juga bisa langsung mencoba dengan data sendiri: setiap bisnis baru mendapat ${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit.`],
   ['Bagaimana proses pendaftaran?', 'Daftar dengan email, pilih satu atau lebih jenis bisnis, lalu isi info singkatnya. PRASARA menyiapkan draf konfigurasi; Anda meninjau dan mengaktifkannya di Pusat Konfirmasi. Sebelum diaktifkan, bisnis masih berstatus draf dan halaman publiknya belum tampil.'],
   ['Apakah data bisnis aman?', 'Data setiap bisnis dipisahkan di tingkat database, hak akses karyawan diperiksa di server, dan koneksi selalu terenkripsi (HTTPS). Tim PRASARA hanya bisa melihat ringkasan diagnostik bila Anda memberi izin dari Pusat bantuan, dan setiap aksesnya tercatat.'],
-  ['Apakah tersedia AI Assistant?', 'Belum. Asisten AI untuk pemilik masih dalam pengembangan dan ditandai "Segera hadir". Saran yang ada sekarang disusun dari aturan dan data bisnis Anda, bukan AI.'],
-  ['Apakah penggunaan AI dikenakan biaya?', 'Bila nanti tersedia, AI memakai penyedia pihak ketiga yang berbayar per pemakaian, sehingga akan ada kuota per paket atau biaya tambahan. Ketentuannya diumumkan sebelum fitur diaktifkan — AI tidak akan dijanjikan gratis tanpa batas, dan tidak ada biaya yang ditagihkan untuk fitur yang belum tersedia.'],
   ['Bagaimana cara mengubah paket?', 'Buka menu Langganan di aplikasi. Naik paket berlaku sejak pembayaran disetujui, dan sisa hari paket lama dihitung ulang lalu ditambahkan. Turun paket berlaku setelah masa paket sekarang berakhir. Pembayaran lewat QRIS atau transfer bank, diperiksa biasanya dalam 1×24 jam pada hari kerja.'],
   ['Apakah bisnis dapat berkembang tanpa berpindah platform?', 'Bisa. Tambah bisnis baru, cabang atau gudang, karyawan dengan peran berbeda, modul baru, atau naik paket — semua di akun yang sama, dan data lama tetap utuh.'],
   ['Bagaimana jika bisnis saya belum tersedia dalam kategori?', 'Pilih Business Builder: susun sendiri jenis data, formulir, alur status, peran, dan laporan, atau mulai dari template (bengkel, salon, kursus, rental, dan lainnya). Bila masih ragu, ceritakan usaha Anda lewat WhatsApp.'],
@@ -264,28 +258,6 @@ export default async function Landing() {
           </div>
         </section>
 
-        {/* 6. AI */}
-        <section className="ln-sec" id="ai" aria-labelledby="h-ai">
-          <div className="ln-wrap">
-            <div className="ln-ai">
-              <div>
-                <span className="ln-kicker">AI Business Assistant <Badge t="Segera hadir" /></span>
-                <h2 id="h-ai">Lebih dari Sekadar Mengelola. Pahami Bisnis Anda.</h2>
-                <p className="ln-p">Asisten AI direncanakan sebagai bagian dari ekosistem PRASARA — membaca data bisnis yang Anda izinkan, bukan menebak. <b>Fitur ini belum aktif.</b></p>
-                <ul className="ln-checks">{AI_CAN.map((t) => <li key={t}><Icon name="check" size={18} />{t}</li>)}</ul>
-                <p className="ln-small">Prinsipnya: hanya membaca data sesuai hak akses, tidak mengarang bila data tidak ada, rekomendasi bukan tindakan otomatis, dan perubahan data selalu menunggu persetujuan Anda. AI memakai penyedia pihak ketiga, sehingga akan ada kuota atau biaya sesuai paket — diumumkan sebelum diaktifkan.</p>
-              </div>
-              <div className="ln-chat" aria-label="Contoh konsep percakapan dengan asisten AI">
-                <span className="ln-chat-tag">CONTOH KONSEP — BELUM AKTIF</span>
-                <div className="ln-bub me">Bagaimana kondisi bisnis saya bulan ini?</div>
-                <div className="ln-bub">Berikut ringkasan transaksi, pengeluaran, dan aktivitas operasional bulan ini berdasarkan data yang tersedia. Ada 3 hal yang perlu Anda tinjau: 2 tagihan lewat jatuh tempo dan 1 barang yang stoknya menipis.</div>
-                <div className="ln-bub me">Buatkan pengingat untuk penghuni yang menunggak.</div>
-                <div className="ln-bub">Draf pesan sudah siap untuk 2 penghuni. Tinjau dan kirim sendiri — saya tidak mengirim apa pun tanpa persetujuan Anda.</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* 7. CARA KERJA */}
         <section className="ln-sec ln-sec-alt" id="cara" aria-labelledby="h-cara">
           <div className="ln-wrap">
@@ -341,7 +313,7 @@ export default async function Landing() {
               <div>
                 <span className="ln-kicker">Business Builder</span>
                 <h2 id="h-builder" style={{ marginTop: 8 }}>Usaha Anda tidak ada di daftar?</h2>
-                <p className="ln-p" style={{ marginTop: 12 }}>Bangun sendiri dari aplikasi: jenis data (mis. Pelanggan, Kendaraan, Servis), formulir dengan field pilihan Anda, status & alur kerja dengan aturan per peran dan persetujuan, serta laporan. Mulai dari template <b>Bengkel motor</b> atau <b>Salon</b>, atau dari nol. <b>Bangun dengan AI</b> <Badge t="Segera hadir" />.</p>
+                <p className="ln-p" style={{ marginTop: 12 }}>Bangun sendiri dari aplikasi: jenis data (mis. Pelanggan, Kendaraan, Servis), formulir dengan field pilihan Anda, status & alur kerja dengan aturan per peran dan persetujuan, serta laporan. Mulai dari template <b>Bengkel motor</b> atau <b>Salon</b>, atau dari nol.</p>
               </div>
               <div>
                 <h3>Alurnya</h3>
@@ -405,7 +377,7 @@ export default async function Landing() {
               <li>Harga per bisnis per bulan, diambil langsung dari sistem langganan PRASARA. Harga masih dapat berubah selama tahap pengembangan; pelanggan aktif diberi tahu lebih dulu.</li>
               <li>Batas paket (kamar terisi, akun karyawan, ruang foto & lampiran) tertulis di tabel perbandingan. Modul bisa diaktifkan atau dimatikan sesuai kebutuhan di setiap paket.</li>
               <li>Naik paket berlaku sejak pembayaran disetujui (sisa hari paket lama dihitung ulang). Turun paket berlaku setelah masa paket sekarang berakhir.</li>
-              <li>Langganan PRASARA terpisah dari biaya pihak ketiga yang Anda pakai sendiri (internet, pulsa/WhatsApp, printer, biaya transfer). AI belum tersedia; bila nanti aktif, pemakaiannya dapat memiliki kuota atau biaya tersendiri.</li>
+              <li>Langganan PRASARA terpisah dari biaya pihak ketiga yang Anda pakai sendiri (internet, pulsa/WhatsApp, printer, biaya transfer).</li>
               <li>Fitur bertanda "Segera hadir" belum tersedia dan tidak ditagihkan.</li>
             </ul>
           </div>

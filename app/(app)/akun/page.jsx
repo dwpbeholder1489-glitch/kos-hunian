@@ -1,5 +1,6 @@
 'use client';
 // Akun: email masuk, bisnis aktif & ganti bisnis, paket, tampilan, bantuan, keluar.
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -8,6 +9,8 @@ import ThemeSwitch from '@/components/ThemeSwitch';
 import NavIcon from '@/components/NavIcon';
 import { typeOf, roleOf, ROLES, homeOf, canArea, isDraft, SETUP_STATUS } from '@/lib/business';
 import { planOf, PLANS } from '@/lib/plan';
+import { Field, toast } from '@/components/ui';
+import { waOk, waNorm } from '@/lib/akun';
 
 export default function Akun() {
   const router = useRouter();
@@ -25,6 +28,7 @@ export default function Akun() {
         <span className="small muted">{ROLES[role]?.name || role} di {kos.name}{role === 'pemilik' && !p.owner ? ` · paket ${p.name || PLANS[p.plan]?.name || p.plan}${p.trial ? ' (masa coba)' : ''}` : ''}</span>
         {role === 'pemilik' && <Link href="/langganan" className="small">Lihat paket & langganan →</Link>}
       </section>
+      <Profil user={user} />
       <section className="panel" style={{ gap: 8 }}>
         <span className="label">Bisnis Anda</span>
         <div className="bizlist">
@@ -47,5 +51,30 @@ export default function Akun() {
       </div>
       <button className="ghost danger" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
     </div>
+  );
+}
+
+// Nama & No. WhatsApp pemilik akun (dipakai untuk sapaan dan bantuan). Disimpan di profil akun, bukan di data bisnis.
+function Profil({ user }) {
+  const m = user?.user_metadata || {};
+  const [name, setName] = useState(m.name || '');
+  const [wa, setWa] = useState(m.whatsapp || '');
+  const [busy, setBusy] = useState(false);
+  const changed = name.trim() !== (m.name || '') || waNorm(wa) !== (m.whatsapp || '');
+  const save = async () => {
+    if (name.trim().length < 3) return toast('Isi nama lengkap (minimal 3 huruf).');
+    if (wa && !waOk(wa)) return toast('Nomor WhatsApp belum benar (mis. 0812 3456 7890).');
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ data: { name: name.trim().slice(0, 80), whatsapp: wa ? waNorm(wa) : null } });
+    setBusy(false);
+    toast(error ? 'Belum tersimpan. Coba lagi.' : 'Profil disimpan');
+  };
+  return (
+    <section className="panel" style={{ gap: 10 }}>
+      <span className="label">Profil Anda</span>
+      <Field label="Nama lengkap"><input value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} /></Field>
+      <Field label="Nomor WhatsApp" hint="Untuk bantuan & info akun"><input type="tel" inputMode="tel" autoComplete="tel" value={wa} onChange={(e) => setWa(e.target.value)} placeholder="0812 3456 7890" /></Field>
+      {changed && <button className="primary" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan profil'}</button>}
+    </section>
   );
 }

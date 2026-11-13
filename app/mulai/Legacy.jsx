@@ -105,11 +105,10 @@ export default function LegacyMulai() {
               {[['bengkel', '🔧 Template Bengkel motor', 'Pelanggan, Kendaraan, Servis (Antre → Dikerjakan → Menunggu spare part → Selesai → Diambil), laporan jasa & spare part.'],
                 ['salon', '💇 Template Salon & barbershop', 'Pelanggan, Janji temu (Dijadwalkan → Datang → Selesai / Tidak datang), laporan per stylist.'],
                 ['kosong', '🧩 Bangun sendiri (manual)', 'Mulai dari satu jenis data contoh; tambah sendiri field, status, dan laporan.']].map(([k, l, d]) => (
-                <button type="button" key={k} className={'typecard' + (ktpl === k ? ' on' : '')} onClick={() => setKtpl(k)} style={ktpl === k ? { borderColor: 'var(--brand)', boxShadow: 'inset 0 0 0 1px var(--brand)' } : undefined}>
+                <button type="button" key={k} className={'typecard' + (ktpl === k ? ' on' : '')} onClick={() => setKtpl(k)} style={ktpl === k ? { borderColor: 'var(--gold)', boxShadow: 'inset 0 0 0 1px var(--gold)' } : undefined}>
                   <span style={{ flex: 1, textAlign: 'left' }}><b>{l}</b><br /><span className="small muted" style={{ fontWeight: 500 }}>{d}</span></span>
                 </button>
               ))}
-              <div className="typecard" style={{ opacity: 0.6 }} aria-disabled="true"><span style={{ flex: 1, textAlign: 'left' }}><b>✨ Bangun dengan AI</b> <span className="chip gold">Segera hadir</span><br /><span className="small muted" style={{ fontWeight: 500 }}>Ceritakan usaha dengan bahasa sehari-hari, AI menyusun usulan konfigurasi. Belum tersedia.</span></span></div>
             </div>
           </Field>
         )}

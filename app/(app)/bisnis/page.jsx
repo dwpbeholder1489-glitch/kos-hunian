@@ -92,7 +92,7 @@ export default function Bisnis() {
           </section>
         );
         if (b.business_type === 'kustom' && b.revenue == null) return (
-          <section className="panel" key={b.id} style={b.id === kosId ? { borderColor: 'var(--brand)' } : undefined}>
+          <section className="panel" key={b.id} style={b.id === kosId ? { borderColor: 'var(--gold)' } : undefined}>
             <div className="stack" style={{ gap: 0 }}><b>{t.icon} {b.name}</b><span className="small muted">{t.name} · {b.plan_name || b.plan}</span></div>
             {b.attention?.length > 0 && <div className="list">{b.attention.map((a) => <button key={a.text} className="li click" onClick={() => go(b, a.href)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}><span className="small">{a.text}</span><b className="small">›</b></button>)}</div>}
             <span className="small muted">Uang masuk belum diatur (Business Builder › Data & formulir › Uang masuk), jadi bisnis ini belum ikut dijumlahkan.{b.last_activity ? ` Catatan terakhir ${tgl(String(b.last_activity).slice(0, 10))}.` : ''}</span>
@@ -119,7 +119,7 @@ export default function Bisnis() {
           </button>
         );
         return (
-          <section className="panel" key={b.id} style={b.id === kosId ? { borderColor: 'var(--brand)' } : undefined}>
+          <section className="panel" key={b.id} style={b.id === kosId ? { borderColor: 'var(--gold)' } : undefined}>
             <div className="row between">
               <div className="stack" style={{ gap: 0 }}><b>{t.icon} {b.name}</b><span className="small muted">{t.name}{b.legal_entity ? ` · ${b.legal_entity.name}` : ''} · {b.plan_name || b.plan}</span></div>
               <span className={'chip ' + (b.complete ? 'good' : 'gold')}>{b.complete ? 'Lengkap' : 'Perkiraan'}</span>

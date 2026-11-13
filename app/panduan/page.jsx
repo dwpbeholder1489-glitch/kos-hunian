@@ -64,11 +64,12 @@ const MENUS = [
 const PARTS = [
   ['A', 'Persiapan (sekali saja)', [
     ['Daftar dan kenalkan bisnis Anda', 'Halaman depan › Mulai Sekarang', [
-      <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Sekarang</b>, isi email dan kata sandi, lalu <b>Buat akun</b>. Buka email Anda dan ketuk tautan konfirmasi.</>,
-      <>Masuk. Di <b>Apa jenis bisnis yang Anda miliki atau kelola?</b> pilih satu atau lebih kategori (mis. Properti & Hunian, Retail, Laundry), lalu <b>Lanjut</b>.</>,
+      <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Sekarang</b>. Isi <b>nama lengkap</b>, <b>email aktif</b>, <b>nomor WhatsApp</b>, dan <b>kata sandi</b> (minimal 8 karakter, berisi huruf dan angka — tombol <b>Lihat</b> menampilkan ketikan Anda), ulangi kata sandi, centang persetujuan Syarat & Privasi, lalu <b>Buat akun</b>.</>,
+      <>Buka email dari PRASARA dan ketuk <b>tautan verifikasi</b>. Belum masuk? Di layar <b>Cek email Anda</b> tekan <b>Kirim ulang email verifikasi</b> (bisa setelah 60 detik). Akun belum aktif sebelum diverifikasi.</>,
+      <>Setelah verifikasi muncul sambutan <b>Selamat datang di PRASARA</b> → <b>Daftarkan Bisnis Saya</b>. Di <b>Apa jenis bisnis yang Anda miliki atau kelola?</b> pilih satu atau lebih kategori (mis. Properti & Hunian, Retail, Laundry), lalu <b>Lanjut</b>.</>,
       <>Untuk tiap bisnis isi <b>nama</b>, <b>subkategori</b>, <b>lokasi</b>, <b>status bisnis</b>, <b>hubungan Anda</b>, <b>jumlah cabang</b>, dan pertanyaan singkat (mis. kos: jumlah kamar; laundry: layanan, jam, antar jemput).</>,
       <>Tekan <b>Tinjau</b> lalu <b>Buat draf bisnis</b>. Tiap bisnis dibuat terpisah sebagai <b>draf</b> — lanjutkan di <b>Pusat Konfirmasi</b> (Langkah 64) untuk melengkapi & mengaktifkannya.</>,
-    ], <>Karyawan tidak membuat bisnis baru: pilih <b>Saya karyawan…</b> dan minta pemilik mengundang email Anda di menu Karyawan. Tidak menerima email konfirmasi? Periksa folder Spam atau Promosi.</>, null, <ScrSignup />],
+    ], <>Karyawan tidak membuat bisnis baru: pilih <b>Saya karyawan…</b> dan minta pemilik mengundang email Anda di menu Karyawan. Tidak menerima email verifikasi? Periksa folder Spam atau Promosi, lalu kirim ulang. <b>Lupa kata sandi?</b> Di halaman Masuk tekan <b>Lupa kata sandi?</b>, isi email, buka tautan yang dikirim, lalu buat kata sandi baru. Nama & nomor WhatsApp bisa diubah di <b>Akun › Profil Anda</b>.</>, null, <ScrSignup />],
     ['Kenali tombol Panduan', 'Semua menu', [
       <>Di sebelah judul setiap menu ada tombol kecil <b>? Panduan</b>.</>,
       <>Tekan untuk membaca <b>Cara pakai</b> menu itu dalam 3 langkah.</>,
@@ -327,7 +328,7 @@ const PARTS = [
       <>Setiap saran menyebut <b>alasan</b> dengan angka dari data Anda (mis. "7 penjualan kasbon dalam 30 hari terakhir"), <b>manfaat</b>, <b>dampak</b>, dan <b>tingkat risiko</b>.</>,
       <>Tekan <b>Terapkan</b> untuk menjalankannya (mengaktifkan modul, menyalakan otomatisasi, atau mewajibkan persetujuan), atau <b>Buka</b> untuk saran yang Anda kerjakan sendiri (mis. melengkapi harga modal, menutup buku).</>,
       <>Tidak cocok? Tekan <b>Abaikan 30 hari</b> (alasan opsional). Semua keputusan tercatat di Riwayat.</>,
-    ], <>Saran hanya muncul bila datanya cukup kuat (mis. minimal beberapa kejadian dalam 30 hari), bukan dari satu kejadian. Tidak ada yang berubah sebelum Anda menekan Terapkan. Pengelola yang menerapkan saran modul akan mengirim permintaan ke pemilik. Saran ini dihitung dengan aturan tetap — bukan AI.</>, null, null],
+    ], <>Saran hanya muncul bila datanya cukup kuat (mis. minimal beberapa kejadian dalam 30 hari), bukan dari satu kejadian. Tidak ada yang berubah sebelum Anda menekan Terapkan. Pengelola yang menerapkan saran modul akan mengirim permintaan ke pemilik. Saran ini dihitung dengan aturan tetap dari data Anda sendiri.</>, null, null],
     ['Unduh semua data & tutup bisnis', 'Pengaturan › Data & penutupan bisnis (pemilik)', [
       <>Tekan <b>Unduh Excel</b> (satu lembar per jenis data: barang, penjualan, belanja, kas, jurnal, dll. — bisa difilter dan dijumlah) atau <b>Unduh PDF</b> (laporan berhalaman, siap dibaca, dicetak, atau dikirim). Di iPhone, file tersimpan di app <b>Files › Unduhan</b> dan bisa dibuka langsung.</>,
       <>Usaha berhenti? Tekan <b>Tutup bisnis…</b>. Sistem memeriksa: shift yang belum ditutup, pesanan supplier yang belum selesai, persetujuan menunggu, pembayaran belum diverifikasi, penghuni aktif, dan <b>ekspor data dalam 7 hari terakhir</b> — semuanya harus beres dulu.</>,
@@ -416,7 +417,7 @@ const PARTS = [
   ]],
   ['I', 'Business Builder (bisnis kustom)', [
     ['Buat bisnis kustom', 'Ketuk nama bisnis › + Tambah bisnis › Bisnis lain (Business Builder)', [
-      <>Pilih <b>Template Bengkel motor</b>, <b>Template Salon & barbershop</b>, atau <b>Bangun sendiri</b>. (<b>Bangun dengan AI</b> belum tersedia.)</>,
+      <>Pilih <b>Template Bengkel motor</b>, <b>Template Salon & barbershop</b>, atau <b>Bangun sendiri</b>.</>,
       <>Isi nama usaha, lalu <b>Setujui & buat bisnis</b>. Bisnis dibuat sebagai <b>draf</b> dan Anda langsung masuk ke <b>Business Builder</b>.</>,
       <>Langkah <b>1. Profil</b>: isi deskripsi, model pendapatan (dari mana uang masuk), proses utama, dan lokasi.</>,
     ], <>Semua isi template bisa diubah. Selama draf, tim belum bisa mencatat.</>, null, <ScrBuilder />],
@@ -472,7 +473,7 @@ const PARTS = [
       <>Ketuk <b>Lengkapi</b>/<b>Ubah</b> untuk mengisi (mis. alamat, WhatsApp, metode pembayaran; laundry: <b>harga & estimasi tiap layanan</b>, wilayah/biaya/jadwal antar jemput; kos: jumlah kamar & harga sewa), lalu <b>Simpan & setujui</b> — atau <b>Simpan draf</b>.</>,
       <>Putuskan tiap bagian: <b>Setujui</b>, <b>Tunda</b>, atau <b>Tolak</b> (bagian bertanda wajib hanya bisa disetujui). Modul: <b>Setujui semua yang disarankan</b> lalu sesuaikan.</>,
       <>Tekan <b>Tinjau seluruh konfigurasi & aktifkan</b>: lihat apa yang akan aktif dan yang tidak, lalu <b>Aktifkan</b>. Menu operasional langsung terbuka; halaman bisnis tetap draf sampai Anda terbitkan sendiri (Langkah 44).</>,
-    ], <>Selama draf, transaksi (pesanan, penjualan, tagihan) ditolak server. Harga, kapasitas, dan jumlah karyawan tidak pernah diisi otomatis. Yang tidak disetujui tidak diaktifkan. Setelah aktif, bagian yang Anda setujui di sini langsung diterapkan; semua keputusan tercatat di Konfigurasi › Riwayat. Belum siap? <b>Tunda setup</b> atau <b>Tolak draf</b> (datanya tetap tersimpan). Asisten AI untuk mengisi draf: segera hadir.</>, 'warn', <ScrKonfirmasi />],
+    ], <>Selama draf, transaksi (pesanan, penjualan, tagihan) ditolak server. Harga, kapasitas, dan jumlah karyawan tidak pernah diisi otomatis. Yang tidak disetujui tidak diaktifkan. Setelah aktif, bagian yang Anda setujui di sini langsung diterapkan; semua keputusan tercatat di Konfigurasi › Riwayat. Belum siap? <b>Tunda setup</b> atau <b>Tolak draf</b> (datanya tetap tersimpan).</>, 'warn', <ScrKonfirmasi />],
   ]],
   ['L', 'Laundry lanjutan: antar jemput', [
     ['Antar jemput: wilayah, jadwal & status', 'Operasional › Antar jemput', [
@@ -524,7 +525,7 @@ const PARTS = [
       <>Foto pertama = <b>foto utama</b>: tampil kecil di daftar <b>Kamar</b>, <b>Barang</b>, tombol cepat & hasil cari <b>Kasir</b>, daftar <b>Layanan/Menu</b>, dan tombol pilihan saat <b>terima pesanan</b> — memudahkan mencari dengan cepat. Ketuk foto: <b>Jadikan utama</b>, <b>Ganti foto ini</b> (hanya di tempat ini), atau <b>Lepas</b> (file tetap di pustaka).</>,
       <>Menu <b>Foto & media</b>: semua foto, kuota penyimpanan, filter kategori, pencarian, dan <b>Dipakai di</b> mana saja. <b>Ganti gambar</b> = berlaku di semua tempat yang memakainya. <b>Hapus</b> foto yang masih dipakai meminta konfirmasi dan melepasnya dari semua tempat.</>,
       <>Di halaman bisnis publik: cover di atas, galeri yang bisa digeser, dan foto kecil di samping tiap kamar/barang/layanan — ketuk untuk memperbesar. Foto kamar hanya tampil bila kamar tersedia.</>,
-    ], <>Foto di sini bersifat <b>publik</b> (untuk ditampilkan ke pelanggan). Dokumentasi internal — nota, bukti transfer, kondisi kamar/barang — tetap lewat <b>📎 Lampiran</b> di tiap data (privat). Foto dikecilkan di HP sebelum dikirim (maks 1600 px + thumbnail) agar hemat kuota dan cepat dibuka; kuota dihitung bersama lampiran sesuai paket. <b>Segera hadir</b>: saran foto & deskripsi otomatis oleh AI.</>, 'warn', <ScrMedia />],
+    ], <>Foto di sini bersifat <b>publik</b> (untuk ditampilkan ke pelanggan). Dokumentasi internal — nota, bukti transfer, kondisi kamar/barang — tetap lewat <b>📎 Lampiran</b> di tiap data (privat). Foto dikecilkan di HP sebelum dikirim (maks 1600 px + thumbnail) agar hemat kuota dan cepat dibuka; kuota dihitung bersama lampiran sesuai paket.</>, 'warn', <ScrMedia />],
   ]],
 ];
 
