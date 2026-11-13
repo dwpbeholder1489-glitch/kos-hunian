@@ -53,7 +53,7 @@ export default function Pembukuan() {
         <button className={entity ? 'on' : ''} onClick={() => setEntity(true)}>Seluruh badan usaha</button>
       </div>}
       <div className="seg">
-        {[['laporan', 'Laporan'], ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['laporan', 'Laporan'], ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
       {!d && !err ? <Loading /> : d && <>
@@ -62,6 +62,7 @@ export default function Pembukuan() {
         {tab === 'buku' && <BukuBesar d={d} kosId={kosId} entity={entity} from={from} to={to} retail={retail} />}
         {tab === 'jurnal' && <Jurnal kosId={kosId} from={from} to={to} retail={retail} ver={ver} />}
         {tab === 'periode' && owner && <Periode d={d} kosId={kosId} ym={ym} onDone={load} />}
+        {tab === 'bank' && <RekonBank kosId={kosId} ym={ym} owner={owner} ver={ver} />}
       </>}
     </div>
   );
@@ -273,5 +274,80 @@ function Manual({ d, kosId, onDone }) {
       <div className="li"><span className="small">Debit {rp(D)} · Kredit {rp(K)}</span>{D === K && D > 0 ? <span className="chip good">Seimbang</span> : <span className="chip gold">Belum seimbang</span>}</div>
       <button className="primary" disabled={busy || D !== K || D === 0 || desc.trim().length < 5} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan jurnal'}</button>
     </section>
+  );
+}
+
+// Rekonsiliasi bank (Paket Bisnis): cocokkan baris jurnal akun Bank dengan rekening koran akhir bulan.
+// Semua angka & izin dari server (bank_recon_get/save/mark/finish/reopen); selesai hanya bila selisih 0.
+function RekonBank({ kosId, ym, owner, ver }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const [saldo, setSaldo] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const muat = () => supabase.rpc('bank_recon_get', { p_kos: kosId, p_month: ym + '-01' }).then(({ data, error }) => {
+    if (error) return setErr(errMsg(error));
+    setD(data); setSaldo(data?.rekon?.saldo_koran != null ? String(data.rekon.saldo_koran) : ''); setNote(data?.rekon?.catatan || '');
+  });
+  useEffect(() => { setD(null); setErr(null); muat(); }, [kosId, ym, ver]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (err) return <div className="notice bad">{/bank_recon/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
+  if (!d) return <Loading />;
+  if (!d.aktif) return <FiturUpgrade kosId={kosId} owner={owner} event="FINANCE.RECONCILIATION_REQUESTED" title="Rekonsiliasi bank tersedia mulai Paket Bisnis" text="Cocokkan catatan bank di PRASARA dengan rekening koran setiap bulan, dan temukan transaksi yang belum tercatat atau belum masuk ke bank." />;
+  if (!d.ada_akun) return <Empty title="Belum ada akun Bank" text="Akun Bank muncul otomatis setelah ada transaksi transfer, e-wallet, atau setor ke bank." />;
+
+  const selesai = d.rekon?.status === 'selesai';
+  const panggil = async (fn, args, ok) => {
+    setBusy(true);
+    const { error } = await supabase.rpc(fn, args);
+    setBusy(false);
+    if (error) { toast(errMsg(error)); return false; }
+    if (ok) toast(ok);
+    muat(); return true;
+  };
+  const simpan = () => {
+    const n = parseRp(saldo);
+    if (saldo.trim() === '' || n == null || Number.isNaN(n)) return toast('Isi saldo rekening koran akhir bulan');
+    panggil('bank_recon_save', { p_kos: kosId, p_month: ym + '-01', p_statement: n, p_note: note || null }, 'Saldo rekening koran disimpan');
+  };
+  const tandai = (ids, cocok) => panggil('bank_recon_mark', { p_kos: kosId, p_month: ym + '-01', p_lines: ids, p_cocok: cocok }, null);
+  const belum = d.baris.filter((x) => !x.cocok);
+  const finish = () => { if (window.confirm(`Selesaikan rekonsiliasi ${bulan(ym)}?\nBaris yang ditandai terkunci sampai dibuka kembali oleh pemilik.`)) panggil('bank_recon_finish', { p_kos: kosId, p_month: ym + '-01' }, 'Rekonsiliasi selesai'); };
+  const reopen = () => { const r = window.prompt('Alasan membuka kembali rekonsiliasi ini:', ''); if (r != null) panggil('bank_recon_reopen', { p_kos: kosId, p_month: ym + '-01', p_reason: r }, 'Dibuka kembali'); };
+  const sel = d.selisih == null ? null : Number(d.selisih);
+
+  return (
+    <>
+      <section className="panel">
+        <div className="row between"><h3>Rekonsiliasi bank · {bulan(ym)}</h3>{d.rekon ? <span className={'chip ' + (selesai ? 'good' : 'void')}>{selesai ? 'Selesai' : 'Draf'}</span> : null}</div>
+        <span className="small muted">1) Isi saldo rekening koran per {tgl(d.akhir)}. 2) Centang baris yang sudah tercantum di rekening koran. 3) Bila selisih 0, tekan Selesaikan.</span>
+        <div className="grid">
+          <Tile label="Saldo buku (akun Bank)" value={rp(d.saldo_buku)} sub="semua catatan bank s.d. akhir bulan" />
+          <Tile label="Seharusnya di bank" value={rp(d.saldo_cocok)} sub="baris yang sudah dicentang" />
+          <Tile label="Belum muncul di bank" value={rp(d.belum_muncul)} sub="tercatat, belum di rekening koran" />
+          <Tile label="Selisih" value={sel == null ? '—' : rp(sel)} sub={sel == null ? 'isi saldo rekening koran' : sel === 0 ? 'cocok' : 'rekening koran − seharusnya'} />
+        </div>
+        {!selesai && <>
+          <Field label="Saldo rekening koran akhir bulan"><input inputMode="numeric" value={saldo} onChange={(e) => setSaldo(e.target.value)} placeholder="mis. 12.500.000" /></Field>
+          <Field label="Catatan (opsional)"><input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder="mis. Rekening BRI 1234" /></Field>
+          <button className="primary" disabled={busy} onClick={simpan}>Simpan saldo</button>
+        </>}
+        {sel != null && sel !== 0 && !selesai && <span className="small" style={{ color: 'var(--bad)' }}>Masih selisih {rp(sel)}. Centang baris yang sudah ada di rekening koran. Bila selisih berasal dari biaya admin atau bunga bank yang belum dicatat, catat dulu (Kas/Pengeluaran, akun bank) lalu muat ulang.</span>}
+        {!selesai && <button className="cta" disabled={busy || sel !== 0} onClick={finish}>Selesaikan rekonsiliasi</button>}
+        {selesai && <span className="small muted">Diselesaikan {d.rekon.selesai_oleh ? `oleh ${d.rekon.selesai_oleh}` : ''}{d.rekon.catatan ? ` · ${d.rekon.catatan}` : ''}.</span>}
+        {selesai && owner && <button className="ghost" disabled={busy} onClick={reopen}>Buka kembali</button>}
+      </section>
+
+      <section className="panel">
+        <div className="row between"><h3>Baris akun Bank</h3>{!selesai && belum.length > 0 && <button className="sm ghost" disabled={busy} onClick={() => tandai(belum.map((x) => x.id), true)}>Centang semua ({belum.length})</button>}</div>
+        {d.baris.length === 0 ? <span className="small muted">Tidak ada baris bank yang perlu dicocokkan di bulan ini.</span> : <div className="list">{d.baris.map((x) => (
+          <label key={x.id} className="li" style={{ alignItems: 'flex-start', gap: 10 }}>
+            <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={x.cocok} disabled={busy || selesai} onChange={(e) => tandai([x.id], e.target.checked)} aria-label={`Sudah di rekening koran: ${x.uraian}`} />
+            <div className="main"><b className="small">{x.uraian}</b><span className="small muted">{tgl(x.tanggal)} · {x.nomor}</span></div>
+            <span className="small" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(x.masuk) > 0 ? `+${rp(x.masuk)}` : `−${rp(x.keluar)}`}</span>
+          </label>
+        ))}</div>}
+        <span className="small muted">Baris yang sudah dicocokkan di bulan sebelumnya tidak ditampilkan lagi. Baris yang belum dicentang ikut tampil di bulan berikutnya.</span>
+      </section>
+    </>
   );
 }

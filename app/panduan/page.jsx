@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -58,7 +58,7 @@ const MENUS = [
   ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan persetujuan'],
   ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan'],
   ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
-  ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, anggaran & realisasi (Paket Bisnis)'],
+  ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, rekonsiliasi bank & anggaran (Paket Bisnis)'],
 ];
 
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
@@ -323,9 +323,10 @@ const PARTS = [
       <>Tab <b>Buku besar</b>: pilih akun (mis. Kas) untuk melihat setiap mutasi dan saldonya; ketuk <b>lihat …</b> untuk membuka transaksi asalnya. Tab <b>Jurnal</b>: semua jurnal beserta baris debit/kreditnya.</>,
       <>Punya beberapa bisnis dalam satu badan usaha (atur di Konfigurasi › Profil)? Pilih <b>Seluruh badan usaha</b> untuk laporan gabungan bisnis-bisnis itu. Badan usaha berbeda tidak pernah digabung.</>,
       <>Tab <b>Periode & manual</b> (pemilik): <b>Tutup</b> bulan yang sudah diperiksa (alasan wajib, tercatat). <b>Jurnal manual</b> untuk penyesuaian, mis. saldo awal rekening bank: debit Bank, kredit Ekuitas saldo awal. Jurnal manual tersedia mulai <b>Paket Bisnis</b> (bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa).</>,
+      <>Tab <b>Rekonsiliasi bank</b> (Paket Bisnis): isi <b>saldo rekening koran</b> akhir bulan, centang baris akun Bank yang sudah tercantum di rekening koran, lalu lihat <b>Selisih</b>. Bila 0, tekan <b>Selesaikan rekonsiliasi</b>. Selisih biasanya karena biaya admin/bunga bank yang belum dicatat — catat dulu, lalu cocokkan lagi. Baris yang belum muncul di bank ikut ke bulan berikutnya; pemilik bisa <b>Buka kembali</b> dengan alasan.</>,
       <><b>Keuangan › Anggaran</b> (Paket Bisnis): pilih bulan, isi anggaran tiap kategori biaya, lalu ketuk di luar kotak untuk menyimpan. Bilah menunjukkan terpakai (hijau), mendekati batas ≥80% (kuning), atau melebihi (merah). Realisasi dihitung otomatis dari pengeluaran yang tercatat.</>,
       <>Bulan baru: tekan <b>Salin anggaran</b> bulan lalu, atau <b>Pakai Rp …</b> untuk memakai realisasi bulan lalu sebagai anggaran. Kosongkan isian untuk menghapus. Di paket lain menu ini tetap menampilkan pengeluaran per kategori.</>,
-    ], <>Jurnal tidak bisa dihapus atau diubah. Bila penjualan/belanja dibatalkan atau diubah, sistem membuat <b>jurnal pembalikan/koreksi</b>; untuk bulan yang sudah ditutup, koreksinya dicatat di bulan berjalan. Kos dicatat saat uang diterima (basis kas), toko saat transaksi terjadi — gabungan berbeda basis hanya indikasi, bukan konsolidasi resmi. Pajak & penyusutan otomatis belum tersedia.</>, null, <ScrAnggaran />],
+    ], <>Jurnal tidak bisa dihapus atau diubah. Bila penjualan/belanja dibatalkan atau diubah, sistem membuat <b>jurnal pembalikan/koreksi</b>; untuk bulan yang sudah ditutup, koreksinya dicatat di bulan berjalan. Kos dicatat saat uang diterima (basis kas), toko saat transaksi terjadi — gabungan berbeda basis hanya indikasi, bukan konsolidasi resmi. Pajak & penyusutan otomatis belum tersedia.</>, null, <><ScrRekonBank /><ScrAnggaran /></>],
     ['Stok per lokasi & mutasi', 'Konfigurasi › Cabang & gudang, lalu menu Mutasi stok (toko)', [
       <>Pemilik membuka <b>Operasional › Mutasi stok</b> › <b>+ Tambah gudang / cabang</b> (atau Konfigurasi › Cabang & gudang › + Tambah). Lokasi yang sudah ada otomatis bernama <b>Lokasi utama</b> (boleh diganti namanya) dan semua stok lama ada di sana.</>,
       <>Begitu ada lebih dari satu lokasi, muncul kotak <b>📍 Lokasi kerja</b> di Kasir, Barang & stok, dan Belanja. Pilih lokasi tempat Anda bekerja: penjualan, belanja, hitung ulang stok, dan barang rusak tercatat di lokasi itu.</>,

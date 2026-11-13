@@ -341,6 +341,27 @@ export function ScrUpgradeSukses() {
   );
 }
 
+// Rekonsiliasi bank (Paket Bisnis): saldo rekening koran vs baris akun Bank yang dicentang (contoh)
+export function ScrRekonBank() {
+  const rows = [['Transfer dari pelanggan', '+', 2500000, true], ['Setor tunai ke bank', '+', 1000000, true], ['Bayar supplier via transfer', '−', 750000, false]];
+  return (
+    <Phone bare>
+      <div className="row between"><h3>Rekonsiliasi bank · {MONTH}</h3><span className="chip void">Draf</span></div>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Seharusnya di bank</span><span className="v">{rp(3500000)}</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Selisih</span><span className="v">{rp(0)}</span><span className="s">cocok</span></div>
+      </div>
+      <F label="Saldo rekening koran akhir bulan" value="3.500.000" />
+      {rows.map(([n, t, v, ok]) => (
+        <div key={n} className="row between small" style={{ flexWrap: 'nowrap', gap: 8 }}>
+          <span>{ok ? '☑' : '☐'} {n}</span><span style={{ whiteSpace: 'nowrap' }}>{t}{rp(v)}</span>
+        </div>
+      ))}
+      <span className="mini-btn cta">Selesaikan rekonsiliasi</span>
+    </Phone>
+  );
+}
+
 // Anggaran & realisasi (Paket Bisnis): bilah hijau/kuning/merah per kategori biaya (contoh)
 export function ScrAnggaran() {
   const bar = (p, c) => <div style={{ height: 8, borderRadius: 4, background: 'var(--line)', overflow: 'hidden' }}><div style={{ width: `${Math.min(p, 100)}%`, height: '100%', background: c }} /></div>;
