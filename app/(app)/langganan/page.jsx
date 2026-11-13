@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { Field, Sheet, Loading, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg } from '@/lib/format';
-import { planOf, PLANS, FEATURES, BUSINESS, waTo, featureCell, termOf, totalOf, savePct } from '@/lib/plan';
+import { planOf, PLANS, FEATURES, FEATURE_CODES, BUSINESS, waTo, featureCell, termOf, totalOf, savePct } from '@/lib/plan';
 
 const DUR = [1, 3, 6, 12];
 const REQ_ST = { menunggu: ['Menunggu diperiksa', 'gold'], disetujui: ['Lunas', 'good'], ditolak: ['Ditolak', 'bad'], batal: ['Dibatalkan', 'void'], kedaluwarsa: ['Kedaluwarsa', 'void'] };
@@ -58,6 +58,19 @@ export default function Langganan() {
     if (pendingReq?.method !== 'gateway') return;
     supabase.rpc('plan_pay_link', { p_kos: kos.id, p_plan: pendingReq.plan, p_months: pendingReq.months }).then(({ data }) => setPendingUrl(data || null));
   }, [kos.id, pendingReq?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Kartu "Upgrade berhasil": tampil sekali untuk setiap persetujuan baru (penanda per perangkat)
+  const [baru, setBaru] = useState(null);
+  useEffect(() => {
+    if (!reqs) return;
+    const key = `prasara-upgrade-${kos.id}`;
+    const ok = reqs.find((r) => r.status === 'disetujui');
+    if (!ok) return;
+    let seen = null; try { seen = localStorage.getItem(key); } catch {}
+    if (seen === null) { try { localStorage.setItem(key, ok.id); } catch {} return; }
+    if (seen !== ok.id) setBaru(ok);
+  }, [reqs, kos.id]);
+  const tutupBaru = () => { try { localStorage.setItem(`prasara-upgrade-${kos.id}`, baru.id); } catch {} setBaru(null); };
 
   if (p.owner) return (
     <div className="stack">
@@ -124,6 +137,21 @@ export default function Langganan() {
           : <button className="sm ghost" onClick={() => cancel(true)}>Berhenti memperpanjang</button>)}
       </section>
 
+      {baru && (
+        <section className="panel" style={{ borderColor: 'var(--good)' }}>
+          <h3>Upgrade berhasil!</h3>
+          <div className="row between"><b>Paket {pname(baru.plan)}</b><span className="chip good">{baru.months === 12 ? '1 tahun' : `${baru.months} bulan`}</span></div>
+          <span className="small">Dibayar {rp(baru.amount)} (sekali bayar){baru.active_until ? ` · aktif s.d. ${tgl(String(baru.active_until).slice(0, 10))}` : ''}.</span>
+          {(() => { const pl = plans.find((x) => x.key === baru.plan); return pl ? (
+            <>
+              <span className="small">Kapasitas baru: karyawan {pl.limits?.karyawan ?? '—'}, ruang lampiran {pl.limits?.lampiran_mb ?? '—'} MB.</span>
+              <ul className="small" style={{ margin: '6px 0 0', paddingLeft: 18 }}>{(pl.features || []).map((c) => <li key={c}>{FEATURE_CODES[c] || c}</li>)}</ul>
+            </>
+          ) : null; })()}
+          <button className="cta" style={{ width: '100%', marginTop: 8 }} onClick={tutupBaru}>Mengerti</button>
+        </section>
+      )}
+
       {pending && !sent && (
         <div className="notice info">
           {pending.method === 'gateway' ? (
@@ -132,6 +160,7 @@ export default function Langganan() {
             <>Invoice {pending.number || ''} · {pname(pending.plan)} {pending.months} bulan ({rp(pending.amount)}) sedang diperiksa. Paket aktif setelah disetujui, biasanya dalam 1×24 jam pada hari kerja.</>
           )}
           {pending.trx?.code && <div className="small" style={{ marginTop: 6 }}>ID transaksi: <b>{pending.trx.code}</b></div>}
+          {pending.due_at && <div className="small" style={{ marginTop: 6 }}>Batas waktu bayar: <b>{tgl(String(pending.due_at).slice(0, 10))}</b>{new Date(pending.due_at) < new Date() && <span style={{ color: 'var(--att-fg)' }}> · sudah lewat. Belum membayar? Ketuk Belum bayar — batalkan, lalu pilih lagi.</span>}</div>}
           {pending.method === 'gateway' && pendingUrl && <a href={pendingUrl} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: 8 }}><button className="cta" style={{ width: '100%' }}>Buka halaman Lynk.id</button></a>}
           <div className="row" style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan PRASARA ${pending.number || ''}${pending.trx?.code ? ` (${pending.trx.code})` : ''} untuk "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a>
             <button className="sm ghost" onClick={() => cancelInv(pending)}>Belum bayar — batalkan</button></div>
@@ -206,6 +235,13 @@ export default function Langganan() {
 
           <section className="panel">
             <h3>4. Konfirmasi</h3>
+            <div className="tile" style={{ marginBottom: 8 }}>
+              <span className="label">Ringkasan pesanan</span>
+              <span className="v">Paket {sel.name} · {months === 12 && term ? '1 tahun' : `${months} bulan`}</span>
+              <span className="small">Total {rp(total)}{months > 1 ? ' (dibayar sekali)' : ''}</span>
+              {(sel.features || []).length > 0 && <ul className="small" style={{ margin: '6px 0 0', paddingLeft: 18 }}>{sel.features.map((c) => <li key={c}>{FEATURE_CODES[c] || c}</li>)}</ul>}
+              <span className="small muted">Invoice dibuat setelah Anda menekan tombol di bawah. Batas waktu bayar 3 hari.</span>
+            </div>
             <Field label="Catatan (opsional)" hint="mis. nama pengirim di rekening atau aplikasi"><input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
             {method === 'lynk' ? (
               <>

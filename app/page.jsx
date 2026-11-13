@@ -193,8 +193,8 @@ export default async function Landing() {
           <div className="ln-wrap ln-hero-grid">
             <div className="ln-hero-text ln-rise">
               <span className="ln-eyebrow">Adaptive Business System</span>
-              <h1>Kelola Bisnis Lebih Terarah. Kembangkan dengan <span>Lebih Cerdas.</span></h1>
-              <p className="ln-lead">Mulai dari operasional harian hingga pengambilan keputusan, PRASARA membantu menyatukan kebutuhan bisnis Anda dalam satu sistem yang adaptif.</p>
+              <h1>Kelola bisnis dengan <span>lebih terstruktur.</span></h1>
+              <p className="ln-lead">PRASARA membantu Anda mengelola transaksi, inventaris, keuangan, pelanggan, dan operasional bisnis dalam satu sistem yang menyesuaikan kebutuhan usaha Anda.</p>
               <div className="ln-cta-row">
                 <Link href={START} className="ln-btn ln-btn-primary ln-btn-lg">Mulai Sekarang <Icon name="arrow" size={18} /></Link>
                 <a href="#demo" className="ln-btn ln-btn-outline ln-btn-lg">▶&nbsp; Lihat Demo</a>

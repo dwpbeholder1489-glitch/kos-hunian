@@ -169,7 +169,7 @@ const PARTS = [
     ['Berlangganan', 'Langganan', [
       <>Pilih paket: <b>Dasar</b>, <b>Bisnis</b>, atau <b>Pro</b>. Harga normal tampil dicoret di atas harga yang berlaku (harga per bisnis per bulan). Lalu pilih durasi; untuk Pro tersedia <b>1 tahun</b> dengan harga tahunan yang dibayar sekali untuk 12 bulan.</>,
       <>Bayar lewat <b>QRIS</b>, <b>transfer bank</b>, atau <b>Lynk.id</b> sesuai total. Dengan <b>Lynk.id</b>, pilih tombol itu lalu tekan <b>Buat tagihan & buka Lynk.id</b>. Di halaman Lynk, isi email akun Anda (tertulis di layar) agar pembayaran otomatis cocok; paket aktif sendiri begitu pembayaran diterima, tanpa kirim bukti.</>,
-      <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>. Setiap pembayaran mendapat <b>nomor invoice</b> (INV-…) dan <b>ID transaksi</b> (TRX-…). Salah pilih dan belum membayar? Tekan <b>Belum bayar — batalkan</b>, lalu pilih lagi.</>,
+      <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>. Setiap pembayaran mendapat <b>nomor invoice</b> (INV-…) dan <b>ID transaksi</b> (TRX-…). Tagihan punya <b>batas waktu bayar 3 hari</b>; lewat batas, tanda <b>sudah lewat</b> muncul. Salah pilih dan belum membayar? Tekan <b>Belum bayar — batalkan</b>, lalu pilih lagi.</>,
       <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam pada hari kerja (pembayaran lewat Lynk.id: otomatis). Invoice bisa dibuka & dicetak di <b>Riwayat tagihan</b>.</>,
       <><b>Naik paket</b> berlaku sejak disetujui (sisa hari paket lama dihitung ulang dan ditambahkan). <b>Turun paket</b> berlaku setelah paket sekarang berakhir.</>,
       <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi.</>,
@@ -202,7 +202,7 @@ const PARTS = [
       <>Belum terjawab? Tekan <b>Laporkan masalah</b> di bagian <b>Tiket bantuan</b>: pilih jenis masalah, tulis judul dan ceritanya, lalu <b>Kirim</b>. Balasan tim muncul di sana dan dikirim ke email Anda. Bisa juga <b>Tanya via WhatsApp</b>.</>,
       <>Bila tim perlu memeriksa, pemilik bisa menekan <b>Izinkan selama 24 jam</b>. Tim hanya melihat ringkasan angka (tanpa nama/nomor penghuni atau pelanggan), tidak bisa mengubah data, dan setiap pembukaan tercatat di sana. <b>Cabut izin sekarang</b> kapan saja.</>,
       <>Selama masa coba, PRASARA mengirim <b>email arahan</b> hanya untuk langkah yang belum Anda kerjakan, paling banyak satu email tiap 2 hari.</>,
-    ], <>Email arahan & info bisa dimatikan lewat tautan di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan dan pengumuman layanan penting tidak ikut berhenti. Pengumuman dari tim PRASARA juga tampil sebagai banner di atas aplikasi; tekan ✕ untuk menutupnya.</>, null, null],
+    ], <>Email arahan & info bisa dimatikan lewat tautan di bawah email, atau di <b>Pengaturan › Akun</b>. Pengingat tagihan dan pengumuman layanan penting tidak ikut berhenti. Pengumuman dari tim PRASARA juga tampil sebagai banner di atas aplikasi; tekan ✕ untuk menutupnya. Ingin menghapus akun? Buka <b>Akun › Ajukan hapus akun</b>; admin memproses permintaan itu, dan data yang wajib disimpan menurut ketentuan tetap disimpan.</>, null, null],
     ['Notifikasi & ringkasan lewat email', 'Lonceng di kanan atas', [
       <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti hari ini: pembayaran menunggu diperiksa, tagihan telat, dan jatuh tempo hari ini.</>,
       <>Ketuk lonceng. Bagian <b>Perlu perhatian</b> juga menampilkan sewa yang akan berakhir, kamar tanpa harga, dan penghuni tanpa nomor WhatsApp. Ketuk untuk membuka menunya.</>,
@@ -263,7 +263,7 @@ const PARTS = [
       <>Tekan <b>Kirim cara masuk via WA</b>. Karyawan membuka PRASARA › <b>Masuk</b> › <b>Daftar</b> dengan email itu, lalu konfirmasi email. Saat masuk, ia langsung berada di bisnis Anda — tidak perlu membuat bisnis.</>,
       <>Karyawan hanya melihat menu perannya. Kasir tidak melihat harga modal, laba, kas, dan laporan; penjualan yang ia lihat hanya miliknya sendiri. Setiap penjualan mencatat nama kasirnya.</>,
       <>Ganti peran lewat pilihan di daftar. <b>Nonaktifkan</b> untuk menutup akses sementara; <b>Hapus</b> untuk membuang emailnya dari daftar. Tombol <b>Bersihkan</b> menghapus semua email nonaktif dan undangan kedaluwarsa sekaligus.</>,
-    ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Dasar 1, Bisnis 5, Pro 15. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun.</>, null, null],
+    ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Dasar 1, Bisnis 5, Pro 15. Saat batas penuh, tombol Undang membuka pilihan upgrade paket. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun.</>, null, null],
     ['Pelanggan & supplier', 'Menu Pelanggan & supplier (toko)', [
       <>Pilih tab <b>Pelanggan</b> atau <b>Supplier</b>. Angka merah = sisa kasbon pelanggan atau utang Anda ke supplier.</>,
       <>Ketuk nama untuk melihat <b>riwayat</b> penjualan, belanja, dan pelunasannya. Ketuk nomor penjualan untuk membuka struknya.</>,

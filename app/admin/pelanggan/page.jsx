@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { Loading, Empty } from '@/components/ui';
-import { errMsg } from '@/lib/format';
+import { Loading, Empty, toast } from '@/components/ui';
+import { errMsg, tgl } from '@/lib/format';
 import { PLANS } from '@/lib/plan';
 import { can, TYPE_ICON } from '@/lib/admin';
 import { health } from '@/lib/health';
@@ -28,6 +28,20 @@ export default function Pelanggan() {
   const [q, setQ] = useState('');
   const [f, setF] = useState('semua');
   const [type, setType] = useState('semua');
+  const [reqDel, setReqDel] = useState(null);   // permintaan hapus akun (antrean)
+  const loadDel = () => supabase.rpc('admin_account_requests').then(({ data, error }) => setReqDel(error ? [] : (data || [])));
+  useEffect(() => { if (can(adminMe, 'customers.view')) loadDel(); }, [adminMe]); // eslint-disable-line react-hooks/exhaustive-deps
+  const putus = async (r, status) => {
+    let note = '';
+    if (status === 'selesai') note = window.prompt('Catatan (opsional), mis. "data keuangan disimpan sesuai retensi"', '');
+    if (status === 'ditolak') note = window.prompt('Alasan penolakan (wajib)', '');
+    if (note === null) return;
+    note = note.trim();
+    if (status === 'ditolak' && !note) return toast('Isi alasan penolakan.');
+    const { error } = await supabase.rpc('admin_account_resolve', { p_id: r.id, p_status: status, p_note: note || null });
+    if (error) return toast(errMsg(error));
+    toast('Permintaan diperbarui'); loadDel();
+  };
   useEffect(() => {
     try { const p = new URLSearchParams(window.location.search).get('f'); if (p && FILTERS.some(([k]) => k === p)) setF(p); } catch {}
     if (can(adminMe, 'customers.view')) supabase.rpc('admin_customers').then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data)));
@@ -46,6 +60,28 @@ export default function Pelanggan() {
   return (
     <div className="stack">
       <div className="row"><h2>Pelanggan</h2><PageHelp page="admin-pelanggan" /></div>
+      {reqDel?.length > 0 && (
+        <section className="panel">
+          <h3>Permintaan hapus akun ({reqDel.length})</h3>
+          <p className="small muted" style={{ margin: 0 }}>Data bisnis yang wajib disimpan menurut ketentuan retensi tidak dihapus otomatis. Pastikan sesuai kebijakan sebelum menyatakan selesai.</p>
+          <div className="list">{reqDel.map((r) => (
+            <div key={r.id} className="li" style={{ alignItems: 'flex-start' }}>
+              <div className="main">
+                <b className="small">{r.email || '—'}</b>
+                <span className="small muted">{r.bisnis || 'Tanpa bisnis'} · diajukan {tgl(String(r.created_at).slice(0, 10))}</span>
+                <span className="small">Status: {r.status === 'diproses' ? 'sedang diproses' : 'menunggu'}</span>
+                {can(adminMe, 'customers.override') && (
+                  <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
+                    {r.status === 'menunggu' && <button className="sm ghost" onClick={() => putus(r, 'diproses')}>Diproses</button>}
+                    <button className="sm" onClick={() => putus(r, 'selesai')}>Selesai</button>
+                    <button className="sm ghost danger" onClick={() => putus(r, 'ditolak')}>Tolak</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}</div>
+        </section>
+      )}
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama bisnis atau email" aria-label="Cari pelanggan" />
       <div className="seg">{FILTERS.map(([k, l, fn]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l} ({all.filter(fn).length})</button>)}</div>
       <div className="seg">{[['semua', 'Semua jenis'], ['properti', '🏠 Properti'], ['retail', '🛒 Retail'], ['jasa', '🧺 Jasa'], ['kustom', '🧩 Kustom']].map(([k, l]) => <button key={k} className={type === k ? 'on' : ''} onClick={() => setType(k)}>{l}</button>)}</div>

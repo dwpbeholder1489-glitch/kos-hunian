@@ -1,6 +1,6 @@
 'use client';
 // Akun: email masuk, bisnis aktif & ganti bisnis, paket, tampilan, bantuan, keluar.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -10,6 +10,7 @@ import NavIcon from '@/components/NavIcon';
 import { typeOf, roleOf, ROLES, homeOf, canArea, isDraft, SETUP_STATUS } from '@/lib/business';
 import { planOf, PLANS } from '@/lib/plan';
 import { Field, toast } from '@/components/ui';
+import { errMsg, tgl } from '@/lib/format';
 import { waOk, waNorm } from '@/lib/akun';
 
 export default function Akun() {
@@ -49,8 +50,37 @@ export default function Akun() {
         <Link href="/bantuan" className="modrow"><span className="modic"><NavIcon name="/bantuan" /></span><span className="t"><b>Pusat bantuan</b><small>Panduan, tanya jawab, tiket bantuan</small></span></Link>
         <Link href="/panduan" className="modrow"><span className="modic"><NavIcon name="/catatan" /></span><span className="t"><b>Panduan bergambar</b><small>Langkah demi langkah semua menu</small></span></Link>
       </div>
+      <HapusAkun />
       <button className="ghost danger" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
     </div>
+  );
+}
+
+// Permintaan hapus akun (Bab 19). Admin memproses; data bisnis yang wajib disimpan menurut ketentuan tetap disimpan.
+function HapusAkun() {
+  const [req, setReq] = useState(undefined);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { supabase.rpc('account_request_my').then(({ data, error }) => setReq(error ? null : data)); }, []);
+  const ajukan = async () => {
+    if (!window.confirm('Ajukan penghapusan akun? Admin akan memprosesnya. Data bisnis yang wajib disimpan menurut ketentuan tetap disimpan.')) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc('account_request_delete');
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    setReq(data); toast('Permintaan hapus akun dikirim');
+  };
+  const aktif = req && (req.status === 'menunggu' || req.status === 'diproses');
+  return (
+    <section className="panel">
+      <h3>Hapus akun</h3>
+      <span className="small muted">Akun dihapus setelah admin memprosesnya. Data bisnis yang wajib disimpan menurut aturan (misalnya catatan keuangan) tetap disimpan dan tidak ikut terhapus.</span>
+      {aktif
+        ? <div className="notice">Permintaan dikirim {tgl(String(req.created_at).slice(0, 10))}. Status: {req.status === 'diproses' ? 'sedang diproses' : 'menunggu'}.</div>
+        : <>
+          {req?.status === 'selesai' && <span className="small">Permintaan sebelumnya sudah selesai diproses.</span>}
+          <button className="ghost danger" disabled={busy || req === undefined} onClick={ajukan}>{busy ? 'Mengirim…' : 'Ajukan hapus akun'}</button>
+        </>}
+    </section>
   );
 }
 
