@@ -168,9 +168,9 @@ const PARTS = [
   ['D', 'Akun, langganan, dan portal penghuni', [
     ['Berlangganan', 'Langganan', [
       <>Pilih paket: <b>Dasar</b>, <b>Bisnis</b>, atau <b>Pro</b>. Harga normal tampil dicoret di atas harga yang berlaku (harga per bisnis per bulan). Lalu pilih durasi; untuk Pro tersedia <b>1 tahun</b> dengan harga tahunan yang dibayar sekali untuk 12 bulan.</>,
-      <>Bayar lewat <b>QRIS</b> atau <b>transfer bank</b> sesuai total.</>,
+      <>Bayar lewat <b>QRIS</b>, <b>transfer bank</b>, atau <b>Lynk.id</b> sesuai total. Dengan <b>Lynk.id</b>, pilih tombol itu lalu tekan <b>Buat tagihan & buka Lynk.id</b>. Di halaman Lynk, isi email akun Anda (tertulis di layar) agar pembayaran otomatis cocok; paket aktif sendiri begitu pembayaran diterima, tanpa kirim bukti.</>,
       <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>. Setiap pembayaran mendapat <b>nomor invoice</b> (INV-…) dan <b>ID transaksi</b> (TRX-…). Salah pilih dan belum membayar? Tekan <b>Belum bayar — batalkan</b>, lalu pilih lagi.</>,
-      <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam pada hari kerja. Invoice bisa dibuka & dicetak di <b>Riwayat tagihan</b>.</>,
+      <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam pada hari kerja (pembayaran lewat Lynk.id: otomatis). Invoice bisa dibuka & dicetak di <b>Riwayat tagihan</b>.</>,
       <><b>Naik paket</b> berlaku sejak disetujui (sisa hari paket lama dihitung ulang dan ditambahkan). <b>Turun paket</b> berlaku setelah paket sekarang berakhir.</>,
       <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi.</>,
     ], <>Bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar (dihitung sejak bisnis diaktifkan). Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],

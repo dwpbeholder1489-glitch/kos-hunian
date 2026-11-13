@@ -29,6 +29,8 @@ export default function Langganan() {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(null);
   const [inv, setInv] = useState(null);
+  const [lynkUrl, setLynkUrl] = useState(null);
+  const [pendingUrl, setPendingUrl] = useState(null);
 
   // Tagihan + ID transaksi & status pembayaran dari server; cadangan: tabel tagihan saja
   const loadReqs = () => supabase.rpc('my_invoices', { p_kos: kos.id }).then(async ({ data, error }) => {
@@ -45,6 +47,17 @@ export default function Langganan() {
       setPlan((cur) => cur || (list.find((x) => x.key === kos.plan && !p.free) || list[0])?.key);
     });
   }, [kos.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Link Lynk: hanya ada bila harganya masih sama dengan link yang dipasang (dicek server)
+  const pendingReq = reqs?.find((r) => r.status === 'menunggu');
+  useEffect(() => {
+    if (!plan) return;
+    supabase.rpc('plan_pay_link', { p_kos: kos.id, p_plan: plan, p_months: months }).then(({ data }) => setLynkUrl(data || null));
+  }, [kos.id, plan, months]);
+  useEffect(() => {
+    if (pendingReq?.method !== 'gateway') return;
+    supabase.rpc('plan_pay_link', { p_kos: kos.id, p_plan: pendingReq.plan, p_months: pendingReq.months }).then(({ data }) => setPendingUrl(data || null));
+  }, [kos.id, pendingReq?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (p.owner) return (
     <div className="stack">
@@ -70,9 +83,11 @@ export default function Langganan() {
 
   async function confirm() {
     setBusy(true);
-    const { data: id, error } = await supabase.rpc('request_plan', { p_kos: kos.id, p_plan: sel.key, p_months: months, p_method: method, p_note: note });
+    const metode = method === 'lynk' ? 'gateway' : method;
+    const { data: id, error } = await supabase.rpc('request_plan', { p_kos: kos.id, p_plan: sel.key, p_months: months, p_method: metode, p_note: note });
     setBusy(false);
     if (error) return toast(errMsg(error));
+    if (metode === 'gateway') { toast('Tagihan dibuat. Ketuk Buka halaman Lynk.id untuk membayar.'); loadReqs(); return; }
     const { data: r } = await supabase.from('plan_requests').select('number').eq('id', id).maybeSingle();
     const msg = `Halo, saya sudah membayar langganan PRASARA.\n\nInvoice: ${r?.number || '-'}\nBisnis: ${kos.name}\nAkun: ${user?.email}\nPaket: ${sel.name} ${months === 12 && term ? '1 tahun' : months + ' bulan'}\nTotal: ${rp(total)}\nMetode: ${method === 'qris' ? 'QRIS' : 'Transfer ' + BUSINESS.bank.name}${note ? `\nCatatan: ${note}` : ''}\n\n(Bukti pembayaran saya lampirkan)`;
     setSent(waTo(msg));
@@ -111,8 +126,13 @@ export default function Langganan() {
 
       {pending && !sent && (
         <div className="notice info">
-          Invoice {pending.number || ''} · {pname(pending.plan)} {pending.months} bulan ({rp(pending.amount)}) sedang diperiksa. Paket aktif setelah disetujui, biasanya dalam 1×24 jam pada hari kerja.
+          {pending.method === 'gateway' ? (
+            <>Invoice {pending.number || ''} · {pname(pending.plan)} {pending.months} bulan ({rp(pending.amount)}) menunggu pembayaran di Lynk.id. Paket aktif <b>otomatis</b> begitu pembayaran diterima, asalkan email di halaman Lynk sama dengan <b>{user?.email}</b>.</>
+          ) : (
+            <>Invoice {pending.number || ''} · {pname(pending.plan)} {pending.months} bulan ({rp(pending.amount)}) sedang diperiksa. Paket aktif setelah disetujui, biasanya dalam 1×24 jam pada hari kerja.</>
+          )}
           {pending.trx?.code && <div className="small" style={{ marginTop: 6 }}>ID transaksi: <b>{pending.trx.code}</b></div>}
+          {pending.method === 'gateway' && pendingUrl && <a href={pendingUrl} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: 8 }}><button className="cta" style={{ width: '100%' }}>Buka halaman Lynk.id</button></a>}
           <div className="row" style={{ marginTop: 8 }}><a href={waTo(`Halo, saya ingin menanyakan konfirmasi langganan PRASARA ${pending.number || ''}${pending.trx?.code ? ` (${pending.trx.code})` : ''} untuk "${kos.name}" (${user?.email}).`)} target="_blank" rel="noreferrer">Tanya via WhatsApp →</a>
             <button className="sm ghost" onClick={() => cancelInv(pending)}>Belum bayar — batalkan</button></div>
         </div>
@@ -161,6 +181,7 @@ export default function Langganan() {
             <div className="seg">
               <button className={method === 'qris' ? 'on' : ''} onClick={() => setMethod('qris')}>QRIS</button>
               <button className={method === 'transfer' ? 'on' : ''} onClick={() => setMethod('transfer')}>Transfer bank</button>
+              <button className={method === 'lynk' ? 'on' : ''} onClick={() => setMethod('lynk')}>Lynk.id</button>
             </div>
             {method === 'qris' ? (
               <>
@@ -168,6 +189,12 @@ export default function Langganan() {
                 <p className="small muted" style={{ margin: 0, textAlign: 'center' }}>Scan dengan aplikasi bank atau e-wallet, lalu masukkan nominal <b>{rp(total)}</b>.</p>
                 <a href={BUSINESS.qrisImage} download="QRIS-PRASARA.jpg" className="small" style={{ textAlign: 'center' }}>Simpan gambar QRIS</a>
               </>
+            ) : method === 'lynk' ? (
+              lynkUrl ? (
+                <p className="small muted" style={{ margin: 0 }}>Bayar di halaman Lynk.id (QRIS, e-wallet, atau virtual account sesuai pilihan di sana) dengan nominal <b>{rp(total)}</b>. Di halaman Lynk, isi email <b>{user?.email}</b> agar pembayaran otomatis cocok dengan akun Anda. Tekan tombol di bawah untuk membuat tagihan lalu membuka Lynk.id.</p>
+              ) : (
+                <p className="small" style={{ margin: 0, color: 'var(--att)' }}>Pembayaran Lynk.id belum tersedia untuk pilihan ini. Pilih QRIS atau transfer bank.</p>
+              )
             ) : (
               <>
                 <span className="small muted">{BUSINESS.bank.name} a.n. {BUSINESS.bank.holder}</span>
@@ -180,8 +207,17 @@ export default function Langganan() {
           <section className="panel">
             <h3>4. Konfirmasi</h3>
             <Field label="Catatan (opsional)" hint="mis. nama pengirim di rekening atau aplikasi"><input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-            <button className="cta" onClick={confirm} disabled={busy}>{busy ? 'Menyimpan…' : 'Saya sudah bayar'}</button>
-            <p className="small muted" style={{ margin: 0 }}>Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam pada hari kerja.</p>
+            {method === 'lynk' ? (
+              <>
+                <button className="cta" onClick={confirm} disabled={busy || !lynkUrl}>{busy ? 'Menyimpan…' : 'Buat tagihan & buka Lynk.id'}</button>
+                <p className="small muted" style={{ margin: 0 }}>Paket aktif otomatis setelah pembayaran di Lynk.id diterima. Tidak perlu kirim bukti.</p>
+              </>
+            ) : (
+              <>
+                <button className="cta" onClick={confirm} disabled={busy}>{busy ? 'Menyimpan…' : 'Saya sudah bayar'}</button>
+                <p className="small muted" style={{ margin: 0 }}>Paket aktif setelah pembayaran diperiksa, biasanya dalam 1×24 jam pada hari kerja.</p>
+              </>
+            )}
           </section>
         </>
       )}
@@ -207,7 +243,7 @@ export default function Langganan() {
               <div className="li"><span className="small">Tanggal</span><b className="small">{tgl(inv.created_at.slice(0, 10))}</b></div>
               <div className="li"><span className="small">{KIND[inv.kind] || 'Langganan'}</span><b className="small">{pname(inv.plan)} × {inv.months} bulan</b></div>
               {inv.unit_price && inv.months === 1 && <div className="li"><span className="small">Harga per bulan</span><b className="small">{rp(inv.unit_price)}</b></div>}
-              <div className="li"><span className="small">Metode</span><b className="small">{inv.method === 'qris' ? 'QRIS' : inv.method === 'transfer' ? 'Transfer bank' : 'Pembayaran online'}</b></div>
+              <div className="li"><span className="small">Metode</span><b className="small">{inv.method === 'qris' ? 'QRIS' : inv.method === 'transfer' ? 'Transfer bank' : inv.method === 'gateway' ? 'Lynk.id' : 'Pembayaran online'}</b></div>
               {inv.trx?.code && <div className="li"><span className="small">ID transaksi</span><b className="small" style={{ overflowWrap: 'anywhere' }}>{inv.trx.code}</b></div>}
               {inv.trx?.status && <div className="li"><span className="small">Status pembayaran</span><b className="small">{TRX_ST[inv.trx.status] || inv.trx.status}</b></div>}
               <div className="li"><b>Total</b><b>{rp(inv.amount)}</b></div>

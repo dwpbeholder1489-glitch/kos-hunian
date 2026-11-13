@@ -72,3 +72,15 @@ select pay_event_ingest('lynk','uji-kunci-0007',true,'{}','{}',
 select status from plan_requests where id = :'inv2';
 select count(*) jumlah_aktivasi from plan_activations where kos_id = :'K';
 select kos.plan, kos.paid_until - current_date as sisa_hari from kos where id = :'K';
+
+\echo == G. Langganan > Lynk: link tersedia, tagihan gateway dibuat, notifikasi cocok mengaktifkan paket
+select plan_pay_link(:'K','bisnis',1) is not null as link_bisnis_ada;
+select plan_pay_link(:'K','dasar',3) is null as link_tanpa_harga_terdaftar_null;
+set role authenticated;
+select set_config('request.jwt.claim.sub',:'owner',false), set_config('request.jwt.claims','{"sub":"77777777-7777-7777-7777-777777777777","email":"bayar@x.com"}',false) \g /dev/null
+select request_plan(:'K','bisnis',1,'gateway') as inv3 \gset
+reset role;
+select r.amount, r.method, r.status, t.provider, t.method as metode_trx, t.status as status_trx from plan_requests r join pay_transactions t on t.invoice_id = r.id where r.id = :'inv3';
+select pay_event_ingest('lynk','uji-kunci-0008',true,'{}','{}',
+  '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":99000,"email":"bayar@x.com","ref":"REF-UJI-0008"}'::jsonb)->>'status' as hasil_g;
+select r.status, kos.plan, kos.paid_until - current_date as sisa_hari from plan_requests r join kos on kos.id = r.kos_id where r.id = :'inv3';
