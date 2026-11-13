@@ -84,3 +84,21 @@ select r.amount, r.method, r.status, t.provider, t.method as metode_trx, t.statu
 select pay_event_ingest('lynk','uji-kunci-0008',true,'{}','{}',
   '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":99000,"email":"bayar@x.com","ref":"REF-UJI-0008"}'::jsonb)->>'status' as hasil_g;
 select r.status, kos.plan, kos.paid_until - current_date as sisa_hari from plan_requests r join kos on kos.id = r.kos_id where r.id = :'inv3';
+
+\echo == H. Rekonsiliasi admin: pembayaran tanpa tagihan dicocokkan manual ke tagihan yang menunggu
+set role authenticated;
+select set_config('request.jwt.claim.sub',:'owner',false), set_config('request.jwt.claims','{"sub":"77777777-7777-7777-7777-777777777777","email":"bayar@x.com"}',false) \g /dev/null
+select request_plan(:'K','pro',1,'qris') as inv4 \gset
+reset role;
+select pay_event_ingest('lynk','uji-kunci-0009',true,'{}','{}',
+  '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":149000,"email":"orang.lain@x.com","ref":"REF-UJI-0009"}'::jsonb)->>'status' as hasil_h;
+select id as rc from pay_recon where status = 'terbuka' and reason = 'tidak_ada_tagihan' order by created_at desc limit 1 \gset
+insert into auth.users(id,email) values ('88888888-8888-8888-8888-888888888888','adm@x.com') on conflict do nothing;
+insert into app_admins(email) values ('adm@x.com') on conflict do nothing;
+set role authenticated;
+select set_config('request.jwt.claim.sub','88888888-8888-8888-8888-888888888888',false), set_config('request.jwt.claims','{"sub":"88888888-8888-8888-8888-888888888888","email":"adm@x.com"}',false) \g /dev/null
+select admin_recon_resolve(:'rc', 'cocokkan', :'inv4', 'Uji: uang masuk di mutasi');
+reset role;
+select status from plan_requests where id = :'inv4';
+select kos.plan, kos.paid_until - current_date as sisa_hari from kos where id = :'K';
+select status, resolution from pay_recon where id = :'rc';
