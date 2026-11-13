@@ -45,9 +45,9 @@ end $$;
 select approval_rule_set(:'L','retur_penjualan',true); select approval_required(:'L','retur_penjualan') c_lama_bisa_atur;
 
 \echo == D. Otomatisasi: baru tidak bisa menyalakan; mematikan boleh; jadwal harian melewati bisnis tanpa fitur
-select code as rc from automation_recipes where 'retail' = any(applies_to) order by code limit 1 \gset
+select code as rc from automation_recipes where 'retail' = any(applies_to) and tier = 'dasar' order by code limit 1 \gset
 do $$ declare m text; begin
-  begin perform automation_set('91919191-0000-0000-0000-00000000000a', (select code from automation_recipes where 'retail' = any(applies_to) order by code limit 1), true, '{}'); exception when others then m := sqlerrm; end;
+  begin perform automation_set('91919191-0000-0000-0000-00000000000a', (select code from automation_recipes where 'retail' = any(applies_to) and tier = 'dasar' order by code limit 1), true, '{}'); exception when others then m := sqlerrm; end;
   if coalesce(m, '') not like 'BATAS_PAKET%' then raise exception 'D_GAGAL: %', m; end if; raise notice 'd_OK: baru tidak bisa menyalakan';
 end $$;
 select automation_set(:'N', :'rc', false, '{}') is not null d_mematikan_boleh;

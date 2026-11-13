@@ -27,6 +27,8 @@ export default function Persetujuan() {
   const { kos, kosId, ver, loadKos } = useKos();
   const fitur = hasFeature(kos, 'persetujuan');   // mengatur aturan sendiri: mulai Paket Bisnis (bisnis lama tetap)
   const owner = canArea(kos, 'team');
+  const approver = !owner && Boolean(kos?.my_approver);   // penyetuju tingkat 1 (Paket Pro)
+  const multi = hasFeature(kos, 'persetujuan_bertingkat');
   const [rows, setRows] = useState(null);
   const [rules, setRules] = useState([]);
   const [tab, setTab] = useState('menunggu');
@@ -49,7 +51,7 @@ export default function Persetujuan() {
   return (
     <div className="stack">
       <div className="row"><h2>Persetujuan</h2><PageHelp page="persetujuan" /></div>
-      <p className="small muted" style={{ margin: 0 }}>{owner ? 'Tindakan berisiko dari karyawan dan otomatisasi menunggu keputusan Anda di sini. Setelah disetujui, sistem langsung menjalankannya dan mencatat hasilnya.' : 'Permintaan Anda ke pemilik dan statusnya.'}</p>
+      <p className="small muted" style={{ margin: 0 }}>{owner ? 'Tindakan berisiko dari karyawan dan otomatisasi menunggu keputusan Anda di sini. Setelah disetujui, sistem langsung menjalankannya dan mencatat hasilnya.' : approver ? 'Anda ditunjuk sebagai penyetuju tingkat 1: putuskan permintaan karyawan lain di modul Anda. Permintaan bernilai besar diteruskan ke pemilik.' : 'Permintaan Anda ke pemilik dan statusnya.'}</p>
       <div className="seg">
         <button className={tab === 'menunggu' ? 'on' : ''} onClick={() => setTab('menunggu')}>Menunggu ({pending.length})</button>
         <button className={tab === 'riwayat' ? 'on' : ''} onClick={() => setTab('riwayat')}>Riwayat</button>
@@ -61,7 +63,8 @@ export default function Persetujuan() {
           <button key={r.id} className="li click" onClick={() => setOpen(r)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
             <div className="main"><b className="small">{r.summary}</b>
               <span className="small muted">{r.number} · {r.requested_via === 'otomatisasi' ? '⚙ otomatisasi' : r.requested_email} · {when(r.created_at)}</span></div>
-            <span className={'chip ' + ST[r.status][1]}>{ST[r.status][0]}</span>
+            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}><span className={'chip ' + ST[r.status][1]}>{ST[r.status][0]}</span>
+              {r.status === 'menunggu' && r.levels_needed > 1 && <span className="chip">Tingkat {r.level} dari {r.levels_needed}</span>}</span>
           </button>
         ))}</div></section>
       ))}
@@ -72,30 +75,63 @@ export default function Persetujuan() {
           <span className="small muted">Berlaku untuk karyawan (pengelola, kasir, gudang). Pemilik selalu bisa langsung menjalankan.</span>
           {!fitur && <FiturUpgrade kosId={kosId} event="TRANSACTION.APPROVAL_REQUESTED" title="Mengatur aturan persetujuan tersedia mulai Paket Bisnis" text="Pengaman bawaan di bawah tetap berlaku di paket ini. Di Paket Bisnis Anda bisa menyalakan atau mematikan setiap aturan sendiri." />}
           {rules.map((x) => (
-            <label key={x.code} className="row small" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-              <span>{x.label} <span className={'chip ' + RISK[x.risk]}>{x.risk}</span></span>
-              <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={x.required} disabled={!fitur}
-                onChange={async (e) => { if (await run(() => supabase.rpc('approval_rule_set', { p_kos: kosId, p_action: x.code, p_required: e.target.checked }), 'Aturan disimpan', errMsg)) load(); }} />
-            </label>
+            <div key={x.code} className="stack" style={{ gap: 6, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
+              <label className="row small" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                <span>{x.label} <span className={'chip ' + RISK[x.risk]}>{x.risk}</span></span>
+                <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={x.required} disabled={!fitur}
+                  onChange={async (e) => { if (await run(() => supabase.rpc('approval_rule_set', { p_kos: kosId, p_action: x.code, p_required: e.target.checked }), 'Aturan disimpan', errMsg)) load(); }} />
+              </label>
+              {multi && x.code !== 'ubah_modul' && <Tingkat x={x} kosId={kosId} onDone={load} />}
+            </div>
           ))}
         </section>
       )}
+      {tab === 'aturan' && owner && (
+        <section className="panel">
+          <h3>Persetujuan bertingkat</h3>
+          {multi ? <span className="small muted">Tunjuk penyetuju tingkat 1 di menu Karyawan › Atur akses. Untuk tindakan bertingkat 2, permintaan yang disetujui penyetuju diteruskan ke Anda (bisa hanya di atas nominal tertentu). Anda selalu bisa langsung memutuskan di tingkat mana pun.</span>
+            : <FiturUpgrade kosId={kosId} plan="pro" event="APPROVAL.MULTILEVEL.REQUESTED" title="Persetujuan bertingkat tersedia di Paket Pro" text="Pengelola menyetujui tingkat pertama; transaksi bernilai besar tetap menunggu keputusan Anda." />}
+        </section>
+      )}
 
-      {open && <Detail r={open} owner={owner} onClose={() => setOpen(null)} onDone={() => { setOpen(null); load(); loadKos(); }} />}
+      {open && <Detail r={open} owner={owner} approver={approver} onClose={() => setOpen(null)} onDone={() => { setOpen(null); load(); loadKos(); }} />}
     </div>
   );
 }
 
-function Detail({ r, owner, onClose, onDone }) {
+// Atur jumlah tingkat satu tindakan (Paket Pro)
+function Tingkat({ x, kosId, onDone }) {
+  const [lv, setLv] = useState(x.levels || 1);
+  const [min, setMin] = useState(x.level2_min != null ? String(Math.round(x.level2_min)) : '');
+  const save = async (l, m) => {
+    const n = m === '' ? null : Number(String(m).replace(/\D/g, ''));
+    if (await run(() => supabase.rpc('approval_levels_set', { p_kos: kosId, p_action: x.code, p_levels: l, p_min: n }), 'Tingkat disimpan', errMsg)) onDone();
+  };
+  return (
+    <div className="row small" style={{ gap: 8 }}>
+      <select value={lv} onChange={(e) => { const l = Number(e.target.value); setLv(l); save(l, min); }} aria-label={`Tingkat ${x.label}`} style={{ flex: 1 }}>
+        <option value={1}>1 tingkat (penyetuju atau pemilik)</option>
+        <option value={2}>2 tingkat (penyetuju lalu pemilik)</option>
+      </select>
+      {lv === 2 && <Field label="Tingkat 2 mulai nominal (kosong = selalu)"><input inputMode="numeric" value={min} placeholder="mis. 500000" onChange={(e) => setMin(e.target.value)} onBlur={() => save(lv, min)} /></Field>}
+    </div>
+  );
+}
+
+function Detail({ r, owner, approver, onClose, onDone }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [can, setCan] = useState(owner);
+  const [me, setMe] = useState(null);
+  useEffect(() => { supabase.auth.getSession().then(({ data }) => setMe(data?.session?.user?.id || null)); }, []);
+  useEffect(() => { if (!owner && approver && r.status === 'menunggu') supabase.rpc('approval_can_decide', { p_id: r.id }).then(({ data }) => setCan(Boolean(data))); }, [r.id]);
   const decide = async (ok) => {
-    if (ok && !window.confirm(`Setujui dan jalankan sekarang?\n${r.summary}`)) return;
+    if (ok && !window.confirm(`${!owner && r.levels_needed > 1 ? 'Setujui tingkat 1 dan teruskan ke pemilik?' : 'Setujui dan jalankan sekarang?'}\n${r.summary}`)) return;
     setBusy(true);
     const { data, error } = await supabase.rpc('approval_decide', { p_id: r.id, p_approve: ok, p_note: note });
     setBusy(false);
     if (error) return toast(errMsg(error));
-    toast(data?.status === 'dijalankan' ? 'Disetujui & dijalankan' : data?.status === 'gagal' ? `Gagal dijalankan: ${data.error}` : 'Ditolak');
+    toast(data?.status === 'dijalankan' ? 'Disetujui & dijalankan' : data?.status === 'menunggu' ? 'Disetujui tingkat 1 — diteruskan ke pemilik' : data?.status === 'gagal' ? `Gagal dijalankan: ${data.error}` : 'Ditolak');
     onDone();
   };
   const cancel = async () => { if (await run(() => supabase.rpc('approval_cancel', { p_id: r.id }), 'Permintaan dibatalkan', errMsg)) onDone(); };
@@ -113,12 +149,17 @@ function Detail({ r, owner, onClose, onDone }) {
         <span className="label">Data terdampak</span>
         <div className="list">{Object.entries(r.impact).map(([k, v]) => <div className="li" key={k} style={{ alignItems: 'flex-start' }}><span className="small">{KEY[k] || k}</span><b className="small" style={{ textAlign: 'right' }}>{val(k, v)}</b></div>)}</div>
       </>}
-      {r.decided_at && <div className="notice">{ST[r.status][0]} oleh {r.decided_by || '—'} · {when(r.decided_at)}{r.decision_note ? ` · "${r.decision_note}"` : ''}{r.result?.error ? <><br />Kesalahan: {r.result.error}</> : ''}</div>}
-      {r.status === 'menunggu' && owner && <>
-        <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-        <div className="row"><button className="primary" disabled={busy} onClick={() => decide(true)}>Setujui & jalankan</button><button className="danger" disabled={busy} onClick={() => decide(false)}>Tolak</button></div>
+      {r.levels_needed > 1 && <span className="small muted">Permintaan ini perlu {r.levels_needed} tingkat persetujuan · sekarang di tingkat {r.level}.</span>}
+      {Array.isArray(r.steps) && r.steps.length > 0 && <>
+        <span className="label">Riwayat keputusan</span>
+        <div className="list">{r.steps.map((x, i) => <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span className="small">Tingkat {x.level} · {x.oleh} ({x.peran}){x.catatan ? ` · "${x.catatan}"` : ''}</span><span className={'chip ' + (x.keputusan === 'setuju' ? 'good' : 'bad')}>{x.keputusan === 'setuju' ? 'Setuju' : 'Tolak'}</span></div>)}</div>
       </>}
-      {r.status === 'menunggu' && !owner && <button className="ghost" onClick={cancel}>Batalkan permintaan</button>}
+      {r.decided_at && <div className="notice">{ST[r.status][0]} oleh {r.decided_by || '—'} · {when(r.decided_at)}{r.decision_note ? ` · "${r.decision_note}"` : ''}{r.result?.error ? <><br />Kesalahan: {r.result.error}</> : ''}</div>}
+      {r.status === 'menunggu' && can && <>
+        <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+        <div className="row"><button className="primary" disabled={busy} onClick={() => decide(true)}>{!owner && r.levels_needed > 1 ? 'Setujui tingkat 1' : 'Setujui & jalankan'}</button><button className="danger" disabled={busy} onClick={() => decide(false)}>Tolak</button></div>
+      </>}
+      {r.status === 'menunggu' && !owner && me && r.requested_by === me && <button className="ghost" onClick={cancel}>Batalkan permintaan</button>}
     </Sheet>
   );
 }

@@ -382,6 +382,40 @@ export function ScrAnggaran() {
   );
 }
 
+// Karyawan › Atur akses: modul (Paket Bisnis), izin per tindakan & penyetuju (Paket Pro) — contoh
+export function ScrAksesKaryawan() {
+  const cek = (on, t, d) => <div className="row" style={{ gap: 8, flexWrap: 'nowrap', alignItems: 'flex-start' }}><span className="mini-btn" style={{ minWidth: 22, padding: '0 4px' }}>{on ? '✓' : ' '}</span><span style={{ display: 'flex', flexDirection: 'column' }}><b className="small">{t}</b><span className="small muted">{d}</span></span></div>;
+  return (
+    <Phone bare>
+      <h3>Atur akses</h3>
+      <b className="small">rina.kasir@gmail.com</b>
+      <span className="small muted">Peran: Kasir</span>
+      <b className="small">Modul yang boleh dibuka · Pilih sendiri</b>
+      {cek(true, 'Kasir & penjualan', 'Kasir, pesanan, nota')}
+      {cek(true, 'Barang, stok & belanja', 'Barang, stok, supplier')}
+      {cek(false, 'Uang & laporan', 'Kas, laba, pembukuan')}
+      <b className="small">Izin per tindakan (Pro)</b>
+      <div className="row between small"><span>Membatalkan penjualan</span><span className="mini-btn">Tidak boleh</span></div>
+      <div className="row between small"><span>Menyesuaikan stok</span><span className="mini-btn">Perlu persetujuan</span></div>
+      <span className="mini-btn cta">Simpan</span>
+    </Phone>
+  );
+}
+
+// Persetujuan bertingkat: penyetuju tingkat 1 lalu pemilik (Paket Pro) — contoh
+export function ScrPersetujuanTingkat() {
+  return (
+    <Phone bare>
+      <h3>REQ-{'261114'}-003</h3>
+      <b className="small">Sesuaikan stok Beras 5kg (rusak 10 karung)</b>
+      <div className="row between small"><span>Estimasi nilai</span><b>{rp(200000)}</b></div>
+      <span className="small muted">Perlu 2 tingkat persetujuan · sekarang di tingkat 2.</span>
+      <div className="row between small"><span>Tingkat 1 · Andi (penyetuju) · “cek fisik ok”</span><span className="chip good">Setuju</span></div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn cta">Setujui & jalankan</span><span className="mini-btn">Tolak</span></div>
+    </Phone>
+  );
+}
+
 // Sesudah Berhenti memperpanjang: alasan opsional, bisa dilewati (contoh)
 export function ScrAlasanBerhenti() {
   return (

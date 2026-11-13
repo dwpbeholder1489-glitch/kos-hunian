@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -54,9 +54,9 @@ const MENUS = [
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
   ['Pengaturan', 'Profil kos, kategori pengeluaran, unduh semua data, tutup bisnis, keluar'],
-  ['Karyawan', 'Undang pengelola/penjaga, atur peran, nonaktifkan, hapus'],
-  ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan persetujuan'],
-  ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan'],
+  ['Karyawan', 'Undang karyawan, atur peran & akses per modul/tindakan, penyetuju, nonaktifkan, hapus'],
+  ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan & tingkat persetujuan'],
+  ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan/mingguan, penjualan turun, anggaran'],
   ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
   ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, rekonsiliasi bank & anggaran (Paket Bisnis)'],
 ];
@@ -271,7 +271,9 @@ const PARTS = [
       <>Tekan <b>Kirim cara masuk via WA</b>. Karyawan membuka PRASARA › <b>Masuk</b> › <b>Daftar</b> dengan email itu, lalu konfirmasi email. Saat masuk, ia langsung berada di bisnis Anda — tidak perlu membuat bisnis.</>,
       <>Karyawan hanya melihat menu perannya. Kasir tidak melihat harga modal, laba, kas, dan laporan; penjualan yang ia lihat hanya miliknya sendiri. Setiap penjualan mencatat nama kasirnya.</>,
       <>Ganti peran lewat pilihan di daftar. <b>Nonaktifkan</b> untuk menutup akses sementara; <b>Hapus</b> untuk membuang emailnya dari daftar. Tombol <b>Bersihkan</b> menghapus semua email nonaktif dan undangan kedaluwarsa sekaligus.</>,
-    ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Dasar 1, Bisnis 5, Pro 15. Saat batas penuh, tombol Undang membuka pilihan upgrade paket. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun.</>, null, null],
+      <>Tekan <b>Atur akses</b> pada karyawan. <b>Modul yang boleh dibuka</b> (Paket Bisnis & Pro): pilih <b>Sesuai peran</b> atau <b>Pilih sendiri</b> lalu centang modulnya — mis. kasir yang juga boleh mengurus stok tetapi tidak melihat laporan keuangan. Karyawan & Langganan selalu khusus pemilik.</>,
+      <><b>Izin per tindakan</b> (Paket Pro): untuk tiap tindakan berisiko pilih <b>Ikut aturan bisnis</b>, <b>Boleh langsung</b>, <b>Perlu persetujuan</b>, atau <b>Tidak boleh</b>. Centang <b>Boleh menyetujui permintaan karyawan lain (tingkat 1)</b> untuk menjadikannya penyetuju. Tekan <b>Simpan</b>; berlaku saat karyawan membuka aplikasi lagi.</>,
+    ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Dasar 1, Bisnis 5, Pro 15. Saat batas penuh, tombol Undang membuka pilihan upgrade paket. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun. Semua hak akses diperiksa di database. Bila paket turun, pengaturan akses tidak dihapus — karyawan kembali memakai hak perannya sampai paket naik lagi.</>, null, <ScrAksesKaryawan />],
     ['Pelanggan & supplier', 'Menu Pelanggan & supplier (toko)', [
       <>Pilih tab <b>Pelanggan</b> atau <b>Supplier</b>. Angka merah = sisa kasbon pelanggan atau utang Anda ke supplier.</>,
       <>Ketuk nama untuk melihat <b>riwayat</b> penjualan, belanja, dan pelunasannya. Ketuk nomor penjualan untuk membuka struknya.</>,
@@ -308,13 +310,16 @@ const PARTS = [
       <>Pemilik membuka permintaan: terlihat <b>nomor</b>, siapa yang meminta, alasan, <b>data terdampak</b>, dan <b>estimasi nilai</b>. Tekan <b>Setujui & jalankan</b> atau <b>Tolak</b>.</>,
       <>Setelah disetujui, sistem langsung menjalankan tindakannya dan mencatat hasilnya (berhasil atau gagal beserta sebabnya) di <b>Riwayat</b>.</>,
       <>Tab <b>Aturan</b> (pemilik): pilih tindakan mana yang wajib disetujui. Mengubah aturan sendiri tersedia mulai <b>Paket Bisnis</b>; di paket lain aturan bawaan tetap berlaku dan tampil apa adanya, dengan tombol <b>Lihat Paket Bisnis</b>. Bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa mengubahnya.</>,
-    ], <>Pemilik selalu bisa langsung menjalankan tindakan tanpa persetujuan. Aturan bawaan: pembatalan penjualan/belanja/pelunasan, hapus kontak, dan ubah modul wajib disetujui; retur dan penyesuaian stok tidak.</>, null, null],
+      <><b>Persetujuan bertingkat</b> (Paket Pro): di tab Aturan, pilih <b>2 tingkat (penyetuju lalu pemilik)</b> untuk sebuah tindakan dan, bila perlu, isi <b>Tingkat 2 mulai nominal</b> (mis. 500.000; kosong = selalu). Penyetuju tingkat 1 ditunjuk di menu Karyawan › Atur akses.</>,
+      <>Penyetuju membuka permintaan karyawan lain di modulnya dan menekan <b>Setujui tingkat 1</b> (diteruskan ke pemilik) atau <b>Setujui & jalankan</b> bila cukup 1 tingkat. Setiap keputusan tercatat di <b>Riwayat keputusan</b>.</>,
+    ], <>Pemilik selalu bisa langsung menjalankan tindakan tanpa persetujuan, di tingkat mana pun. Aturan bawaan: pembatalan penjualan/belanja/pelunasan, hapus kontak, dan ubah modul wajib disetujui; retur dan penyesuaian stok tidak. Peminta tidak bisa menyetujui permintaannya sendiri, dan perubahan modul selalu diputuskan pemilik.</>, null, <ScrPersetujuanTingkat />],
     ['Otomatisasi', 'Operasional › Otomatisasi (pemilik)', [
       <>Pilih resep, baca <b>pemicu → syarat → tindakan</b>-nya, lalu tekan <b>Nyalakan</b>. Semua resep berjalan setiap pagi pukul 07.00.</>,
       <>Toko: <b>stok menipis → draf pesanan</b> ke supplier terakhir (menunggu persetujuan Anda), <b>kasbon jatuh tempo</b>, <b>utang supplier jatuh tempo</b>, <b>shift lupa ditutup</b>. Kos: <b>pembayaran menunggu diperiksa</b>, <b>tagihan telat</b>. Semua: <b>ringkasan awal bulan</b>.</>,
       <>Hasilnya muncul di <b>Pemberitahuan</b> (dan email untuk resep tertentu). Tekan <b>Jalankan sekarang</b> untuk mencoba.</>,
       <>Buka <b>Riwayat jalan</b> untuk melihat kapan berjalan, hasilnya, atau kesalahannya.</>,
       <>Menyalakan resep tersedia mulai <b>Paket Bisnis</b> (bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa). Mematikan selalu bisa. Bila paket turun, resep yang menyala tidak dijalankan lagi sampai paket naik.</>,
+      <>Jasa: <b>pesanan lewat janji selesai</b>. Resep bertanda <b>Pro</b> (Paket Pro): <b>penjualan turun</b> (7 hari terakhir dibanding 7 hari sebelumnya, paling banyak sekali seminggu), <b>biaya mendekati anggaran</b> (dari menu Anggaran), <b>sewa segera berakhir</b> (kos), dan <b>ringkasan mingguan</b> setiap Senin. Di Paket Pro Anda juga bisa memilih <b>hari jalan</b> (Sen–Min) tiap resep; kosong = setiap hari.</>,
     ], <>Otomatisasi tidak pernah mengubah data sendiri: tindakan yang mengubah data (mis. membuat pesanan) masuk ke Persetujuan. Paling banyak sekali sehari, tidak membuat pesanan ganda, dan dijeda otomatis setelah 3 kali gagal. WhatsApp otomatis belum tersedia — pesan WA disiapkan untuk dikirim dengan satu ketukan.</>, null, null],
     ['Pembukuan', 'Operasional › Pembukuan (pemilik & pengelola)', [
       <>Tidak perlu mencatat dua kali: setiap penjualan, retur, belanja, kas, kasbon/utang, perubahan stok, pengeluaran, dan pembayaran sewa yang terverifikasi otomatis menjadi <b>jurnal</b> (debit & kredit seimbang). Jurnal diposting saat halaman dibuka dan setiap pagi.</>,

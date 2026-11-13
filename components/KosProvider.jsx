@@ -35,14 +35,16 @@ export default function KosProvider({ children }) {
     let data = null, error = null;
     for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
     if (error) { setList([]); return []; }
-    let mods = null, locs = {};
+    let mods = null, locs = {}, acc = {};
     const [roles, ents] = await Promise.all([
       supabase.rpc('my_roles').then((r) => r.data || {}, () => ({})),
       supabase.rpc('my_entitlements').then((r) => r.data || {}, () => ({})), // paket, fitur & batas dari database
       supabase.rpc('my_modules').then((r) => (r.error ? null : r.data || {}), () => null), // modul aktif per bisnis
       supabase.rpc('my_locations').then((r) => r.data || {}, () => ({})), // lokasi (cabang/gudang) & lokasi kerja saya
-    ]).then(([a, b, c, d]) => { mods = c; locs = d; return [a, b]; });
-    data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null, locs: locs[k.id] || null }));
+      supabase.rpc('my_access').then((r) => r.data || {}, () => ({})), // akses per modul (Bisnis/Pro) & penyetuju tingkat 1 (Pro)
+    ]).then(([a, b, c, d, e]) => { mods = c; locs = d; acc = e; return [a, b]; });
+    data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null, locs: locs[k.id] || null,
+      my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver) }));
     setList(data);
     let saved = null;
     try { saved = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch {}
