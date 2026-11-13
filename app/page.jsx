@@ -50,7 +50,7 @@ const SOLVES = [
 const CAPS = [
   ['layers', 'Manajemen bisnis', 'ready', 'Beberapa bisnis dalam satu akun, profil & badan usaha, cabang/gudang, modul yang bisa diaktifkan atau dimatikan.', 'Pemilik kos dan toko memantau keduanya dari satu ringkasan.'],
   ['receipt', 'Transaksi', 'ready', 'Kasir eceran & grosir, pesanan jasa & kuliner, tagihan sewa, pembayaran sebagian, retur, dan pembatalan dengan alasan.', 'Kasir toko menjual per pcs atau per dus dengan harga masing-masing.'],
-  ['users', 'Pelanggan', 'ready', 'Kontak pelanggan, penghuni & supplier, prospek dari halaman bisnis, tindak lanjut, kasbon.', 'Calon penghuni mendaftar online; pemilik tinggal mengonfirmasi.'],
+  ['users', 'Pelanggan', 'ready', 'Kontak pelanggan, penghuni & supplier, prospek dari halaman bisnis, tindak lanjut, kasbon.', 'Paket Pro: calon penghuni mendaftar online lewat halaman bisnis; pemilik tinggal mengonfirmasi.'],
   ['box', 'Inventaris', 'ready', 'Stok multi-satuan, barcode, per lokasi, belanja & terima barang, stok opname, bahan operasional.', 'Laundry mencatat pemakaian deterjen agar biaya bahan ikut terhitung.'],
   ['wallet', 'Keuangan', 'ready', 'Kas & bank, biaya, deposit, utang-piutang, jurnal otomatis, laba rugi, dan neraca. Paket Bisnis: anggaran, rekonsiliasi bank, dan laporan rinci per badan usaha.', 'Uang jaminan penghuni dicatat terpisah dari pendapatan.'],
   ['calendar', 'Booking & reservasi', 'ready', 'Booking kamar dengan uang tanda jadi, reservasi meja dengan cek bentrok, jadwal jemput-antar.', 'Kamar yang dibooking terkunci sampai penghuni check-in.'],
@@ -85,7 +85,7 @@ const CATS = [
   ['🛒', 'Retail & Grosir', 'Toko sembako, minimarket, grosir: kasir eceran & grosir, stok multi-satuan, barcode, belanja ke supplier, kasbon, laporan laba.', 'ready'],
   ['🧩', 'Bisnis lain (Business Builder)', 'Bengkel, salon, katering, dan usaha lain: susun sendiri data, formulir, alur status, peran, dan laporan. Uang masuk per status langsung ke kas & pembukuan.', 'ready'],
   ['🧺', 'Jasa & Laundry', 'Laundry kiloan & satuan (dan jasa lain): pesanan, tahap cuci–kering–setrika–QC, nota, DP, antar-jemput, keluhan, bahan, laporan.', 'ready'],
-  ['🍳', 'Kuliner', 'Warung, kafe, katering: menu, pesanan makan di tempat/bungkus, layar dapur, QR per meja, reservasi meja, bayar per meja.', 'ready'],
+  ['🍳', 'Kuliner', 'Warung, kafe, katering: menu, pesanan makan di tempat/bungkus, layar dapur, reservasi meja, bayar per meja; QR per meja di Paket Pro.', 'ready'],
   ['🏭', 'Produksi', 'Modul khusus (BOM, kontrol mutu) dalam rencana. Sementara bisa disusun lewat Business Builder.', 'plan'],
   ['🚚', 'Distribusi', 'Modul khusus (armada, rute) dalam rencana. Sementara bisa disusun lewat Business Builder.', 'plan'],
 ];
@@ -119,7 +119,7 @@ const GROUPS = [
   ]],
   ['receipt', 'Kuliner', [
     ['Menu & pesanan dapur', 'Pesanan makan di tempat atau bungkus, layar dapur untuk koki, nomor meja.'],
-    ['QR per meja', 'Tamu memindai QR di meja dan memesan sendiri; pesanan masuk sebagai permintaan untuk dikonfirmasi.'],
+    ['QR per meja (Pro)', 'Tamu memindai QR di meja dan memesan sendiri; pesanan masuk sebagai permintaan untuk dikonfirmasi.'],
     ['Reservasi & bayar per meja', 'Reservasi meja dengan cek bentrok, tagihan meja bisa dibayar terpisah (split bill).'],
   ]],
   ['users', 'Untuk semua bisnis', [
@@ -127,7 +127,7 @@ const GROUPS = [
     ['Ringkasan semua bisnis', 'Angka penting setiap bisnis dalam satu layar.'],
     ['Pengingat & email pagi', 'Lonceng pengingat, email ringkasan, dan daftar yang perlu ditindaklanjuti.', 'Dasar'],
     ['Bantuan', 'Panduan bergambar, tombol "? Panduan" di setiap menu, dan tiket bantuan.'],
-    ['Halaman bisnis, QR & foto', 'Halaman publik dengan foto, tautan & QR siap bagikan atau cetak; pendaftaran penghuni dan pesanan online.'],
+    ['Portal bisnis (Pro)', 'Halaman publik dengan foto, tautan & QR siap bagikan atau cetak; pendaftaran penghuni dan pesanan online.'],
     ['Tampilan terang & gelap', 'Nyaman dipakai siang maupun malam; mengikuti pengaturan HP.'],
   ]],
 ];

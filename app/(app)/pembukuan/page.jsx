@@ -59,6 +59,7 @@ export default function Pembukuan() {
       {!d && !err ? <Loading /> : d && <>
         <Meta d={d} entity={entity} />
         {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} />}
+        {tab === 'laporan' && !entity && <ArusKas kosId={kosId} from={from} to={to} period={period} owner={owner} ver={ver} />}
         {tab === 'buku' && (d.ringkas
           ? <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Rincian buku besar tersedia mulai Paket Bisnis" text="Lihat setiap mutasi dan saldo per akun (mis. Kas, Bank, Piutang), lengkap dengan transaksi asalnya. Laba rugi dan neraca ringkas tetap ada di tab Laporan." />
           : <BukuBesar d={d} kosId={kosId} entity={entity} from={from} to={to} retail={retail} />)}
@@ -352,5 +353,43 @@ function RekonBank({ kosId, ym, owner, ver }) {
         <span className="small muted">Baris yang sudah dicocokkan di bulan sebelumnya tidak ditampilkan lagi. Baris yang belum dicentang ikut tampil di bulan berikutnya.</span>
       </section>
     </>
+  );
+}
+
+// Arus kas (metode langsung dari jurnal Kas + Bank). Lengkap (Paket Bisnis): per kelompok operasi/investasi/pendanaan.
+const KELOMPOK = { operasi: 'Aktivitas operasi', investasi: 'Aktivitas investasi', pendanaan: 'Aktivitas pendanaan', saldo_awal: 'Saldo awal yang dicatat' };
+function ArusKas({ kosId, from, to, period, owner, ver }) {
+  const [c, setC] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    setC(null); setErr(null);
+    supabase.rpc('acct_cashflow', { p_kos: kosId, p_from: from, p_to: to }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setC(data)));
+  }, [kosId, from, to, ver]);
+  if (err) return <div className="notice bad">{/acct_cashflow/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
+  if (!c) return <Loading />;
+  return (
+    <section className="panel">
+      <h3>Arus kas · {period}</h3>
+      <span className="small muted">Kas = akun Kas + Bank. Pindah kas ke bank (atau sebaliknya) tidak dihitung sebagai uang masuk/keluar.</span>
+      <div className="list">
+        <div className="li"><span className="small">Saldo awal</span><b className="small">{rp(c.saldo_awal)}</b></div>
+        <div className="li"><span className="small">Uang masuk</span><b className="small" style={{ color: 'var(--good)' }}>+{rp(c.masuk)}</b></div>
+        <div className="li"><span className="small">Uang keluar</span><b className="small" style={{ color: 'var(--bad)' }}>−{rp(c.keluar)}</b></div>
+        <div className="li"><b className="small">Saldo akhir</b><b>{rp(c.saldo_akhir)}</b></div>
+      </div>
+      {c.cocok ? <span className="chip good">Cocok: saldo awal + masuk − keluar = saldo akhir</span> : <div className="notice bad">Saldo tidak cocok. Hubungi bantuan.</div>}
+      {c.lengkap && Array.isArray(c.kelompok) && c.kelompok.length > 0 && <>
+        {c.kelompok.map((g) => (
+          <div key={g.kelompok} className="stack" style={{ gap: 4 }}>
+            <div className="row between"><span className="label">{KELOMPOK[g.kelompok] || g.kelompok}</span><b className="small">{rp(g.bersih)}</b></div>
+            <div className="list">{(g.akun || []).map((a) => (
+              <div key={a.akun} className="li"><span className="small">{a.akun}</span><span className="small">{Number(a.bersih) >= 0 ? '+' : '−'}{rp(Math.abs(a.bersih))}</span></div>
+            ))}</div>
+          </div>
+        ))}
+        <span className="small muted">Dikelompokkan menurut akun lawan di setiap jurnal: modal, prive & pinjaman = pendanaan; aset tetap = investasi; sisanya operasi.</span>
+      </>}
+      {!c.lengkap && <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Arus kas per aktivitas tersedia mulai Paket Bisnis" text="Lihat dari mana uang masuk dan ke mana keluar: operasi, investasi, dan pendanaan, sampai per akun." />}
+    </section>
   );
 }

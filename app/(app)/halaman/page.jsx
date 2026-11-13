@@ -10,6 +10,8 @@ import EntityPhotos from '@/components/media/EntityPhotos';
 import { Field, Loading, Tile, toast } from '@/components/ui';
 import { errMsg, angka, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
+import { hasFeature } from '@/lib/plan';
+import FiturUpgrade from '@/components/FiturUpgrade';
 
 const LINK_PRESETS = [['📍 Lokasi (Google Maps)', 'Lokasi (Google Maps)'], ['📷 Instagram', 'Instagram'], ['🖼️ Foto (Google Drive/Photos)', 'Foto'], ['🎵 TikTok', 'TikTok']];
 const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
@@ -17,6 +19,7 @@ const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/
 // Halaman bisnis publik (blueprint 24, Phase 1): pemilik mengisi & menerbitkan profil, katalog, formulir; permintaan masuk ke Prospek
 export default function Halaman() {
   const { kos, kosId, ver } = useKos();
+  const portal = hasFeature(kos, 'portal_bisnis');   // Portal bisnis: Paket Pro (bisnis lama tetap); dicek juga di database
   const owner = canArea(kos, 'team');
   const retail = kos?.business_type === 'retail';
   const jasa = kos?.business_type === 'jasa';
@@ -111,8 +114,9 @@ export default function Halaman() {
         <Field label="Kalimat di atas formulir (opsional)"><input value={f.form_intro || ''} maxLength={300} onChange={(e) => set('form_intro', e.target.value)} disabled={!owner} placeholder={retail ? 'mis. Pesan sebelum jam 10, diantar siang' : jasa ? 'mis. Jemput gratis radius 2 km' : 'mis. Survei kamar bisa setiap hari'} /></Field>
         <Field label="Ketentuan (opsional)"><textarea rows={2} maxLength={1000} value={f.policy || ''} onChange={(e) => set('policy', e.target.value)} disabled={!owner} placeholder={retail ? 'mis. Ongkir gratis radius 2 km' : jasa ? 'mis. Minimal 3 kg; cucian tidak diambil 30 hari di luar tanggung jawab' : 'mis. Deposit 1 bulan, khusus putri'} /></Field>
         <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.email_notify} onChange={(e) => set('email_notify', e.target.checked)} disabled={!owner} />Kirim email ke saya setiap ada permintaan baru</label>
+        {owner && !portal && !saved?.enabled && <FiturUpgrade kosId={kosId} event="PORTAL.PUBLIC_PAGE.REQUESTED" title="Menerbitkan halaman bisnis tersedia di Paket Pro" text="Anda tetap bisa menyiapkan dan menyimpan isinya sekarang. Setelah naik ke Paket Pro, halaman langsung bisa diterbitkan dengan tautan & QR." />}
         {owner ? <div className="row">
-          <button className="primary" disabled={busy} onClick={() => save(true)}>{saved?.enabled ? 'Simpan & terbitkan' : 'Terbitkan'}</button>
+          <button className="primary" disabled={busy || (!portal && !saved?.enabled)} onClick={() => save(true)}>{saved?.enabled ? 'Simpan & terbitkan' : 'Terbitkan'}</button>
           {saved?.enabled ? <button className="ghost danger" disabled={busy} onClick={() => save(false)}>Sembunyikan halaman</button> : <button className="ghost" disabled={busy} onClick={() => save(false)}>Simpan saja</button>}
         </div> : <span className="small muted">Hanya pemilik yang bisa mengubah dan menerbitkan halaman.</span>}
       </section>

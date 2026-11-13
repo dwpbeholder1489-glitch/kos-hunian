@@ -10,6 +10,8 @@ import { Sheet, Loading, toast } from '@/components/ui';
 import { errMsg, waLink } from '@/lib/format';
 import { qrMatrix, qrSvg } from '@/lib/qr';
 import { isDraft } from '@/lib/business';
+import { hasFeature } from '@/lib/plan';
+import FiturUpgrade from '@/components/FiturUpgrade';
 
 const ajakan = (i) => (i.kuliner ? 'Pindai untuk lihat menu & pesan' : i.type === 'retail' ? 'Pindai untuk lihat barang & pesan' : i.type === 'jasa' ? 'Pindai untuk lihat layanan & pesan' : i.type === 'properti' ? 'Pindai untuk lihat kamar tersedia' : 'Pindai untuk info & pesan');
 
@@ -59,7 +61,8 @@ export function SharePanel({ kosId, compact }) {
   if (!i.module || !i.live) return (
     <div className="stack" style={{ gap: 10 }}>
       <div className="notice">Halaman bisnis <b>{i.name}</b> belum terbit, jadi belum ada tautan & QR untuk dibagikan.</div>
-      {i.can_edit ? <>
+      {i.can_edit && !hasFeature(kos, 'portal_bisnis') ? <FiturUpgrade kosId={kos?.id} event="PORTAL.PUBLIC_PAGE.REQUESTED" title="Halaman bisnis publik tersedia di Paket Pro" text="Portal PRASARA: katalog, pendaftaran, dan pemesanan pelanggan secara online, lengkap dengan tautan & QR. Isi halaman bisa disiapkan dulu di menu Halaman bisnis." />
+      : i.can_edit ? <>
         <button className="cta" disabled={busy} onClick={publish}>{busy ? 'Menerbitkan…' : 'Terbitkan sekarang & dapatkan tautan'}</button>
         <Link href="/halaman"><button className="ghost" style={{ width: '100%' }}>Atur isi halaman dulu</button></Link>
         <span className="small muted">Satu ketukan: halaman diterbitkan dengan nama, alamat & WhatsApp bisnis{i.type === 'properti' ? ' serta kamar yang tersedia (calon penghuni bisa langsung daftar)' : ''}. Bisa disembunyikan lagi kapan saja di menu Halaman bisnis.</span>

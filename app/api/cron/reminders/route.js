@@ -19,6 +19,9 @@ export async function GET(req) {
   // Pembukuan: posting jurnal dari transaksi kemarin (halaman Pembukuan juga memposting saat dibuka)
   let pembukuan = { ok: true, skipped: 'belum dikonfigurasi' };
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('acct_sync_all'); pembukuan = r.error ? { ok: false, error: r.error.message } : { ok: !(r.data?.gagal > 0), ...r.data }; } } catch (e) { pembukuan = { ok: false, error: e.message }; }
+  // Portal bisnis (Pro): sembunyikan halaman bisnis yang tidak berhak lagi (turun paket); isi halaman tidak dihapus
+  let portal = { ok: true, skipped: 'belum dikonfigurasi' };
+  try { const sb = adminDb(); if (sb) { const r = await sb.rpc('portal_unpublish_lapsed'); portal = r.error ? { ok: false, error: r.error.message } : { ok: true, disembunyikan: r.data }; } } catch (e) { portal = { ok: false, error: e.message }; }
   // Lampiran: hapus file yang sudah dihapus pengguna / unggahan yang tidak selesai dari penyimpanan
   let lampiran = { ok: true, skipped: 'belum dikonfigurasi' };
   try {
@@ -42,7 +45,7 @@ export async function GET(req) {
       media = { ok: true, dibersihkan: paths.length };
     }
   } catch (e) { media = { ok: false, error: e.message }; }
-  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, lampiran, media };
+  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, lampiran, media };
   console.log('[cron daily]', JSON.stringify(res));
   try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });
