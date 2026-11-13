@@ -85,7 +85,7 @@ export default function LaporanToko() {
       <div className="row between"><div className="row"><h2>Laporan toko</h2><PageHelp page="laporan-toko" /></div>
         <div className="row noprint">{canExport ? <><button className="sm" onClick={exportCsv}>Unduh Excel</button><button className="sm" onClick={() => window.print()}>Cetak / PDF</button></> : null}</div></div>
       {nav}
-      {!canExport && <Locked need="standar" title="Unduh Excel & cetak PDF" text="Ekspor laporan toko tersedia di paket Standar." />}
+      {!canExport && <Locked need="dasar" title="Unduh Excel & cetak PDF" text="Ekspor laporan toko tersedia mulai Paket Dasar." />}
       <div className="grid">
         <Tile label="Penjualan" value={rp(a.omzet)} sub={delta(a.omzet, b.omzet) || `${angka(r.trx)} transaksi`} />
         <Tile label="Laba kotor" value={rp(a.kotor)} sub={a.margin != null ? `margin ${String(a.margin).replace('.', ',')}%` : '—'} />

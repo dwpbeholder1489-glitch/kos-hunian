@@ -33,7 +33,7 @@ export default function AdminHome() {
   const scored = cs.map((c) => ({ ...c, h: health(c) }));
   const risk = scored.filter((c) => c.h.score != null && c.h.score < 60);
   const idle14 = scored.filter((c) => c.idle_days >= 14);
-  const paying = o.plans.standar + o.plans.pro;
+  const paying = (o.plans.dasar || 0) + (o.plans.bisnis || 0) + (o.plans.standar || 0) + o.plans.pro;
   const occ = pct(o.occupied, o.rooms);
 
   // Peringatan bisnis dengan prioritas
@@ -70,7 +70,7 @@ export default function AdminHome() {
       <div className="cols">
         <section className="panel">
           <h3>Pelanggan per paket</h3>
-          {[['Masa coba', o.plans.trial], ['Gratis', o.plans.gratis], ['Standar', o.plans.standar], ['Pro', o.plans.pro]].map(([l, n]) => (
+          {[['Masa coba', o.plans.trial], ['Gratis', o.plans.gratis], ['Dasar', o.plans.dasar || 0], ['Bisnis', o.plans.bisnis || 0], ...(o.plans.standar ? [['Standar (lama)', o.plans.standar]] : []), ['Pro', o.plans.pro]].map(([l, n]) => (
             <div key={l} className="stack" style={{ gap: 4 }}>
               <div className="row between small"><span>{l}</span><b>{n} ({o.businesses ? pct(n, o.businesses) : 0}%)</b></div>
               <div className="pbar"><span style={{ width: `${o.businesses ? (n / o.businesses) * 100 : 0}%` }} /></div>

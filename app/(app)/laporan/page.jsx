@@ -157,7 +157,7 @@ export default function Laporan() {
           </section>
         </>
       ) : (
-        <Locked need="standar" title="Laporan lengkap, ekspor Excel & PDF" text="Lihat tren 6 bulan, pendapatan per kamar, dan unduh laporan untuk pembukuan dengan paket Standar." />
+        <Locked need="dasar" title="Laporan lengkap, ekspor Excel & PDF" text="Lihat tren 6 bulan, pendapatan per kamar, dan unduh laporan untuk pembukuan mulai Paket Dasar." />
       )}
     </div>
   );

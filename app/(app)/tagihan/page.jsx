@@ -79,7 +79,7 @@ function InvDetail({ d, inv, go, onClose }) {
         <section className="panel"><span className="label">Riwayat pembayaran</span>
           <div className="list">{pays.map((p) => (
             <div className="li" key={p.id}><div className="main"><b>{rp(p.amount)}</b><span className="small muted">{tgl(p.paid_at)} · {METHOD[p.method]}</span>
-              {p.status === 'terverifikasi' && <Link href={'/kwitansi/' + p.id} className="small" onClick={(e) => { if (!canReceipt) { e.preventDefault(); toast('Kwitansi PDF tersedia di paket Standar'); } }}>🧾 Kwitansi{!canReceipt && ' 🔒'}</Link>}</div><PayChip status={p.status} /></div>
+              {p.status === 'terverifikasi' && <Link href={'/kwitansi/' + p.id} className="small" onClick={(e) => { if (!canReceipt) { e.preventDefault(); toast('Kwitansi PDF tersedia mulai Paket Dasar'); } }}>🧾 Kwitansi{!canReceipt && ' 🔒'}</Link>}</div><PayChip status={p.status} /></div>
           ))}</div>
         </section>
       )}

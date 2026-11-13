@@ -17,7 +17,7 @@ export default function Syarat() {
       </ul>
       <h2>3. Masa coba, paket, dan pembayaran</h2>
       <ul>
-        <li>Setiap bisnis baru mendapat {BUSINESS.trialDays} hari akses semua fitur. Setelah itu bisnis otomatis memakai paket Gratis kecuali Anda berlangganan.</li>
+        <li>Setiap bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar. Setelah itu bisnis otomatis memakai paket Gratis kecuali Anda berlangganan.</li>
         <li>Harga berlaku per bisnis per bulan sesuai yang tertera di halaman Harga dan menu Langganan. Harga dapat berubah; pelanggan aktif diberi tahu lebih dulu.</li>
         <li>Pembayaran melalui QRIS atau transfer bank dan aktif setelah diperiksa. Naik paket berlaku sejak disetujui; turun paket berlaku setelah masa paket berjalan berakhir.</li>
         <li>Biaya pihak ketiga yang Anda pakai sendiri (internet, WhatsApp, printer, biaya transfer, dan penyedia lain) tidak termasuk dalam langganan.</li>

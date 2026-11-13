@@ -288,12 +288,13 @@ export function ScrPlan() {
     <Phone tab="Langganan" bare>
       <h3>1. Pilih paket</h3>
       <div className="mini-grid">
-        <div className="tile" style={{ borderColor: 'var(--gold)', borderWidth: 2 }}><span className="label">Standar</span><span className="v">Rp 100.000</span><span className="s">/bulan</span></div>
-        <div className="tile"><span className="label">Pro</span><span className="v">Rp 150.000</span><span className="s">/bulan</span></div>
+        <div className="tile"><span className="label">Dasar</span><span className="planwas"><s>Rp 69.000</s></span><span className="v">Rp 49.000</span><span className="s">/bulan</span></div>
+        <div className="tile" style={{ borderColor: 'var(--gold)', borderWidth: 2 }}><span className="label">Bisnis</span><span className="planwas"><s>Rp 139.000</s></span><span className="v">Rp 99.000</span><span className="s">/bulan</span></div>
+        <div className="tile"><span className="label">Pro</span><span className="planwas"><s>Rp 199.000</s></span><span className="v">Rp 149.000</span><span className="s">/bulan</span></div>
       </div>
       <h3>2. Pilih durasi</h3>
       <div className="seg"><button>1 bulan</button><button className="on">3 bulan</button><button>6 bulan</button><button>12 bulan</button></div>
-      <div className="row between"><span className="label">Total bayar</span><b style={{ fontSize: 18 }}>Rp 300.000</b></div>
+      <div className="row between"><span className="label">Total bayar</span><b style={{ fontSize: 18 }}>Rp 297.000</b></div>
       <h3>3. Bayar</h3>
       <div className="seg"><button className="on">QRIS</button><button>Transfer bank</button></div>
       <span className="mini-btn cta">Saya sudah bayar</span>

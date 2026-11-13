@@ -14,7 +14,7 @@ const BENEFITS = [
   ['layers', 'Tidak perlu menguasai semua fitur', 'Mulai dari yang paling sederhana: kamar dan pembayaran. Fitur lain bisa dipakai nanti, saat memang dibutuhkan.'],
   ['headset', 'Ada bantuan saat kesulitan', `Setiap menu punya tombol "? Panduan". Masih bingung? Tanyakan langsung lewat WhatsApp ${BUSINESS.whatsappDisplay}.`],
   ['eye', 'Kondisi kos jadi lebih jelas', 'Begitu pembayaran dan pengeluaran tercatat, Dashboard dan Laporan menunjukkan uang masuk, tunggakan, dan laba bersih kos.'],
-  ['calendar', 'Waktu mencoba tanpa terburu-buru', `${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit. Setelah itu kos otomatis menjadi paket Gratis — tidak ada tagihan otomatis.`],
+  ['calendar', 'Waktu mencoba tanpa terburu-buru', `Masa coba ${BUSINESS.trialDays} hari Paket Dasar tanpa kartu kredit. Setelah itu kos otomatis menjadi paket Gratis — tidak ada tagihan otomatis.`],
 ];
 
 // [judul, isi, dibantu oleh]

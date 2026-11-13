@@ -12,7 +12,7 @@ export const metadata = {
 };
 
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi PRASARA.')}`;
-const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Standar</span>;
+const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Dasar</span>;
 const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</span>;
 
 // Menu toko (Retail & Grosir)
@@ -67,8 +67,9 @@ const PARTS = [
       <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Sekarang</b>. Isi <b>nama lengkap</b>, <b>email aktif</b>, <b>nomor WhatsApp</b>, dan <b>kata sandi</b> (minimal 8 karakter, berisi huruf dan angka — tombol <b>Lihat</b> menampilkan ketikan Anda), ulangi kata sandi, centang persetujuan Syarat & Privasi, lalu <b>Buat akun</b>.</>,
       <>Buka email dari PRASARA dan ketuk <b>tautan verifikasi</b>. Belum masuk? Di layar <b>Cek email Anda</b> tekan <b>Kirim ulang email verifikasi</b> (bisa setelah 60 detik). Akun belum aktif sebelum diverifikasi.</>,
       <>Setelah verifikasi muncul sambutan <b>Selamat datang di PRASARA</b> → <b>Daftarkan Bisnis Saya</b>. Di <b>Apa jenis bisnis yang Anda miliki atau kelola?</b> pilih satu atau lebih kategori (mis. Properti & Hunian, Retail, Laundry), lalu <b>Lanjut</b>.</>,
-      <>Untuk tiap bisnis isi <b>nama</b>, <b>subkategori</b>, <b>lokasi</b>, <b>status bisnis</b>, <b>hubungan Anda</b>, <b>jumlah cabang</b>, dan pertanyaan singkat (mis. kos: jumlah kamar; laundry: layanan, jam, antar jemput).</>,
-      <>Tekan <b>Tinjau</b> lalu <b>Buat draf bisnis</b>. Tiap bisnis dibuat terpisah sebagai <b>draf</b> — lanjutkan di <b>Pusat Konfirmasi</b> (Langkah 64) untuk melengkapi & mengaktifkannya.</>,
+      <>Untuk tiap bisnis, formulir dibagi <b>4 bagian pendek</b>: <b>Identitas</b> (nama, jenis usaha, deskripsi), <b>Operasional</b> (alamat, nomor kontak, jam buka, status bisnis), <b>Pengelolaan</b> (nama pemilik, peran Anda, dikelola sendiri atau bersama tim), dan <b>Kebutuhan</b> (apa saja yang ingin dikelola + pertanyaan singkat, mis. kos: jumlah kamar). Tiap isian diberi tanda <b>Wajib</b>, <b>Opsional</b>, atau <b>Bisa nanti</b>. Isian tersimpan otomatis di HP Anda — bila terputus, buka lagi dan lanjutkan.</>,
+      <>Di <b>Ringkasan</b> periksa semua isian (tekan <b>Ubah</b> di baris yang ingin diperbaiki), lalu <b>Buat draf bisnis</b>. Tiap bisnis dibuat terpisah sebagai <b>draf</b> — lanjutkan di <b>Pusat Konfirmasi</b> (Langkah 64) untuk melengkapi & mengaktifkannya. Alamat, kontak, dan jam buka yang sudah diisi tidak perlu diketik ulang.</>,
+      <>Setelah bisnis aktif, Beranda menampilkan <b>Persiapan bisnis</b>: lengkapi profil, periksa modul, masukkan barang/layanan/kamar, atur cara pembayaran, tambah karyawan (opsional), dan catat transaksi pertama. Tekan <b>Kerjakan</b> untuk langsung ke halamannya, <b>Nanti</b> untuk melewati dulu, atau <b>Sembunyikan daftar ini</b>. Daftar yang sama selalu ada di Pusat Konfirmasi.</>,
     ], <>Karyawan tidak membuat bisnis baru: pilih <b>Saya karyawan…</b> dan minta pemilik mengundang email Anda di menu Karyawan. Tidak menerima email verifikasi? Periksa folder Spam atau Promosi, lalu kirim ulang. <b>Lupa kata sandi?</b> Di halaman Masuk tekan <b>Lupa kata sandi?</b>, isi email, buka tautan yang dikirim, lalu buat kata sandi baru. Nama & nomor WhatsApp bisa diubah di <b>Akun › Profil Anda</b>.</>, null, <ScrSignup />],
     ['Kenali tombol Panduan', 'Semua menu', [
       <>Di sebelah judul setiap menu ada tombol kecil <b>? Panduan</b>.</>,
@@ -166,13 +167,13 @@ const PARTS = [
   ]],
   ['D', 'Akun, langganan, dan portal penghuni', [
     ['Berlangganan', 'Langganan', [
-      <>Pilih paket dan durasinya. Harga dan fitur tiap paket tampil di sana (harga per bisnis per bulan).</>,
+      <>Pilih paket: <b>Dasar</b>, <b>Bisnis</b>, atau <b>Pro</b>. Harga normal tampil dicoret di atas harga yang berlaku (harga per bisnis per bulan). Lalu pilih durasi; untuk Pro tersedia <b>1 tahun</b> dengan harga tahunan yang dibayar sekali untuk 12 bulan.</>,
       <>Bayar lewat <b>QRIS</b> atau <b>transfer bank</b> sesuai total.</>,
-      <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>. Setiap pembayaran mendapat <b>nomor invoice</b> (INV-…).</>,
+      <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>. Setiap pembayaran mendapat <b>nomor invoice</b> (INV-…) dan <b>ID transaksi</b> (TRX-…). Salah pilih dan belum membayar? Tekan <b>Belum bayar — batalkan</b>, lalu pilih lagi.</>,
       <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam pada hari kerja. Invoice bisa dibuka & dicetak di <b>Riwayat tagihan</b>.</>,
       <><b>Naik paket</b> berlaku sejak disetujui (sisa hari paket lama dihitung ulang dan ditambahkan). <b>Turun paket</b> berlaku setelah paket sekarang berakhir.</>,
       <>Tidak ingin memperpanjang? Tekan <b>Berhenti memperpanjang</b> — paket tetap aktif sampai tanggal berakhir, lalu menjadi Gratis. Bisa dibatalkan lagi.</>,
-    ], <>Bisnis baru mendapat {BUSINESS.trialDays} hari semua fitur. Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
+    ], <>Bisnis baru mendapat masa coba {BUSINESS.trialDays} hari dengan fitur Paket Dasar (dihitung sejak bisnis diaktifkan). Setelah itu menjadi Gratis dengan batasannya (mis. kamar terisi untuk kos). Bila paket habis, mungkin ada <b>masa tenggang</b> beberapa hari sebelum fitur terkunci. <b>Data tidak pernah dihapus.</b></>, null, <ScrPlan />],
     ['Pengaturan, beberapa kos, dan layar utama', 'Pengaturan', [
       <>Ubah <b>nama dan alamat kos</b> — tercetak di kwitansi.</>,
       <><b>Info untuk penghuni</b>: nomor WhatsApp, cara bayar, dan peraturan kos (tampil di portal), serta pilihan email <b>notifikasi bukti transfer</b> dan <b>daftar tagih setiap pagi</b>.</>,
@@ -253,7 +254,7 @@ const PARTS = [
       <>Buka <b>Laporan</b>, pilih bulan dengan tombol <b>‹ ›</b>.</>,
       <><b>Laba rugi</b>: penjualan − modal barang terjual = laba kotor, lalu dikurangi biaya operasional dan selisih stok = <b>laba bersih</b>. Prive dan belanja barang tidak mengurangi laba.</>,
       <><b>Produk</b>: pilih <b>Terlaris</b> atau <b>Paling untung</b>. Bagian <b>Tidak laku</b> menunjukkan barang berstok yang tidak terjual bulan itu.</>,
-      <>Paket Standar: <b>Unduh Excel</b> dan <b>Cetak / PDF</b>.</>,
+      <>Paket Dasar ke atas: <b>Unduh Excel</b> dan <b>Cetak / PDF</b>.</>,
     ], <>Kalau muncul peringatan harga modal kosong, isi modalnya di Barang & stok — tanpa modal, laba barang itu terlihat terlalu tinggi.</>, null, null],
   ]],
   ['F', 'Karyawan, kontak & shift', [
@@ -262,7 +263,7 @@ const PARTS = [
       <>Tekan <b>Kirim cara masuk via WA</b>. Karyawan membuka PRASARA › <b>Masuk</b> › <b>Daftar</b> dengan email itu, lalu konfirmasi email. Saat masuk, ia langsung berada di bisnis Anda — tidak perlu membuat bisnis.</>,
       <>Karyawan hanya melihat menu perannya. Kasir tidak melihat harga modal, laba, kas, dan laporan; penjualan yang ia lihat hanya miliknya sendiri. Setiap penjualan mencatat nama kasirnya.</>,
       <>Ganti peran lewat pilihan di daftar. <b>Nonaktifkan</b> untuk menutup akses sementara; <b>Hapus</b> untuk membuang emailnya dari daftar. Tombol <b>Bersihkan</b> menghapus semua email nonaktif dan undangan kedaluwarsa sekaligus.</>,
-    ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Standar 3, Pro tanpa batas. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun.</>, null, null],
+    ], <>Undangan berlaku 14 hari. Batas karyawan: Gratis 1, Dasar 1, Bisnis 5, Pro 15. Menghapus karyawan tidak menghapus riwayat transaksinya. Karyawan keluar dari akun lewat Pusat bantuan › Keluar dari akun.</>, null, null],
     ['Pelanggan & supplier', 'Menu Pelanggan & supplier (toko)', [
       <>Pilih tab <b>Pelanggan</b> atau <b>Supplier</b>. Angka merah = sisa kasbon pelanggan atau utang Anda ke supplier.</>,
       <>Ketuk nama untuk melihat <b>riwayat</b> penjualan, belanja, dan pelunasannya. Ketuk nomor penjualan untuk membuka struknya.</>,
@@ -278,7 +279,7 @@ const PARTS = [
     ['Pengingat toko', 'Lonceng di kanan atas (toko)', [
       <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti: stok habis atau menipis, pesanan yang lewat perkiraan datang, kasbon pelanggan dan utang supplier yang jatuh tempo dalam 3 hari.</>,
       <>Ketuk lonceng. Tekan <b>Ingatkan WA</b> untuk kasbon, atau <b>Pesan / belanja barang</b> untuk stok.</>,
-      <>Pemilik bisa menyalakan <b>email pengingat setiap pagi</b> pukul 07.00 di halaman itu (paket Standar).</>,
+      <>Pemilik bisa menyalakan <b>email pengingat setiap pagi</b> pukul 07.00 di halaman itu (paket Dasar ke atas).</>,
     ], <>Stok menipis memakai <b>peringatan stok minimum</b> yang diisi di setiap barang. Email hanya dikirim bila ada yang perlu ditindaklanjuti.</>, null, null],
     ['Barang tanpa barcode & label', 'Barang & stok › ☆ dan Cetak label', [
       <>Tekan <b>☆</b> di samping barang yang sering dijual. Barang itu muncul sebagai <b>tombol cepat</b> di atas Kasir — satu ketukan = +1 (maks 24 barang).</>,
@@ -385,7 +386,7 @@ const PARTS = [
     ['Bahan, kas & laporan jasa', 'Operasional › Bahan & stok · Kas · Laporan', [
       <><b>Bahan & stok</b>: daftar deterjen, pewangi, plastik, dll. Beli lewat <b>Belanja</b>; saat dipakai tekan <b>Stok</b> › <b>Pemakaian bahan</b> agar biaya bahan masuk laporan.</>,
       <><b>Kas</b>: saldo kas/bank (termasuk pembayaran pesanan), <b>+ Biaya</b> (listrik, gaji, gas), dan utang supplier. Sisa bayar pelanggan ada di Pesanan.</>,
-      <><b>Laporan</b>: pendapatan per bulan, laba perkiraan (pendapatan − bahan − biaya), uang masuk, belum lunas, uang muka, per layanan, pelanggan teratas, ketepatan waktu, dan keluhan. <b>Unduh Excel</b> (Standar ke atas).</>,
+      <><b>Laporan</b>: pendapatan per bulan, laba perkiraan (pendapatan − bahan − biaya), uang masuk, belum lunas, uang muka, per layanan, pelanggan teratas, ketepatan waktu, dan keluhan. <b>Unduh Excel</b> (Dasar ke atas).</>,
     ], <>Pembukuan otomatis: pesanan diserahkan → Pendapatan jasa & Piutang jasa; pembayaran → Kas/Bank; pemakaian bahan → Beban bahan. Belum tersedia: komisi/penugasan per karyawan, pengingat otomatis jasa, dan stok per cabang untuk bisnis jasa.</>, null, null],
   ]],
   ['H', 'Kos lanjutan: deposit, keluhan, meteran & booking', [
@@ -465,7 +466,7 @@ const PARTS = [
       <>Di bagian <b>📎 Lampiran</b> tekan <b>+ Foto / file</b>. Di iPhone pilih <b>Ambil Foto</b>, <b>Perpustakaan Foto</b>, atau <b>Pilih File</b> (PDF). Bisa memilih beberapa sekaligus.</>,
       <>Foto otomatis dikecilkan (foto iPhone/HEIC menjadi JPG) sebelum diunggah. Setelah mencatat biaya baru, Anda langsung ditawari menambah <b>foto nota</b>.</>,
       <>Ketuk gambar untuk membuka ukuran penuh. Hapus dengan <b>✕</b> › <b>Ya, hapus</b>.</>,
-    ], <>File disimpan privat: hanya pengguna yang berhak melihat datanya (mis. dokumen penghuni hanya pemilik & bagian sewa; foto nota pengeluaran hanya pemilik/pengelola) yang bisa membuka, lewat tautan sementara 10 menit. Maks 4 MB per file, 10 file per data; ruang per bisnis mengikuti paket (Gratis 50 MB, Standar 500 MB, Pro 2 GB). Penambahan & penghapusan tercatat di Riwayat. Unduh semua data hanya berisi <b>daftar</b> lampiran, bukan filenya. Bisnis yang ditutup: lampiran bisa dilihat, tidak bisa ditambah.</>, 'warn', <ScrLampiran />],
+    ], <>File disimpan privat: hanya pengguna yang berhak melihat datanya (mis. dokumen penghuni hanya pemilik & bagian sewa; foto nota pengeluaran hanya pemilik/pengelola) yang bisa membuka, lewat tautan sementara 10 menit. Maks 4 MB per file, 10 file per data; ruang per bisnis mengikuti paket (Gratis 50 MB, Dasar 500 MB, Bisnis 2 GB, Pro 10 GB). Penambahan & penghapusan tercatat di Riwayat. Unduh semua data hanya berisi <b>daftar</b> lampiran, bukan filenya. Bisnis yang ditutup: lampiran bisa dilihat, tidak bisa ditambah.</>, 'warn', <ScrLampiran />],
   ]],
   ['K', 'Pusat Konfirmasi (setup bisnis baru)', [
     ['Tinjau, lengkapi & aktifkan bisnis', 'Pusat Konfirmasi (menu utama bisnis yang masih draf)', [

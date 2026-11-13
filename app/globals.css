@@ -1062,3 +1062,25 @@ main{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .welcome li i{width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:var(--gold-fg);display:grid;place-items:center;font-style:normal;font-weight:800;flex:none}
 .welcome li b{display:block}.welcome li span{color:var(--muted);font-size:14px}
 .pwbox input:focus,.pwbox input:focus-visible{outline:none;box-shadow:none}
+
+/* Harga V2: harga normal dicoret, paket tahunan, kartu pilihan paket */
+.ln-was{margin:0 0 -6px;font-size:14px;color:var(--ln-muted);display:flex;gap:8px;align-items:center}
+.ln-was b{font-size:12px;font-weight:800;color:var(--accent-ink);background:var(--gold);border-radius:999px;padding:2px 8px}
+.ln-term{margin:2px 0 8px;padding:10px 12px;border:1px dashed var(--gold);border-radius:12px;font-size:13px;line-height:1.5;color:var(--ln-muted)}
+.ln-term b{color:var(--ln-fg,inherit);font-size:14px}
+.planwas{font-size:13px;color:var(--muted)}
+.planwas s{margin-right:6px}
+.savechip{display:inline-block;font-size:11px;font-weight:800;color:var(--accent-ink);background:var(--gold);border-radius:999px;padding:2px 8px}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:6px 0;border-top:1px solid var(--line)}
+.kv:first-child{border-top:0}
+.kv span{color:var(--muted)}
+.kv b{text-align:right;overflow-wrap:anywhere}
+.tag3{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle;background:var(--sunk);color:var(--muted)}
+.tag3.req{background:var(--gold-soft);color:var(--gold)}
+.needs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.needs button{justify-content:flex-start;text-align:left;min-height:48px;font-size:13px}
+.needs button[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.prep .li{align-items:flex-start;gap:10px}
+.prep .dot{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:2px}
+.prep .dot.ok{background:var(--gold);border-color:var(--gold);color:var(--accent-ink)}
+.prep .li .main{flex:1;min-width:0;text-align:left}

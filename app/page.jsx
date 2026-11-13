@@ -6,7 +6,7 @@ import { KasirMock } from '@/components/landing/HeroMulti';
 import DashMock from '@/components/landing/DashMock';
 import CapsFilter from '@/components/landing/CapsFilter';
 import Showcase from '@/components/landing/Showcase';
-import { PLANS, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell } from '@/lib/plan';
+import { PLANS, PLAN_ORDER, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell, savePct } from '@/lib/plan';
 import { TESTIMONIALS } from '@/lib/testimonials';
 
 const TITLE = 'PRASARA — Kelola Bisnis Lebih Terarah. Kembangkan dengan Lebih Cerdas.';
@@ -28,7 +28,7 @@ async function getPlans() {
     const r = await fetch(`${url}/rest/v1/rpc/plans_public`, { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: '{}', next: { revalidate: 300 } });
     if (r.ok) { const d = await r.json(); if (Array.isArray(d) && d.length) return d; }
   } catch {}
-  return ['gratis', 'standar', 'pro'].map((k) => ({ key: k, name: PLANS[k].name, tagline: PLANS[k].tagline, price: PLANS[k].price, is_free: k === 'gratis', active: true }));
+  return PLAN_ORDER.map((k) => ({ key: k, name: PLANS[k].name, tagline: PLANS[k].tagline, price: PLANS[k].price, list_price: PLANS[k].list_price, terms: PLANS[k].terms || [], is_free: k === 'gratis', active: true, trial: k === 'dasar', trial_days: BUSINESS.trialDays }));
 }
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
@@ -99,7 +99,7 @@ const GROUPS = [
     ['Pengingat WhatsApp', 'Pesan pengingat berisi rincian tagihan siap kirim dengan satu ketukan.'],
     ['Booking, deposit, keluhan & meteran', 'Booking kamar dengan DP, uang jaminan tercatat terpisah dari pendapatan, keluhan kamar sampai selesai, listrik/air per meteran jadi tagihan otomatis.'],
     ['Portal penghuni', 'Penghuni cek tagihan dan kirim bukti transfer lewat link pribadi.', 'Pro'],
-    ['Laba rugi & kwitansi', 'Untung bersih per bulan, kwitansi PDF, ekspor Excel.', 'Standar'],
+    ['Laba rugi & kwitansi', 'Untung bersih per bulan, kwitansi PDF, ekspor Excel.', 'Dasar'],
   ]],
   ['receipt', 'Retail & Grosir', [
     ['Kasir eceran & grosir', 'Satu barang bisa punya beberapa satuan (pcs, dus, kg) dengan harga masing-masing. Struk cetak atau WhatsApp.'],
@@ -124,7 +124,7 @@ const GROUPS = [
   ['users', 'Untuk semua bisnis', [
     ['Karyawan & peran', 'Pengelola, kasir, staf gudang, penjaga, petugas proses — masing-masing hanya melihat menunya.'],
     ['Ringkasan semua bisnis', 'Angka penting setiap bisnis dalam satu layar.'],
-    ['Pengingat & email pagi', 'Lonceng pengingat, email ringkasan, dan daftar yang perlu ditindaklanjuti.', 'Standar'],
+    ['Pengingat & email pagi', 'Lonceng pengingat, email ringkasan, dan daftar yang perlu ditindaklanjuti.', 'Dasar'],
     ['Bantuan', 'Panduan bergambar, tombol "? Panduan" di setiap menu, dan tiket bantuan.'],
     ['Halaman bisnis, QR & foto', 'Halaman publik dengan foto, tautan & QR siap bagikan atau cetak; pendaftaran penghuni dan pesanan online.'],
     ['Tampilan terang & gelap', 'Nyaman dipakai siang maupun malam; mengikuti pengaturan HP.'],
@@ -147,7 +147,7 @@ const FAQ = [
   ['Apakah setiap bisnis menggunakan fitur yang sama?', 'Tidak. Kos melihat kamar, penghuni, dan tagihan; toko melihat kasir, stok, dan belanja; laundry melihat pesanan dan tahap proses; kuliner melihat menu, dapur, dan meja. Menu yang tidak relevan tidak ditampilkan, dan karyawan hanya melihat menu sesuai perannya.'],
   ['Apakah saya dapat memilih modul sendiri?', 'Bisa. Saat mendaftar, setiap modul yang disarankan Anda setujui atau tolak di Pusat Konfirmasi. Setelah aktif, modul bisa dinyalakan atau dimatikan kapan saja di Pusat konfigurasi, dan setiap perubahan tercatat di riwayat.'],
   ['Bagaimana sistem rekomendasi bekerja?', 'Saat ini rekomendasi disusun dari template per jenis usaha (aturan tetap) ditambah jawaban Anda saat mendaftar — misalnya jumlah kamar atau layanan yang ditawarkan. Setelah berjalan, PRASARA juga memberi saran fitur berdasarkan data bisnis Anda sendiri. Semua saran hanya berlaku bila Anda menyetujuinya.'],
-  ['Apakah tersedia demo?', `Ya. Contoh tampilan di halaman ini memakai DATA CONTOH dan tidak tersambung ke data siapa pun. Anda juga bisa langsung mencoba dengan data sendiri: setiap bisnis baru mendapat ${BUSINESS.trialDays} hari akses semua fitur tanpa kartu kredit.`],
+  ['Apakah tersedia demo?', `Ya. Contoh tampilan di halaman ini memakai DATA CONTOH dan tidak tersambung ke data siapa pun. Anda juga bisa langsung mencoba dengan data sendiri: setiap bisnis baru mendapat masa coba ${BUSINESS.trialDays} hari Paket Dasar tanpa kartu kredit.`],
   ['Bagaimana proses pendaftaran?', 'Daftar dengan email, pilih satu atau lebih jenis bisnis, lalu isi info singkatnya. PRASARA menyiapkan draf konfigurasi; Anda meninjau dan mengaktifkannya di Pusat Konfirmasi. Sebelum diaktifkan, bisnis masih berstatus draf dan halaman publiknya belum tampil.'],
   ['Apakah data bisnis aman?', 'Data setiap bisnis dipisahkan di tingkat database, hak akses karyawan diperiksa di server, dan koneksi selalu terenkripsi (HTTPS). Tim PRASARA hanya bisa melihat ringkasan diagnostik bila Anda memberi izin dari Pusat bantuan, dan setiap aksesnya tercatat.'],
   ['Bagaimana cara mengubah paket?', 'Buka menu Langganan di aplikasi. Naik paket berlaku sejak pembayaran disetujui, dan sisa hari paket lama dihitung ulang lalu ditambahkan. Turun paket berlaku setelah masa paket sekarang berakhir. Pembayaran lewat QRIS atau transfer bank, diperiksa biasanya dalam 1×24 jam pada hari kerja.'],
@@ -161,7 +161,7 @@ const FAQ = [
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'PRASARA', applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web', description: DESC, inLanguage: 'id',
-  offers: ['gratis', 'standar', 'pro'].map((k) => ({ '@type': 'Offer', name: PLANS[k].name, price: PLANS[k].price, priceCurrency: 'IDR' })), // bawaan; harga terkini di halaman
+  offers: PLAN_ORDER.map((k) => ({ '@type': 'Offer', name: PLANS[k].name, price: PLANS[k].price, priceCurrency: 'IDR' })), // bawaan; harga terkini di halaman
 };
 
 function Badge({ t }) {
@@ -177,7 +177,9 @@ function Cell({ v }) {
 export default async function Landing() {
   const plans = await getPlans();
   const free = plans.find((x) => x.is_free);
-  const best = (plans.find((x) => x.key === 'standar') || plans.filter((x) => !x.is_free)[0])?.key;
+  const best = (plans.find((x) => x.key === 'bisnis') || plans.filter((x) => !x.is_free)[0])?.key;
+  const trialDays = plans.find((x) => x.trial_days != null)?.trial_days ?? BUSINESS.trialDays;
+  const trialPlan = plans.find((x) => x.trial);
   const cardRows = (pl) => FEATURES.filter((f) => !f.soon).map((f) => [f, featureCell(f, pl)])
     .filter(([f, v]) => v && (pl.is_free || typeof v === 'string' || !(free && featureCell(f, free) === true))).slice(0, 8);
   return (
@@ -198,7 +200,7 @@ export default async function Landing() {
                 <a href="#demo" className="ln-btn ln-btn-outline ln-btn-lg">▶&nbsp; Lihat Demo</a>
               </div>
               <ul className="ln-hero-checks">{['Sistem adaptif', 'Modular & fleksibel', 'Terintegrasi', 'Siap berkembang'].map((t) => <li key={t}><Icon name="check" size={16} />{t}</li>)}</ul>
-              <p className="ln-support">Gratis {BUSINESS.trialDays} hari semua fitur, tanpa kartu kredit.</p>
+              <p className="ln-support">Coba gratis {trialDays} hari{trialPlan ? ` Paket ${trialPlan.name}` : ''}, tanpa kartu kredit.</p>
             </div>
             <div className="ln-rise ln-rise-2"><DashMock /></div>
           </div>
@@ -345,19 +347,23 @@ export default async function Landing() {
         <section className="ln-sec" id="harga" aria-labelledby="h-harga">
           <div className="ln-wrap">
             <div className="ln-head"><span className="ln-kicker">Harga</span><h2 id="h-harga">Harga sederhana, per bisnis.</h2>
-              <p>Setiap bisnis baru mendapat <b>{BUSINESS.trialDays} hari akses semua fitur</b>. Setelah itu otomatis menjadi paket Gratis kecuali Anda memilih berlangganan — tanpa tagihan kejutan, dan data tidak pernah dihapus.</p></div>
+              <p>Setiap bisnis baru mendapat <b>masa coba {trialDays} hari{trialPlan ? ` Paket ${trialPlan.name}` : ''}</b>. Setelah itu otomatis menjadi paket Gratis kecuali Anda memilih berlangganan — tanpa tagihan kejutan, dan data tidak pernah dihapus.</p></div>
             <div className="ln-prices">
               {plans.map((pl) => (
                 <div key={pl.key} className={'ln-price' + (pl.key === best ? ' best' : '')}>
                   {pl.key === best && <span className="ln-best">Paling sesuai untuk bisnis aktif</span>}
                   <h3>{pl.name}</h3>
                   <p className="ln-tag">{pl.tagline}</p>
-                  <div className="ln-amount">{rp(Number(pl.price))}<span>{Number(pl.price) ? ' /bulan' : ' selamanya'}</span><span className="per">{Number(pl.price) ? 'per bisnis' : 'tanpa batas waktu'}</span></div>
+                  {Number(pl.list_price) > Number(pl.price) && <p className="ln-was"><s>{rp(Number(pl.list_price))}</s><b>Hemat {savePct(pl.price, pl.list_price)}%</b></p>}
+                  <div className="ln-amount">{rp(Number(pl.price))}<span>{Number(pl.price) ? ' /bulan' : ' selamanya'}</span><span className="per">{Number(pl.price) ? (Number(pl.list_price) > Number(pl.price) ? 'per bisnis · harga peluncuran' : 'per bisnis') : 'tanpa batas waktu'}</span></div>
+                  {(pl.terms || []).map((t) => (
+                    <p key={t.months} className="ln-term"><b>{pl.name} {Number(t.months) === 12 ? 'Tahunan' : `${t.months} bulan`}: {rp(Number(t.price))}</b>{Number(t.list_price) > Number(t.price) && <> <s>{rp(Number(t.list_price))}</s> · hemat {savePct(t.price, t.list_price)}%</>}<br />Dibayar sekali untuk {t.months} bulan.</p>
+                  ))}
                   {!pl.is_free && free && <p className="ln-small" style={{ margin: '-4px 0 6px' }}>Semua fitur {free.name}, ditambah:</p>}
                   <ul>{cardRows(pl).map(([f, v]) => (
                     <li key={f.label}><Icon name="check" size={17} /><span>{f.label}{typeof v === 'string' ? ` — ${v}` : ''}</span></li>
                   ))}</ul>
-                  <Link href={START} className={'ln-btn ' + (pl.key === best ? 'ln-btn-primary' : 'ln-btn-outline')}>{pl.is_free ? 'Mulai gratis' : `Coba ${pl.name} ${BUSINESS.trialDays} hari`}</Link>
+                  <Link href={START} className={'ln-btn ' + (pl.key === best ? 'ln-btn-primary' : 'ln-btn-outline')}>{pl.is_free ? 'Mulai gratis' : pl.trial ? `Coba ${pl.name} ${trialDays} hari` : `Mulai dengan ${pl.name}`}</Link>
                 </div>
               ))}
             </div>

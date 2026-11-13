@@ -46,7 +46,7 @@ export default function Pengaturan() {
       const { data: ses } = await supabase.auth.getSession();
       const r = await fetch('/api/reminders/now', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + ses.session?.access_token }, body: JSON.stringify({ kosId: kos.id }) });
       const x = await r.json();
-      toast(!r.ok ? (x.error || 'Gagal mengirim') : x.empty ? 'Tidak ada tagihan yang jatuh tempo 3 hari ke depan atau telat. Tidak ada yang dikirim.' : x.digests ? `Daftar tagih dikirim ke ${user?.email}` : 'Fitur ini butuh paket Standar.');
+      toast(!r.ok ? (x.error || 'Gagal mengirim') : x.empty ? 'Tidak ada tagihan yang jatuh tempo 3 hari ke depan atau telat. Tidak ada yang dikirim.' : x.digests ? `Daftar tagih dikirim ke ${user?.email}` : 'Fitur ini butuh Paket Dasar ke atas.');
     } catch { toast('Gagal terhubung'); }
     setSending(false);
   }
@@ -82,7 +82,7 @@ export default function Pengaturan() {
         <Field label="Cara bayar" hint="Nomor rekening, e-wallet, atau QRIS, dan batas waktu bayar"><textarea value={payInfo} onChange={(e) => setPayInfo(e.target.value)} placeholder={'Transfer ke BRI 1234-5678 a.n. Nama Pemilik\nPaling lambat tanggal jatuh tempo'} /></Field>
         <Field label="Peraturan kos" hint="Jam malam, tamu, kebersihan, parkir, dll."><textarea value={rules} onChange={(e) => setRules(e.target.value)} placeholder={'Jam malam 22.00\nTamu lawan jenis hanya di ruang tamu'} style={{ minHeight: 110 }} /></Field>
         {isOwner && kos.notify_email !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={notify} onChange={(e) => setNotify(e.target.checked)} /> Kirim email ke {user?.email} saat penghuni mengirim bukti transfer</label>}
-        {isOwner && kos.daily_digest !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={digest} onChange={(e) => setDigest(e.target.checked)} /> Kirim daftar tagih setiap pagi ke {user?.email} (paket Standar)</label>}
+        {isOwner && kos.daily_digest !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={digest} onChange={(e) => setDigest(e.target.checked)} /> Kirim daftar tagih setiap pagi ke {user?.email} (paket Dasar ke atas)</label>}
         <button className="primary" onClick={saveInfo}>Simpan info</button>
         <a href="/notifikasi" className="small">Atur ringkasan mingguan & bulanan di menu Notifikasi (lonceng) →</a>
         {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}

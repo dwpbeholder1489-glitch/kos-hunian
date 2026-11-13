@@ -98,7 +98,7 @@ export default function Notifikasi() {
           {OPTS.map(([col, label, hint, locked]) => (
             <label key={col} className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
               <input type="checkbox" style={{ width: 22, minHeight: 22, marginTop: 2 }} checked={kos[col] !== false} onChange={(e) => toggle(col, e.target.checked, label)} />
-              <span style={{ flex: 1 }}><b>{label}</b>{locked && <span className="chip gold" style={{ marginLeft: 6 }}>Standar</span>}<br /><span className="small muted">{hint}</span></span>
+              <span style={{ flex: 1 }}><b>{label}</b>{locked && <span className="chip gold" style={{ marginLeft: 6 }}>Dasar</span>}<br /><span className="small muted">{hint}</span></span>
             </label>
           ))}
           <div className="row">

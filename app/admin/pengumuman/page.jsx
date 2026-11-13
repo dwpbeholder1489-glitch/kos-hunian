@@ -7,7 +7,7 @@ import { Loading, Empty, Field, toast } from '@/components/ui';
 import { tgl, errMsg } from '@/lib/format';
 import { can } from '@/lib/admin';
 
-const PLANS = [['gratis', 'Gratis'], ['coba', 'Masa coba'], ['standar', 'Standar'], ['pro', 'Pro']];
+const PLANS = [['gratis', 'Gratis'], ['coba', 'Masa coba'], ['dasar', 'Dasar'], ['bisnis', 'Bisnis'], ['pro', 'Pro']];
 const TYPES = [['properti', '🏠 Properti'], ['retail', '🛒 Retail'], ['jasa', '🧺 Jasa'], ['kustom', '🧩 Kustom']];
 const KIND = { layanan: ['Layanan penting', 'warn'], info: ['Info / fitur / tips', 'info'] };
 

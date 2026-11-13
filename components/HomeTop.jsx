@@ -5,6 +5,8 @@ import Link from 'next/link';
 import NavIcon from '@/components/NavIcon';
 import { tabsFor, homeOf, typeOf, isKuliner } from '@/lib/business';
 import { useKos } from '@/components/KosProvider';
+import Persiapan from '@/components/Persiapan';
+import { canArea } from '@/lib/business';
 
 const PICK = {
   properti: ['/kamar', '/penghuni', '/tagihan', '/pembayaran', '/booking', '/perbaikan', '/pengeluaran', '/laporan'],
@@ -29,7 +31,7 @@ export default function HomeTop({ kos }) {
   const extra = tabs.filter(([h]) => h !== home && !want.includes(h) && h !== '/konfirmasi');
   const grid = [...items, ...extra].slice(0, 7);
   const name = user?.user_metadata?.name || user?.user_metadata?.full_name;
-  return (
+  return (<>
     <section className="hometop" aria-label="Beranda">
       <div className="hello-row">
         <span className="hello-ic" aria-hidden="true">{typeOf(kos).icon}</span>
@@ -43,5 +45,6 @@ export default function HomeTop({ kos }) {
         </div>
       </>}
     </section>
-  );
+    {canArea(kos, 'settings') && <Persiapan kos={kos} />}
+  </>);
 }

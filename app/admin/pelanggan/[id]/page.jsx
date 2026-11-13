@@ -27,9 +27,9 @@ export default function CustomerDetail() {
   const [tpls, setTpls] = useState([]);
   const [tpl, setTpl] = useState('');
   const [msg, setMsg] = useState('');
-  const [ov, setOv] = useState({ action: 'tambah_coba', plan: 'standar', value: '14', reason: '' });
+  const [ov, setOv] = useState({ action: 'tambah_coba', plan: 'dasar', value: '14', reason: '' });
   const [susp, setSusp] = useState('');
-  const [planList, setPlanList] = useState([{ key: 'standar', name: 'Standar' }, { key: 'pro', name: 'Pro' }]);
+  const [planList, setPlanList] = useState([{ key: 'dasar', name: 'Dasar' }, { key: 'bisnis', name: 'Bisnis' }, { key: 'pro', name: 'Pro' }]);
   useEffect(() => { supabase.rpc('admin_plans').then(({ data }) => { const l = (data?.plans || []).filter((x) => !x.is_free); if (l.length) setPlanList(l); }); }, []);
   const [assist, setAssist] = useState(null);
 

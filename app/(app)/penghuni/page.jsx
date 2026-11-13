@@ -146,7 +146,7 @@ function OccEdit({ d, occ, onClose }) {
         <Field label="Alamat asal (opsional)"><input value={addr} maxLength={300} onChange={(e) => setAddr(e.target.value)} placeholder="jalan, desa, kota" /></Field>
       </div>
       <Field label="Email (opsional)" hint="Untuk pengingat tagihan otomatis. Penghuni juga bisa mengisinya sendiri di portal."><input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@gmail.com" /></Field>
-      {email.trim() && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={remind} onChange={(e) => setRemind(e.target.checked)} /> Kirim pengingat jatuh tempo ke email ini (paket Standar)</label>}
+      {email.trim() && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={remind} onChange={(e) => setRemind(e.target.checked)} /> Kirim pengingat jatuh tempo ke email ini (paket Dasar ke atas)</label>}
       <Field label="Catatan"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
       {!isNew && !used && <button className="danger" onClick={del}>Hapus penghuni</button>}

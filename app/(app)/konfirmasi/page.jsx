@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import LogoUpload from '@/components/LogoUpload';
+import Persiapan from '@/components/Persiapan';
 import { Field, Loading, Sheet, toast } from '@/components/ui';
 import { rp, angka, errMsg } from '@/lib/format';
 import { waktu } from '@/lib/jasa';
@@ -235,6 +236,8 @@ export default function Konfirmasi() {
           </section>
         );
       })}
+
+      {active && <Persiapan kos={{ id: b.id }} always />}
 
       {d.after?.length > 0 && <section className="panel"><h3>Setelah aktif</h3>
         <span className="small muted">Data operasional diisi di menunya masing-masing setelah bisnis aktif. Dicek dari data nyata.</span>

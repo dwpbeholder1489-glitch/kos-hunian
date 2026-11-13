@@ -27,7 +27,7 @@ export default function Kwitansi() {
   const { id } = useParams();
   const { kos } = useKos();
   const d = useData();
-  if (!hasFeature(kos, 'kwitansi')) return <Locked need="standar" title="Kwitansi PDF" text="Cetak dan kirim kwitansi resmi ke penghuni dengan paket Standar." />;
+  if (!hasFeature(kos, 'kwitansi')) return <Locked need="dasar" title="Kwitansi PDF" text="Cetak dan kirim kwitansi resmi ke penghuni mulai Paket Dasar." />;
   if (!d.ready) return <Loading />;
   const p = d.payments.find((x) => x.id === id);
   const inv = p && d.invById.get(p.invoice_id);

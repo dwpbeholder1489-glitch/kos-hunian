@@ -42,7 +42,7 @@ export default function Pengingat() {
         <section className="panel">
           <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={kos.daily_digest !== false}
             onChange={async (e) => { const v = e.target.checked; if (await run(() => supabase.from('kos').update({ daily_digest: v }).eq('id', kos.id), v ? 'Email pagi dinyalakan' : 'Email pagi dimatikan', errMsg)) loadKos(); }} />
-            Kirim pengingat ini ke {user?.email} setiap pagi pukul 07.00 (paket Standar, hanya bila ada yang perlu ditindaklanjuti)</label>
+            Kirim pengingat ini ke {user?.email} setiap pagi pukul 07.00 (Paket Dasar ke atas, hanya bila ada yang perlu ditindaklanjuti)</label>
         </section>
       )}
       <span className="small muted">Stok menipis memakai "peringatan stok minimum" di setiap barang. Kasbon & utang muncul 3 hari sebelum janji bayar / jatuh tempo.</span>

@@ -9,7 +9,7 @@ import { rp, tgl, errMsg } from '@/lib/format';
 import { PLANS } from '@/lib/plan';
 import { can, ACTION } from '@/lib/admin';
 
-const ST = { menunggu: ['Menunggu', 'gold'], disetujui: ['Disetujui', 'good'], ditolak: ['Ditolak', 'bad'] };
+const ST = { menunggu: ['Menunggu', 'gold'], disetujui: ['Disetujui', 'good'], ditolak: ['Ditolak', 'bad'], batal: ['Dibatalkan pelanggan', 'void'], kedaluwarsa: ['Kedaluwarsa', 'void'] };
 const KIND = { baru: 'baru', perpanjang: 'perpanjangan', upgrade: 'naik paket', downgrade: 'turun paket' };
 
 // Verifikasi pembayaran langganan (manual: cocokkan dengan mutasi rekening/QRIS sebelum mengaktifkan)
@@ -26,7 +26,7 @@ export default function Langganan() {
     setReqs(a.data); setKos(b.data);
   };
   useEffect(() => { if (can(adminMe, 'payments.view')) load(); }, [adminMe]);
-  useEffect(() => { if (tab === 'paket' && !hist) supabase.rpc('admin_log_list', { p_limit: 500 }).then(({ data }) => setHist((data || []).filter((l) => ['ubah_paket', 'override', 'setujui_pembayaran', 'batal_langganan', 'lanjut_langganan', 'ubah_harga', 'paket_baru'].includes(l.action)))); }, [tab]);
+  useEffect(() => { if (tab === 'paket' && !hist) supabase.rpc('admin_log_list', { p_limit: 500 }).then(({ data }) => setHist((data || []).filter((l) => ['ubah_paket', 'override', 'setujui_pembayaran', 'batal_langganan', 'lanjut_langganan', 'ubah_harga', 'paket_baru', 'migrasi_paket', 'rekonsiliasi', 'batal_tagihan'].includes(l.action)))); }, [tab]);
   if (!can(adminMe, 'payments.view')) return <Empty title="Tidak punya izin melihat pembayaran" />;
   if (err) return <div className="notice bad">{/admin_list/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!reqs) return <Loading />;
@@ -58,13 +58,14 @@ export default function Langganan() {
             <div className="main">
               <b><Link href={`/admin/pelanggan/${r.kos_id}`} style={{ color: 'inherit' }}>{r.kos_name}</Link></b>
               <span className="small muted">{r.owner_email} · {tgl(r.created_at.slice(0, 10))}</span>
-              <span className="small">{r.number ? `${r.number} · ` : ''}{r.plan_name || r.plan} {r.months} bulan{r.kind ? ` (${KIND[r.kind] || r.kind})` : ''} · {r.method === 'qris' ? 'QRIS' : 'Transfer'}{r.note ? ` · "${r.note}"` : ''}</span>
+              <span className="small">{r.number ? `${r.number} · ` : ''}{r.plan_name || r.plan} {r.months} bulan{r.kind ? ` (${KIND[r.kind] || r.kind})` : ''} · {r.method === 'qris' ? 'QRIS' : r.method === 'transfer' ? 'Transfer' : 'Online'}{r.note ? ` · "${r.note}"` : ''}</span>
+              {r.trx_code && <span className="small muted">ID transaksi {r.trx_code}{r.provider && r.provider !== 'manual' ? ` · ${r.provider}` : ''}</span>}
               {r.status === 'menunggu' && can(adminMe, 'payments.verify') && <div className="row" style={{ marginTop: 6 }}>
                 <button className="sm primary" onClick={() => decide(r, true)}>Uang masuk, aktifkan</button>
                 <button className="sm danger" onClick={() => decide(r, false)}>Tolak</button>
               </div>}
             </div>
-            <div style={{ textAlign: 'right' }}><div className="num">{rp(r.amount)}</div><span className={'chip ' + ST[r.status][1]}>{ST[r.status][0]}</span></div>
+            <div style={{ textAlign: 'right' }}><div className="num">{rp(r.amount)}</div><span className={'chip ' + (ST[r.status] || [r.status, 'void'])[1]}>{(ST[r.status] || [r.status])[0]}</span></div>
           </div>
         ))}</div></section>
       ))}

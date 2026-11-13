@@ -2,7 +2,7 @@
 import Link from 'next/link';
 
 // Kotak ajakan upgrade untuk fitur yang terkunci
-export default function Locked({ need = 'standar', title, text }) {
+export default function Locked({ need = 'dasar', title, text }) {
   return (
     <div className="lock noprint">
       <b>🔒 {title || 'Fitur paket berbayar'}</b>
