@@ -55,20 +55,31 @@ export default function Mulai() {
   const [ready, setReady] = useState(false);
   const uid = session?.user?.id;
 
-  // Simpan otomatis di perangkat ini; dipulihkan saat halaman dibuka lagi (belum dikirim ke server sampai draf dibuat)
+  // Progres disimpan di server (akun Anda: bisa dilanjutkan dari perangkat lain). Salinan di perangkat hanya cadangan.
   useEffect(() => {
     if (!uid) return;
-    try {
-      const d = JSON.parse(localStorage.getItem(DRAFT_KEY(uid)) || 'null');
-      if (d && Array.isArray(d.sel) && d.sel.length) { setSel(d.sel); setBiz(d.biz || {}); setStep(Math.min(d.step || 0, d.sel.length + 1)); setSub(d.sub || 0); setWelcomed(true); setRestored(true); }
-    } catch {}
-    setReady(true);
+    let on = true;
+    (async () => {
+      let d = null;
+      try { const { data, error } = await supabase.rpc('reg_draft_get'); if (!error) d = data; } catch {}
+      if (!d) { try { d = JSON.parse(localStorage.getItem(DRAFT_KEY(uid)) || 'null'); } catch {} }
+      if (on && d && Array.isArray(d.sel) && d.sel.length) { setSel(d.sel); setBiz(d.biz || {}); setStep(Math.min(d.step || 0, d.sel.length + 1)); setSub(d.sub || 0); setWelcomed(true); setRestored(true); }
+      if (on) setReady(true);
+    })();
+    return () => { on = false; };
   }, [uid]);
   useEffect(() => {
     if (!uid || !ready) return;
-    try { if (sel.length) localStorage.setItem(DRAFT_KEY(uid), JSON.stringify({ sel, biz, step, sub })); else localStorage.removeItem(DRAFT_KEY(uid)); } catch {}
-  }, [uid, ready, sel, biz, step, sub]);
-  const startOver = () => { setSel([]); setBiz({}); setStep(0); setSub(0); setRestored(false); setErr(null); try { localStorage.removeItem(DRAFT_KEY(uid)); } catch {} };
+    const snap = { sel, biz, step, sub };
+    try { if (sel.length) localStorage.setItem(DRAFT_KEY(uid), JSON.stringify(snap)); else localStorage.removeItem(DRAFT_KEY(uid)); } catch {}
+    // Tunda 0,8 detik agar tidak menyimpan setiap ketukan; kosong = hapus draf di server
+    const t = setTimeout(() => {
+      const req = sel.length ? supabase.rpc('reg_draft_save', { p_data: snap }) : supabase.rpc('reg_draft_clear');
+      req.then(() => {}, () => {});
+    }, 800);
+    return () => clearTimeout(t);
+  }, [uid, ready, sel, biz, step, sub]); // eslint-disable-line react-hooks/exhaustive-deps
+  const startOver = () => { setSel([]); setBiz({}); setStep(0); setSub(0); setRestored(false); setErr(null); try { localStorage.removeItem(DRAFT_KEY(uid)); } catch {} supabase.rpc('reg_draft_clear').then(() => {}, () => {}); };
 
   useEffect(() => {
     Promise.all([
@@ -101,7 +112,7 @@ export default function Mulai() {
     <div className="stack" style={{ gap: 6 }}>
       <span className="small muted">{step >= 1 && step <= n ? `${n > 1 ? `Bisnis ${step} dari ${n} · ` : ''}Bagian ${sub + 1} dari 4: ${SUBS[sub]}` : `Langkah ${Math.min(step + 1, n + 2)} dari ${n + 2}`}</span>
       <div className="progress" aria-hidden="true"><i style={{ width: `${Math.round((100 * (step === 0 ? 1 : step > n ? n * 4 + 2 : (step - 1) * 4 + sub + 2)) / (n * 4 + 2))}%` }} /></div>
-      {step >= 1 && <span className="small muted">Tersimpan otomatis di perangkat ini — bisa dilanjutkan nanti.</span>}
+      {step >= 1 && <span className="small muted">Tersimpan otomatis di akun Anda — bisa dilanjutkan nanti dari perangkat mana pun.</span>}
     </div>
   );
 
@@ -256,6 +267,7 @@ export default function Mulai() {
     setDone(made); setErrs(bad); setBusy(false);
     if (Object.keys(bad).length) return setErr('Sebagian bisnis belum berhasil dibuat. Periksa pesan di bawah, perbaiki, lalu tekan lagi.');
     try { localStorage.removeItem(DRAFT_KEY(uid)); } catch {}
+    supabase.rpc('reg_draft_clear').then(() => {}, () => {});
     setSel([]);
     await loadKos();
     pickKos(made[sel[0]]);
