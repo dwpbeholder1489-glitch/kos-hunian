@@ -49,6 +49,7 @@ const P = {
   '/mutasi': <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
   '/pembukuan': <><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" /><path d="M9 8h5M9 12h5" /></>,
   '/anggaran': <><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" /></>,
+  '/aktivitas': <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   '/analisis': <><path d="M3 20h18M4 16l5-5 4 3 7-8" /><path d="M16 6h4v4" /></>,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
   swap: <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,

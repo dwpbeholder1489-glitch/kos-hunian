@@ -60,6 +60,7 @@ const MENUS = [
   ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
   ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, rekonsiliasi bank & anggaran (Paket Bisnis)'],
   ['Analisis bisnis', 'Bulan ini vs lalu; tren 12 bulan (Paket Bisnis); perbandingan cabang & tahun lalu (Paket Pro)'],
+  ['Riwayat aktivitas', 'Siapa melakukan apa & kapan: penjualan, pembatalan, stok, pembayaran, tagihan, pesanan'],
 ];
 
 // [bagian, judul, menu, langkah[], catatan, jenis catatan, layar, paket]
@@ -557,6 +558,13 @@ const PARTS = [
       <><b>Paket Pro</b>: <b>bulan yang sama tahun lalu</b>, <b>Perbandingan cabang</b> (kontribusi pendapatan, laba, transaksi, tren 6 bulan, 3 barang teratas per cabang), dan <b>pola hari</b> 90 hari terakhir untuk mengatur jadwal & stok.</>,
     ], <>Angka uang diambil dari jurnal Pembukuan (otomatis dari setiap penjualan, pembayaran, dan pengeluaran), jadi sama dengan laporan keuangan; jumlah transaksi dari menu operasional. Laba di sini sebelum pajak. Perbandingan cabang muncul bila Anda punya lebih dari satu lokasi.</>, null, <ScrAnalisis />],
   ]],
+  ['Q', 'Riwayat aktivitas', [
+    ['Melihat siapa melakukan apa', 'Pengaturan Bisnis › Riwayat aktivitas (semua anggota, sesuai bagiannya)', [
+      <>Buka <b>Riwayat aktivitas</b>. Setiap peristiwa penting tercatat otomatis: penjualan & pembatalan, retur, belanja & barang diterima, penyesuaian & mutasi stok, pengeluaran, pelunasan kasbon/utang, tagihan & pembayaran sewa, booking, pesanan jasa per tahap, dan persetujuan.</>,
+      <>Pilih bagian (<b>Penjualan & pesanan</b>, <b>Stok & belanja</b>, <b>Uang</b>, <b>Sewa & tagihan</b>) atau isi <b>Tanggal</b>. Tiap baris menunjukkan jenis, jam, ringkasan, <b>siapa yang melakukan</b>, dan nilainya.</>,
+      <>Ketuk penjualan untuk membuka struknya, atau pesanan untuk membuka notanya. <b>Muat lebih banyak</b> untuk riwayat lama.</>,
+    ], <>Riwayat ditulis oleh database di transaksi yang sama dengan datanya — bila transaksi gagal, riwayatnya juga tidak tercatat — dan tidak bisa diubah atau dihapus siapa pun. Karyawan hanya melihat aktivitas di bagian yang boleh ia buka. Riwayat dimulai sejak fitur ini aktif; transaksi lama tetap ada di menunya masing-masing.</>, null, null],
+  ]],
 ];
 
 const RULES = [
@@ -618,6 +626,7 @@ export default function Panduan() {
           <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
           <div><b>Foto & media</b><span><a href="#bagian-O">Langkah 71</a><br />Foto kamar, barang, layanan, cover & galeri; pustaka media</span></div>
           <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
+          <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>

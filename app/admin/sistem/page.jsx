@@ -17,8 +17,10 @@ export default function Sistem() {
   const [db, setDb] = useState(null);
   const [srv, setSrv] = useState(null);
   const [err, setErr] = useState(null);
+  const [ev, setEv] = useState(null);   // pemantauan peristiwa (event_reconcile): jumlah per jenis & dokumen tanpa peristiwa
   useEffect(() => {
     if (!can(adminMe, 'system.view')) return;
+    supabase.rpc('event_reconcile').then(({ data }) => setEv(data || null), () => {});
     supabase.rpc('admin_system').then(({ data, error }) => (error ? setErr(errMsg(error)) : setDb(data)));
     supabase.auth.getSession().then(({ data }) => fetch('/api/admin/status', { headers: { authorization: 'Bearer ' + data.session?.access_token } }))
       .then((r) => r.json()).then(setSrv).catch(() => setSrv({ error: 'Server aplikasi tidak menjawab' }));
@@ -55,6 +57,14 @@ export default function Sistem() {
           </div>
         ))}</div>}
       </section>
+      {ev && <section className="panel">
+        <h3>Peristiwa transaksi (7 hari)</h3>
+        {(() => { const gap = Object.values(ev.celah || {}).reduce((t, n) => t + Number(n), 0); return (
+          <div className={'notice ' + (gap ? 'bad' : 'good')}>{gap ? `${gap} dokumen tanpa peristiwa tercatat — periksa trigger di database.` : 'Lengkap: setiap penjualan, pembayaran, pesanan, dan pengeluaran tercatat sebagai peristiwa.'}</div>); })()}
+        <div className="list">{Object.entries(ev.per_jenis || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => <div className="li" key={k}><span className="small">{k}</span><b className="small">{Number(n).toLocaleString('id-ID')}</b></div>)}</div>
+        {Object.keys(ev.per_jenis || {}).length === 0 && <span className="small muted">Belum ada peristiwa dalam 7 hari terakhir.</span>}
+        <span className="small muted">Hanya jumlah — isi transaksi pelanggan tidak ditampilkan.</span>
+      </section>}
       <section className="panel">
         <h3>Jumlah data</h3>
         <div className="list">{Object.entries(db.tables).map(([k, v]) => <div className="li" key={k}><span className="small">{TBL[k] || k}</span><b className="small">{Number(v).toLocaleString('id-ID')}</b></div>)}</div>

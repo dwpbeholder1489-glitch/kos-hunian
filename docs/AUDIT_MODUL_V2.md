@@ -58,7 +58,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | 43–44 | Admin platform | VERIFIED | Peran staf + MFA, akses bantuan terbatas & tercatat, tiket, audit, status sistem; **MISSING** tampilan registry modul |
 | 45 | Entitlement | VERIFIED | `plan_has` di server, uji per fitur |
 | 5–6 | Module Registry & dependensi | PARTIAL → diperbaiki tahap ini | Tabel `modules` + `business_modules` + dependensi wajib; metadata Bab 5 belum lengkap |
-| 8 | Event lintas modul | MISSING | Tidak ada outbox/domain event |
+| 8 | Event lintas modul | VERIFIED (14 Nov) | `domain_events` outbox transaksional + idempoten, riwayat aktivitas `/aktivitas`, pemantauan kelengkapan di Admin › Status sistem. Belum ada penangan asinkron (dipakai saat integrasi/notifikasi) |
 
 ## 3. Temuan masalah
 
@@ -71,8 +71,8 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 
 | Prio | Pekerjaan | Fase |
 |---|---|---|
-| P0 | Module Registry V2 + dependency graph + dampak nonaktif + registry di Admin | 0 — **tahap ini** |
-| P0 | Domain event outbox + riwayat aktivitas per dokumen | 1 |
+| P0 | ~~Module Registry V2 + dependency graph + dampak nonaktif + registry di Admin~~ — selesai 14 Nov | 0 |
+| P0 | ~~Domain event outbox + riwayat aktivitas per dokumen~~ — selesai 14 Nov | 1 |
 | P1 | Pajak (PPN) & split payment di kasir + jurnal pajak | 1 |
 | P1 | Penawaran harga → sales order → pengiriman/surat jalan → invoice (grosir) + batas kredit & daftar harga pelanggan | 1–2 |
 | P1 | Batch & kedaluwarsa + saran pemesanan ulang | 1 |
