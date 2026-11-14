@@ -6,7 +6,7 @@ import { useKos } from '@/components/KosProvider';
 import Icon from '@/components/landing/Icon';
 import { LN_THEME_KEY } from '@/lib/theme';
 
-const LINKS = [['/#beranda', 'Beranda'], ['/#produk', 'Produk'], ['/#solusi', 'Solusi Bisnis'], ['/#cara', 'Cara Kerja'], ['/#harga', 'Harga'], ['/tentang', 'Tentang Kami']];
+const LINKS = [['/#beranda', 'Beranda'], ['/#bisnis', 'Jenis Bisnis'], ['/#demo', 'Demonstrasi'], ['/#modul', 'Modul'], ['/#harga', 'Harga'], ['/tentang', 'Tentang Kami']];
 
 // Tombol tema landing: gelap = tampilan utama; terang disimpan di perangkat ini (tidak mengubah tema aplikasi)
 function ThemeBtn() {

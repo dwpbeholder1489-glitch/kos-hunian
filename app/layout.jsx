@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui';
 import { SITE_URL as SITE } from '@/lib/plan';
 import { themeScript } from '@/lib/theme';
 const TITLE = 'PRASARA — Kelola Bisnis Lebih Terarah. Kembangkan dengan Lebih Cerdas.';
-const DESC = 'Adaptive Business System untuk mengelola bisnis dari HP: kos & properti sewa, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain. Coba gratis 30 hari.';
+const DESC = 'Adaptive Business System untuk mengelola bisnis dari HP: kos & properti sewa, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain. Coba gratis 14 hari.';
 const IMAGE = { url: '/og.jpg?v=3', width: 1200, height: 630, alt: 'PRASARA — aplikasi pengelolaan bisnis' };
 
 // Judul, deskripsi & gambar pratinjau saat link dibagikan (WhatsApp, Facebook, Telegram, X)

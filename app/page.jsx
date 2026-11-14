@@ -1,17 +1,26 @@
 import Link from 'next/link';
+import './landing.css';
 import { LogoMark } from '@/components/Logo';
-import LandingNav from '@/components/LandingNav';
 import Icon from '@/components/landing/Icon';
-import { KasirMock } from '@/components/landing/HeroMulti';
-import DashMock from '@/components/landing/DashMock';
-import CapsFilter from '@/components/landing/CapsFilter';
-import Showcase from '@/components/landing/Showcase';
-import { PLANS, PLAN_ORDER, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell, savePct } from '@/lib/plan';
-import { TESTIMONIALS } from '@/lib/testimonials';
 import HitungKunjungan from '@/components/HitungKunjungan';
+import Engine from '@/components/cine/Engine';
+import Nav from '@/components/cine/Nav';
+import Dash from '@/components/cine/Dash';
+import Problems from '@/components/cine/Problems';
+import Calc from '@/components/cine/Calc';
+import Explorer from '@/components/cine/Explorer';
+import Demo from '@/components/cine/Demo';
+import Eco from '@/components/cine/Eco';
+import Insight from '@/components/cine/Insight';
+import Pricing from '@/components/cine/Pricing';
+import Acc from '@/components/cine/Acc';
+import { PLANS, PLAN_ORDER, FEATURES, FEATURE_GROUPS, BUSINESS, featureCell } from '@/lib/plan';
+import { TESTIMONIALS } from '@/lib/testimonials';
 
-const TITLE = 'PRASARA — Kelola Bisnis Lebih Terarah. Kembangkan dengan Lebih Cerdas.';
-const DESC = 'Adaptive Business System: satu platform untuk operasional, pelanggan, transaksi, keuangan, stok, dan layanan — kos & properti, toko retail & grosir, laundry & jasa, kuliner, dan usaha lain. Sistem menyesuaikan jenis bisnis; pemilik yang menyetujui. Coba gratis 30 hari.';
+// Landing publik: Cinematic Scroll Experience. Gaya di app/landing.css (kelas cx-), gerak di components/cine/Engine.jsx.
+// Semua dashboard di halaman ini ILUSTRASI dengan DATA CONTOH. Harga & isi paket dari database (plans_public).
+const TITLE = 'PRASARA — Bisnis Lebih Teratur. Keputusan Lebih Terarah.';
+const DESC = 'Kelola transaksi, operasional, keuangan, pelanggan, dan perkembangan bisnis dalam satu sistem yang menyesuaikan kebutuhan usaha Anda — toko, grosir, laundry, kos, kuliner, dan usaha lain. Coba gratis 14 hari, tanpa kartu kredit.';
 export const metadata = {
   title: TITLE,
   description: DESC,
@@ -32,105 +41,20 @@ async function getPlans() {
   return PLAN_ORDER.map((k) => ({ key: k, name: PLANS[k].name, tagline: PLANS[k].tagline, price: PLANS[k].price, list_price: PLANS[k].list_price, terms: PLANS[k].terms || [], is_free: k === 'gratis', active: true, trial: k === 'dasar', trial_days: BUSINESS.trialDays }));
 }
 
-const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(n);
 const WA = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya ingin tanya tentang aplikasi PRASARA.')}`;
 const START = '/masuk?daftar=1';
 
-// Masalah umum → apa yang dilakukan PRASARA (tanpa klaim hasil finansial)
-const PROBLEMS = [
-  ['file', 'Pencatatan masih tersebar'], ['receipt', 'Transaksi sulit dipantau'], ['users', 'Data pelanggan tidak teratur'], ['box', 'Inventaris sulit dikontrol'],
-  ['chart', 'Laporan butuh waktu lama'], ['notebook', 'Operasional serba manual'], ['compass', 'Sulit membaca kondisi bisnis'],
-];
-const SOLVES = [
-  ['layers', 'Operasional lebih terstruktur'], ['receipt', 'Transaksi tercatat rapi & tertelusur'], ['users', 'Pelanggan terkelola dengan baik'], ['box', 'Stok lebih terkontrol'],
-  ['chart', 'Laporan tersusun otomatis'], ['flow', 'Proses bisnis lebih efisien'], ['trend', 'Perkembangan bisnis lebih jelas'],
-];
+const DOTS = [['beranda', 'Beranda'], ['masalah', 'Masalah'], ['biaya', 'Biaya tersembunyi'], ['bisnis', 'Jenis bisnis'], ['ubah', 'Sebelum & sesudah'], ['demo', 'Demonstrasi'], ['modul', 'Modul'], ['analisis', 'Analisis'], ['alur', 'Alur kerja'], ['aman', 'Keamanan'], ['harga', 'Harga'], ['langganan', 'Langganan'], ['faq', 'FAQ'], ['mulai', 'Mulai']];
 
-// Kemampuan inti (status jujur: ready = tersedia, part = sebagian, soon = segera hadir)
-const CAPS = [
-  ['layers', 'Manajemen bisnis', 'ready', 'Beberapa bisnis dalam satu akun, profil & badan usaha, cabang/gudang, modul yang bisa diaktifkan atau dimatikan.', 'Pemilik kos dan toko memantau keduanya dari satu ringkasan.'],
-  ['receipt', 'Transaksi', 'ready', 'Kasir eceran & grosir, pesanan jasa & kuliner, tagihan sewa, pembayaran sebagian, retur, dan pembatalan dengan alasan.', 'Kasir toko menjual per pcs atau per dus dengan harga masing-masing.'],
-  ['users', 'Pelanggan', 'ready', 'Kontak pelanggan, penghuni & supplier, prospek dari halaman bisnis, tindak lanjut, kasbon.', 'Paket Pro: calon penghuni mendaftar online lewat halaman bisnis; pemilik tinggal mengonfirmasi.'],
-  ['box', 'Inventaris', 'ready', 'Stok multi-satuan, barcode, per lokasi, belanja & terima barang, stok opname, bahan operasional.', 'Laundry mencatat pemakaian deterjen agar biaya bahan ikut terhitung.'],
-  ['wallet', 'Keuangan', 'ready', 'Kas & bank, biaya, deposit, utang-piutang, jurnal otomatis, laba rugi, dan neraca. Paket Bisnis: anggaran, rekonsiliasi bank, dan laporan rinci per badan usaha.', 'Uang jaminan penghuni dicatat terpisah dari pendapatan.'],
-  ['calendar', 'Booking & reservasi', 'ready', 'Booking kamar dengan uang tanda jadi, reservasi meja dengan cek bentrok, jadwal jemput-antar.', 'Kamar yang dibooking terkunci sampai penghuni check-in.'],
-  ['flow', 'Layanan', 'ready', 'Pesanan per kg/item, tahap proses yang bisa diatur, keluhan & pengerjaan ulang, antar-jemput, layar dapur.', 'Petugas proses melihat tahap cucian tanpa melihat uang.'],
-  ['shield', 'Karyawan & operasional', 'part', 'Peran & hak akses per karyawan, persetujuan untuk aksi penting, shift kasir, riwayat perubahan. Absensi & penggajian: dalam rencana.', 'Kasir tidak melihat harga modal dan laba.'],
-  ['chart', 'Laporan & analitik', 'ready', 'Laporan per jenis bisnis dengan grafik, tren 6 bulan, barang terlaris, ketepatan waktu, ekspor Excel/PDF.', 'Melihat bulan mana biaya operasional paling besar.'],
-];
+const HERO_DASH = { title: 'Command Center', sub: 'Ringkasan hari ini', on: 0, kpis: [['Pendapatan', 'Rp24,8 jt', '+12%'], ['Transaksi', '318', '+8%'], ['Laba', 'Rp7,4 jt', '+5%']], chartTitle: 'Pendapatan 8 bulan', line: [9, 11, 10, 13, 12, 15, 17, 20], listTitle: 'Perlu perhatian', list: ['3 tagihan jatuh tempo', '2 barang hampir habis', '1 pesanan terlambat'] };
+const PANELS = [['flow', 'Operasional'], ['wallet', 'Keuangan'], ['users', 'Pelanggan'], ['chart', 'Analisis Bisnis']];
 
-// Sistem adaptif: alur nyata (/mulai → setup_items → Pusat Konfirmasi → setup_activate)
-const FLOW = ['Identifikasi bisnis', 'Analisis kebutuhan', 'Rekomendasi modul', 'Persetujuan pemilik', 'Aktivasi konfigurasi', 'Dashboard bisnis'];
-const ADAPT = [
-  ['compass', 'Mengenali jenis bisnis', 'Anda memilih kategori & subkategori (15 kategori) dan menjawab beberapa pertanyaan singkat.'],
-  ['layers', 'Merekomendasikan modul', 'Dari template per jenis usaha, PRASARA menyusun draf modul, menu, dan informasi yang perlu dilengkapi.'],
-  ['check', 'Anda yang memutuskan', 'Setiap rekomendasi bisa disetujui, diubah, atau ditolak di Pusat Konfirmasi. Harga dan kapasitas tidak diisi otomatis.'],
-  ['chart', 'Ikut berkembang', 'Modul bisa ditambah atau dimatikan kapan saja di Pusat konfigurasi; saran fitur muncul dari data bisnis Anda sendiri.'],
-  ['shield', 'Perubahan penting butuh persetujuan', 'Aktivasi dan perubahan konfigurasi diperiksa di server, bukan hanya di tampilan. Admin platform tidak mengubah konfigurasi bisnis Anda.'],
-  ['notebook', 'Tercatat di riwayat', 'Setiap perubahan konfigurasi tersimpan: siapa, kapan, dan alasannya.'],
-];
+// Sebelum → sesudah: posisi awal tiap benda (px dari tengah) sebelum bergerak ke pusat
+const BEFORE = [['eye', 'Pengecekan manual', 0, -185, 3], ['notebook', 'Buku catatan', -190, -95, -9], ['sheet', 'Spreadsheet', 190, -60, 7], ['message', 'WhatsApp', -180, 70, 6], ['file', 'File terpisah', 170, 150, -8]];
+const AFTER = ['Dashboard terpusat', 'Data transaksi terstruktur', 'Laporan keuangan', 'Pemantauan operasional', 'Informasi mudah diakses'];
+const AFTER_DASH = { title: 'Semua dalam satu sistem', sub: 'PRASARA', on: 0, kpis: [['Transaksi', 'Tercatat'], ['Stok', 'Terpantau'], ['Laporan', 'Otomatis']], chartTitle: 'Perkembangan bisnis', line: [5, 6, 6, 8, 9, 11, 12, 14], listTitle: 'Tersambung', list: ['Kasir → stok', 'Stok → pembukuan', 'Pembukuan → laporan'] };
 
-// Cara kerja (4 tahap, sesuai alur pendaftaran yang berjalan)
-const HOW4 = [
-  ['Daftarkan bisnis Anda', 'Buat akun dengan email, lalu isi nama bisnis, kategori, dan lokasi. Boleh lebih dari satu bisnis sekaligus.'],
-  ['Kenali kebutuhan bisnis', 'PRASARA membaca kategori, subkategori, dan jawaban Anda untuk menyiapkan draf konfigurasi.'],
-  ['Pilih konfigurasi', 'Tinjau modul yang direkomendasikan di Pusat Konfirmasi — setujui, ubah, atau tolak satu per satu.'],
-  ['Mulai kelola bisnis', 'Setelah Anda aktifkan, menu dan dashboard disiapkan sesuai konfigurasi yang disetujui.'],
-];
-
-
-// Solusi per kategori: status jujur
-const CATS = [
-  ['🏠', 'Properti & Sewa', 'Kos, kontrakan, homestay: kamar, penghuni, tagihan bulanan otomatis, booking, deposit, keluhan & perbaikan, meteran listrik/air, verifikasi pembayaran, laba rugi.', 'ready'],
-  ['🛒', 'Retail & Grosir', 'Toko sembako, minimarket, grosir: kasir eceran & grosir, stok multi-satuan, barcode, belanja ke supplier, kasbon, laporan laba.', 'ready'],
-  ['🧩', 'Bisnis lain (Business Builder)', 'Bengkel, salon, katering, dan usaha lain: susun sendiri data, formulir, alur status, peran, dan laporan. Uang masuk per status langsung ke kas & pembukuan.', 'ready'],
-  ['🧺', 'Jasa & Laundry', 'Laundry kiloan & satuan (dan jasa lain): pesanan, tahap cuci–kering–setrika–QC, nota, DP, antar-jemput, keluhan, bahan, laporan.', 'ready'],
-  ['🍳', 'Kuliner', 'Warung, kafe, katering: menu, pesanan makan di tempat/bungkus, layar dapur, reservasi meja, bayar per meja; QR per meja di Paket Pro.', 'ready'],
-  ['🏭', 'Produksi', 'Modul khusus (BOM, kontrol mutu) dalam rencana. Sementara bisa disusun lewat Business Builder.', 'plan'],
-  ['🚚', 'Distribusi', 'Modul khusus (armada, rute) dalam rencana. Sementara bisa disusun lewat Business Builder.', 'plan'],
-];
-
-
-// Fitur utama yang sudah tersedia
-const GROUPS = [
-  ['home', 'Properti & Sewa', [
-    ['Kamar & penghuni', 'Status, harga, dan riwayat sewa setiap kamar terlihat sekilas.'],
-    ['Tagihan otomatis', 'Tagihan sewa terbit sendiri tiap bulan; boleh dibayar sebagian.'],
-    ['Verifikasi pembayaran', 'Tunai, transfer, atau QRIS diperiksa dulu sebelum dihitung lunas.'],
-    ['Pengingat WhatsApp', 'Pesan pengingat berisi rincian tagihan siap kirim dengan satu ketukan.'],
-    ['Booking, deposit, keluhan & meteran', 'Booking kamar dengan DP, uang jaminan tercatat terpisah dari pendapatan, keluhan kamar sampai selesai, listrik/air per meteran jadi tagihan otomatis.'],
-    ['Portal penghuni', 'Penghuni cek tagihan dan kirim bukti transfer lewat link pribadi.', 'Pro'],
-    ['Laba rugi & kwitansi', 'Untung bersih per bulan, kwitansi PDF, ekspor Excel.', 'Dasar'],
-  ]],
-  ['receipt', 'Retail & Grosir', [
-    ['Kasir eceran & grosir', 'Satu barang bisa punya beberapa satuan (pcs, dus, kg) dengan harga masing-masing. Struk cetak atau WhatsApp.'],
-    ['Barcode & label', 'Scan dengan kamera HP atau scanner Bluetooth. Barang tanpa barcode: tombol cepat atau cetak label sendiri.'],
-    ['Stok & belanja', 'Pesan ke supplier, terima barang sebagian atau penuh; harga modal rata-rata dihitung otomatis.'],
-    ['Kas, kasbon & utang', 'Saldo kas dan bank, kasbon pelanggan, utang ke supplier, pengingat jatuh tempo.'],
-    ['Retur & shift kasir', 'Barang kembali menambah stok; tutup shift menunjukkan uang laci pas, lebih, atau kurang.'],
-    ['Laporan laba', 'Penjualan bersih, laba kotor, barang terlaris dan yang tidak laku.'],
-  ]],
-  ['layers', 'Jasa & Laundry', [
-    ['Pesanan kiloan & satuan', 'Harga per kg/pcs dengan minimal otomatis, diskon, ongkos antar-jemput, DP atau lunas.'],
-    ['Tahap proses', 'Cuci, kering, setrika, cek kualitas, kemas — urutan bisa diatur. Petugas proses tidak melihat uang.'],
-    ['Nota & WhatsApp', 'Nota cetak atau kirim WA; pesan diterima, sudah siap, dan tagih siap kirim (manual).'],
-    ['Keluhan & cuci ulang', 'Catat keluhan, cuci ulang tanpa biaya, ganti rugi; batal pesanan dengan alasan & persetujuan.'],
-    ['Bahan & laporan', 'Stok deterjen/pewangi, pendapatan per layanan, ketepatan waktu, laba perkiraan.'],
-  ]],
-  ['receipt', 'Kuliner', [
-    ['Menu & pesanan dapur', 'Pesanan makan di tempat atau bungkus, layar dapur untuk koki, nomor meja.'],
-    ['QR per meja (Pro)', 'Tamu memindai QR di meja dan memesan sendiri; pesanan masuk sebagai permintaan untuk dikonfirmasi.'],
-    ['Reservasi & bayar per meja', 'Reservasi meja dengan cek bentrok, tagihan meja bisa dibayar terpisah (split bill).'],
-  ]],
-  ['users', 'Untuk semua bisnis', [
-    ['Karyawan & peran', 'Pengelola, kasir, staf gudang, penjaga, petugas proses — masing-masing hanya melihat menunya.'],
-    ['Ringkasan semua bisnis', 'Angka penting setiap bisnis dalam satu layar.'],
-    ['Pengingat & email pagi', 'Lonceng pengingat, email ringkasan, dan daftar yang perlu ditindaklanjuti.', 'Dasar'],
-    ['Bantuan', 'Panduan bergambar, tombol "? Panduan" di setiap menu, dan tiket bantuan.'],
-    ['Portal bisnis (Pro)', 'Halaman publik dengan foto, tautan & QR siap bagikan atau cetak; pendaftaran penghuni dan pesanan online.'],
-    ['Tampilan terang & gelap', 'Nyaman dipakai siang maupun malam; mengikuti pengaturan HP.'],
-  ]],
-];
+const FLOW = [['receipt', 'Transaksi masuk', 'Penjualan, pesanan, atau pembayaran dicatat sekali.'], ['database', 'Data tercatat', 'Stok, kas, dan piutang ikut berubah saat itu juga.'], ['file', 'Tagihan terbentuk', 'Tagihan berkala terbit sendiri sesuai jadwalnya.'], ['clock', 'Aktivitas diperbarui', 'Riwayat mencatat siapa melakukan apa dan kapan.'], ['chart', 'Laporan diperbarui', 'Laba rugi dan ringkasan memakai angka terbaru.']];
 
 const TRUST = [
   ['database', 'Data tiap bisnis terpisah', 'Pemisahan data dijaga langsung di tingkat database. Pengguna lain tidak dapat melihat data Anda.'],
@@ -164,15 +88,13 @@ const jsonLd = {
   operatingSystem: 'Web', description: DESC, inLanguage: 'id',
   offers: PLAN_ORDER.map((k) => ({ '@type': 'Offer', name: PLANS[k].name, price: PLANS[k].price, priceCurrency: 'IDR' })), // bawaan; harga terkini di halaman
 };
+// Kelas cx-js dipasang sebelum halaman tergambar (agar tidak berkedip); dicabut lagi bila mesin gerak tidak pernah hidup.
+const BOOT = "document.documentElement.classList.add('cx-js');setTimeout(function(){if(!window.__cx)document.documentElement.classList.remove('cx-js')},4000)";
 
-function Badge({ t }) {
-  if (!t) return null;
-  return <span className={'ln-badge ' + (t === 'Segera hadir' ? 'soon' : t === 'Pro' ? 'pro' : 'std')}>{t}</span>;
-}
 function Cell({ v }) {
-  if (v === true) return <Icon name="check" size={18} className="ln-yes" />;
-  if (v === false) return <Icon name="minus" size={18} className="ln-no" />;
-  return <span className="ln-small">{v}</span>;
+  if (v === true) return <Icon name="check" size={18} className="y" />;
+  if (v === false) return <Icon name="minus" size={18} className="n" />;
+  return <span>{v}</span>;
 }
 
 export default async function Landing() {
@@ -182,210 +104,179 @@ export default async function Landing() {
   const trialDays = plans.find((x) => x.trial_days != null)?.trial_days ?? BUSINESS.trialDays;
   const trialPlan = plans.find((x) => x.trial);
   const cardRows = (pl) => FEATURES.filter((f) => !f.soon).map((f) => [f, featureCell(f, pl)])
-    .filter(([f, v]) => v && (pl.is_free || typeof v === 'string' || !(free && featureCell(f, free) === true))).slice(0, 8);
+    .filter(([f, v]) => v && (pl.is_free || typeof v === 'string' || !(free && featureCell(f, free) === true))).slice(0, 8)
+    .map(([f, v]) => f.label + (typeof v === 'string' ? ` — ${v}` : ''));
+  const cards = plans.map((pl) => ({ key: pl.key, name: pl.name, tagline: pl.tagline, price: pl.price, list_price: pl.list_price, terms: pl.terms || [], is_free: !!pl.is_free, trial: !!pl.trial, rows: cardRows(pl) }));
+  const CTA = `Mulai Gratis ${trialDays} Hari`;
+  const SUBS = [
+    ['Pendaftaran', `Daftar dengan email, lalu isi data singkat bisnis Anda. Setiap bisnis baru mendapat masa coba ${trialDays} hari${trialPlan ? ` Paket ${trialPlan.name}` : ''} tanpa kartu kredit. Bisnis berstatus draf sampai Anda meninjau dan mengaktifkannya di Pusat Konfirmasi.`],
+    ['Pembayaran', 'Pilih paket di menu Langganan, lalu bayar lewat halaman pembayaran yang disediakan atau lewat QRIS/transfer bank. Paket baru aktif setelah pembayaran terverifikasi; pembayaran manual biasanya diperiksa dalam 1×24 jam pada hari kerja. Tagihan menampilkan batas waktu bayarnya.'],
+    ['Masa berlaku', 'Paket bulanan berlaku per bulan sejak aktif; Pro Tahunan dibayar sekali untuk 12 bulan. Tanggal berakhir selalu terlihat di menu Langganan.'],
+    ['Perpanjangan', 'Tidak ada pendebetan otomatis dari rekening atau kartu Anda. Perpanjang dari menu Langganan; masa baru ditambahkan setelah masa aktif sekarang berakhir, jadi tidak ada hari yang hangus.'],
+    ['Perubahan paket', 'Naik paket berlaku sejak pembayaran disetujui, dan sisa hari paket lama dihitung ulang. Turun paket berlaku setelah masa paket sekarang berakhir.'],
+    ['Pembatalan', 'Ketuk "Berhenti memperpanjang" di menu Langganan kapan saja, tanpa perlu menghubungi kami. Paket tetap aktif sampai tanggal berakhirnya, lalu bisnis kembali ke paket Gratis. Data tidak dihapus.'],
+    ['Riwayat pembayaran', 'Setiap tagihan dan statusnya (menunggu, lunas, dibatalkan) tersimpan di Riwayat tagihan pada menu Langganan.'],
+  ];
   return (
-    <div className="ln">
+    <div className="cx">
+      <script dangerouslySetInnerHTML={{ __html: BOOT }} />
       <HitungKunjungan path="/" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <LandingNav theme />
+      <Engine dots={DOTS} />
+      <Nav cta="Mulai Gratis" />
 
       <main>
-        {/* 1. HERO */}
-        <section className="ln-hero" id="beranda">
-          <div className="ln-wrap ln-hero-grid">
-            <div className="ln-hero-text ln-rise">
-              <span className="ln-eyebrow">Adaptive Business System</span>
-              <h1>Kelola bisnis dengan <span>lebih terstruktur.</span></h1>
-              <p className="ln-lead">PRASARA membantu Anda mengelola transaksi, inventaris, keuangan, pelanggan, dan operasional bisnis dalam satu sistem yang menyesuaikan kebutuhan usaha Anda.</p>
-              <div className="ln-cta-row">
-                <Link href={START} className="ln-btn ln-btn-primary ln-btn-lg">Mulai Sekarang <Icon name="arrow" size={18} /></Link>
-                <a href="#demo" className="ln-btn ln-btn-outline ln-btn-lg">▶&nbsp; Lihat Demo</a>
+        {/* 01 HERO */}
+        <section className="cx-hero" id="beranda" data-sp="exit">
+          <div className="cx-wrap cx-hero-grid">
+            <div className="cx-hero-text">
+              <span className="cx-kick cx-enter" style={{ '--i': 1 }}>Adaptive Business System</span>
+              <h1><span className="cx-enter" style={{ '--i': 2, display: 'block' }}>Bisnis Anda Bisa Lebih Teratur.</span><em className="cx-enter" style={{ '--i': 3 }}>Keputusan Anda Bisa Lebih Terarah.</em></h1>
+              <p className="cx-lead cx-enter" style={{ '--i': 4 }}>Kelola transaksi, operasional, keuangan, pelanggan, dan perkembangan bisnis dalam satu sistem yang menyesuaikan kebutuhan usaha Anda.</p>
+              <div className="cx-cta cx-enter" style={{ '--i': 5 }}>
+                <Link href={START} className="cx-btn pri">{CTA} <Icon name="arrow" size={18} /></Link>
+                <a href="#demo" className="cx-btn dark">Lihat Demonstrasi</a>
               </div>
-              <ul className="ln-hero-checks">{['Sistem adaptif', 'Modular & fleksibel', 'Terintegrasi', 'Siap berkembang'].map((t) => <li key={t}><Icon name="check" size={16} />{t}</li>)}</ul>
-              <p className="ln-support">Coba gratis {trialDays} hari{trialPlan ? ` Paket ${trialPlan.name}` : ''}, tanpa kartu kredit.</p>
+              <ul className="cx-facts cx-enter" style={{ '--i': 6 }}>
+                <li><Icon name="shield" size={17} />Data tiap bisnis terpisah</li>
+                <li><Icon name="phone" size={17} />Dipakai dari HP, tanpa pasang aplikasi</li>
+                <li><Icon name="check" size={17} />Tanpa kartu kredit</li>
+              </ul>
             </div>
-            <div className="ln-rise ln-rise-2"><DashMock /></div>
-          </div>
-        </section>
-
-        {/* 2. MASALAH & SOLUSI */}
-        <section className="ln-sec ln-force-light ln-sec-tight" id="masalah" aria-labelledby="h-masalah">
-          <div className="ln-wrap ln-strip">
-            <h2 id="h-masalah">Sering Mengalami Tantangan Ini dalam Bisnis?</h2>
-            <ul className="ln-tiles">{PROBLEMS.map(([ic, t]) => <li key={t}><Icon name={ic} size={26} /><span>{t}</span></li>)}</ul>
-          </div>
-        </section>
-        <section className="ln-sec ln-force-dark ln-sec-tight" aria-labelledby="h-solusi-band">
-          <div className="ln-wrap ln-strip">
-            <h2 id="h-solusi-band">PRASARA Membantu Anda <span>Mengatasinya</span></h2>
-            <ul className="ln-tiles dark">{SOLVES.map(([ic, t]) => <li key={t}><Icon name={ic} size={26} /><span>{t}</span></li>)}</ul>
-          </div>
-        </section>
-
-        {/* 3. PRODUK — KEMAMPUAN INTI */}
-        <section className="ln-sec ln-force-light" id="produk" aria-labelledby="h-produk">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Produk</span><h2 id="h-produk">Fitur Utama PRASARA</h2>
-              <p>Modul yang dapat disesuaikan dengan kebutuhan dan karakteristik bisnis Anda. Status ditulis apa adanya: <b>Tersedia</b>, <b>Sebagian tersedia</b>, atau <b>Segera hadir</b>.</p></div>
-            <CapsFilter caps={CAPS} />
-            <p className="ln-small" style={{ marginTop: 18 }}><a href="#fitur" className="ln-textlink">Lihat rincian fitur per jenis bisnis <Icon name="arrow" size={16} /></a></p>
-          </div>
-        </section>
-
-        {/* 4. DEMO */}
-        <section className="ln-sec" id="demo" aria-labelledby="h-demo">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Demo</span><h2 id="h-demo">Lihat Bagaimana PRASARA Bekerja untuk Bisnis Anda.</h2>
-              <p>Semua tampilan di bawah memakai <b>DATA CONTOH</b> — tidak tersambung ke data bisnis siapa pun.</p></div>
-            <div className="ln-demo">
-              <div><h3 style={{ marginBottom: 14 }}>Properti & Sewa</h3><Showcase /></div>
-              <div className="ln-demo-side">
-                <h3>Retail & Grosir — Kasir</h3>
-                <KasirMock />
-                <p className="ln-p" style={{ fontSize: 15 }}>Tombol barang cepat untuk barang tanpa barcode, scan kamera untuk barang berbarcode, lalu bayar tunai, transfer, atau kasbon.</p>
-              </div>
+            <div className="cx-stage">
+              <div className="cx-ring" aria-hidden="true" />
+              <div className="cx-dash-in"><div className="cx-dash-3d"><Dash d={HERO_DASH} /></div></div>
+              <ul className="cx-panels" aria-label="Bagian sistem">
+                {PANELS.map(([ic, t], i) => <li key={t} className="cx-panel" style={{ '--i': i }}><Icon name={ic} size={18} />{t}</li>)}
+              </ul>
             </div>
           </div>
+          <div className="cx-hint" aria-hidden="true"><i /><span>Gulir untuk menjelajah</span></div>
         </section>
 
-        {/* 5. SISTEM ADAPTIF */}
-        <section className="ln-sec ln-sec-alt" id="adaptif" aria-labelledby="h-adaptif">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Adaptive Business System</span><h2 id="h-adaptif">Bisnis Berbeda, Kebutuhan Berbeda. Sistem yang Sama-sama Bisa Menyesuaikan.</h2>
-              <p>PRASARA tidak memaksa semua bisnis memakai fitur dan pengaturan yang sama. Sistem menyiapkan rekomendasi — keputusan tetap di tangan pemilik.</p></div>
-            <ol className="ln-flow" aria-label="Alur penyesuaian sistem">
-              {FLOW.map((t, i) => <li key={t}><span className="ln-flow-n">{String(i + 1).padStart(2, '0')}</span><span>{t}</span></li>)}
+        {/* 02 MASALAH */}
+        <section className="cx-sec" id="masalah" aria-labelledby="h-masalah">
+          <div className="cx-wrap">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Kenali masalahnya</span><h2 id="h-masalah" data-rv="" style={{ '--i': 1 }}>Bisnis Bertumbuh, Tetapi Cara Mengelolanya Masih Sama?</h2></div>
+            <Problems />
+          </div>
+        </section>
+
+        {/* 03 BIAYA TERSEMBUNYI */}
+        <section className="cx-sec" id="biaya" aria-labelledby="h-biaya" style={{ paddingTop: 0 }}>
+          <div className="cx-wrap">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Biaya yang tidak terlihat</span><h2 id="h-biaya" data-rv="" style={{ '--i': 1 }}>Masalah Kecil yang Dibiarkan Bisa Menjadi Beban Besar.</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Geser angkanya sesuai keadaan Anda. Hasilnya perkiraan waktu yang terpakai untuk pekerjaan manual — bukan janji penghematan.</p></div>
+            <Calc />
+          </div>
+        </section>
+
+        {/* 04 JELAJAH BISNIS */}
+        <section className="cx-sec" id="bisnis" aria-labelledby="h-bisnis" style={{ background: '#fff' }}>
+          <div className="cx-wrap">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Jenis bisnis</span><h2 id="h-bisnis" data-rv="" style={{ '--i': 1 }}>Satu Platform. Berbagai Jenis Bisnis.</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Pilih jenis usaha untuk melihat kebutuhan, modul, dan alur kerjanya. Ketersediaan ditulis apa adanya.</p></div>
+            <Explorer />
+          </div>
+        </section>
+
+        {/* 05 SEBELUM → SESUDAH */}
+        <section className="cx-ba" id="ubah" data-sp="pin" aria-labelledby="h-ubah">
+          <div className="cx-ba-pin">
+            <div className="cx-wrap cx-ba-head">
+              <h2 id="h-ubah">Berubah dari Pengelolaan Terpisah Menjadi Sistem yang Terintegrasi.</h2>
+              <div className="cx-ba-state" aria-hidden="true"><span className="s1">Sebelum</span><span className="s2">Sesudah</span></div>
+            </div>
+            <div className="cx-ba-field">
+              <svg className="cx-ba-lines" viewBox="-300 -220 600 440" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                {BEFORE.map(([, t, x, y]) => <path key={t} pathLength="1" d={`M${x} ${y} Q ${x * 0.3} ${y * 0.9} 0 0`} />)}
+              </svg>
+              <ul aria-label="Sebelum: pengelolaan terpisah">
+                {BEFORE.map(([ic, t, x, y, r]) => <li key={t} className="cx-ba-item" style={{ '--x': x + 'px', '--y': y + 'px', '--r': r + 'deg' }}><Icon name={ic} size={18} />{t}</li>)}
+              </ul>
+              <div className="cx-ba-core"><Dash d={AFTER_DASH} /></div>
+            </div>
+            <ul className="cx-ba-after" aria-label="Sesudah: sistem terintegrasi">
+              {AFTER.map((t) => <li key={t}><Icon name="check" size={15} />{t}</li>)}
+            </ul>
+          </div>
+        </section>
+
+        {/* 06 DEMONSTRASI */}
+        <section className="cx-sec" id="demo" aria-labelledby="h-demo">
+          <div className="cx-wrap" style={{ paddingInline: 12 }}>
+            <div className="cx-demo">
+              <div className="cx-wrap">
+                <span className="cx-kick" data-rv="">Demonstrasi</span><h2 id="h-demo" data-rv="" style={{ '--i': 1 }}>Lihat Bagaimana PRASARA Bekerja.</h2>
+                <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Ketuk tiap bagian. Tidak perlu masuk; semua layar di bawah adalah ilustrasi dengan data contoh.</p>
+                <Demo />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 07 MODUL */}
+        <section className="cx-sec" id="modul" aria-labelledby="h-modul" style={{ paddingTop: 0 }}>
+          <div className="cx-wrap">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Modular</span><h2 id="h-modul" data-rv="" style={{ '--i': 1 }}>Gunakan yang Dibutuhkan. Kembangkan Saat Bisnis Bertumbuh.</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Tujuh bagian yang saling terhubung. Ketuk salah satu untuk melihat hubungannya.</p></div>
+            <Eco />
+          </div>
+        </section>
+
+        {/* 08 ANALISIS */}
+        <section className="cx-sec" id="analisis" aria-labelledby="h-analisis" style={{ background: 'var(--mint)' }}>
+          <div className="cx-wrap">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Analisis bisnis</span><h2 id="h-analisis" data-rv="" style={{ '--i': 1 }}>Jangan Hanya Mencatat Bisnis. Pahami Kondisinya.</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Pendapatan, pengeluaran, laba, produk terlaris, dan ketepatan waktu — dari transaksi yang sama, tanpa rekap ulang.</p></div>
+            <Insight />
+          </div>
+        </section>
+
+        {/* 09 ALUR OTOMATIS */}
+        <section className="cx-sec" id="alur" aria-labelledby="h-alur">
+          <div className="cx-wrap">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Alur kerja</span><h2 id="h-alur" data-rv="" style={{ '--i': 1 }}>Kurangi Pekerjaan Berulang. Beri Ruang untuk Mengembangkan Bisnis.</h2></div>
+            <ol className="cx-flow" data-sp="view">
+              {FLOW.map(([ic, t, d], i) => <li key={t} className="cx-flow-step" style={{ '--i': i }}><span className="cx-flow-dot"><Icon name={ic} size={20} /></span><div><h3>{t}</h3><p>{d}</p></div></li>)}
             </ol>
-            <div className="ln-vals" style={{ marginTop: 36 }}>
-              {ADAPT.map(([ic, t, d]) => <div key={t} className="ln-val"><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span><h3>{t}</h3><p>{d}</p></div>)}
-            </div>
+            <p className="cx-note" style={{ marginTop: 22 }}>Yang sudah berjalan: jurnal otomatis dari transaksi, tagihan sewa berkala, pengingat, dan resep otomatisasi (Paket Bisnis/Pro). Pesan WhatsApp otomatis: segera hadir — saat ini pesan disiapkan dan Anda yang mengirim.</p>
           </div>
         </section>
 
-        {/* 7. CARA KERJA */}
-        <section className="ln-sec ln-sec-alt" id="cara" aria-labelledby="h-cara">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Cara kerja</span><h2 id="h-cara">Empat tahap dari daftar sampai dipakai.</h2></div>
-            <ol className="ln-steps ln-steps4">
-              {HOW4.map(([t, d], i) => (
-                <li key={t}><span className="ln-step-n">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{d}</p></li>
-              ))}
-            </ol>
-            <div className="ln-cta-row" style={{ marginTop: 28 }}><Link href={START} className="ln-btn ln-btn-primary">Daftarkan bisnis <Icon name="arrow" size={18} /></Link></div>
+        {/* 11 KEAMANAN */}
+        <section className="cx-sec" id="aman" aria-labelledby="h-aman" style={{ background: '#fff' }}>
+          <div className="cx-wrap cx-two">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Keamanan & kepercayaan</span><h2 id="h-aman" data-rv="" style={{ '--i': 1 }}>Bisnis Anda Membutuhkan Sistem yang Dapat Dipercaya.</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Hanya yang benar-benar diterapkan. <Link href="/privasi" style={{ color: 'var(--green)', fontWeight: 700 }}>Baca Kebijakan Privasi</Link></p></div>
+            <ul className="cx-trust" style={{ gridTemplateColumns: '1fr' }}>
+              {TRUST.map(([ic, t, d], i) => <li key={t} data-rv="" style={{ '--i': Math.min(i, 3) }}><Icon name={ic} size={24} /><div><h3>{t}</h3><p>{d}</p></div></li>)}
+            </ul>
           </div>
         </section>
 
-        {/* 8. SOLUSI PER INDUSTRI */}
-        <section className="ln-sec" id="solusi" aria-labelledby="h-solusi">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Solusi bisnis</span><h2 id="h-solusi">Kos, toko, laundry, kuliner — dan usaha lain.</h2>
-              <p>Empat jenis bisnis sudah bisa dipakai penuh, ditambah Business Builder untuk usaha lain. Modul khusus jenis lain baru dibuka setelah siap.</p></div>
-            <div className="ln-cats">
-              {CATS.map(([ic, t, d, st]) => (
-                <div key={t} className={'ln-cat ' + st}>
-                  <span className="ic" aria-hidden="true">{ic}</span>
-                  <h3>{t}</h3>
-                  <p>{d}</p>
-                  <span className="st">{st === 'ready' ? 'Tersedia' : 'Dalam rencana'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 9. RINCIAN FITUR */}
-        <section className="ln-sec ln-sec-alt" id="fitur" aria-labelledby="h-fitur">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Fitur utama</span><h2 id="h-fitur">Rincian fitur yang sudah bisa dipakai hari ini.</h2><p>Ketuk jenis bisnis untuk melihat fiturnya.</p></div>
-            <div className="ln-groups">
-              {GROUPS.map(([ic, g, items]) => (
-                <details key={g} className="ln-group">
-                  <summary className="ln-group-h"><span className="ln-ico-wrap"><Icon name={ic} size={22} /></span><h3>{g}</h3><span className="ln-small">{items.length} fitur</span><Icon name="plus" size={18} className="ln-group-tg" /></summary>
-                  <ul>{items.map(([t, d, b]) => (
-                    <li key={t}><div className="ln-feat-t">{t} <Badge t={b} /></div><p>{d}</p></li>
-                  ))}</ul>
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 10. BUSINESS BUILDER */}
-        <section className="ln-sec" id="builder" aria-labelledby="h-builder">
-          <div className="ln-wrap">
-            <div className="ln-builder">
-              <div>
-                <span className="ln-kicker">Business Builder</span>
-                <h2 id="h-builder" style={{ marginTop: 8 }}>Usaha Anda tidak ada di daftar?</h2>
-                <p className="ln-p" style={{ marginTop: 12 }}>Bangun sendiri dari aplikasi: jenis data (mis. Pelanggan, Kendaraan, Servis), formulir dengan field pilihan Anda, status & alur kerja dengan aturan per peran dan persetujuan, serta laporan. Mulai dari template <b>Bengkel motor</b> atau <b>Salon</b>, atau dari nol.</p>
-              </div>
-              <div>
-                <h3>Alurnya</h3>
-                <ol style={{ marginTop: 10 }}>
-                  <li>Tambah bisnis › Bisnis lain › pilih template atau bangun sendiri.</li>
-                  <li>Atur jenis data & field (teks, angka, uang, tanggal, pilihan, ya/tidak, rujukan).</li>
-                  <li>Atur status, langkah yang boleh per peran, catatan wajib, persetujuan, batas waktu.</li>
-                  <li>Buat laporan (jumlah, total, rata-rata per status/bulan/field).</li>
-                  <li>Validasi otomatis, lalu aktifkan.</li>
-                </ol>
-                <a href={WA} target="_blank" rel="noreferrer" className="ln-btn ln-btn-outline" style={{ marginTop: 16 }}><Icon name="message" size={18} />Ceritakan usaha Anda</a>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 11. KEAMANAN */}
-        <section className="ln-sec ln-sec-dark" aria-labelledby="h-trust">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Keamanan & privasi</span><h2 id="h-trust">Data bisnis Anda, tetap milik Anda.</h2></div>
-            <div className="ln-trust">
-              {TRUST.map(([ic, t, d]) => <div key={t}><Icon name={ic} size={22} /><h3>{t}</h3><p>{d}</p></div>)}
-            </div>
-            <p style={{ marginTop: 28 }}><Link href="/privasi" className="ln-textlink" style={{ color: '#E6CB8F' }}>Baca Kebijakan Privasi <Icon name="arrow" size={16} /></Link></p>
-          </div>
-        </section>
-
-        {/* 12. HARGA */}
-        <section className="ln-sec" id="harga" aria-labelledby="h-harga">
-          <div className="ln-wrap">
-            <div className="ln-head"><span className="ln-kicker">Harga</span><h2 id="h-harga">Harga sederhana, per bisnis.</h2>
-              <p>Setiap bisnis baru mendapat <b>masa coba {trialDays} hari{trialPlan ? ` Paket ${trialPlan.name}` : ''}</b>. Setelah itu otomatis menjadi paket Gratis kecuali Anda memilih berlangganan — tanpa tagihan kejutan, dan data tidak pernah dihapus.</p></div>
-            <div className="ln-prices">
-              {plans.map((pl) => (
-                <div key={pl.key} className={'ln-price' + (pl.key === best ? ' best' : '')}>
-                  {pl.key === best && <span className="ln-best">Paling sesuai untuk bisnis aktif</span>}
-                  <h3>{pl.name}</h3>
-                  <p className="ln-tag">{pl.tagline}</p>
-                  {Number(pl.list_price) > Number(pl.price) && <p className="ln-was"><s>{rp(Number(pl.list_price))}</s><b>Hemat {savePct(pl.price, pl.list_price)}%</b></p>}
-                  <div className="ln-amount">{rp(Number(pl.price))}<span>{Number(pl.price) ? ' /bulan' : ' selamanya'}</span><span className="per">{Number(pl.price) ? (Number(pl.list_price) > Number(pl.price) ? 'per bisnis · harga peluncuran' : 'per bisnis') : 'tanpa batas waktu'}</span></div>
-                  {(pl.terms || []).map((t) => (
-                    <p key={t.months} className="ln-term"><b>{pl.name} {Number(t.months) === 12 ? 'Tahunan' : `${t.months} bulan`}: {rp(Number(t.price))}</b>{Number(t.list_price) > Number(t.price) && <> <s>{rp(Number(t.list_price))}</s> · hemat {savePct(t.price, t.list_price)}%</>}<br />Dibayar sekali untuk {t.months} bulan.</p>
-                  ))}
-                  {!pl.is_free && free && <p className="ln-small" style={{ margin: '-4px 0 6px' }}>Semua fitur {free.name}, ditambah:</p>}
-                  <ul>{cardRows(pl).map(([f, v]) => (
-                    <li key={f.label}><Icon name="check" size={17} /><span>{f.label}{typeof v === 'string' ? ` — ${v}` : ''}</span></li>
-                  ))}</ul>
-                  <Link href={START} className={'ln-btn ' + (pl.key === best ? 'ln-btn-primary' : 'ln-btn-outline')}>{pl.is_free ? 'Mulai gratis' : pl.trial ? `Coba ${pl.name} ${trialDays} hari` : `Mulai dengan ${pl.name}`}</Link>
-                </div>
-              ))}
-            </div>
-            <details className="ln-compare">
+        {/* 12 HARGA */}
+        <section className="cx-sec" id="harga" aria-labelledby="h-harga">
+          <div className="cx-wrap">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Harga</span><h2 id="h-harga" data-rv="" style={{ '--i': 1 }}>Harga Sederhana, per Bisnis.</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Setiap bisnis baru mendapat <b>masa coba {trialDays} hari{trialPlan ? ` Paket ${trialPlan.name}` : ''}</b>. Setelah itu otomatis menjadi paket Gratis kecuali Anda memilih berlangganan — tanpa tagihan kejutan, dan data tidak dihapus.</p></div>
+            <Pricing plans={cards} best={best} trialDays={trialDays} freeName={free?.name || ''} start={START} />
+            <details className="cx-compare">
               <summary>Bandingkan semua fitur</summary>
-              <div className="ln-table-wrap"><table>
+              <div className="cx-table"><table>
                 <thead><tr><th>Fitur</th>{plans.map((pl) => <th key={pl.key}>{pl.name}</th>)}</tr></thead>
                 <tbody>{FEATURE_GROUPS.map(([g, name]) => [
-                  <tr key={g} className="ln-groupsep"><td colSpan={plans.length + 1}>{name}</td></tr>,
+                  <tr key={g} className="g"><td colSpan={plans.length + 1}>{name}</td></tr>,
                   ...FEATURES.filter((f) => f.group === g).map((f) => (
-                    <tr key={f.label}><td>{f.label}{f.soon && <> <Badge t="Segera hadir" /></>}</td>{plans.map((pl) => <td key={pl.key}><Cell v={f.soon ? (f[pl.key] ? 'Segera' : false) : featureCell(f, pl)} /></td>)}</tr>
+                    <tr key={f.label}><td>{f.label}{f.soon && <> <span className="cx-soon">Segera hadir</span></>}</td>{plans.map((pl) => <td key={pl.key}><Cell v={f.soon ? (f[pl.key] ? 'Segera' : false) : featureCell(f, pl)} /></td>)}</tr>
                   )),
                 ])}</tbody>
               </table></div>
             </details>
-            <ul className="ln-plan-notes">
-              <li>Harga per bisnis per bulan, diambil langsung dari sistem langganan PRASARA. Harga masih dapat berubah selama tahap pengembangan; pelanggan aktif diberi tahu lebih dulu.</li>
-              <li>Batas paket (kamar terisi, akun karyawan, ruang foto & lampiran) tertulis di tabel perbandingan. Modul bisa diaktifkan atau dimatikan sesuai kebutuhan di setiap paket.</li>
-              <li>Naik paket berlaku sejak pembayaran disetujui (sisa hari paket lama dihitung ulang). Turun paket berlaku setelah masa paket sekarang berakhir.</li>
-              <li>Langganan PRASARA terpisah dari biaya pihak ketiga yang Anda pakai sendiri (internet, pulsa/WhatsApp, printer, biaya transfer).</li>
+            <ul className="cx-notes">
+              <li>Harga per bisnis, diambil langsung dari sistem langganan PRASARA. Harga masih dapat berubah selama tahap pengembangan; pelanggan aktif diberi tahu lebih dulu.</li>
+              <li>Batas paket (kamar terisi, akun karyawan, ruang foto & lampiran, dan lainnya) tertulis di tabel perbandingan.</li>
+              <li>Langganan PRASARA terpisah dari biaya pihak ketiga yang Anda pakai sendiri (internet, pulsa/WhatsApp, printer, biaya transfer atau biaya layanan pembayaran).</li>
               <li>Fitur bertanda "Segera hadir" belum tersedia dan tidak ditagihkan.</li>
             </ul>
           </div>
@@ -393,55 +284,59 @@ export default async function Landing() {
 
         {/* TESTIMONI — tampil otomatis bila lib/testimonials.js sudah berisi testimoni asli */}
         {TESTIMONIALS.length > 0 && (
-          <section className="ln-sec ln-sec-alt" aria-labelledby="h-testi">
-            <div className="ln-wrap">
-              <div className="ln-head"><span className="ln-kicker">Kata pengguna</span><h2 id="h-testi">Dipakai pemilik usaha sungguhan.</h2></div>
-              <div className="ln-testi">{TESTIMONIALS.map((t) => (
-                <figure key={t.name}><blockquote>“{t.quote}”</blockquote><figcaption><b>{t.name}</b><span>{t.role}</span></figcaption></figure>
-              ))}</div>
+          <section className="cx-sec" aria-labelledby="h-testi" style={{ background: '#fff' }}>
+            <div className="cx-wrap">
+              <div className="cx-head"><span className="cx-kick">Kata pengguna</span><h2 id="h-testi">Dipakai pemilik usaha sungguhan.</h2></div>
+              <ul className="cx-trust">{TESTIMONIALS.map((t) => <li key={t.name} style={{ gridTemplateColumns: '1fr' }}><figure><blockquote style={{ margin: 0, fontSize: 18 }}>“{t.quote}”</blockquote><figcaption className="cx-note" style={{ marginTop: 8 }}><b>{t.name}</b> · {t.role}</figcaption></figure></li>)}</ul>
             </div>
           </section>
         )}
 
-        {/* 13. FAQ */}
-        <section className="ln-sec ln-sec-alt" id="faq" aria-labelledby="h-faq">
-          <div className="ln-wrap ln-faq-wrap">
-            <div className="ln-head"><span className="ln-kicker">FAQ</span><h2 id="h-faq">Pertanyaan yang sering diajukan</h2></div>
-            <div className="ln-faq">
-              {FAQ.map(([q, a]) => <details key={q}><summary>{q}<Icon name="plus" size={18} /></summary><p>{a}</p></details>)}
-            </div>
+        {/* 13 TRANSPARANSI LANGGANAN */}
+        <section className="cx-sec" id="langganan" aria-labelledby="h-langganan" style={{ background: '#fff' }}>
+          <div className="cx-wrap cx-two">
+            <div className="cx-head"><span className="cx-kick" data-rv="">Transparansi langganan</span><h2 id="h-langganan" data-rv="" style={{ '--i': 1 }}>Tahu Persis Apa yang Terjadi dengan Langganan Anda.</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Dari daftar sampai berhenti — tanpa syarat tersembunyi.</p></div>
+            <Acc items={SUBS} id="sub" first={0} />
           </div>
         </section>
 
-        {/* 14. CTA */}
-        <section className="ln-sec">
-          <div className="ln-wrap">
-            <div className="ln-final">
-              <h2>Kelola bisnis lebih terarah, mulai hari ini.</h2>
-              <p>Daftar dalam beberapa menit, tinjau konfigurasi yang disarankan, lalu mulai dari HP.</p>
-              <div className="ln-cta-row center">
-                <Link href={START} className="ln-btn ln-btn-accent ln-btn-lg">Mulai Sekarang <Icon name="arrow" size={18} /></Link>
-                <a href={WA} target="_blank" rel="noreferrer" className="ln-btn ln-btn-onDark ln-btn-lg"><Icon name="message" size={18} />Hubungi Kami</a>
-              </div>
+        {/* 14 FAQ */}
+        <section className="cx-sec" id="faq" aria-labelledby="h-faq">
+          <div className="cx-wrap cx-two">
+            <div className="cx-head"><span className="cx-kick" data-rv="">FAQ</span><h2 id="h-faq" data-rv="" style={{ '--i': 1 }}>Pertanyaan yang Sering Diajukan</h2>
+              <p className="cx-lead" data-rv="" style={{ '--i': 2 }}>Belum terjawab? <a href={WA} target="_blank" rel="noreferrer" style={{ color: 'var(--green)', fontWeight: 700 }}>Tanya lewat WhatsApp</a></p></div>
+            <Acc items={FAQ} id="faq" />
+          </div>
+        </section>
+
+        {/* 15 PENUTUP */}
+        <section className="cx-close" id="mulai" data-sp="view" aria-labelledby="h-mulai">
+          <div className="cx-wrap">
+            <div className="cx-close-logo"><LogoMark size={52} /></div>
+            <h2 id="h-mulai" data-rv="">Bisnis yang Lebih Teratur Dimulai dari Sistem yang Tepat.</h2>
+            <p data-rv="" style={{ '--i': 1 }}>Anda fokus mengembangkan bisnis. PRASARA membantu mengatur sistemnya.</p>
+            <div className="cx-cta" data-rv="" style={{ '--i': 2 }}>
+              <Link href={START} className="cx-btn pri">Mulai Kelola Bisnis Anda <Icon name="arrow" size={18} /></Link>
+              <a href="#bisnis" className="cx-btn dark">Jelajahi PRASARA</a>
             </div>
           </div>
         </section>
       </main>
 
-      {/* FOOTER */}
-      <footer className="ln-foot">
-        <div className="ln-wrap ln-foot-grid">
-          <div className="ln-foot-brand">
-            <div className="ln-logo"><LogoMark size={34} /><span className="ln-logo-t"><b>PRASARA</b><small>Adaptive Business System</small></span></div>
-            <p>Adaptive Business System untuk mengelola operasional, pelanggan, transaksi, keuangan, dan layanan dalam satu tempat.</p>
-            <p className="ln-small" style={{ marginTop: 8 }}>One Intelligence. Every Business.</p>
+      <footer className="cx-foot">
+        <div className="cx-wrap cx-foot-grid">
+          <div className="cx-foot-brand">
+            <div className="cx-logo" style={{ color: '#fff', '--logo-1': '#4ADE80', '--logo-2': '#D6FBE6', '--logo-3': '#22A06B' }}><LogoMark size={30} /><span>PRASARA</span></div>
+            <p style={{ marginTop: 12 }}>Adaptive Business System untuk mengelola operasional, pelanggan, transaksi, keuangan, dan layanan dalam satu tempat.</p>
+            <p style={{ marginTop: 8, fontSize: 13 }}>One Intelligence. Every Business.</p>
           </div>
-          <nav aria-label="Produk"><b>Produk</b><a href="#produk">Kemampuan inti</a><a href="#demo">Demo</a><a href="#adaptif">Sistem adaptif</a><a href="#harga">Harga</a></nav>
-          <nav aria-label="Solusi bisnis"><b>Solusi bisnis</b><a href="#solusi">Kos & properti</a><a href="#solusi">Toko retail & grosir</a><a href="#solusi">Laundry & jasa</a><a href="#solusi">Kuliner</a><a href="#builder">Business Builder</a></nav>
+          <nav aria-label="Produk"><b>Produk</b><a href="#demo">Demonstrasi</a><a href="#modul">Modul</a><a href="#analisis">Analisis bisnis</a><a href="#harga">Harga</a></nav>
+          <nav aria-label="Solusi bisnis"><b>Solusi bisnis</b><a href="#bisnis">Kos & properti</a><a href="#bisnis">Toko retail & grosir</a><a href="#bisnis">Laundry & jasa</a><a href="#bisnis">Kuliner</a><a href="#bisnis">Business Builder</a></nav>
           <nav aria-label="Bantuan"><b>Bantuan</b><Link href="/panduan">Pusat bantuan & panduan</Link><Link href="/p/contoh">Contoh portal penghuni</Link><a href={WA} target="_blank" rel="noreferrer">WhatsApp {BUSINESS.whatsappDisplay}</a><Link href="/masuk">Masuk</Link></nav>
           <nav aria-label="Perusahaan"><b>Perusahaan</b><Link href="/tentang">Tentang Kami</Link><Link href="/privasi">Kebijakan Privasi</Link><Link href="/syarat">Syarat & Ketentuan</Link></nav>
         </div>
-        <div className="ln-wrap ln-copy">© {new Date().getFullYear()} PRASARA. Hak cipta dilindungi.</div>
+        <div className="cx-wrap cx-copy">© {new Date().getFullYear()} PRASARA. Hak cipta dilindungi.</div>
       </footer>
     </div>
   );
