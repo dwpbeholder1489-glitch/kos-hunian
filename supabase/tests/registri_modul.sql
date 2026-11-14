@@ -11,12 +11,12 @@ select set_config('request.jwt.claim.sub', 'b8b8b8b8-0000-0000-0000-000000000001
 \echo == A. Katalog: AI dihentikan & tidak tampil; modul rencana = dalam_rencana; fitur lama terdaftar & aktif
 select module_catalog(:'K') as c \gset
 select not exists (select 1 from jsonb_array_elements(:'c'::jsonb) m where m ->> 'code' = 'u_asisten') a_tanpa_ai,
-       (select m ->> 'activation' from jsonb_array_elements(:'c'::jsonb) m where m ->> 'code' = 'u_pajak') a_pajak,
+       (select m ->> 'activation' from jsonb_array_elements(:'c'::jsonb) m where m ->> 'code' = 'u_sdm') a_sdm_dalam_rencana,
        (select m ->> 'activation' from jsonb_array_elements(:'c'::jsonb) m where m ->> 'code' = 'u_analisis') a_analisis,
        (select m ->> 'module_type' from jsonb_array_elements(:'c'::jsonb) m where m ->> 'code' = 'r_kasir') a_jenis_kasir,
        (select count(*) from jsonb_array_elements(:'c'::jsonb) m where m ->> 'impl_status' is null) = 0 a_semua_berstatus;
 do $$ declare m text; begin
-  begin perform module_set('b8b8b8b8-0000-0000-0000-00000000000a', 'u_pajak', true, null); exception when others then m := sqlerrm; end;
+  begin perform module_set('b8b8b8b8-0000-0000-0000-00000000000a', 'u_sdm', true, null); exception when others then m := sqlerrm; end;
   if coalesce(m, '') not like 'Modul ini belum tersedia%' then raise exception 'A_GAGAL rencana: %', m; end if; raise notice 'a_OK: modul dalam rencana tidak bisa diaktifkan';
 end $$;
 
@@ -30,7 +30,7 @@ reset role;
 update modules set impl_status = 'testing' where code = 'r_promo';
 select status = 'segera' c_testing_belum_tersedia from modules where code = 'r_promo';
 insert into kos(id,name,owner_id,setup_status,business_type) values ('b8b8b8b8-0000-0000-0000-00000000000b','Toko Baru','b8b8b8b8-0000-0000-0000-000000000001','active','retail');
-select not exists (select 1 from business_modules where kos_id = 'b8b8b8b8-0000-0000-0000-00000000000b' and module_code in ('u_pajak', 'r_promo', 'u_asisten')) c_tanpa_modul_rencana;
+select not exists (select 1 from business_modules where kos_id = 'b8b8b8b8-0000-0000-0000-00000000000b' and module_code in ('u_sdm', 'r_promo', 'u_asisten')) c_tanpa_modul_rencana;
 
 \echo == D. Registry admin: bukan staf ditolak
 select set_config('request.jwt.claim.sub', 'b8b8b8b8-0000-0000-0000-000000000001', false) \g /dev/null

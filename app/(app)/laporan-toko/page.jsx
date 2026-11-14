@@ -9,6 +9,7 @@ import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from 
 import { DayColumns } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
+import { canArea } from '@/lib/business';
 import { useKuotaEkspor } from '@/lib/ekspor';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma)
@@ -36,6 +37,7 @@ export default function LaporanToko() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sort, setSort] = useState('omzet');
+  const [pajak, setPajak] = useState(null);   // laporan PPN keluaran bulan ini (tax_report)
   const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);
   useEffect(() => {
     setD(null);
@@ -44,6 +46,8 @@ export default function LaporanToko() {
       supabase.rpc('retail_report', { p_kos: kosId, p_from: ym + '-01', p_to: monthEnd(ym) }),
       supabase.rpc('retail_report', { p_kos: kosId, p_from: pm + '-01', p_to: monthEnd(pm) }),
     ]).then(([a, b]) => (a.error || b.error ? setErr(errMsg(a.error || b.error)) : setD({ r: a.data, prev: b.data })));
+    setPajak(null);
+    if (canArea(kos, 'finance')) supabase.rpc('tax_report', { p_kos: kosId, p_month: ym + '-01' }).then(({ data }) => setPajak(data || null));
   }, [kosId, ver, ym]);
   if (kos.business_type !== 'retail') return <Empty title="Laporan ini untuk bisnis Retail & Grosir" />;
   if (err) return <div className="notice bad">{err.includes('retail_report') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
@@ -116,8 +120,23 @@ export default function LaporanToko() {
         <section className="panel">
           <h3>Cara bayar</h3>
           <div className="list">{Object.entries(PAY).map(([k, l]) => <div className="li" key={k}><span>{l}</span><b>{rp(r.bayar[k])}</b></div>)}</div>
+          <span className="small muted">Penjualan bayar campuran sudah dibagi ke tiap cara bayar sesuai rinciannya.</span>
           {N(r.grosir) > 0 && <span className="small muted">Penjualan harga grosir: {rp(r.grosir)} ({Math.round((N(r.grosir) / Math.max(1, a.omzet)) * 100)}%)</span>}
         </section>
+
+        {pajak && (pajak.setelan?.aktif || Number(pajak.ppn_keluaran) !== 0) && (
+          <section className="panel">
+            <h3>PPN keluaran {bulan(ym)}</h3>
+            <div className="list">
+              <div className="li"><span className="small">Penjualan kena PPN (DPP)</span><b className="small">{rp(pajak.penjualan.dpp)}</b></div>
+              <div className="li"><span className="small">PPN dari penjualan</span><b className="small">{rp(pajak.penjualan.ppn)}</b></div>
+              {Number(pajak.retur_ppn) > 0 && <div className="li"><span className="small">Dikurangi PPN retur (DPP {rp(pajak.retur_dpp)})</span><b className="small">−{rp(pajak.retur_ppn)}</b></div>}
+              <div className="li"><span className="small"><b>PPN keluaran bersih</b></span><b>{rp(pajak.ppn_keluaran)}</b></div>
+              <div className="li"><span className="small muted">Penjualan tidak kena PPN</span><span className="small muted">{rp(pajak.penjualan.tidak_kena)}</span></div>
+            </div>
+            <span className="small muted">Harga di kasir sudah termasuk PPN{pajak.setelan?.rate ? ` ${String(pajak.setelan.rate).replace('.', ',')}%` : ''}; angka di atas sudah memisahkannya. Penjualan & laba di laporan ini tanpa PPN. PPN masukan dari pembelian belum dihitung (menyusul). Gunakan sebagai bahan pelaporan pajak bersama konsultan Anda.</span>
+          </section>
+        )}
 
         {(r.lokasi || []).length > 1 && (
           <section className="panel">

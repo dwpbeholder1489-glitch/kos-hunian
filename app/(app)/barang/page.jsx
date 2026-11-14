@@ -95,6 +95,8 @@ export default function Barang() {
                 {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
                   onClick={async () => { if (await run(() => supabase.rpc('product_set_favorite', { p_product: p.id, p_on: !p.favorite }), p.favorite ? 'Dihapus dari tombol cepat' : 'Jadi tombol cepat di Kasir', errMsg)) reload(); }}
                   style={{ fontSize: 18, color: p.favorite ? 'var(--att)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}
+                {!bahan && kos?.profile?.tax?.aktif && <button className="sm ghost" aria-pressed={!!p.tax_exempt} title="Tandai barang yang tidak dikenai PPN"
+                  onClick={async () => { if (await run(() => supabase.rpc('product_set_tax', { p_product: p.id, p_exempt: !p.tax_exempt }), p.tax_exempt ? 'Barang dikenai PPN lagi' : 'Barang ditandai bebas PPN', errMsg)) reload(); }}>{p.tax_exempt ? 'Bebas PPN' : 'Kena PPN'}</button>}
                 <button className="sm" onClick={() => setAdj(p)}>Stok</button>
                 <button className="sm ghost" onClick={() => setEdit(p)}>Ubah</button>
               </div>

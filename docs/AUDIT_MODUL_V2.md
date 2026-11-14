@@ -22,7 +22,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | Bab | Modul | Status | Bukti / lokasi | Celah |
 |---|---|---|---|---|
 | 9 | Command Center | PARTIAL | `/bisnis` (ringkasan pemilik), `/analisis`, dashboard per jenis | Belum satu dashboard lintas jenis dengan kas, piutang, utang, pesanan tertunda & filter cabang sekaligus; preferensi widget belum ada |
-| 10 | Sales & POS (toko) | VERIFIED (inti) | `/kasir`, `sales`, `sale_lines`, multi-satuan, harga eceran/grosir, diskon, kasbon, retur, shift | **MISSING:** pajak (PPN), split payment, penawaran harga (quotation), sales order B2B, komisi, laporan tutup harian, varian produk |
+| 10 | Sales & POS (toko) | VERIFIED (inti) | `/kasir`, `sales`, `sale_lines`, multi-satuan, harga eceran/grosir, diskon, kasbon, retur, shift | **SELESAI 14 Nov:** PPN keluaran (harga termasuk PPN, bebas PPN per barang, jurnal & laporan) dan bayar campuran. **MISSING:** penawaran harga (quotation), sales order B2B, komisi, laporan tutup harian, varian produk |
 | 11 | Inventory | VERIFIED (inti) | `stock_moves` (ledger), `stock_levels` per lokasi, mutasi, opname, penyesuaian beralasan | **MISSING:** batch/kedaluwarsa, serial, reservasi stok, saran pemesanan ulang (reorder point/safety stock), umur stok |
 | 12 | Accounting | VERIFIED | `acct_*` double-entry otomatis, periode tutup, buku besar, neraca, laba rugi, arus kas, rekonsiliasi bank, anggaran | **MISSING:** aset tetap & penyusutan otomatis, pajak, cost center, akrual/dibayar dimuka terjadwal |
 | 13 | Procurement | PARTIAL | `purchases` (pesan, terima sebagian), retur supplier, pelunasan utang | **MISSING:** permintaan pembelian, RFQ, invoice supplier & 3-way matching, kinerja supplier |
@@ -73,7 +73,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 |---|---|---|
 | P0 | ~~Module Registry V2 + dependency graph + dampak nonaktif + registry di Admin~~ — selesai 14 Nov | 0 |
 | P0 | ~~Domain event outbox + riwayat aktivitas per dokumen~~ — selesai 14 Nov | 1 |
-| P1 | Pajak (PPN) & split payment di kasir + jurnal pajak | 1 |
+| P1 | ~~Pajak (PPN) & split payment di kasir + jurnal pajak~~ — selesai 14 Nov (PPN keluaran; masukan menyusul bersama faktur pembelian) | 1 |
 | P1 | Penawaran harga → sales order → pengiriman/surat jalan → invoice (grosir) + batas kredit & daftar harga pelanggan | 1–2 |
 | P1 | Batch & kedaluwarsa + saran pemesanan ulang | 1 |
 | P1 | Data karyawan, absensi, shift, gaji (jurnal gaji) | 1 |

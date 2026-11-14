@@ -190,6 +190,7 @@ const PARTS = [
       <><b>Teks pesan WhatsApp</b>: ubah kata-kata pesan pengingat tagihan dan pesan link portal. Ketuk kata berwarna seperti <b>{'{nama}'}</b> atau <b>{'{total}'}</b> untuk menyisipkan data penghuni otomatis; lihat <b>Contoh pesan</b> sebelum menyimpan. <b>Pakai teks bawaan</b> mengembalikan teks awal.</>,
       <><b>QRIS kos</b>: unggah screenshot QRIS dari aplikasi bank/merchant agar penghuni bisa scan dari portal. Uji dengan satu pembayaran kecil setelah mengganti.</>,
       <>Tambah kategori pengeluaran sesuai kebutuhan.</>,
+      <>Toko yang sudah PKP: bagian <b>Pajak (PPN)</b> — centang <b>Toko saya memungut PPN</b>, isi <b>tarif</b> sesuai ketentuan yang berlaku untuk usaha Anda (tidak diisi otomatis; tanyakan konsultan pajak bila ragu) dan NPWP bila perlu, lalu <b>Simpan pajak</b>. Barang yang tidak dikenai PPN ditandai <b>Bebas PPN</b> di Barang & stok. Berlaku untuk penjualan berikutnya.</>,
       <>Punya kos lain? <b>+ Tambah kos lain</b>, lalu pindah dengan mengetuk nama bisnis di kiri atas.</>,
       <>Pasang di layar utama HP: Safari › <b>Bagikan</b> › <b>Tambah ke Layar Utama</b>; Chrome › <b>⋮</b> › <b>Tambahkan ke layar utama</b>. Ikon <b>P</b> bertuliskan PRASARA muncul di layar HP dan langsung membuka bisnis Anda. Sudah memasang ikon lama? Hapus ikonnya, lalu pasang ulang dari alamat baru <b>prasara-id.vercel.app</b>.</>,
     ], null, null, null],
@@ -239,6 +240,8 @@ const PARTS = [
       <>Buka <b>Kasir</b>. Pilih <b>Eceran</b> atau <b>Grosir</b> di kanan atas — harga mengikuti pilihan ini.</>,
       <>Cari barang, lalu ketuk tombol satuannya (mis. <b>pcs · Rp 3.500</b> atau <b>dus · Rp 125.000</b>). Ketuk lagi untuk menambah jumlah.</>,
       <>Ketuk bar <b>Keranjang</b> di bawah. Ubah jumlah atau harga bila perlu, isi diskon, lalu pilih <b>Tunai</b> (isi uang diterima → kembalian), <b>Transfer / QRIS</b>, atau <b>Kasbon</b> (pilih/isi nama pelanggan).</>,
+      <>Pembeli bayar dengan beberapa cara? Pilih <b>Campuran</b> lalu isi bagian <b>Tunai</b>, <b>Transfer / QRIS</b>, dan/atau <b>Kasbon</b> (tombol <b>Sisa</b> mengisi kekurangannya). Baris <b>Terbagi</b> harus sama dengan total. Bila ada bagian kasbon, pilih pelanggannya. Kas, bank, kasbon, shift, dan laporan otomatis dibagi sesuai rincian.</>,
+      <>Toko PKP: setelah <b>Pajak (PPN)</b> diaktifkan di Pengaturan, layar bayar menampilkan <b>Termasuk PPN</b> dan struk mencetak bagian PPN-nya. Harga jual tetap harga yang Anda isi (sudah termasuk PPN).</>,
       <>Tekan <b>Simpan</b>. Stok berkurang otomatis. Tekan <b>Lihat / kirim struk</b> untuk mencetak atau mengirim struk lewat WhatsApp.</>,
     ], <>Transaksi yang salah dibatalkan dari menu <b>Penjualan</b> (ketuk transaksinya › Batalkan, isi alasan). Barang yang dikembalikan pelanggan: ketuk transaksinya › <b>Retur barang</b>, isi jumlahnya, pilih <b>uang tunai</b>, <b>transfer balik</b>, atau <b>potong kasbon</b>. Stok bertambah lagi dan penjualan berkurang di laporan.</>, null, null],
     ['Belanja ke supplier', 'Menu Belanja', [
@@ -265,6 +268,7 @@ const PARTS = [
       <><b>Laba rugi</b>: penjualan − modal barang terjual = laba kotor, lalu dikurangi biaya operasional dan selisih stok = <b>laba bersih</b>. Prive dan belanja barang tidak mengurangi laba.</>,
       <><b>Produk</b>: pilih <b>Terlaris</b> atau <b>Paling untung</b>. Bagian <b>Tidak laku</b> menunjukkan barang berstok yang tidak terjual bulan itu.</>,
       <>Paket Dasar ke atas: <b>Unduh Excel</b> dan <b>Cetak / PDF</b>.</>,
+      <>Bila PPN aktif: bagian <b>PPN keluaran</b> menunjukkan penjualan kena PPN (DPP), PPN dari penjualan, PPN retur, dan <b>PPN keluaran bersih</b> bulan itu. Penjualan & laba di laporan sudah <b>tanpa PPN</b> (PPN bukan pendapatan toko).</>,
     ], <>Kalau muncul peringatan harga modal kosong, isi modalnya di Barang & stok — tanpa modal, laba barang itu terlihat terlalu tinggi.</>, null, null],
   ]],
   ['F', 'Karyawan, kontak & shift', [

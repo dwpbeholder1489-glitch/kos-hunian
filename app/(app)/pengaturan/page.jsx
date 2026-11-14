@@ -87,6 +87,7 @@ export default function Pengaturan() {
         <a href="/notifikasi" className="small">Atur ringkasan mingguan & bulanan di menu Notifikasi (lonceng) →</a>
         {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}
       </section>}
+      {canEdit && kos.business_type === 'retail' && <PajakBox kos={kos} onSaved={loadKos} />}
       {canEdit && !retail && <QrisBox kosId={kos.id} />}
       {canEdit && !retail && kos.wa_reminder_tpl !== undefined && <TemplateBox kos={kos} onSaved={loadKos} />}
       <section className="panel"><h3>{retail ? 'Jenis biaya' : 'Kategori pengeluaran'}</h3>
@@ -194,6 +195,33 @@ function TemplateBox({ kos, onSaved }) {
         );
       })}
       <button className="primary" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan teks pesan'}</button>
+    </section>
+  );
+}
+
+// Pajak (PPN) toko: harga di kasir = harga sudah termasuk PPN; sistem memisahkan bagian PPN untuk jurnal & laporan.
+// Tarif diisi pemilik sendiri sesuai ketentuan yang berlaku untuk usahanya (tidak diisi otomatis).
+function PajakBox({ kos, onSaved }) {
+  const t = kos.profile?.tax || {};
+  const [on, setOn] = useState(Boolean(t.aktif));
+  const [rate, setRate] = useState(t.rate != null ? String(t.rate).replace('.', ',') : '');
+  const [npwp, setNpwp] = useState(t.npwp || '');
+  const save = async () => {
+    const r = Number(String(rate).replace(',', '.'));
+    if (on && !(r > 0)) return toast('Isi tarif PPN dalam persen.');
+    if (await run(() => supabase.rpc('tax_settings_set', { p_kos: kos.id, p_active: on, p_rate: on ? r : null, p_npwp: npwp }), on ? 'PPN aktif untuk penjualan berikutnya' : 'PPN dinonaktifkan', errMsg)) onSaved();
+  };
+  return (
+    <section className="panel">
+      <h3>Pajak (PPN)</h3>
+      <span className="small muted">Untuk toko yang sudah Pengusaha Kena Pajak (PKP). Harga jual di kasir dianggap <b>sudah termasuk PPN</b>; sistem memisahkan bagian PPN di struk, jurnal (PPN keluaran), dan laporan PPN bulanan. Barang yang tidak dikenai PPN ditandai di menu Barang (Bebas PPN).</span>
+      <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={on} onChange={(e) => setOn(e.target.checked)} />Toko saya memungut PPN</label>
+      {on && <div className="row">
+        <Field label="Tarif PPN (%)"><input inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="isi sesuai ketentuan" /></Field>
+        <Field label="NPWP (opsional, tampil di laporan)"><input value={npwp} onChange={(e) => setNpwp(e.target.value)} /></Field>
+      </div>}
+      <span className="small muted">Perubahan berlaku untuk penjualan berikutnya; transaksi lama tidak diubah. Pastikan tarif sesuai aturan pajak yang berlaku untuk usaha Anda — tanyakan konsultan pajak bila ragu.</span>
+      <button className="primary" onClick={save}>Simpan pajak</button>
     </section>
   );
 }

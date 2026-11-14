@@ -7,7 +7,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg } from '@/lib/format';
-import { PAY, jam, qtyNum, uid } from '@/lib/retail';
+import { PAY, jam, qtyNum, uid, payLabel } from '@/lib/retail';
 
 const REFUND = { tunai: 'Uang tunai dari laci', transfer: 'Transfer balik', kasbon: 'Potong kasbon' };
 import { canArea } from '@/lib/business';
@@ -36,7 +36,7 @@ export default function Penjualan() {
   const ok = (rows || []).filter((s) => s.status === 'selesai');
   const omzet = ok.reduce((a, s) => a + Number(s.total), 0);
   const laba = ok.reduce((a, s) => a + Number(s.total) - Number(s.cost_total), 0);
-  const kasbon = ok.filter((s) => s.pay_method === 'kasbon').reduce((a, s) => a + Number(s.total), 0);
+  const kasbon = ok.reduce((a, s) => a + Number(s.amt_kasbon ?? (s.pay_method === 'kasbon' ? s.total : 0)), 0);   // termasuk bagian kasbon dari bayar campuran
   const noCost = ok.some((s) => Number(s.cost_total) === 0 && Number(s.total) > 0);
 
   return (
@@ -57,7 +57,7 @@ export default function Penjualan() {
           <section className="panel"><div className="list">{rows.map((s) => (
             <button className="li click" key={s.id} onClick={() => setOpen(s)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' }}>
               <div className="main"><b>{s.number}{s.status === 'batal' && <span className="chip void" style={{ marginLeft: 6 }}>Batal</span>}</b>
-                <span className="small muted">{jam(s.sold_at)} · {PAY[s.pay_method]}{s.contact_id ? ` · ${contacts.get(s.contact_id) || ''}` : ''}{fin && s.cashier ? ` · ${s.cashier.split('@')[0]}` : ''}</span></div>
+                <span className="small muted">{jam(s.sold_at)} · {payLabel(s)}{s.contact_id ? ` · ${contacts.get(s.contact_id) || ''}` : ''}{fin && s.cashier ? ` · ${s.cashier.split('@')[0]}` : ''}</span></div>
               <b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b>
             </button>
           ))}</div></section>
@@ -97,7 +97,7 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
   };
   return (
     <Sheet title={s.number} onClose={onClose}>
-      <span className="small muted">{tgl(s.sale_date)} {jam(s.sold_at)} · {PAY[s.pay_method]}{contact ? ` · ${contact}` : ''}{s.tier === 'grosir' ? ' · harga grosir' : ''}</span>
+      <span className="small muted">{tgl(s.sale_date)} {jam(s.sold_at)} · {payLabel(s)}{contact ? ` · ${contact}` : ''}{s.tier === 'grosir' ? ' · harga grosir' : ''}</span>
       {s.status === 'batal' && <div className="notice bad">Dibatalkan: {s.void_reason}</div>}
       {!lines ? <Loading /> : <div className="list">{lines.map((l) => (
         <div className="li" key={l.id} style={{ flexWrap: 'wrap' }}>
@@ -113,7 +113,7 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
       <Link href={`/struk/${s.id}`}><button className="primary" style={{ width: '100%' }}>Lihat / kirim struk</button></Link>
       {s.status === 'selesai' && !voiding && lines && lines.some((l) => left(l) > 0) && (!ret ? <button onClick={() => setRet({ id: uid(), qty: {}, refund: s.pay_method === 'kasbon' ? 'kasbon' : s.pay_method, reason: '' })}>{fin ? 'Retur barang (dikembalikan pelanggan)' : 'Minta retur barang'}</button> : <>
         <span className="small muted">Isi jumlah yang dikembalikan di setiap barang di atas. Stok bertambah lagi.</span>
-        <div className="seg">{Object.entries(REFUND).filter(([k]) => k !== 'kasbon' || s.pay_method === 'kasbon').map(([k, l]) => <button key={k} className={ret.refund === k ? 'on' : ''} onClick={() => setRet({ ...ret, refund: k })}>{l}</button>)}</div>
+        <div className="seg">{Object.entries(REFUND).filter(([k]) => k !== 'kasbon' || Number(s.amt_kasbon ?? (s.pay_method === 'kasbon' ? 1 : 0)) > 0).map(([k, l]) => <button key={k} className={ret.refund === k ? 'on' : ''} onClick={() => setRet({ ...ret, refund: k })}>{l}</button>)}</div>
         <Field label="Alasan retur"><input value={ret.reason} onChange={(e) => setRet({ ...ret, reason: e.target.value })} placeholder="mis. kemasan rusak, salah ambil" /></Field>
         <div className="row between"><b>{ret.refund === 'kasbon' ? 'Kasbon berkurang' : 'Uang dikembalikan'}</b><b>{rp(Math.round(retTotal))}</b></div>
         <div className="row"><button className="primary" onClick={doReturn} disabled={busy || !ret.reason.trim() || retTotal <= 0}>{fin ? 'Simpan retur' : 'Kirim permintaan retur'}</button><button className="ghost" onClick={() => setRet(null)}>Batal</button></div>

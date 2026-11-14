@@ -131,7 +131,7 @@ export default function Kasir() {
   );
 }
 
-function Checkout({ kosId, d, tier, cart, setCart, lead, onClose, onDone, reloadContacts }) {
+function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, reloadContacts }) {
   const [discount, setDiscount] = useState('');
   const [method, setMethod] = useState('tunai');
   const [paid, setPaid] = useState('');
@@ -142,12 +142,23 @@ function Checkout({ kosId, d, tier, cart, setCart, lead, onClose, onDone, reload
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [txId] = useState(uid);
+  const [split, setSplit] = useState({ tunai: '', transfer: '', kasbon: '' });   // bayar campuran
 
   const sub = cart.reduce((s, c) => s + Math.round(c.qty * c.price), 0);
   const disc = parseRp(discount);
   const total = Math.max(0, sub - disc);
-  const paidN = paid.trim() ? parseRp(paid) : total;
-  const change = paidN - total;
+  // Bayar campuran: bagian tunai/transfer/kasbon harus berjumlah sama dengan total
+  const sp = { tunai: parseRp(split.tunai), transfer: parseRp(split.transfer), kasbon: parseRp(split.kasbon) };
+  const spSum = sp.tunai + sp.transfer + sp.kasbon;
+  const cashPart = method === 'campuran' ? sp.tunai : total;
+  const paidN = paid.trim() ? parseRp(paid) : cashPart;
+  const change = paidN - cashPart;
+  const needContact = method === 'kasbon' || (method === 'campuran' && sp.kasbon > 0);
+  // Perkiraan PPN (harga termasuk PPN); angka resmi dihitung server saat disimpan
+  const tax = kos?.profile?.tax;
+  const rate = tax?.aktif ? Number(tax.rate) || 0 : 0;
+  const taxable = cart.filter((c) => !d.products.find((p) => p.id === c.product_id)?.tax_exempt).reduce((s, c) => s + Math.round(c.qty * c.price), 0);
+  const ppn = rate && sub ? Math.round(((taxable - (disc * taxable) / sub) * rate) / (100 + rate)) : 0;
   const setLine = (key, patch) => setCart(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)));
   const stockOf = (id) => Number(d.products.find((p) => p.id === id)?.stock || 0);
   const baseUsed = (id) => cart.filter((c) => c.product_id === id).reduce((s, c) => s + c.qty * c.unit_qty, 0);
@@ -157,10 +168,14 @@ function Checkout({ kosId, d, tier, cart, setCart, lead, onClose, onDone, reload
     if (cart.some((c) => !(c.qty > 0))) return toast('Ada jumlah yang belum benar.');
     if (disc > sub) return toast('Diskon melebihi subtotal.');
     if (method === 'tunai' && paid.trim() && paidN < total) return toast('Uang diterima kurang dari total.');
+    if (method === 'campuran') {
+      if (spSum !== total) return toast(`Rincian bayar ${rp(spSum)} belum sama dengan total ${rp(total)}.`);
+      if (paid.trim() && paidN < sp.tunai) return toast('Uang tunai diterima kurang dari bagian tunai.');
+    }
     let cid = contact || null;
     setBusy(true);
     try {
-      if (method === 'kasbon' && !cid) {
+      if (needContact && !cid) {
         if (!newName.trim()) { toast('Pilih pelanggan atau isi nama pelanggan baru.'); setBusy(false); return; }
         const { data, error } = await supabase.rpc('contact_save', { p_kos: kosId, p_id: null, p_kind: 'pelanggan', p_name: newName, p_phone: newPhone });
         if (error) throw error;
@@ -169,11 +184,12 @@ function Checkout({ kosId, d, tier, cart, setCart, lead, onClose, onDone, reload
       const { data, error } = await supabase.rpc('sale_create', {
         p_id: txId, p_kos: kosId, p_tier: tier,
         p_lines: cart.map((c) => ({ product_id: c.product_id, unit: c.unit, qty: c.qty, price: c.price })),
-        p_discount: disc, p_method: method, p_paid: method === 'tunai' ? paidN : null, p_contact: cid, p_due: method === 'kasbon' && due ? due : null, p_note: note,
+        p_discount: disc, p_method: method, p_paid: method === 'tunai' || (method === 'campuran' && sp.tunai > 0) ? paidN : null, p_contact: cid, p_due: needContact && due ? due : null, p_note: note,
+        p_payments: method === 'campuran' ? Object.entries(sp).filter(([, v]) => v > 0).map(([m, a]) => ({ method: m, amount: a })) : null,
       });
       if (error) throw error;
       if (lead) { const r2 = await supabase.rpc('lead_mark_sold', { p_lead: lead.id, p_sale: txId }); if (r2.error) toast('Penjualan tersimpan, tetapi prospek belum ditandai Jadi: ' + errMsg(r2.error)); }
-      onDone({ ...data, change: method === 'tunai' ? change : 0, method });
+      onDone({ ...data, change: method === 'tunai' || method === 'campuran' ? Math.max(0, change) : 0, method: data.method || method });
     } catch (e) { toast(errMsg(e)); }
     setBusy(false);
   };
@@ -201,15 +217,30 @@ function Checkout({ kosId, d, tier, cart, setCart, lead, onClose, onDone, reload
       <div className="row between"><span>Subtotal</span><b>{rp(sub)}</b></div>
       <Field label="Diskon (opsional)"><input inputMode="numeric" value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="0" /></Field>
       <div className="row between" style={{ fontSize: 20 }}><b>Total</b><b>{rp(total)}</b></div>
+      {ppn > 0 && <span className="small muted">Termasuk PPN {rate}% ± {rp(ppn)} (dihitung pasti saat disimpan; barang bebas PPN tidak dikenai)</span>}
 
-      <div className="seg">{Object.entries(PAY).map(([k, l]) => <button key={k} className={method === k ? 'on' : ''} onClick={() => setMethod(k)} aria-pressed={method === k}>{l}</button>)}</div>
+      <div className="seg">{Object.entries({ ...PAY, campuran: 'Campuran' }).map(([k, l]) => <button key={k} className={method === k ? 'on' : ''} onClick={() => setMethod(k)} aria-pressed={method === k}>{l}</button>)}</div>
+      {method === 'campuran' && <>
+        <span className="small muted">Bagi total ke beberapa cara bayar. Jumlahnya harus sama dengan total.</span>
+        {[['tunai', 'Tunai'], ['transfer', 'Transfer / QRIS'], ['kasbon', 'Kasbon (utang pelanggan)']].map(([k, l]) => (
+          <div className="row" key={k} style={{ flexWrap: 'nowrap', gap: 6 }}>
+            <Field label={l}><input inputMode="numeric" value={split[k]} placeholder="0" onChange={(e) => setSplit({ ...split, [k]: e.target.value })} /></Field>
+            {total - spSum + sp[k] > 0 && sp[k] !== total - spSum + sp[k] && <button className="sm" style={{ alignSelf: 'flex-end' }} onClick={() => setSplit({ ...split, [k]: angka(total - spSum + sp[k]) })}>Sisa</button>}
+          </div>
+        ))}
+        <div className="row between"><span>Terbagi</span><b style={{ color: spSum === total ? 'var(--good)' : 'var(--bad)' }}>{rp(spSum)} dari {rp(total)}{spSum !== total ? ` · ${spSum < total ? 'kurang' : 'lebih'} ${rp(Math.abs(total - spSum))}` : ' ✓'}</b></div>
+        {sp.tunai > 0 && <>
+          <Field label="Uang tunai diterima (opsional)"><input inputMode="numeric" value={paid} onChange={(e) => setPaid(e.target.value)} placeholder={angka(sp.tunai)} /></Field>
+          {paid.trim() && <div className="row between"><span>Kembalian</span><b style={{ color: change < 0 ? 'var(--bad)' : 'var(--good)' }}>{change < 0 ? 'kurang ' + rp(-change) : rp(change)}</b></div>}
+        </>}
+      </>}
       {method === 'tunai' && <>
         <Field label="Uang diterima"><input inputMode="numeric" value={paid} onChange={(e) => setPaid(e.target.value)} placeholder={angka(total)} /></Field>
         <div className="row">{[total, 20000, 50000, 100000].filter((v, i, a) => v >= total && a.indexOf(v) === i).map((v) => <button key={v} className="sm" onClick={() => setPaid(angka(v))}>{v === total ? 'Uang pas' : rp(v)}</button>)}</div>
         {paid.trim() && <div className="row between"><span>Kembalian</span><b style={{ color: change < 0 ? 'var(--bad)' : 'var(--good)' }}>{change < 0 ? 'kurang ' + rp(-change) : rp(change)}</b></div>}
       </>}
       {method === 'transfer' && <p className="small muted" style={{ margin: 0 }}>Simpan setelah uang masuk ke rekening atau QRIS terkonfirmasi.</p>}
-      {method === 'kasbon' && <>
+      {needContact && <>
         <Field label="Pelanggan"><select value={contact} onChange={(e) => setContact(e.target.value)}><option value="">+ Pelanggan baru</option>{d.contacts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
         {!contact && <div className="row"><Field label="Nama pelanggan baru"><input value={newName} onChange={(e) => setNewName(e.target.value)} /></Field><Field label="No. HP (opsional)"><input inputMode="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} /></Field></div>}
         <Field label="Janji bayar (opsional)"><input type="date" min={today()} value={due} onChange={(e) => setDue(e.target.value)} /></Field>
@@ -231,8 +262,8 @@ function QtyInput({ value, onChange, label }) {
 function Done({ r, onClose }) {
   return (
     <Sheet title="Transaksi tersimpan" onClose={onClose}>
-      <div className="notice good">{r.number} · {rp(r.total)} · {PAY[r.method]}</div>
-      {r.method === 'tunai' && r.change > 0 && <div className="row between" style={{ fontSize: 22 }}><span>Kembalian</span><b>{rp(r.change)}</b></div>}
+      <div className="notice good">{r.number} · {rp(r.total)} · {PAY[r.method] || 'Campuran'}{Number(r.tax) > 0 ? ` · termasuk PPN ${rp(r.tax)}` : ''}</div>
+      {r.change > 0 && <div className="row between" style={{ fontSize: 22 }}><span>Kembalian</span><b>{rp(r.change)}</b></div>}
       <Link href={`/struk/${r.id}`}><button className="primary" style={{ width: '100%' }}>Lihat / kirim struk</button></Link>
       <button className="cta" onClick={onClose}>Transaksi baru</button>
     </Sheet>
