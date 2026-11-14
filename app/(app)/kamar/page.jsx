@@ -6,6 +6,7 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet, MoveRoomSheet } from '@/components/LeaseForms';
+import PaySheet from '@/components/PaySheet';
 import { rp, tgl, angka, parseRp, ROOM_ST, errMsg } from '@/lib/format';
 import Link from 'next/link';
 import { moduleOn, canArea } from '@/lib/business';
@@ -53,6 +54,7 @@ export default function Kamar() {
       {sheet?.t === 'start' && <StartLeaseSheet d={d} roomId={sheet.id} onClose={close} />}
       {sheet?.t === 'end' && <EndLeaseSheet d={d} lease={sheet.lease} onClose={close} />}
       {sheet?.t === 'move' && <MoveRoomSheet d={d} lease={sheet.lease} onClose={close} />}
+      {sheet?.t === 'pay' && <PaySheet d={d} inv={d.invById.get(sheet.id)} onClose={close} />}
     </div>
   );
 }
@@ -85,6 +87,7 @@ function RoomDetail({ d, room, go, onClose }) {
             <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
             {(d.depByLease?.get(l.id) || 0) > 0 && <><dt>Deposit dipegang</dt><dd>{rp(d.depByLease.get(l.id))}</dd></>}
           </dl>
+          {debt > 0 && (() => { const u = d.invoices.filter((i) => i.lease_id === l.id && i.status !== 'batal' && i.outstanding > 0).sort((a, b) => a.due_date.localeCompare(b.due_date))[0]; return u ? <button className="primary" onClick={() => go({ t: 'pay', id: u.id })}>Catat pembayaran / tandai lunas</button> : null; })()}
           <div className="row"><button onClick={() => go({ t: 'move', lease: l })}>Pindah kamar</button><button className="danger" onClick={() => go({ t: 'end', lease: l })}>Akhiri sewa</button></div>
         </section>
       ) : room.status === 'tersedia' && !d.bookByRoom?.get(room.id) ? (

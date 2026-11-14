@@ -12,6 +12,7 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, InvChip, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet, MoveRoomSheet } from '@/components/LeaseForms';
+import PaySheet from '@/components/PaySheet';
 import { rp, tgl, invTitle, errMsg, waLink, today } from '@/lib/format';
 import { message, caraBayar } from '@/lib/templates';
 import Link from 'next/link';
@@ -57,6 +58,7 @@ export default function Penghuni() {
       {sheet?.t === 'start' && <StartLeaseSheet d={d} occupantId={sheet.id} onClose={close} />}
       {sheet?.t === 'end' && <EndLeaseSheet d={d} lease={sheet.lease} onClose={close} />}
       {sheet?.t === 'move' && <MoveRoomSheet d={d} lease={sheet.lease} onClose={close} />}
+      {sheet?.t === 'pay' && <PaySheet d={d} inv={d.invById.get(sheet.id)} onClose={close} />}
     </div>
   );
 }
@@ -88,6 +90,7 @@ function OccDetail({ d, occ, go, onClose }) {
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
       </dl>
       {l && l.end_date && l.end_date < today() && <div className="notice">Rencana selesai ({tgl(l.end_date)}) sudah lewat dan sewa masih tercatat aktif. Penghuni sudah keluar? Ketuk <b>Akhiri sewa</b> dan isi tanggal keluarnya. Masih tinggal? Ubah <b>Rencana selesai</b> agar tagihan berikutnya terbit lagi.</div>}
+      {debt > 0 && unpaid.length > 0 && <button className="cta" onClick={() => go({ t: 'pay', id: [...unpaid].sort((a, b) => a.due_date.localeCompare(b.due_date))[0].id })}>Catat pembayaran / tandai lunas</button>}
       {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
       <IsianTambahan entity="occupant" id={occ.id} extra={occ.extra} area="rent" />
       <Lampiran entity="occupant" id={occ.id} title="Dokumen penghuni" hint="Mis. foto KTP, surat perjanjian sewa (PDF). Hanya pemilik & karyawan bagian sewa yang bisa melihat." />
@@ -98,7 +101,7 @@ function OccDetail({ d, occ, go, onClose }) {
         {invs.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Belum ada tagihan.</p> : (
           <div className="list">{invs.map((i) => (
             <div className="li" key={i.id}><div className="main"><b>{invTitle(i)}</b><span className="small muted">Jatuh tempo {tgl(i.due_date)}</span></div>
-              <div style={{ textAlign: 'right' }}><div className="num">{rp(i.amount)}</div><InvChip inv={i} /></div></div>
+              <div style={{ textAlign: 'right' }}><div className="num">{rp(i.amount)}</div><InvChip inv={i} />{i.outstanding > 0 && <div><button className="sm primary" style={{ marginTop: 4 }} onClick={() => go({ t: 'pay', id: i.id })}>Bayar {rp(i.outstanding)}</button></div>}</div></div>
           ))}</div>
         )}
       </section>

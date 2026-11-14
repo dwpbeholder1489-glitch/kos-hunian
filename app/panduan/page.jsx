@@ -104,7 +104,7 @@ const PARTS = [
       <><b>Belum lunas</b>: masih ada sisa. <b>Menunggak</b>: lewat jatuh tempo.</>,
       <>Ketuk tagihan untuk melihat rincian dan riwayat pembayarannya.</>,
     ], null, null, <ScrInvoices />],
-    ['Catat pembayaran', 'Tagihan › ketuk tagihan › Catat pembayaran', [
+    ['Catat pembayaran', 'Tagihan › ketuk tagihan › Catat pembayaran (atau Penghuni / Kamar › Catat pembayaran / tandai lunas)', [
       <>Isi <b>Jumlah</b>. Bayar sebagian boleh — sisanya tetap tercatat.</>,
       <>Isi <b>Tanggal bayar</b> dan <b>Metode</b>: tunai, transfer, QRIS, atau <b>Dipotong dari deposit</b> (muncul bila penghuni punya deposit).</>,
       <>Centang <b>Uang sudah saya terima</b> bila uang sudah dicek masuk.</>,
