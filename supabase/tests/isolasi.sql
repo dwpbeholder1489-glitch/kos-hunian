@@ -46,6 +46,8 @@ begin
       ('reorder_suggest', format('select public.reorder_suggest(%L)', k)),
       ('product_save', format('select public.product_save(%L, null, ''uji'', ''kg'', 0, 0, ''[{"name":"kg"}]'')', k)),
       ('unit_to_base', format('select public.unit_to_base((select id from public.products where kos_id = %L limit 1), ''kg'', 1)', k)),
+      ('asset_list', format('select public.asset_list(%L)', k)),
+      ('asset_save', format('select public.asset_save(%L, null, ''{"name":"uji","mode":"awal","cost":1000}'')', k)),
       ('staff_save', format('select public.staff_save(%L, null, ''{"name":"uji isolasi"}'')', k)),
       ('staff_me', format('select public.staff_me(%L)', k)),
       ('attendance_clock', format('select public.attendance_clock(%L, ''masuk'', null)', k)),

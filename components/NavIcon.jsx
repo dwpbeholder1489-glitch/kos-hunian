@@ -50,6 +50,7 @@ const P = {
   '/crm': <><path d="M4 5h16v11H8l-4 4z" /><path d="M8 10h8" /></>,
   '/mutasi': <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
   '/pembukuan': <><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" /><path d="M9 8h5M9 12h5" /></>,
+  '/aset': <><path d="M3 21h18M5 21V8l7-4 7 4v13" /><path d="M9 21v-5h6v5M9 11h.01M15 11h.01" /></>,
   '/anggaran': <><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" /></>,
   '/aktivitas': <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   '/analisis': <><path d="M3 20h18M4 16l5-5 4 3 7-8" /><path d="M16 6h4v4" /></>,

@@ -422,6 +422,22 @@ export function ScrSatuan() {
   );
 }
 
+export function ScrAset() {
+  return (
+    <Phone bare>
+      <h3>Aset tetap</h3>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Nilai buku</span><span className="v">{rp(19500000)}</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Susut / bulan</span><span className="v">{rp(750000)}</span></div>
+      </div>
+      <div className="row between small"><span><b>Motor pengantar</b><br />Kendaraan · 4 tahun · susut {rp(375000)}/bulan</span><b>{rp(15750000)}</b></div>
+      <div className="row between small"><span><b>Kulkas showcase</b><br />Peralatan · 2 tahun · sisa 21 bulan</span><b>{rp(3750000)}</b></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Jual / lepas aset</b><span>Nilai buku {rp(3750000)} → dijual {rp(4000000)} · <span style={{ color: 'var(--good)' }}>untung {rp(250000)}</span></span></div>
+      <span className="mini-btn cta">+ Tambah aset</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

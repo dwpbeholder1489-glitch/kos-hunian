@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -54,6 +54,7 @@ const MENUS = [
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
   ['Pengaturan', 'Profil kos, kategori pengeluaran, unduh semua data, tutup bisnis, keluar'],
+  ['Aset tetap', 'Daftar aset (motor, mesin, peralatan), penyusutan otomatis per bulan, nilai buku, jual/buang aset'],
   ['SDM & gaji', 'Data karyawan, jadwal shift, absensi (karyawan bisa absen sendiri), kasbon, hitung & bayar gaji, slip gaji'],
   ['Karyawan', 'Undang karyawan, atur peran & akses per modul/tindakan, penyetuju, nonaktifkan, hapus'],
   ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan & tingkat persetujuan'],
@@ -621,6 +622,19 @@ const PARTS = [
       <>Ketuk nama untuk menambah <b>bonus</b>, <b>potongan</b> (mis. alpa, denda), atau mengubah potongan kasbon. Absensi berubah? <b>Hitung ulang</b> — bonus & potongan tetap.</>,
       <>Pilih dari Kas atau Bank lalu <b>Bayar gaji</b>: satu pengeluaran <b>Gaji karyawan</b> sebesar total dibayar, masuk laporan dan pembukuan. Buka <b>Slip ›</b> untuk mencetak/PDF atau <b>Kirim WA</b> ke karyawan; karyawan yang tertaut melihat slipnya sendiri di Absen saya.</>,
     ], <>Salah hitung setelah dibayar? <b>Batalkan penggajian</b> (alasan wajib): pengeluarannya ikut dihapus dan kasbon kembali belum dipotong, lalu hitung ulang. Pengeluaran gaji tidak bisa dihapus dari menu Pengeluaran. Kasir/staf lain tidak bisa melihat data gaji.</>, 'warn', null],
+  ]],
+  ['U', 'Aset tetap & penyusutan', [
+    ['Mencatat aset & penyusutan otomatis', 'Keuangan › Aset tetap', [
+      <>Aset = barang yang dipakai usaha bertahun-tahun (motor, kulkas, mesin, etalase, komputer, bangunan). Tekan <b>+ Tambah aset</b> lalu pilih <b>Baru dibeli</b> (isi harga, tanggal, dibayar dari kas/bank — tercatat sebagai pengeluaran modal) atau <b>Sudah dimiliki</b> (isi perkiraan nilai sekarang; tidak ada uang keluar).</>,
+      <>Sudah pernah mencatat pembeliannya di Pengeluaran sebagai <b>Modal / investasi</b>? Ia muncul di kotak <b>Pengeluaran modal yang belum dicatat sebagai aset</b> — tekan <b>Jadikan aset</b>.</>,
+      <>Isi <b>Umur manfaat</b> (tombol 1/2/4/8/20 tahun atau ketik bulan) dan, bila ada, <b>nilai sisa</b>. Langsung tampil hitungannya, mis. "Penyusutan Rp 500.000 per bulan selama 2 tahun". Tanah: hapus centang <b>Disusutkan tiap bulan</b>.</>,
+      <>Tiap bulan yang sudah lewat, sistem mencatat penyusutan sendiri ke <b>Pembukuan</b> (Beban penyusutan) — Anda tidak perlu menekan apa pun. Di daftar terlihat <b>nilai buku</b>, penyusutan per bulan, dan sisa bulan tiap aset.</>,
+    ], <>Penyusutan <b>bukan uang keluar</b>: saldo kas tidak berubah (uangnya sudah keluar saat membeli) dan tidak muncul di menu Pengeluaran. Ia mengurangi laba di Pembukuan dan Analisis bisnis agar harga aset tidak membebani satu bulan saja. Mengubah umur/nilai sisa otomatis mengoreksi jurnalnya.</>, null, <ScrAset />],
+    ['Menjual, membuang, atau menghapus aset', 'Aset tetap › ketuk aset', [
+      <>Ketuk aset › <b>Jual / lepas aset</b>. Pilih <b>Dijual</b> (isi uang diterima & masuk ke kas/bank), <b>Dibuang / rusak</b>, atau <b>Hilang</b>, serta tanggalnya.</>,
+      <>Sebelum disimpan tampil selisihnya terhadap nilai buku: <b>untung</b> (masuk Pendapatan lain) atau <b>rugi</b> (Beban non-operasional). Penyusutan berhenti sejak bulan itu.</>,
+      <>Salah pilih? Buka tab <b>Sudah dilepas</b> › ketuk aset › <b>Batalkan pelepasan</b>. Salah catat aset? <b>Hapus (salah catat)</b> dengan alasan.</>,
+    ], <>Pengeluaran pembelian aset tidak bisa dihapus dari menu Pengeluaran selama asetnya masih terdaftar — hapus asetnya dulu dari Aset tetap. Aset yang dibuat lewat "Baru dibeli" ikut menghapus pengeluarannya; yang berasal dari "Jadikan aset" pengeluarannya tetap ada.</>, 'warn', null],
   ]],
 ];
 

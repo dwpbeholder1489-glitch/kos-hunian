@@ -81,7 +81,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P1 | ~~Pindah kamar penghuni~~ — selesai 14 Nov | 1 |
 | P1 | ~~Batch & kedaluwarsa + saran pemesanan ulang~~ — selesai 14 Nov (FEFO otomatis, mutasi membawa batch; belum: nomor seri, blokir jual barang kedaluwarsa opsional) | 1 |
 | P1 | ~~Data karyawan, absensi, shift, gaji (jurnal gaji)~~ — selesai 14 Nov (belum: cuti diajukan karyawan, komisi, BPJS/PPh 21) | 1 |
-| P1 | Aset tetap & penyusutan otomatis | 1 |
+| P1 | ~~Aset tetap & penyusutan otomatis~~ — selesai 14 Nov (garis lurus, pelepasan aset, jurnal otomatis; belum: saldo menurun, penyusutan fiskal, foto/lampiran aset) | 1 |
 | P2 | Resep & food cost kuliner (konsumsi bahan otomatis) | 2 |
 | P2 | Promosi & bundling, konsinyasi | 2 |
 | P2 | Permintaan pembelian, invoice supplier, 3-way matching | 2 |
