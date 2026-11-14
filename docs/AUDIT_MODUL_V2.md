@@ -67,6 +67,9 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 3. Status implementasi platform & status aktivasi pelanggan tercampur di satu kolom `status` (available/segera) — Bab 5 meminta dipisah.
 4. Menonaktifkan modul tidak menampilkan dampak (menu yang hilang, data yang tetap) sebelum dikonfirmasi.
 
+5. **Aturan terlalu kaku (keluhan pemilik 14 Nov):** sewa tidak bisa diakhiri bila tanggal masuk belum tiba atau tanggal keluar belum tiba; rencana selesai ditahan tagihan; booking −7 hari; langsung huni +7 hari; jemput tanpa opsi "antar sendiri"; pesanan siap tidak bisa dikoreksi; tamu terlambat tidak bisa ditandai datang. → dilonggarkan di migrasi `20261114210000` (keuangan tetap terjaga: tagihan yang sudah dibayar tidak dibatalkan diam-diam). Rekening/QRIS di halaman bisnis kini untuk semua jenis bisnis dengan saklar pemilik.
+6. Celah yang ditemukan saat audit: **pindah kamar** penghuni belum ada (harus akhiri + mulai sewa baru, deposit tidak ikut) → masuk backlog P1.
+
 ## 4. Backlog berprioritas (Bab 54–55)
 
 | Prio | Pekerjaan | Fase |
@@ -75,6 +78,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P0 | ~~Domain event outbox + riwayat aktivitas per dokumen~~ — selesai 14 Nov | 1 |
 | P1 | ~~Pajak (PPN) & split payment di kasir + jurnal pajak~~ — selesai 14 Nov (PPN keluaran; masukan menyusul bersama faktur pembelian) | 1 |
 | P1 | Penawaran harga → sales order → pengiriman/surat jalan → invoice (grosir) + batas kredit & daftar harga pelanggan | 1–2 |
+| P1 | Pindah kamar penghuni (sewa lama selesai, sewa baru, deposit & tagihan ikut) | 1 |
 | P1 | Batch & kedaluwarsa + saran pemesanan ulang | 1 |
 | P1 | Data karyawan, absensi, shift, gaji (jurnal gaji) | 1 |
 | P1 | Aset tetap & penyusutan otomatis | 1 |
