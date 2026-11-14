@@ -34,7 +34,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 
 | Bab | Industri | Status | Catatan |
 |---|---|---|---|
-| 17 | Retail & grocery | VERIFIED (inti) | Celah: promosi/bundling, konsinyasi, kedaluwarsa, analitik kasir |
+| 17 | Retail & grocery | VERIFIED (inti) | Promo, konsinyasi, kedaluwarsa selesai (14–15 Nov). Celah: analitik kasir |
 | 18 | Grosir & distribusi | PARTIAL → inti selesai 14 Nov | Penawaran, pesanan, surat jalan bertahap, faktur, batas kredit, tempo, daftar harga, umur piutang, penerima/gagal kirim. **MISSING:** rute & armada, foto bukti kirim, harga bertingkat per jumlah |
 | 19 | F&B (kuliner) | PARTIAL | Meja, reservasi, QR meja, layar dapur, split bill ada; **MISSING** resep, konsumsi bahan, food cost, waste |
 | 20 | Laundry | VERIFIED | Tahap proses, per kg/item, antar jemput, keluhan; celah: perawatan mesin |
@@ -83,7 +83,8 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P1 | ~~Data karyawan, absensi, shift, gaji (jurnal gaji)~~ — selesai 14 Nov (belum: cuti diajukan karyawan, komisi, BPJS/PPh 21) | 1 |
 | P1 | ~~Aset tetap & penyusutan otomatis~~ — selesai 14 Nov (garis lurus, pelepasan aset, jurnal otomatis; belum: saldo menurun, penyusutan fiskal, foto/lampiran aset) | 1 |
 | P2 | ~~Resep & food cost kuliner (konsumsi bahan otomatis)~~ — selesai 14 Nov (resep per menu, potong bahan saat selesai, food cost % & margin, porsi tersedia, bahan terbuang; belum: sub-resep/bumbu racikan, menu engineering, yield/susut masak) | 2 |
-| P2 | ~~Promosi & bundling~~ — selesai 14 Nov (diskon barang, beli X gratis Y, paket, minimal belanja; terjadwal; dihitung server; di struk). **Belum:** konsinyasi, promo untuk jasa/kuliner, voucher/kode kupon, poin loyalti | 2 |
+| P2 | ~~Promosi & bundling~~ — selesai 14 Nov (diskon barang, beli X gratis Y, paket, minimal belanja; terjadwal; dihitung server; di struk). **Belum:** promo untuk jasa/kuliner, voucher/kode kupon, poin loyalti | 2 |
+| P2 | ~~Konsinyasi (titip jual)~~ — selesai 15 Nov (terima/kembalikan titipan, yang terjual otomatis jadi setoran ke penitip, laba = jual − harga titip; belum: komisi persen, laporan cetak untuk penitip, toko menitip di tempat lain) | 2 |
 | P2 | ~~Permintaan pembelian, invoice supplier, 3-way matching~~ — selesai 15 Nov (+ PPN masukan, kurang/lebih bayar, kinerja supplier; belum: RFQ/perbandingan penawaran, barang dalam perjalanan) | 2 |
 | P3 | Business Health Score per jenis bisnis, proyeksi & skenario | 4 |
 | P3 | Rule builder otomatisasi bebas | 4 |
