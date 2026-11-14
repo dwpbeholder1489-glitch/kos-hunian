@@ -83,7 +83,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P1 | ~~Data karyawan, absensi, shift, gaji (jurnal gaji)~~ — selesai 14 Nov (belum: cuti diajukan karyawan, komisi, BPJS/PPh 21) | 1 |
 | P1 | ~~Aset tetap & penyusutan otomatis~~ — selesai 14 Nov (garis lurus, pelepasan aset, jurnal otomatis; belum: saldo menurun, penyusutan fiskal, foto/lampiran aset) | 1 |
 | P2 | ~~Resep & food cost kuliner (konsumsi bahan otomatis)~~ — selesai 14 Nov (resep per menu, potong bahan saat selesai, food cost % & margin, porsi tersedia, bahan terbuang; belum: sub-resep/bumbu racikan, menu engineering, yield/susut masak) | 2 |
-| P2 | Promosi & bundling, konsinyasi | 2 |
+| P2 | ~~Promosi & bundling~~ — selesai 14 Nov (diskon barang, beli X gratis Y, paket, minimal belanja; terjadwal; dihitung server; di struk). **Belum:** konsinyasi, promo untuk jasa/kuliner, voucher/kode kupon, poin loyalti | 2 |
 | P2 | Permintaan pembelian, invoice supplier, 3-way matching | 2 |
 | P3 | Business Health Score per jenis bisnis, proyeksi & skenario | 4 |
 | P3 | Rule builder otomatisasi bebas | 4 |

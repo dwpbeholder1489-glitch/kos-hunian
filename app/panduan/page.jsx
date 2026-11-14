@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -54,6 +54,7 @@ const MENUS = [
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
   ['Pengaturan', 'Profil kos, kategori pengeluaran, unduh semua data, tutup bisnis, keluar'],
+  ['Promo & bundling', 'Diskon barang, beli X gratis Y, paket bundling, minimal belanja — terjadwal & otomatis di Kasir (toko)'],
   ['Aset tetap', 'Daftar aset (motor, mesin, peralatan), penyusutan otomatis per bulan, nilai buku, jual/buang aset'],
   ['SDM & gaji', 'Data karyawan, jadwal shift, absensi (karyawan bisa absen sendiri), kasbon, hitung & bayar gaji, slip gaji'],
   ['Karyawan', 'Undang karyawan, atur peran & akses per modul/tindakan, penyetuju, nonaktifkan, hapus'],
@@ -648,6 +649,19 @@ const PARTS = [
       <>Tab <b>Laporan biaya bahan</b> (7 hari / bulan ini / 30 hari): biaya bahan terpakai, <b>food cost %</b> (biaya bahan ÷ penjualan), dan rinciannya per menu beserta untungnya.</>,
       <>Bahan tumpah, basi, atau rusak: catat di <b>Bahan & stok</b> › Stok › Rusak/Kedaluwarsa — muncul sebagai <b>Bahan terbuang</b> di laporan.</>,
     ], <>Stok bahan kurang <b>tidak menghalangi</b> pesanan selesai: stoknya menjadi minus dan ditandai agar Anda belanja atau hitung ulang. Biaya bahan tiap pesanan memakai harga modal saat itu; mengubah resep hanya berlaku untuk pesanan berikutnya. Staf dapur (operator) tidak melihat biaya.</>, 'warn', null],
+  ]],
+  ['W', 'Toko: promo & bundling', [
+    ['Membuat promo', 'Transaksi › Promo & bundling', [
+      <>Tekan <b>+ Promo</b>, beri nama (tampil di kasir & struk), lalu pilih jenisnya: <b>Diskon barang</b> (persen untuk barang tertentu atau semua), <b>Beli X gratis Y</b> (mis. beli 2 gratis 1 untuk barang & satuan yang sama), <b>Paket bundling</b> (beberapa barang dengan harga paket), atau <b>Minimal belanja</b> (mis. belanja Rp 100.000 potong Rp 5.000).</>,
+      <>Isi rinciannya; hitungannya langsung tampil — mis. "Pembeli mengambil 3, membayar 2 (hemat Rp 3.500; setara diskon 33,3%)" atau "Harga biasa Rp 34.000 → paket Rp 30.000 · hemat Rp 4.000".</>,
+      <>Atur <b>Berlaku</b>: tanggal mulai & sampai (kosong = tanpa batas), hari tertentu (mis. Sabtu–Minggu), dan untuk harga eceran, grosir, atau keduanya. Simpan.</>,
+      <>Daftar promo menunjukkan statusnya (Berjalan / Terjadwal / Berakhir / Dimatikan), berapa kali dipakai, dan total potongannya. Ketuk promo untuk mengubah, mematikan, atau menghapus.</>,
+    ], <>Sistem menolak promo yang merugikan tanpa sengaja: harga paket yang tidak lebih murah, gratis lebih banyak dari beli, dan potongan rupiah di atas setengah minimal belanja.</>, null, <ScrPromo />],
+    ['Promo di Kasir & struk', 'Kasir › Bayar', [
+      <>Kasir tidak perlu mengingat promo. Saat <b>Bayar</b>, promo yang berlaku hari itu muncul sendiri di bawah Subtotal ("Promo · Mie beli 2 gratis 1 −Rp 7.000") dan Total langsung berkurang.</>,
+      <>Untuk Beli X gratis Y, masukkan seluruh barang yang dibawa pembeli (mis. 3 pcs untuk beli 2 gratis 1) — yang gratis dipotong otomatis dan stoknya tetap berkurang 3.</>,
+      <>Kolom <b>Diskon tambahan</b> tetap bisa diisi manual di luar promo. Struk (cetak/WA) mencantumkan nama tiap promo.</>,
+    ], <>Satu barang hanya kena satu promo (urutan: paket → beli X gratis Y → diskon barang → minimal belanja). Barang yang harganya diubah manual di kasir dan pengiriman Pesanan grosir tidak ikut promo. Potongan promo mengurangi penjualan di laporan dan pembukuan, sama seperti diskon; PPN dihitung dari harga setelah promo.</>, 'warn', null],
   ]],
 ];
 

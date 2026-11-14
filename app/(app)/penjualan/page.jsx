@@ -106,7 +106,8 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
         </div>
       ))}</div>}
       {rets.length > 0 && <div className="notice">{rets.map((r) => <div key={r.number} className="small">{r.number} · {tgl(r.date)} · {r.items?.map((i) => `${angka(i.qty)} ${i.unit} ${i.name}`).join(', ')} · {REFUND[r.refund_method]} {rp(r.total)} — {r.reason}</div>)}</div>}
-      {Number(s.discount) > 0 && <div className="row between"><span>Diskon</span><span>−{rp(s.discount)}</span></div>}
+      {(s.promos || []).map((x) => <div className="row between" key={x.id} style={{ flexWrap: 'nowrap', gap: 8 }}><span style={{ minWidth: 0 }}>Promo · {x.name}</span><span style={{ whiteSpace: 'nowrap' }}>−{rp(x.amount)}</span></div>)}
+      {Number(s.discount) - Number(s.promo_discount || 0) > 0 && <div className="row between"><span>Diskon</span><span>−{rp(Number(s.discount) - Number(s.promo_discount || 0))}</span></div>}
       <div className="row between"><b>Total</b><b>{rp(s.total)}</b></div>
       {fin && <div className="row between small muted"><span>Laba kotor</span><span>{rp(Number(s.total) - Number(s.cost_total))}</span></div>}
       {s.cashier && <span className="small muted">Kasir: {s.cashier}</span>}

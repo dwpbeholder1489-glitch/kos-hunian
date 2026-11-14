@@ -5,6 +5,7 @@ const P = {
   '/jasa': <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,
   '/pesanan': <><rect x="4" y="2" width="16" height="20" rx="2" /><circle cx="12" cy="13" r="4.5" /><path d="M7 6h.01M10 6h.01" /></>,
   '/resep': <><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v4h4M9 12h7M9 16h5" /></>,
+  '/promo': <><path d="M20 12l-8 8-9-9V4h7z" /><circle cx="7.5" cy="8.5" r="1.2" /></>,
   '/layanan': <><path d="M4 6h16M4 12h16M4 18h10" /><circle cx="18" cy="18" r="2" /></>,
   '/laporan-jasa': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   '/kerja': <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M14 17.5h7M17.5 14v7" /></>,

@@ -144,10 +144,26 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const [busy, setBusy] = useState(false);
   const [txId] = useState(uid);
   const [split, setSplit] = useState({ tunai: '', transfer: '', kasbon: '' });   // bayar campuran
+  const [promo, setPromo] = useState({ total: 0, items: [] });   // promo otomatis: dihitung server, di sini hanya pratinjau
+  const [promoBusy, setPromoBusy] = useState(false);
+  // baris berharga otomatis tidak mengirim harga (server memakai harga resmi → ikut promo); harga yang diubah manual dikirim & tidak ikut promo
+  const lineOut = (c) => ({ product_id: c.product_id, unit: c.unit, qty: c.qty, ...(c.auto ? {} : { price: c.price }) });
+  const cartKey = JSON.stringify(cart.map((c) => [c.product_id, c.unit, c.qty, c.auto ? null : c.price])) + tier;
+  useEffect(() => {
+    if (!cart.length || cart.some((c) => !(c.qty > 0))) { setPromo({ total: 0, items: [] }); return undefined; }
+    setPromoBusy(true);
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc('promo_preview', { p_kos: kosId, p_tier: tier, p_lines: cart.map(lineOut) });
+      setPromo(error || !data ? { total: 0, items: [] } : { total: Number(data.total) || 0, items: data.items || [] });
+      setPromoBusy(false);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [cartKey]);
 
   const sub = cart.reduce((s, c) => s + Math.round(c.qty * c.price), 0);
   const disc = parseRp(discount);
-  const total = Math.max(0, sub - disc);
+  const pro = Math.min(promo.total, sub);
+  const total = Math.max(0, sub - pro - disc);
   // Bayar campuran: bagian tunai/transfer/kasbon harus berjumlah sama dengan total
   const sp = { tunai: parseRp(split.tunai), transfer: parseRp(split.transfer), kasbon: parseRp(split.kasbon) };
   const spSum = sp.tunai + sp.transfer + sp.kasbon;
@@ -159,7 +175,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const tax = kos?.profile?.tax;
   const rate = tax?.aktif ? Number(tax.rate) || 0 : 0;
   const taxable = cart.filter((c) => !d.products.find((p) => p.id === c.product_id)?.tax_exempt).reduce((s, c) => s + Math.round(c.qty * c.price), 0);
-  const ppn = rate && sub ? Math.round(((taxable - (disc * taxable) / sub) * rate) / (100 + rate)) : 0;
+  const ppn = rate && sub ? Math.round(((taxable - ((disc + pro) * taxable) / sub) * rate) / (100 + rate)) : 0;
   const setLine = (key, patch) => setCart(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)));
   const stockOf = (id) => Number(d.products.find((p) => p.id === id)?.stock || 0);
   const baseUsed = (id) => cart.filter((c) => c.product_id === id).reduce((s, c) => s + toBase(c.qty, c.unit_qty), 0);
@@ -167,7 +183,8 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const pay = async () => {
     if (!cart.length) return toast('Keranjang kosong.');
     if (cart.some((c) => !(c.qty > 0))) return toast('Ada jumlah yang belum benar.');
-    if (disc > sub) return toast('Diskon melebihi subtotal.');
+    if (promoBusy) return toast('Sebentar, promo sedang dihitung.');
+    if (disc > sub - pro) return toast(pro > 0 ? `Diskon melebihi sisa setelah promo (${rp(sub - pro)}).` : 'Diskon melebihi subtotal.');
     if (method === 'tunai' && paid.trim() && paidN < total) return toast('Uang diterima kurang dari total.');
     if (method === 'campuran') {
       if (spSum !== total) return toast(`Rincian bayar ${rp(spSum)} belum sama dengan total ${rp(total)}.`);
@@ -184,7 +201,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
       }
       const { data, error } = await supabase.rpc('sale_create', {
         p_id: txId, p_kos: kosId, p_tier: tier,
-        p_lines: cart.map((c) => ({ product_id: c.product_id, unit: c.unit, qty: c.qty, price: c.price })),
+        p_lines: cart.map(lineOut),
         p_discount: disc, p_method: method, p_paid: method === 'tunai' || (method === 'campuran' && sp.tunai > 0) ? paidN : null, p_contact: cid, p_due: needContact && due ? due : null, p_note: note,
         // dikirim hanya untuk Campuran: penjualan biasa tetap jalan walau database belum diperbarui
         ...(method === 'campuran' ? { p_payments: Object.entries(sp).filter(([, v]) => v > 0).map(([m, a]) => ({ method: m, amount: a })) } : {}),
@@ -217,7 +234,9 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
         );
       })}</div>
       <div className="row between"><span>Subtotal</span><b>{rp(sub)}</b></div>
-      <Field label="Diskon (opsional)"><input inputMode="numeric" value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="0" /></Field>
+      {promo.items.map((x) => <div className="row between small" key={x.id} style={{ color: 'var(--good)', flexWrap: 'nowrap', gap: 8 }}><span style={{ minWidth: 0 }}>Promo · {x.name}</span><b style={{ whiteSpace: 'nowrap' }}>−{rp(x.amount)}</b></div>)}
+      {promo.items.length > 0 && cart.some((c) => !c.auto) && <span className="small muted">Barang yang harganya diubah manual tidak ikut promo.</span>}
+      <Field label={pro > 0 ? 'Diskon tambahan (opsional)' : 'Diskon (opsional)'}><input inputMode="numeric" value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="0" /></Field>
       <div className="row between" style={{ fontSize: 20 }}><b>Total</b><b>{rp(total)}</b></div>
       {ppn > 0 && <span className="small muted">Termasuk PPN {rate}% ± {rp(ppn)} (dihitung pasti saat disimpan; barang bebas PPN tidak dikenai)</span>}
 
@@ -264,7 +283,7 @@ function QtyInput({ value, onChange, label }) {
 function Done({ r, onClose }) {
   return (
     <Sheet title="Transaksi tersimpan" onClose={onClose}>
-      <div className="notice good">{r.number} · {rp(r.total)} · {PAY[r.method] || 'Campuran'}{Number(r.tax) > 0 ? ` · termasuk PPN ${rp(r.tax)}` : ''}</div>
+      <div className="notice good">{r.number} · {rp(r.total)} · {PAY[r.method] || 'Campuran'}{Number(r.promo) > 0 ? ` · hemat promo ${rp(r.promo)}` : ''}{Number(r.tax) > 0 ? ` · termasuk PPN ${rp(r.tax)}` : ''}</div>
       {r.change > 0 && <div className="row between" style={{ fontSize: 22 }}><span>Kembalian</span><b>{rp(r.change)}</b></div>}
       <Link href={`/struk/${r.id}`}><button className="primary" style={{ width: '100%' }}>Lihat / kirim struk</button></Link>
       <button className="cta" onClick={onClose}>Transaksi baru</button>

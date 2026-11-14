@@ -452,6 +452,21 @@ export function ScrResep() {
   );
 }
 
+export function ScrPromo() {
+  return (
+    <Phone bare>
+      <h3>Bayar · harga eceran</h3>
+      <div className="row between small"><span>Mie instan 6 pcs</span><b>{rp(21000)}</b></div>
+      <div className="row between small"><span>Gula 1 kg 1 pcs + Teh celup 2 kotak</span><b>{rp(34000)}</b></div>
+      <div className="row between small"><span>Subtotal</span><b>{rp(55000)}</b></div>
+      <div className="row between small" style={{ color: 'var(--good)' }}><span>Promo · Mie beli 2 gratis 1</span><b>−{rp(7000)}</b></div>
+      <div className="row between small" style={{ color: 'var(--good)' }}><span>Promo · Paket ngeteh</span><b>−{rp(4000)}</b></div>
+      <div className="row between"><b>Total</b><b>{rp(44000)}</b></div>
+      <span className="mini-btn cta">Simpan · {rp(44000)}</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>
