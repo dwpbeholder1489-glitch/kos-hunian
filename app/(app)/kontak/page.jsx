@@ -9,7 +9,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import CrmTimeline from '@/components/CrmTimeline';
-import { rp, tgl, errMsg, waLink } from '@/lib/format';
+import { rp, tgl, errMsg, waLink, angka, parseRp, today } from '@/lib/format';
 import { canArea, moduleOn } from '@/lib/business';
 
 const KIND = { pelanggan: 'Pelanggan', supplier: 'Supplier' };
@@ -83,6 +83,7 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
       {!isNew && (c.archived_at
         ? <button onClick={restore}>Pulihkan dari arsip</button>
         : <button className="ghost danger" onClick={del}>Hapus {c.kind === 'supplier' ? 'supplier' : 'pelanggan'}</button>)}
+      {!isNew && c.kind === 'pelanggan' && !c.archived_at && kos.business_type === 'retail' && moduleOn(kos, 'u_kredit') && <SyaratPelanggan c={c} kosId={kosId} canEdit={fin} />}
       {!isNew && <IsianTambahan entity="contact" id={c.id} area="sell,stock,finance" />}
       {!isNew && c.kind === 'pelanggan' && !c.archived_at && moduleOn(kos, 'u_crm') && canArea(kos, 'sell,rent') && <>
         <h3 style={{ margin: '8px 0 0' }}>Catatan & tindak lanjut</h3>
@@ -98,5 +99,55 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
         ))}</div>}
       </>}
     </Sheet>
+  );
+}
+
+// Syarat pelanggan grosir: batas kredit, tempo, daftar harga khusus, alamat kirim, NPWP + umur piutang (server: customer_credit, customer_terms_set)
+function SyaratPelanggan({ c, kosId, canEdit }) {
+  const [cr, setCr] = useState(null);
+  const [lists, setLists] = useState([]);
+  const [open, setOpen] = useState([]);
+  const [f, setF] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => {
+    supabase.rpc('customer_credit', { p_contact: c.id }).then(({ data }) => {
+      setCr(data || null);
+      if (data) setF({ credit_limit: data.limit != null ? angka(data.limit) : '', terms_days: data.terms_days != null ? String(data.terms_days) : '', price_list_id: data.price_list_id || '', address: data.address || '', npwp: data.npwp || '' });
+    });
+    supabase.rpc('receivable_open', { p_kos: kosId, p_contact: c.id }).then(({ data }) => setOpen(data || []));
+  };
+  useEffect(() => {
+    load();
+    supabase.from('price_lists').select('id,name').eq('kos_id', kosId).is('archived_at', null).order('name').then(({ data }) => setLists(data || []));
+  }, [c.id]);
+  if (!cr || !f) return null;
+  const set = (k, v) => setF({ ...f, [k]: v });
+  const save = async () => {
+    setBusy(true);
+    const { error } = await supabase.rpc('customer_terms_set', { p_contact: c.id, p: { ...f, credit_limit: f.credit_limit.trim() === '' ? null : parseRp(f.credit_limit), terms_days: f.terms_days === '' ? null : f.terms_days } });
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    toast('Syarat pelanggan disimpan'); load();
+  };
+  const t0 = today();
+  return (
+    <section className="panel" style={{ gap: 8 }}>
+      <span className="label">Syarat pelanggan (grosir)</span>
+      <div className="row">
+        <Field label="Batas kredit" hint="kosong = tanpa batas"><input inputMode="numeric" value={f.credit_limit} onChange={(e) => set('credit_limit', e.target.value)} disabled={!canEdit} placeholder="mis. 5jt" /></Field>
+        <Field label="Tempo bayar (hari)"><input inputMode="numeric" value={f.terms_days} onChange={(e) => set('terms_days', e.target.value.replace(/\D/g, ''))} disabled={!canEdit} placeholder="mis. 14" /></Field>
+      </div>
+      <Field label="Daftar harga khusus"><select value={f.price_list_id} onChange={(e) => set('price_list_id', e.target.value)} disabled={!canEdit}><option value="">— harga biasa (grosir/eceran) —</option>{lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></Field>
+      <Field label="Alamat kirim"><input value={f.address} maxLength={300} onChange={(e) => set('address', e.target.value)} disabled={!canEdit} /></Field>
+      <Field label="NPWP (opsional)"><input value={f.npwp} maxLength={30} onChange={(e) => set('npwp', e.target.value)} disabled={!canEdit} /></Field>
+      {canEdit ? <button className="primary" disabled={busy} onClick={save}>Simpan syarat</button> : <span className="small muted">Hanya pemilik/bagian keuangan yang bisa mengubah syarat pelanggan.</span>}
+      <span className="small">Piutang {rp(cr.balance)}{Number(cr.open_orders) > 0 ? ` · pesanan berjalan ${rp(cr.open_orders)}` : ''}{cr.limit != null ? ` · sisa batas ${rp(cr.available)}` : ''}</span>
+      {open.length > 0 && <div className="list">{open.map((r) => (
+        <div className="li" key={r.sale_id}><div className="main"><span className="small"><Link href={`/struk/${r.sale_id}`}>{r.number}</Link> · {tgl(r.sale_date)}</span>
+          <span className="small" style={{ color: r.due_date < t0 ? 'var(--bad)' : undefined }}>{r.due_date < t0 ? `lewat tempo ${Math.round((new Date(t0) - new Date(r.due_date)) / 864e5)} hari` : `jatuh tempo ${tgl(r.due_date)}`}</span></div>
+          <b className="small">{rp(r.open_amount)}</b></div>
+      ))}</div>}
+      {open.length > 0 && <span className="small muted">Pembayaran melunasi faktur terlama lebih dulu.</span>}
+    </section>
   );
 }

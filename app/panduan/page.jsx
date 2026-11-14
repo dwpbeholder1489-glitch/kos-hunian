@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -572,12 +572,28 @@ const PARTS = [
       <>Ketuk penjualan untuk membuka struknya, atau pesanan untuk membuka notanya. <b>Muat lebih banyak</b> untuk riwayat lama.</>,
     ], <>Riwayat ditulis oleh database di transaksi yang sama dengan datanya — bila transaksi gagal, riwayatnya juga tidak tercatat — dan tidak bisa diubah atau dihapus siapa pun. Karyawan hanya melihat aktivitas di bagian yang boleh ia buka. Riwayat dimulai sejak fitur ini aktif; transaksi lama tetap ada di menunya masing-masing.</>, null, null],
   ]],
+  ['R', 'Grosir: penawaran, pesanan, surat jalan & faktur', [
+    ['Penawaran → pesanan → kirim → faktur', 'Transaksi › Pesanan grosir (Retail & Grosir)', [
+      <>Tekan <b>+ Penawaran</b>, pilih pelanggan. Kotak di bawahnya menunjukkan <b>piutang</b>, <b>pesanan berjalan</b>, <b>batas kredit</b>, piutang yang <b>lewat jatuh tempo</b>, dan daftar harga yang dipakai.</>,
+      <>Cari barang (nama/barcode), isi jumlah & satuan. Harga terisi otomatis: <b>daftar harga pelanggan</b> → harga grosir → harga eceran — boleh diubah sesuai kesepakatan. Isi No. PO pelanggan, tempo bayar, alamat kirim, berlaku sampai bila perlu.</>,
+      <><b>Simpan penawaran</b> lalu <b>Kirim WA</b> atau <b>Cetak penawaran</b> (PDF). Bila pelanggan setuju: <b>Pelanggan setuju → jadikan pesanan</b> (atau langsung <b>Simpan & jadikan pesanan</b>). Penawaran & pesanan belum mengubah stok atau uang.</>,
+      <>Pesanan yang melewati <b>batas kredit</b> hanya bisa dikonfirmasi pemilik/pengelola dengan <b>alasan</b> (tercatat). Kasir diminta meminta pemilik. Ada piutang terlambat atau stok kurang? Muncul peringatan, pesanan tetap bisa dibuat.</>,
+      <>Saat barang berangkat: <b>Buat surat jalan</b>. Jumlah terisi sisa pesanan — kurangi bila dikirim bertahap. Pilih <b>Piutang (tempo)</b>, <b>Tunai</b>, atau <b>Transfer</b>, isi sopir & kendaraan. Stok berkurang dan <b>faktur</b> terbit otomatis (sama dengan transaksi Kasir: masuk laporan, PPN, dan pembukuan).</>,
+      <>Cetak <b>Surat jalan</b> (tanpa harga, ada kolom cek & tanda tangan) dan <b>Faktur</b> (harga, jatuh tempo, rekening). Barang sampai: <b>Sudah diterima</b> + nama penerima. Gagal kirim: <b>Gagal kirim</b> + alasan → faktur dibatalkan, stok & piutang kembali, sisa bisa dikirim ulang (pemilik/keuangan).</>,
+      <>Pelanggan tidak jadi ambil sisanya? <b>Tutup sisa</b> (alasan wajib). Pembayaran piutang dicatat di <b>Kas & kasbon</b> seperti biasa; pembayaran melunasi faktur terlama lebih dulu.</>,
+    ], <>Pesanan, pengiriman, faktur, dan pembayaran dicatat terpisah. Kirim melebihi sisa pesanan ditolak — ubah pesanannya dulu bila pelanggan menambah.</>, 'warn', <ScrGrosir />],
+    ['Batas kredit, tempo & daftar harga pelanggan', 'Pelanggan & supplier › ketuk pelanggan › Syarat pelanggan · Pesanan grosir › Daftar harga', [
+      <>Buka pelanggan › <b>Syarat pelanggan (grosir)</b>: isi <b>Batas kredit</b> (kosong = tanpa batas), <b>Tempo bayar</b> (hari), <b>Daftar harga khusus</b>, alamat kirim, NPWP, lalu <b>Simpan syarat</b> (pemilik/keuangan).</>,
+      <>Di bawahnya tampil faktur yang belum lunas beserta <b>jatuh tempo</b> atau <b>lewat tempo … hari</b>.</>,
+      <>Daftar harga: <b>Pesanan grosir › Daftar harga</b> › buat (mis. <b>Reseller</b>) › isi harga khusus per barang & satuan (ketuk di luar kolom untuk menyimpan; kosongkan = harga biasa). Pasangkan ke pelanggan lewat Syarat pelanggan.</>,
+    ], null, null, null],
+  ]],
 ];
 
 const RULES = [
   'Catat semua uang keluar, sekecil apa pun — termasuk yang diambil pemilik untuk pribadi (prive). Saldo kas hanya cocok jika semuanya tercatat.',
   'Transfer dan QRIS dicatat sebagai diterima hanya setelah uang benar-benar masuk ke rekening.',
-  'Penghuni lama: isi tagihan pertama dengan jatuh tempo berikutnya yang belum dibayar.',
+  'Penghuni lama: isi "Sewa dihitung mulai" dengan awal periode berikutnya yang belum dibayar.',
   'Kas bersih bukan laba. Lihat Laporan untuk laba, dan Tunggakan untuk uang yang belum tertagih.',
 ];
 

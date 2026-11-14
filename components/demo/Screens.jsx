@@ -385,6 +385,23 @@ export function ScrAnggaran() {
 }
 
 // Keuangan › Analisis bisnis (contoh): bulan ini vs lalu + perbandingan cabang (Paket Pro)
+// Pesanan grosir: penawaran → pesanan → surat jalan → faktur (contoh)
+export function ScrGrosir() {
+  return (
+    <Phone bare>
+      <div className="row between"><h3>SO-261114-001</h3><span className="small" style={{ color: 'var(--brand-2)', fontWeight: 800 }}>Tutup</span></div>
+      <span className="small"><b>Warung Bu Tini</b> · Dikirim sebagian · tempo 14 hari</span>
+      <div className="unitbox small" style={{ gap: 2 }}><span>Piutang {rp(786000)} · batas kredit {rp(3000000)}</span><span>Memakai daftar harga <b>Reseller</b></span></div>
+      <div className="row between small"><span>Beras 5kg · 10 karung × {rp(56000)} · terkirim 6</span><b>{rp(560000)}</b></div>
+      <div className="row between small"><span>Minyak 1L · 5 dus × {rp(190000)} · terkirim 5</span><b>{rp(950000)}</b></div>
+      <div className="row between"><b>Total</b><b>{rp(1510000)}</b></div>
+      <div className="row between small"><span><b>SJ-261114-001</b> · Ujang</span><span className="chip gold">Dalam pengiriman</span></div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn">Surat jalan</span><span className="mini-btn">Faktur</span><span className="mini-btn cta">Sudah diterima</span></div>
+      <span className="mini-btn cta">Buat surat jalan</span>
+    </Phone>
+  );
+}
+
 export function ScrAnalisis() {
   const bars = [42, 48, 45, 55, 52, 60, 58, 63, 61, 70, 66, 78];
   return (

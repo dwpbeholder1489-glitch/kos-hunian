@@ -1084,3 +1084,17 @@ main{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .prep .dot{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:2px}
 .prep .dot.ok{background:var(--gold);border-color:var(--gold);color:var(--accent-ink)}
 .prep .li .main{flex:1;min-width:0;text-align:left}
+
+/* Dokumen grosir (penawaran, pesanan, surat jalan, faktur) — cetak/PDF */
+.gdoc-two{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:560px){.gdoc-two{grid-template-columns:1fr 1fr}}
+.gdoc-t{width:100%;border-collapse:collapse;font-size:13px}
+@media (max-width:420px){.gdoc-t{font-size:12px}.gdoc-t th,.gdoc-t td{padding:5px 2px}}
+.gdoc-t th,.gdoc-t td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.gdoc-t th{font-size:12px;color:var(--muted);font-weight:700}
+.gdoc-t .r{text-align:right;white-space:nowrap}
+.gdoc-t th.r{white-space:normal}
+.gdoc-t td:nth-child(2){overflow-wrap:anywhere}
+.gdoc-sign{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;text-align:center}
+.gdoc-line{border-bottom:1px solid var(--fg);min-height:56px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-size:13px}
+@media print{.gdoc{border:0;padding:0}.gdoc .label{color:#555}.gdoc-t th,.gdoc-t td{border-color:#bbb}.gdoc-line{border-color:#000}}

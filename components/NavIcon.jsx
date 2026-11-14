@@ -23,6 +23,7 @@ const P = {
   '/kasir': <><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M7 20h10M12 16v4M7 8h4" /></>,
   '/penjualan': <><path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 7H6" /><circle cx="10" cy="20" r="1.4" /><circle cx="17" cy="20" r="1.4" /></>,
   '/shift': <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  '/grosir': <><path d="M3 7h11v9H3z" /><path d="M14 10h4l3 3v3h-7z" /><circle cx="7" cy="18" r="1.6" /><circle cx="17" cy="18" r="1.6" /></>,
   '/belanja': <><path d="M6 7h12l-1 13H7z" /><path d="M9 7a3 3 0 0 1 6 0" /></>,
   '/kas': <><path d="M3 7h18v12H3z" /><path d="M3 7l3-3h12l3 3" /><circle cx="12" cy="13" r="2.5" /></>,
   '/barang': <><path d="M21 8 12 3 3 8v8l9 5 9-5z" /><path d="M3 8l9 5 9-5M12 13v8" /></>,

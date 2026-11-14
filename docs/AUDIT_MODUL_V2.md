@@ -35,7 +35,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | Bab | Industri | Status | Catatan |
 |---|---|---|---|
 | 17 | Retail & grocery | VERIFIED (inti) | Celah: promosi/bundling, konsinyasi, kedaluwarsa, analitik kasir |
-| 18 | Grosir & distribusi | PARTIAL | Harga grosir ada; **MISSING** sales order, batas kredit, rute & surat jalan, bukti kirim |
+| 18 | Grosir & distribusi | PARTIAL → inti selesai 14 Nov | Penawaran, pesanan, surat jalan bertahap, faktur, batas kredit, tempo, daftar harga, umur piutang, penerima/gagal kirim. **MISSING:** rute & armada, foto bukti kirim, harga bertingkat per jumlah |
 | 19 | F&B (kuliner) | PARTIAL | Meja, reservasi, QR meja, layar dapur, split bill ada; **MISSING** resep, konsumsi bahan, food cost, waste |
 | 20 | Laundry | VERIFIED | Tahap proses, per kg/item, antar jemput, keluhan; celah: perawatan mesin |
 | 21 | Properti & kos | VERIFIED | E2E lulus; celah: multi-properti per gedung, perpanjangan kontrak |
@@ -77,7 +77,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P0 | ~~Module Registry V2 + dependency graph + dampak nonaktif + registry di Admin~~ — selesai 14 Nov | 0 |
 | P0 | ~~Domain event outbox + riwayat aktivitas per dokumen~~ — selesai 14 Nov | 1 |
 | P1 | ~~Pajak (PPN) & split payment di kasir + jurnal pajak~~ — selesai 14 Nov (PPN keluaran; masukan menyusul bersama faktur pembelian) | 1 |
-| P1 | Penawaran harga → sales order → pengiriman/surat jalan → invoice (grosir) + batas kredit & daftar harga pelanggan | 1–2 |
+| P1 | ~~Penawaran harga → sales order → surat jalan → faktur (grosir) + batas kredit & daftar harga pelanggan~~ — selesai 14 Nov (belum: rute/armada, harga bertingkat per jumlah, reservasi stok keras) | 1–2 |
 | P1 | ~~Pindah kamar penghuni~~ — selesai 14 Nov | 1 |
 | P1 | Batch & kedaluwarsa + saran pemesanan ulang | 1 |
 | P1 | Data karyawan, absensi, shift, gaji (jurnal gaji) | 1 |
