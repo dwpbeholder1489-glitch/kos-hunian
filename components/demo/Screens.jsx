@@ -438,6 +438,20 @@ export function ScrAset() {
   );
 }
 
+export function ScrResep() {
+  return (
+    <Phone bare>
+      <h3>Resep · Nasi goreng</h3>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Beras</b><div className="row" style={{ gap: 6 }}><span className="mini-btn">150</span><span className="mini-btn">gram</span></div><span>= 0,15 kg · <b>{rp(1800)}</b></span></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Telur</b><div className="row" style={{ gap: 6 }}><span className="mini-btn">1</span><span className="mini-btn">butir</span></div><span>= <b>{rp(2000)}</b> · <span style={{ color: 'var(--bad)' }}>stok tinggal 1 butir</span></span></div>
+      <div className="row between small"><span>Biaya bahan per porsi</span><b>{rp(4160)}</b></div>
+      <div className="row between small"><span>Persen dari harga jual</span><b style={{ color: 'var(--good)' }}>27,7%</b></div>
+      <div className="row between small"><span>Untung kotor</span><b>{rp(10840)}</b></div>
+      <span className="mini-btn cta">Simpan resep</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

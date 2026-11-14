@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -635,6 +635,19 @@ const PARTS = [
       <>Sebelum disimpan tampil selisihnya terhadap nilai buku: <b>untung</b> (masuk Pendapatan lain) atau <b>rugi</b> (Beban non-operasional). Penyusutan berhenti sejak bulan itu.</>,
       <>Salah pilih? Buka tab <b>Sudah dilepas</b> › ketuk aset › <b>Batalkan pelepasan</b>. Salah catat aset? <b>Hapus (salah catat)</b> dengan alasan.</>,
     ], <>Pengeluaran pembelian aset tidak bisa dihapus dari menu Pengeluaran selama asetnya masih terdaftar — hapus asetnya dulu dari Aset tetap. Aset yang dibuat lewat "Baru dibeli" ikut menghapus pengeluarannya; yang berasal dari "Jadikan aset" pengeluarannya tetap ada.</>, 'warn', null],
+  ]],
+  ['V', 'Kuliner & jasa: resep, biaya bahan (food cost)', [
+    ['Mengisi resep per menu / bahan per layanan', 'Stok › Resep & food cost (jasa lain: Bahan per layanan)', [
+      <>Catat dulu bahannya di <b>Bahan & stok</b> dengan satuan utama dan satuan takarannya (mis. Beras: utama kg + satuan gram; Minyak: liter + ml; Telur: butir) serta harga modalnya.</>,
+      <>Buka <b>Resep & food cost</b>, ketuk menu (atau dari <b>Menu & tahap</b> › ubah menu › <b>Atur resep & biaya bahan</b>). Tekan <b>+ Tambah bahan</b>, pilih bahan, isi <b>jumlah dipakai</b> untuk 1 porsi dan satuannya — mis. Beras 150 gram, Telur 1 butir, Minyak 20 ml.</>,
+      <>Di bawah tiap bahan tampil hitungannya ("= 0,15 kg · Rp 1.800"), dan di bagian bawah: <b>biaya bahan per porsi</b>, <b>persen dari harga jual</b>, dan <b>untung kotor</b>. Simpan.</>,
+      <>Daftar menu menampilkan persen biaya bahan (hijau ≤ 35%, kuning 35–45%, merah di atas 45%), untung per porsi, dan <b>cukup untuk berapa porsi</b> dari stok sekarang; bahan yang kurang disebut namanya.</>,
+    ], <>Laundry/jasa lain memakai cara yang sama untuk <b>bahan per layanan</b>, mis. Cuci kiloan: deterjen 30 ml + pewangi 10 ml per kg. Aktifkan modul <b>Resep & biaya bahan</b> di Konfigurasi › Modul (Kuliner sudah aktif).</>, null, <ScrResep />],
+    ['Bahan terpotong otomatis & laporan food cost', 'Pesanan selesai → stok · Resep & food cost › Laporan biaya bahan', [
+      <>Saat pesanan <b>selesai</b> (diserahkan ke pelanggan), bahan sesuai resep × jumlah porsi langsung terpotong dari stok dan tercatat di riwayat bahan sebagai "Resep · pesanan …". Tidak perlu mencatat pemakaian satu per satu.</>,
+      <>Tab <b>Laporan biaya bahan</b> (7 hari / bulan ini / 30 hari): biaya bahan terpakai, <b>food cost %</b> (biaya bahan ÷ penjualan), dan rinciannya per menu beserta untungnya.</>,
+      <>Bahan tumpah, basi, atau rusak: catat di <b>Bahan & stok</b> › Stok › Rusak/Kedaluwarsa — muncul sebagai <b>Bahan terbuang</b> di laporan.</>,
+    ], <>Stok bahan kurang <b>tidak menghalangi</b> pesanan selesai: stoknya menjadi minus dan ditandai agar Anda belanja atau hitung ulang. Biaya bahan tiap pesanan memakai harga modal saat itu; mengubah resep hanya berlaku untuk pesanan berikutnya. Staf dapur (operator) tidak melihat biaya.</>, 'warn', null],
   ]],
 ];
 

@@ -48,6 +48,8 @@ begin
       ('unit_to_base', format('select public.unit_to_base((select id from public.products where kos_id = %L limit 1), ''kg'', 1)', k)),
       ('asset_list', format('select public.asset_list(%L)', k)),
       ('asset_save', format('select public.asset_save(%L, null, ''{"name":"uji","mode":"awal","cost":1000}'')', k)),
+      ('recipe_overview', format('select public.recipe_overview(%L)', k)),
+      ('food_cost_report', format('select public.food_cost_report(%L, current_date - 30, current_date)', k)),
       ('staff_save', format('select public.staff_save(%L, null, ''{"name":"uji isolasi"}'')', k)),
       ('staff_me', format('select public.staff_me(%L)', k)),
       ('attendance_clock', format('select public.attendance_clock(%L, ''masuk'', null)', k)),

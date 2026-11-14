@@ -13,6 +13,7 @@ import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
 const UNITS_K = ['porsi', 'pcs', 'gelas', 'cup', 'botol', 'bungkus', 'box', 'paket', 'kg', 'loyang'];
 import { canArea } from '@/lib/business';
+import Link from 'next/link';
 
 // Katalog layanan (harga, minimal, lama pengerjaan) & tahap proses yang bisa diatur — dasar "Configure Many"
 export default function Layanan() {
@@ -143,6 +144,7 @@ function ServiceForm({ kosId, T, s, cats, onClose, onSaved }) {
       <Field label="Deskripsi (opsional)" hint="tampil di halaman bisnis"><input value={f.description} maxLength={300} onChange={(e) => set('description', e.target.value)} placeholder={T.kul ? 'mis. nasi, telur, kerupuk' : 'mis. cuci, kering, lipat rapi'} /></Field>
       <Field label="Persyaratan (opsional)"><input value={f.requirements} maxLength={300} onChange={(e) => set('requirements', e.target.value)} placeholder={T.kul ? 'mis. pesan H-1 untuk katering' : 'mis. pakaian luntur dipisah, tidak menerima kulit'} /></Field>
       <Field label="Info tambahan (opsional)"><input value={f.info} maxLength={300} onChange={(e) => set('info', e.target.value)} placeholder={T.kul ? 'mis. level pedas 0–5' : 'mis. pewangi bisa dipilih'} /></Field>
+      {s.id && <Link href={`/resep?menu=${s.id}`} className="small" style={{ fontWeight: 700 }}>{T.kul ? 'Atur resep & biaya bahan ›' : 'Atur bahan yang dipakai ›'}</Link>}
       {s.id && <div className="seg">{[[true, 'Tersedia'], [false, 'Tidak tersedia sementara']].map(([k, l]) => <button key={l} className={f.active === k ? 'on' : ''} onClick={() => set('active', k)}>{l}</button>)}</div>}
       {s.id && <span className="small muted">{T.svc} yang tidak tersedia tidak bisa dipilih saat menerima pesanan dan tidak tampil di halaman bisnis.</span>}
       <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
