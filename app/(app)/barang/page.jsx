@@ -17,19 +17,22 @@ import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, MOVE } from '@/lib/retail';
 import { isiNum, isiText, measure, toBase, resolveUnit, contentOf, contentChoices, presetsFor, crossDim, unitProblem, BASE_PRESETS } from '@/lib/units';
 import Kedaluwarsa from '@/components/Kedaluwarsa';
+import { CategoryBar, CategorySheet, VariantForm, groupOf } from '@/components/TokoLanjut';
 
 // Muat barang + satuan untuk bisnis aktif
 function useProducts(kosId, ver, multi) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const load = useCallback(async () => {
-    const [p, u, l] = await Promise.all([
+    const [p, u, l, c, g] = await Promise.all([
       supabase.from('products').select('*').eq('kos_id', kosId).order('name'),
       supabase.from('product_units').select('*').eq('kos_id', kosId),
       multi ? supabase.rpc('stock_levels_list', { p_kos: kosId }) : Promise.resolve({ data: [] }),
+      supabase.from('product_categories').select('*').eq('kos_id', kosId).order('sort').order('name'),
+      supabase.from('product_variant_groups').select('*').eq('kos_id', kosId),
     ]);
     if (p.error || u.error) return setErr(errMsg(p.error || u.error));
-    setD({ products: p.data, units: u.data, levels: l.data || [] });
+    setD({ products: p.data, units: u.data, levels: l.data || [], cats: c.data || [], groups: g.data || [] });
   }, [kosId, multi]);
   useEffect(() => { load(); }, [load, ver]);
   return { d, err, reload: load };
@@ -45,6 +48,9 @@ export default function Barang() {
   const [edit, setEdit] = useState(null);   // null | 'new' | product
   useBaru(() => setEdit('new'));
   const [adj, setAdj] = useState(null);
+  const [cat, setCat] = useState('');
+  const [catSheet, setCatSheet] = useState(false);
+  const [variant, setVariant] = useState(null);   // null | 'new' | grup (tambah varian)
   const thumbs = useThumbs(kosId, 'product', `${ver}:${edit ? 1 : 0}`);
   if (err) return <div className="notice bad">{err.includes('products') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
@@ -58,13 +64,16 @@ export default function Barang() {
   const low = active.filter(isLow);
   const value = active.reduce((s, p) => s + Math.max(0, Number(p.stock)) * Number(p.cost), 0);
   const term = q.trim().toLowerCase();
+  const catCount = active.reduce((m, p) => { const k = p.category_id || '-'; m[k] = (m[k] || 0) + 1; return m; }, {});
+  const catName = (id) => d.cats.find((c) => c.id === id)?.name;
   const shown = d.products.filter((p) => (f === 'arsip' ? !p.active : p.active) && (f !== 'menipis' || isLow(p))
+    && (!cat || (cat === '-' ? !p.category_id : p.category_id === cat))
     && (!term || term.split(/\s+/).every((w) => p.name.toLowerCase().includes(w)) || (p.sku || '').toLowerCase() === term
       || d.units.some((u) => u.product_id === p.id && (u.barcode || '').toLowerCase() === term)));
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>{bahan ? 'Bahan & stok' : 'Barang & stok'}</h2><PageHelp page={bahan ? 'bahan' : 'barang'} /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></div></div>
+      <div className="row between"><div className="row"><h2>{bahan ? 'Bahan & stok' : 'Barang & stok'}</h2><PageHelp page={bahan ? 'bahan' : 'barang'} /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}{!bahan && <button className="sm" onClick={() => setVariant('new')}>+ Varian</button>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></div></div>
       <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
       <div className="grid">
         <Tile label={bahan ? 'Bahan aktif' : 'Barang aktif'} value={angka(active.length)} />
@@ -74,8 +83,9 @@ export default function Barang() {
       {d.products.length > 0 && <>
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kode, atau barcode" aria-label="Cari barang" />
         <div className="seg">
-          {[['aktif', `Semua (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
+          {[['aktif', `Aktif (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
         </div>
+        {f !== 'kedaluwarsa' && <CategoryBar cats={d.cats} value={cat} onChange={setCat} counts={catCount} onManage={() => setCatSheet(true)} />}
       </>}
       {f === 'kedaluwarsa' ? <Kedaluwarsa kosId={kosId} ver={ver} multi={multi} tracked={active.some((p) => p.track_expiry)} onChanged={reload} /> : d.products.length === 0 ? (
         <Empty title={bahan ? 'Belum ada bahan' : 'Belum ada barang'} text={bahan ? 'Catat bahan operasional (deterjen, pewangi, plastik, hanger) agar stok dan biaya bahan terpantau. Pemakaian dicatat lewat tombol Stok › Pemakaian bahan.' : 'Tambahkan barang yang dijual. Satu barang bisa punya beberapa satuan, misalnya pcs dan dus isi 40, masing-masing dengan harga eceran dan grosir.'}>
@@ -89,7 +99,7 @@ export default function Barang() {
               <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: '1 1 220px', minWidth: 0 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={48} />}
               <div className="main">
                 <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}</b>
-                {p.sku && <span className="small muted">Kode {p.sku}</span>}
+                {(p.sku || p.category_id || p.variant_group_id) && <span className="small muted">{[p.variant_group_id && 'Varian', p.category_id && catName(p.category_id), p.sku && `Kode ${p.sku}`].filter(Boolean).join(' · ')}</span>}
                 <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>
                 {us.some((u, k) => k > 0 && unitProblem(u, p.base_unit)) && <span className="small" style={{ color: 'var(--bad)' }}>Periksa satuan: {us.filter((u, k) => k > 0 && unitProblem(u, p.base_unit)).map((u) => unitProblem(u, p.base_unit)).join(' ')} Buka Ubah untuk memperbaiki.</span>}
                 <span className="small muted">{us.map((u) => bahan ? `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''}` : `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
@@ -107,7 +117,9 @@ export default function Barang() {
           );
         })}</div></section>
       )}
-      {edit && <ProductForm bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
+      {catSheet && <CategorySheet kosId={kosId} cats={d.cats} products={d.products} onClose={() => setCatSheet(false)} onChanged={reload} />}
+      {variant && <VariantForm kosId={kosId} cats={d.cats} group={variant === 'new' ? null : variant} onClose={() => setVariant(null)} onSaved={(r) => { setVariant(null); toast(`${r.made.length} varian ${r.name} tersimpan`); reload(); }} />}
+      {edit && <ProductForm cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
       {adj && <StockSheet bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
     </div>
   );
@@ -117,7 +129,8 @@ const blankUnit = () => ({ name: '', content_qty: '', content_unit: '', price_re
 const money = (v) => (Number(v) > 0 ? angka(v) : '');
 const kgText = (v) => (Number(v) > 0 ? String(Number(v)).replace('.', ',') : '');
 
-function ProductForm({ kosId, p, units, bahan, batch, onClose, onSaved }) {
+function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVariant, onClose, onSaved }) {
+  const [catId, setCatId] = useState(p?.category_id || '');
   const [name, setName] = useState(p?.name || '');
   const [base, setBaseRaw] = useState(p?.base_unit || '');
   const [cost, setCost] = useState(money(p?.cost));
@@ -167,6 +180,7 @@ function ProductForm({ kosId, p, units, bahan, batch, onClose, onSaved }) {
     let pid = p?.id || null;
     const ok = await run(async () => { const r = await supabase.rpc('product_save', { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null, p_density: densN }); if (r.data) pid = r.data; return r; }, p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
     const leadN = lead.trim() === '' ? null : parseInt(lead, 10);
+    if (ok && pid && (catId || null) !== (p?.category_id || null)) await run(() => supabase.rpc('product_set_category', { p_products: [pid], p_category: catId || null }), null, errMsg);
     if (ok && pid && (track !== Boolean(p?.track_expiry) || leadN !== (p?.lead_days ?? null))) {
       await run(() => supabase.rpc('product_set_tracking', { p_product: pid, p_track: track, p_lead_days: Number.isFinite(leadN) ? leadN : null }), track && !p?.track_expiry ? 'Tanggal kedaluwarsa dicatat mulai sekarang' : null, errMsg);
     }
@@ -180,7 +194,10 @@ function ProductForm({ kosId, p, units, bahan, batch, onClose, onSaved }) {
 
   return (
     <Sheet title={p ? 'Ubah barang' : 'Tambah barang'} onClose={onClose}>
+      {group && <div className="notice small">Varian dari <b>{group.name}</b> ({group.count} varian). Mengganti nama di sini hanya untuk varian ini.
+        <button className="sm" style={{ marginTop: 6 }} onClick={() => onAddVariant(group)}>+ Tambah varian lain</button></div>}
       <Field label={bahan ? 'Nama bahan' : 'Nama barang'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={bahan ? 'mis. Deterjen cair' : 'mis. Gula pasir'} /></Field>
+      {!bahan && cats.length > 0 && <Field label="Kategori"><select value={catId} onChange={(e) => setCatId(e.target.value)}><option value="">— tanpa kategori —</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
       {p && !bahan && <EntityPhotos kosId={kosId} entity="product" entityId={p.id} category="produk" title="Foto barang" max={6} hint="Opsional. Foto utama tampil di katalog halaman bisnis." />}
 
       <div className="unitbox" style={{ gap: 8 }}>

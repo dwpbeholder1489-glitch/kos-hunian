@@ -12,6 +12,7 @@ import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, today } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, unitPrice, uid, PAY } from '@/lib/retail';
 import { toBase } from '@/lib/units';
+import { CategoryBar } from '@/components/TokoLanjut';
 
 const cartKey = (k) => 'prasara.cart.' + k;
 
@@ -26,6 +27,7 @@ export default function Kasir() {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(null);
   const [shift, setShift] = useState(undefined);
+  const [catF, setCatF] = useState('');   // saring per kategori
   const thumbs = useThumbs(kosId, 'product', ver);
   useEffect(() => { supabase.rpc('shift_current', { p_kos: kosId }).then(({ data, error }) => setShift(error ? undefined : data)); }, [kosId, ver, done]);
 
@@ -33,7 +35,8 @@ export default function Kasir() {
     // katalog kasir dari database tanpa harga modal (aman untuk karyawan kasir)
     const { data, error } = await supabase.rpc('kasir_catalog', { p_kos: kosId });
     if (error) return setErr(errMsg(error));
-    setD({ products: data.products, units: data.units, contacts: data.customers });
+    const c = await supabase.from('product_categories').select('id, name, sort').eq('kos_id', kosId).order('sort').order('name');
+    setD({ products: data.products, units: data.units, contacts: data.customers, cats: c.data || [] });
   };
   useEffect(() => { load(); }, [kosId, ver]);
   // Keranjang disimpan di HP ini supaya tidak hilang saat pindah menu
@@ -44,8 +47,9 @@ export default function Kasir() {
     if (!d) return [];
     const w = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const codes = (p) => [p.sku, ...d.units.filter((u) => u.product_id === p.id).map((u) => u.barcode)].filter(Boolean).map((x) => x.toLowerCase());
-    return d.products.filter((p) => w.every((x) => p.name.toLowerCase().includes(x)) || (w.length === 1 && codes(p).some((c) => c === w[0] || c.startsWith(w[0])))).slice(0, 40);
-  }, [d, q]);
+    return d.products.filter((p) => (!catF || (catF === '-' ? !p.category_id : p.category_id === catF))
+      && (w.every((x) => p.name.toLowerCase().includes(x)) || (w.length === 1 && codes(p).some((c) => c === w[0] || c.startsWith(w[0]))))).slice(0, catF ? 120 : 40);
+  }, [d, q, catF]);
 
   if (err) return <div className="notice bad">{err.includes('kasir_catalog') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
@@ -93,7 +97,8 @@ export default function Kasir() {
         <input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari nama, kode, atau scan barcode" aria-label="Cari barang" style={{ flex: 1 }} />
         <ScanButton onCode={byCode} />
       </div>
-      {!q.trim() && (() => {
+      {d.cats?.length > 0 && <CategoryBar cats={d.cats} value={catF} onChange={setCatF} />}
+      {!q.trim() && !catF && (() => {
         const fav = d.products.filter((p) => p.favorite);
         const anyPic = fav.some((p) => thumbs[p.id]);
         return fav.length > 0 ? (

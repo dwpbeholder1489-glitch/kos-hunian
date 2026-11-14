@@ -5,7 +5,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import Locked from '@/components/Locked';
 import { Loading, Empty, Tile } from '@/components/ui';
-import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from '@/lib/format';
+import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg, today as todayStr } from '@/lib/format';
 import { DayColumns } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
@@ -37,8 +37,11 @@ export default function LaporanToko() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sort, setSort] = useState('omzet');
-  const [pajak, setPajak] = useState(null);   // laporan PPN keluaran bulan ini (tax_report)
+  const [pajak, setPajak] = useState(null);
+  const [kpi, setKpi] = useState(null);   // indikator toko (retail_kpi)
+  const [names, setNames] = useState({});   // laporan PPN keluaran bulan ini (tax_report)
   const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);
+  useEffect(() => { supabase.rpc('member_names', { p_kos: kosId }).then(({ data }) => setNames(data || {})); }, [kosId]);
   useEffect(() => {
     setD(null);
     const pm = addMonthsYm(ym, -1);
@@ -46,7 +49,8 @@ export default function LaporanToko() {
       supabase.rpc('retail_report', { p_kos: kosId, p_from: ym + '-01', p_to: monthEnd(ym) }),
       supabase.rpc('retail_report', { p_kos: kosId, p_from: pm + '-01', p_to: monthEnd(pm) }),
     ]).then(([a, b]) => (a.error || b.error ? setErr(errMsg(a.error || b.error)) : setD({ r: a.data, prev: b.data })));
-    setPajak(null);
+    setPajak(null); setKpi(null);
+    if (canArea(kos, 'finance')) supabase.rpc('retail_kpi', { p_kos: kosId, p_from: ym + '-01', p_to: ym >= thisMonth() ? todayStr() : monthEnd(ym) }).then(({ data }) => setKpi(data || null));
     if (canArea(kos, 'finance')) supabase.rpc('tax_report', { p_kos: kosId, p_month: ym + '-01' }).then(({ data }) => setPajak(data || null));
   }, [kosId, ver, ym]);
   if (kos.business_type !== 'retail') return <Empty title="Laporan ini untuk bisnis Retail & Grosir" />;
@@ -124,6 +128,8 @@ export default function LaporanToko() {
           {N(r.grosir) > 0 && <span className="small muted">Penjualan harga grosir: {rp(r.grosir)} ({Math.round((N(r.grosir) / Math.max(1, a.omzet)) * 100)}%)</span>}
         </section>
 
+        {kpi && <Indikator k={kpi} names={names} />}
+
         {pajak && (pajak.setelan?.aktif || Number(pajak.ppn_keluaran) !== 0 || Number(pajak.ppn_masukan) !== 0) && (
           <section className="panel">
             <h3>PPN {bulan(ym)}</h3>
@@ -180,5 +186,57 @@ export default function LaporanToko() {
         ))}</div>}
       </section>
     </div>
+  );
+}
+
+// Indikator toko (Bab 17 KPI): dihitung server dari transaksi & kartu stok nyata periode ini
+function Indikator({ k, names }) {
+  const n = (v) => Number(v || 0);
+  const pct = (v) => (v == null ? '—' : `${String(v).replace('.', ',')}%`);
+  const who = (u) => names[u] || (u ? 'karyawan lama' : 'sistem');
+  const maxCat = Math.max(1, ...k.kategori.map((c) => n(c.omzet)));
+  return (
+    <section className="panel">
+      <h3>Indikator toko</h3>
+      <span className="small muted">{tgl(k.from)} – {tgl(k.to)} · penjualan tanpa PPN, setelah retur</span>
+      <dl className="kv">
+        <dt>Rata-rata belanja per transaksi</dt><dd>{k.rata_keranjang != null ? rp(k.rata_keranjang) : '—'}</dd>
+        <dt>Jenis barang per transaksi</dt><dd>{k.jenis_per_trx != null ? String(k.jenis_per_trx).replace('.', ',') : '—'}</dd>
+        <dt>Margin kotor</dt><dd>{pct(k.margin_pct)}</dd>
+        <dt>Perputaran persediaan</dt><dd>{k.perputaran != null ? `${String(k.perputaran).replace('.', ',')}× · stok cukup ±${angka(k.hari_persediaan)} hari` : 'belum cukup data'}</dd>
+        <dt>Barang aktif yang stoknya habis</dt><dd>{angka(k.stok_habis)} dari {angka(k.barang_aktif)} ({pct(k.stok_habis_pct)})</dd>
+        <dt>Barang sempat habis karena terjual</dt><dd>{angka(k.sempat_habis)}</dd>
+        <dt>Susut (rusak & kedaluwarsa)</dt><dd>{rp(k.susut)} · {pct(k.susut_pct)} dari penjualan</dd>
+        {n(k.selisih_hitung) !== 0 && <><dt>Selisih hitung stok</dt><dd>{n(k.selisih_hitung) > 0 ? 'kurang ' : 'lebih '}{rp(Math.abs(n(k.selisih_hitung)))}</dd></>}
+        <dt>Dibatalkan</dt><dd>{angka(k.batal_n)} · {rp(k.batal)}</dd>
+      </dl>
+      <span className="small muted">Perputaran = harga pokok terjual ÷ rata-rata nilai persediaan (kartu stok, tanpa barang titipan). Makin tinggi, makin cepat barang berputar.</span>
+      {k.kasir.length > 0 && <>
+        <span className="label">Per kasir</span>
+        <div className="list">{k.kasir.map((x) => (
+          <div className="li" key={x.user_id || 'x'} style={{ alignItems: 'flex-start' }}>
+            <div className="main"><b className="small">{who(x.user_id)}</b>
+              <span className="small muted">{angka(x.trx)} transaksi{n(x.trx) ? ` · rata-rata ${rp(n(x.omzet) / n(x.trx))}` : ''}{n(x.retur_n) ? ` · retur ${x.retur_n} (${rp(x.retur)})` : ''}{n(x.batal_n) ? ` · batal ${x.batal_n} (${rp(x.batal)})` : ''}</span>
+              {n(x.shift_selisih_n) > 0 && <span className="small" style={{ color: 'var(--bad)' }}>Selisih laci di {x.shift_selisih_n} shift · total {n(x.shift_selisih) < 0 ? 'kurang' : 'lebih'} {rp(Math.abs(n(x.shift_selisih)))}</span>}
+            </div>
+            <b className="small" style={{ flex: 'none' }}>{rp(x.omzet)}</b>
+          </div>
+        ))}</div>
+        <span className="small muted">Pembatalan, retur, dan selisih laci yang sering pada satu orang patut diperiksa.</span>
+      </>}
+      {k.kategori.length > 1 && <>
+        <span className="label">Per kategori</span>
+        {k.kategori.map((c) => (
+          <div key={c.name} className="stack" style={{ gap: 2 }}>
+            <div className="row between small" style={{ flexWrap: 'nowrap' }}><span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{c.name}</span><b style={{ flex: 'none' }}>{rp(c.omzet)} · laba {rp(c.laba)}</b></div>
+            <div style={{ height: 6, borderRadius: 6, background: 'var(--sunk)' }}><div style={{ height: 6, borderRadius: 6, width: `${Math.max(2, (n(c.omzet) / maxCat) * 100)}%`, background: 'var(--gold)' }} /></div>
+          </div>
+        ))}
+      </>}
+      {k.varian.length > 0 && <>
+        <span className="label">Barang bervarian</span>
+        {k.varian.map((v) => <span key={v.name} className="small"><b>{v.name}</b> {rp(v.omzet)} · {(v.rinci || []).map((r) => `${r.label} ${rp(r.omzet)}`).join(' · ')}</span>)}
+      </>}
+    </section>
   );
 }

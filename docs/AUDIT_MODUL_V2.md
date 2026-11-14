@@ -30,7 +30,7 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | Submodul | Status | Catatan |
 |---|---|---|
 | Cari barang, barcode, keranjang, pilih pelanggan | ADA | `/kasir` (kamera, tanpa barcode juga bisa) |
-| **Varian produk** (ukuran/warna/rasa) | **BELUM** | Tiap varian harus dibuat sebagai barang terpisah |
+| Varian produk (ukuran/warna/rasa) | ADA (15 Nov) | Grup varian + kombinasi otomatis; tiap varian = barang dengan stok/harga/barcode sendiri. Belum: gambar per varian di portal |
 | Konversi satuan | ADA | Mesin konversi 14 Nov |
 | Harga bertingkat | SEBAGIAN | Eceran/grosir + daftar harga per pelanggan; **harga per jumlah beli BELUM** |
 | Diskon, promo | ADA | |
@@ -38,17 +38,17 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | Bayar campuran, kasbon, tunai/kredit | ADA | |
 | Faktur, struk, retur, refund | ADA | Faktur dari Pesanan grosir |
 | Shift kasir | ADA | Buka/tutup laci + selisih |
-| **Tutup harian (daily closing)** | **BELUM** | Tidak ada laporan tutup hari yang mengunci & merangkum semua kasir |
+| Tutup harian (daily closing) | ADA (15 Nov) | Rekap + bukti per hari/lokasi, kas catatan vs dihitung, tanda berubah setelah ditutup, tutup ulang. Sengaja tidak mengunci transaksi |
 | Pesanan penjualan & penawaran | ADA | Grosir (toko) saja; **jasa BELUM punya penawaran** |
 | **Komisi penjualan** | **BELUM** | |
-| **Kinerja penjualan per kasir/sales** | **BELUM** | |
+| Kinerja penjualan per kasir | ADA (15 Nov) | Indikator toko & tutup harian. **Per sales (grosir) BELUM** |
 
 ### Bab 11 Inventory & Gudang — SEBAGIAN
 | Submodul | Status | Catatan |
 |---|---|---|
 | Master barang, SKU, barcode | ADA | |
-| **Kategori barang** | **BELUM** | Kolom & filter kategori tidak ada |
-| **Varian** | **BELUM** | |
+| Kategori barang | ADA (15 Nov) | Satu tingkat (tanpa sub-kategori) |
+| Varian | ADA (15 Nov) | |
 | Satuan & konversi | ADA | |
 | Gudang/cabang, mutasi antar lokasi | ADA | `branches`, `stock_transfers` |
 | **Lokasi rak (bin)** | **BELUM** | |
@@ -126,12 +126,12 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | Submodul | Status |
 |---|---|
 | POS, barcode, konversi satuan, harga eceran/grosir, promo, bundling, konsinyasi, shift, saran belanja, kedaluwarsa, mutasi toko | ADA (konsinyasi tanpa komisi persen & tanpa laporan cetak penitip) |
-| **Varian produk** | **BELUM** |
-| **Tutup harian** | **BELUM** |
-| **Pencegahan kehilangan (susut, pembatalan mencurigakan, selisih kasir berulang)** | **BELUM** |
-| Analitik toko | SEBAGIAN |
+| Varian produk | ADA (15 Nov) |
+| Tutup harian | ADA (15 Nov) |
+| Pencegahan kehilangan | SEBAGIAN (15 Nov: susut, pembatalan & retur & selisih laci per kasir terlihat; peringatan otomatis & batas pembatalan BELUM) |
+| Analitik toko | SEBAGIAN (per kategori & varian ADA) |
 | KPI: omzet, margin kotor | ADA |
-| **KPI: rata-rata keranjang, perputaran persediaan, tingkat stok habis, susut, penjualan per kasir** | **BELUM** |
+| KPI: rata-rata keranjang, perputaran persediaan, stok habis, susut, penjualan per kasir | ADA (15 Nov, Laporan toko › Indikator toko) |
 
 ### Bab 18 Grosir & distribusi — SEBAGIAN
 | Submodul | Status |
@@ -220,7 +220,7 @@ Hanya template Builder `bb_produksi`. BOM, MRP, perintah produksi, pengeluaran b
 
 ## Ralat klaim sebelumnya
 
-1. 15 Nov saya menulis "backlog P2 untuk toko sudah habis". **Salah.** Toko masih belum punya varian produk, kategori barang, tutup harian, pencegahan kehilangan, KPI toko (keranjang, perputaran, stok habis, susut, per kasir), komisi, harga per jumlah beli, nomor seri, dan reservasi stok.
+1. 15 Nov (pagi) saya menulis "backlog P2 untuk toko sudah habis". **Salah.** Saat itu toko masih belum punya varian produk, kategori barang, tutup harian, pencegahan kehilangan, KPI toko, komisi, harga per jumlah beli, nomor seri, dan reservasi stok (empat yang pertama selesai di Toko lanjutan 1).
 2. Audit 14 Nov menandai Retail, Laundry, Properti, Akuntansi "VERIFIED". Yang benar: **inti**-nya berjalan dan diuji, tetapi tiap bab masih punya submodul BELUM (tabel di atas).
 3. Bisnis jasa, kuliner, dan kos belum mendapat beberapa fitur yang sudah ada di toko (PPN, penawaran, promo).
 
@@ -228,7 +228,7 @@ Hanya template Builder `bb_produksi`. BOM, MRP, perintah produksi, pengeluaran b
 
 | Prio | Pekerjaan | Jenis bisnis |
 |---|---|---|
-| P1 | Toko lanjutan 1: kategori barang, varian produk, tutup harian, KPI toko (keranjang, perputaran, stok habis, susut, per kasir) | Toko |
+| P1 | ~~Toko lanjutan 1: kategori barang, varian produk, tutup harian, KPI toko~~ — selesai 15 Nov | Toko |
 | P1 | Toko lanjutan 2: harga per jumlah beli, komisi kasir/sales, pencegahan kehilangan, kebijakan stok minus | Toko, grosir |
 | P1 | Kesetaraan lintas bisnis: PPN untuk jasa/kuliner/kos, penawaran untuk jasa, promo untuk kuliner | Jasa, kuliner, kos |
 | P1 | Akuntansi lanjutan: neraca saldo, akrual & dibayar dimuka, pusat biaya/departemen, PPh UMKM | Semua |

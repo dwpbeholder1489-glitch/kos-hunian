@@ -497,6 +497,21 @@ export function ScrKonsinyasi() {
   );
 }
 
+export function ScrVarian() {
+  return (
+    <Phone bare>
+      <h3>Barang dengan varian</h3>
+      <div className="row between small"><span>Warna</span><b>Hitam, Putih</b></div>
+      <div className="row between small"><span>Ukuran</span><b>S, M, L</b></div>
+      <div className="small"><b>6 varian akan dibuat</b></div>
+      <div className="row between small"><span>☑ Hitam / S</span><b>{rp(50000)} · stok 4</b></div>
+      <div className="row between small"><span>☑ Hitam / L</span><b>{rp(55000)} · stok 2</b></div>
+      <div className="row between small"><span>☐ Putih / S</span><span className="muted">tidak dijual</span></div>
+      <span className="mini-btn cta">Simpan 5 varian</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

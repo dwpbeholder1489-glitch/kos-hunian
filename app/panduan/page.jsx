@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -693,6 +693,29 @@ const PARTS = [
       <>Tekan <b>Setor ke penitip</b>, isi jumlah (boleh sebagian), pilih Tunai atau Transfer. Setoran juga terlihat di Kas & kasbon › Utang supplier dan di Kontak penitip.</>,
       <>Barang tidak laku dibawa pulang penitip: tekan <b>Kembalikan barang</b>, isi jumlahnya. Stok berkurang dan tidak perlu disetor.</>,
     ], <>Barang titipan yang <b>rusak, kedaluwarsa, atau hilang</b> di toko (dicatat di Barang & stok › Stok) dihitung harus disetor juga, karena menjadi tanggungan toko. Bila penitip sendiri yang menanggung, catat sebagai <b>Kembalikan barang</b>. Di pembukuan, titipan yang belum terjual tercatat sebagai Titipan konsinyasi (bukan utang), dan laba toko = harga jual − harga titip.</>, 'warn', null],
+  ]],
+  ['Z', 'Toko: kategori, varian, tutup harian & indikator', [
+    ['Kategori barang', 'Barang & stok › Atur kategori', [
+      <>Ketuk <b>+ Kategori</b> (atau <b>Atur kategori</b>) di bawah kolom cari, ketik nama (mis. Sembako, Minuman, Rokok), lalu <b>Tambah</b>.</>,
+      <>Ketuk <b>Pilih barang</b> di samping kategori, centang barang-barangnya, lalu Simpan. Bisa juga dari <b>Ubah</b> barang › Kategori.</>,
+      <>Tombol kategori muncul di Barang & stok dan di <b>Kasir</b> untuk menyaring daftar barang. Laporan toko menampilkan penjualan per kategori.</>,
+    ], <>Menghapus kategori tidak menghapus barangnya — barang menjadi "Tanpa kategori".</>, null, null],
+    ['Barang dengan varian (ukuran, warna, rasa)', 'Barang & stok › + Varian', [
+      <>Tekan <b>+ Varian</b>, isi nama barang (mis. Kaos Polos), satuan utama, kategori, harga modal, dan harga jual.</>,
+      <>Di <b>Pilihan varian</b>, isi nama pilihan dan isinya dipisah koma — mis. Warna: <i>Hitam, Putih</i> dan Ukuran: <i>S, M, L</i>. Semua kombinasi langsung tampil (Hitam / S, Hitam / M, …).</>,
+      <>Untuk tiap kombinasi: hilangkan centang yang tidak dijual, ubah harga bila berbeda (mis. ukuran XL lebih mahal), isi stok sekarang dan kode/barcode. Ada satuan lain (mis. Lusin isi 12)? Isi di bagian <b>Satuan jual lain</b>. Simpan.</>,
+      <>Menambah ukuran/warna baru nanti: buka salah satu varian › <b>Ubah</b> › <b>+ Tambah varian lain</b>.</>,
+    ], <>Tiap varian adalah barang tersendiri dengan stok, harga modal, dan barcode sendiri, bernama "Kaos Polos — Hitam / L". Kasir, Belanja, promo, dan laporan bekerja seperti biasa. Setiap varian dihitung satu barang untuk batas paket.</>, 'warn', <ScrVarian />],
+    ['Tutup harian', 'Transaksi › Tutup harian', [
+      <>Setelah selesai berjualan, buka <b>Tutup harian</b>. Terlihat penjualan bersih, laba kotor, rata-rata belanja, rincian promo/diskon/retur, cara bayar, kasbon, pembatalan, per kasir, shift, dan <b>saldo kas menurut catatan</b>.</>,
+      <>Hitung uang tunai, isi di <b>Uang tunai yang dihitung</b> (opsional) — selisihnya langsung tampil — tambahkan catatan bila perlu, lalu <b>Tutup hari</b>.</>,
+      <>Riwayat di bawah menyimpan setiap hari yang ditutup. Bila ada transaksi tanggal itu yang dibatalkan, diretur, atau ditambah setelah ditutup, hari itu ditandai <b>Berubah</b>; buka lalu <b>Tutup ulang</b>.</>,
+    ], <>Tutup harian adalah rekap dan bukti, bukan kunci: transaksi tetap bisa dikoreksi bila memang perlu. Bila ada beberapa lokasi, tutup harian dicatat untuk lokasi kerja Anda (kotak 📍). Hanya pemilik/bagian keuangan.</>, null, null],
+    ['Indikator toko', 'Laporan toko › Indikator toko', [
+      <>Di bawah laporan bulanan: <b>rata-rata belanja per transaksi</b>, jenis barang per transaksi, margin kotor, <b>perputaran persediaan</b> (berapa kali stok habis terjual dan diganti; disertai perkiraan stok cukup berapa hari), barang yang stoknya habis, susut (rusak & kedaluwarsa), dan pembatalan.</>,
+      <><b>Per kasir</b>: jumlah transaksi, rata-rata, retur, pembatalan, dan selisih laci di shift. Pembatalan, retur, atau selisih yang sering pada satu orang patut diperiksa.</>,
+      <>Penjualan dan laba <b>per kategori</b> serta <b>per varian</b> (mis. ukuran mana yang paling laku).</>,
+    ], <>Semua angka dihitung dari transaksi dan kartu stok yang tercatat; barang titipan konsinyasi tidak ikut dalam nilai persediaan.</>, null, null],
   ]],
 ];
 
