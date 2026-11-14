@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -662,6 +662,24 @@ const PARTS = [
       <>Untuk Beli X gratis Y, masukkan seluruh barang yang dibawa pembeli (mis. 3 pcs untuk beli 2 gratis 1) — yang gratis dipotong otomatis dan stoknya tetap berkurang 3.</>,
       <>Kolom <b>Diskon tambahan</b> tetap bisa diisi manual di luar promo. Struk (cetak/WA) mencantumkan nama tiap promo.</>,
     ], <>Satu barang hanya kena satu promo (urutan: paket → beli X gratis Y → diskon barang → minimal belanja). Barang yang harganya diubah manual di kasir dan pengiriman Pesanan grosir tidak ikut promo. Potongan promo mengurangi penjualan di laporan dan pembukuan, sama seperti diskon; PPN dihitung dari harga setelah promo.</>, 'warn', null],
+  ]],
+  ['X', 'Pembelian: permintaan, faktur supplier & PPN masukan', [
+    ['Permintaan pembelian', 'Belanja › tab Permintaan', [
+      <>Staf yang tahu barang menipis menekan <b>+ Permintaan</b>, mencari barangnya, mengisi jumlah, satuan, dan keterangan (mis. "stok tinggal 2"), lalu <b>Kirim permintaan</b>. Stok dan uang belum berubah.</>,
+      <>Pemilik atau bagian keuangan membuka permintaan itu: terlihat stok sekarang dan harga beli terakhir tiap barang. Tekan <b>Setujui</b>, atau <b>Tolak</b> dengan alasan agar pemohon tahu.</>,
+      <>Permintaan yang disetujui: tekan <b>Buat pesanan ke supplier</b>, pilih supplier, sesuaikan jumlah/harga bila perlu, lalu simpan. Pesanannya muncul di tab <b>Belanja</b> berstatus Dipesan, dan diterima seperti biasa (Terima barang).</>,
+    ], <>Permintaan tidak wajib. Toko yang dikelola sendiri tetap bisa langsung <b>+ Belanja</b> seperti biasa.</>, null, null],
+    ['Faktur supplier & pencocokan', 'Belanja › tab Faktur supplier (atau buka belanja › Faktur supplier)', [
+      <>Bagian atas menampilkan belanja yang <b>barangnya sudah diterima tetapi fakturnya belum dicatat</b>. Ketuk, lalu <b>+ Catat faktur</b>: isi nomor faktur dari supplier, tanggal, jatuh tempo, serta jumlah dan harga yang ditagih per barang (sudah terisi sesuai barang yang diterima).</>,
+      <>Tekan <b>Simpan & cocokkan</b>. Tiap barang dibandingkan tiga arah: <b>Dipesan</b> · <b>Diterima</b> · <b>Ditagih</b>. Hasilnya <b>Cocok</b>, <b>Ada selisih</b> (harga atau jumlah berbeda), atau <b>Menunggu barang</b> (ditagih lebih banyak dari yang sudah diterima).</>,
+      <>Faktur <b>Cocok</b> → <b>Posting faktur</b>. Faktur <b>Ada selisih</b> hanya bisa diposting pemilik/pengelola dengan mengisi alasan; selisih harganya dicatat sendiri di pembukuan (Selisih harga pembelian).</>,
+      <>Bila faktur menambah tagihan (PPN atau selisih harga), pilih: <b>jadi utang ke supplier</b> atau <b>sudah dibayar</b> dari Kas/Bank.</>,
+    ], <>Faktur yang sama persis dengan barang diterima <b>tidak mengubah utang</b> — nilainya sudah tercatat saat barang diterima; faktur menjadi bukti cocok. Faktur "Menunggu barang" tetap tersimpan sebagai draf dan diposting setelah barangnya datang. Nomor faktur yang sama dari supplier yang sama ditolak agar tidak tercatat dua kali. Belanja yang fakturnya sudah diposting tidak bisa dibatalkan sebelum fakturnya dibatalkan.</>, 'warn', <ScrFaktur />],
+    ['PPN masukan & kinerja supplier', 'Faktur supplier › PPN · Laporan toko › PPN · Belanja › Kinerja supplier', [
+      <>Bila PPN aktif (Pengaturan › Pajak (PPN)), centang <b>Faktur ini memuat PPN</b> saat mencatat faktur. Nilainya dihitung dari tarif Anda dan bisa disesuaikan dengan angka di faktur; isi juga nomor faktur pajaknya.</>,
+      <>Di <b>Laporan toko</b>, bagian PPN kini menampilkan PPN keluaran, <b>PPN masukan</b> dari faktur supplier, dan selisihnya: <b>kurang bayar</b> atau <b>lebih bayar</b> bulan itu.</>,
+      <>Tab <b>Kinerja supplier</b> merangkum tiap supplier: nilai belanja, datang tepat waktu, barang terpenuhi, rata-rata menunggu, retur, dan berapa faktur yang berselisih.</>,
+    ], <>PPN masukan dicatat <b>di atas harga belanja</b>: isi harga barang di Belanja tanpa PPN, lalu PPN-nya di faktur. Bila usaha Anda bukan PKP, PPN dari supplier dimasukkan ke harga barang dan tidak dicatat terpisah. Angka ini bahan pelaporan — pastikan dengan konsultan pajak Anda.</>, 'warn', null],
   ]],
 ];
 

@@ -12,9 +12,11 @@ import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui'
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 import { toBase } from '@/lib/units';
+import { Permintaan, Faktur, FakturSheet, KinerjaSupplier } from '@/components/Pengadaan';
 
 const BUY = { tunai: 'Tunai', transfer: 'Transfer', utang: 'Utang ke supplier' };
 const REFUND = { potong_utang: 'Potong utang ke supplier', tunai: 'Uang kembali tunai', transfer: 'Uang kembali transfer' };
+const TABS = [['belanja', 'Belanja'], ['permintaan', 'Permintaan'], ['faktur', 'Faktur supplier'], ['supplier', 'Kinerja supplier']];
 const ST = { dipesan: ['Dipesan', 'gold'], sebagian: ['Diterima sebagian', 'info'], batal: ['Batal', 'void'] };
 
 // Belanja ke supplier: menambah stok dan menghitung ulang harga modal rata-rata
@@ -26,6 +28,9 @@ export default function Belanja() {
   const [saran, setSaran] = useState(false);
   useBaru(() => setForm(true));
   const [open, setOpen] = useState(null);
+  const [tab, setTab] = useState('belanja');
+  const [fk, setFk] = useState(null);   // belanja yang fakturnya sedang dibuka
+  useEffect(() => { const t = new URLSearchParams(window.location.search).get('tab'); if (TABS.some(([k]) => k === t)) setTab(t); }, []);
   const load = async () => {
     const [b, p, u, c, pl, rt] = await Promise.all([
       supabase.from('purchases').select('*').eq('kos_id', kosId).order('purchase_date', { ascending: false }).order('created_at', { ascending: false }).limit(60),
@@ -55,6 +60,11 @@ export default function Belanja() {
   return (
     <div className="stack">
       <div className="row between"><div className="row"><h2>Belanja</h2><PageHelp page="belanja" /></div><div className="row"><button className="sm" onClick={() => setSaran(true)} disabled={!d.products.length}>Saran belanja</button><button className="primary" onClick={() => setForm(true)} disabled={!d.products.length}>+ Belanja</button></div></div>
+      <div className="seg" style={{ overflowX: 'auto' }}>{TABS.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)} aria-pressed={tab === k} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
+      {tab === 'permintaan' && <Permintaan kosId={kosId} d={d} onOrder={(init) => setForm({ init })} />}
+      {tab === 'faktur' && <Faktur kosId={kosId} />}
+      {tab === 'supplier' && <KinerjaSupplier kosId={kosId} />}
+      {tab === 'belanja' && <>
       <LokasiBar note="Belanja baru dicatat untuk lokasi ini; barang masuk ke stok lokasi tempat belanja dicatat." />
       <div className="grid">
         <Tile label="Belanja bulan ini" value={rp(thisMonth.reduce((a, b) => a + Number(b.total), 0) - retMonth)} sub={`${thisMonth.length} nota${retMonth ? ` · retur ${rp(retMonth)}` : ''}`} />
@@ -74,9 +84,11 @@ export default function Belanja() {
           </button>
         ))}</div></section>
       )}
+      </>}
       {saran && <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={(init) => { setSaran(false); setForm({ init }); }} />}
-      {form && <PurchaseForm kosId={kosId} d={d} init={form.init} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
-      {open && <Detail tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
+      {form && <PurchaseForm kosId={kosId} d={d} init={form.init} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); if (r.request) setTab('belanja'); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
+      {open && <Detail tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} onFaktur={() => { setFk(open.id); setOpen(null); }} />}
+      {fk && <FakturSheet purchaseId={fk} onClose={() => { setFk(null); load(); }} />}
     </div>
   );
 }
@@ -130,12 +142,15 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
         sid = data; setSupplier(data);
       }
       if (method === 'utang' && !sid) { toast('Pilih supplier atau isi nama supplier baru untuk belanja utang.'); setBusy(false); return; }
+      if (init?.request && !sid) { toast('Pilih supplier atau isi nama supplier baru untuk pesanan ini.'); setBusy(false); return; }
       const args = {
         p_id: txId, p_kos: kosId, p_date: date, p_contact: sid,
         p_lines: lines.map((l) => ({ product_id: l.product_id, unit: l.unit, qty: qtyNum(l.qty), price: parseRp(l.price), expiry: l.expiry || null, lot: l.lot || null })),
         p_method: method, p_due: method === 'utang' && due ? due : null, p_note: note,
       };
-      const { data, error } = mode === 'pesan'
+      const { data, error } = init?.request
+        ? await supabase.rpc('preq_to_order', { p_request: init.request, p_id: txId, p_contact: sid, p_lines: args.p_lines, p_method: method, p_due: args.p_due, p_expected: expected || null, p_note: note || null })
+        : mode === 'pesan'
         ? await supabase.rpc('purchase_order_create', { ...args, p_expected: expected || null })
         : await supabase.rpc('purchase_create', args);
       if (error) throw error;
@@ -146,10 +161,10 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
 
   return (
     <Sheet title={mode === 'pesan' ? 'Buat pesanan ke supplier' : 'Catat belanja'} onClose={onClose}>
-      <div className="seg">{[['terima', 'Barang sudah diterima'], ['pesan', 'Pesan dulu (belum datang)']].map(([k, l]) => <button key={k} className={mode === k ? 'on' : ''} onClick={() => setMode(k)} aria-pressed={mode === k}>{l}</button>)}</div>
+      {init?.request ? <div className="notice">Dari permintaan <b>{init.requestNo}</b>. Pilih supplier, lalu sesuaikan jumlah dan harga bila perlu.</div> : <div className="seg">{[['terima', 'Barang sudah diterima'], ['pesan', 'Pesan dulu (belum datang)']].map(([k, l]) => <button key={k} className={mode === k ? 'on' : ''} onClick={() => setMode(k)} aria-pressed={mode === k}>{l}</button>)}</div>}
       {mode === 'pesan' && <p className="small muted" style={{ margin: 0 }}>Stok belum bertambah. Saat barang datang, buka pesanan ini lalu tekan <b>Terima barang</b>.</p>}
       <div className="row">
-        <Field label={mode === 'pesan' ? 'Tanggal pesan' : 'Tanggal'}><input type="date" max={today()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+        {!init?.request && <Field label={mode === 'pesan' ? 'Tanggal pesan' : 'Tanggal'}><input type="date" max={today()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>}
         <Field label="Supplier"><select value={supplier} onChange={(e) => setSupplier(e.target.value)}><option value="">— tanpa / baru —</option>{d.suppliers.filter((s) => !s.archived_at).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
       </div>
       {!supplier && <Field label="Nama supplier baru (opsional)"><input value={newSup} onChange={(e) => setNewSup(e.target.value)} placeholder="mis. CV Sumber Rejeki" /></Field>}
@@ -199,7 +214,7 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
   );
 }
 
-function Detail({ b, supplier, loc, tracked, onClose, onChanged }) {
+function Detail({ b, supplier, loc, tracked, onClose, onChanged, onFaktur }) {
   const [lines, setLines] = useState(null);
   const [rets, setRets] = useState([]);   // retur ke supplier: [{...header, lines}]
   const [ret, setRet] = useState(null);   // form retur: {qty: {line_id: '...'}, refund, reason}
@@ -276,6 +291,7 @@ function Detail({ b, supplier, loc, tracked, onClose, onChanged }) {
         <button className="cta" onClick={() => receive(false)} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan penerimaan'}</button>
         <button className="ghost" onClick={() => receive(true)} disabled={busy}>Simpan & tutup pesanan</button>
       </>)}
+      {b.contact_id && b.status !== 'batal' && !recv && !ret && <button onClick={onFaktur}>Faktur supplier</button>}
       {rets.length > 0 && <>
         <span className="label">Retur ke supplier</span>
         <div className="list">{rets.map((r) => (

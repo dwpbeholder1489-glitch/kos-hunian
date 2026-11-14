@@ -124,17 +124,21 @@ export default function LaporanToko() {
           {N(r.grosir) > 0 && <span className="small muted">Penjualan harga grosir: {rp(r.grosir)} ({Math.round((N(r.grosir) / Math.max(1, a.omzet)) * 100)}%)</span>}
         </section>
 
-        {pajak && (pajak.setelan?.aktif || Number(pajak.ppn_keluaran) !== 0) && (
+        {pajak && (pajak.setelan?.aktif || Number(pajak.ppn_keluaran) !== 0 || Number(pajak.ppn_masukan) !== 0) && (
           <section className="panel">
-            <h3>PPN keluaran {bulan(ym)}</h3>
+            <h3>PPN {bulan(ym)}</h3>
             <div className="list">
               <div className="li"><span className="small">Penjualan kena PPN (DPP)</span><b className="small">{rp(pajak.penjualan.dpp)}</b></div>
               <div className="li"><span className="small">PPN dari penjualan</span><b className="small">{rp(pajak.penjualan.ppn)}</b></div>
               {Number(pajak.retur_ppn) > 0 && <div className="li"><span className="small">Dikurangi PPN retur (DPP {rp(pajak.retur_dpp)})</span><b className="small">−{rp(pajak.retur_ppn)}</b></div>}
               <div className="li"><span className="small"><b>PPN keluaran bersih</b></span><b>{rp(pajak.ppn_keluaran)}</b></div>
+              {pajak.pembelian && (Number(pajak.ppn_masukan) !== 0 || pajak.setelan?.aktif) && <>
+                <div className="li"><span className="small">PPN masukan dari {pajak.pembelian.jumlah} faktur supplier (DPP {rp(pajak.pembelian.dpp)})</span><b className="small">−{rp(pajak.ppn_masukan)}</b></div>
+                <div className="li"><span className="small"><b>{Number(pajak.selisih) >= 0 ? 'PPN kurang bayar (keluaran − masukan)' : 'PPN lebih bayar (masukan lebih besar)'}</b></span><b>{rp(Math.abs(pajak.selisih))}</b></div>
+              </>}
               <div className="li"><span className="small muted">Penjualan tidak kena PPN</span><span className="small muted">{rp(pajak.penjualan.tidak_kena)}</span></div>
             </div>
-            <span className="small muted">Harga di kasir sudah termasuk PPN{pajak.setelan?.rate ? ` ${String(pajak.setelan.rate).replace('.', ',')}%` : ''}; angka di atas sudah memisahkannya. Penjualan & laba di laporan ini tanpa PPN. PPN masukan dari pembelian belum dihitung (menyusul). Gunakan sebagai bahan pelaporan pajak bersama konsultan Anda.</span>
+            <span className="small muted">Harga di kasir sudah termasuk PPN{pajak.setelan?.rate ? ` ${String(pajak.setelan.rate).replace('.', ',')}%` : ''}; angka di atas sudah memisahkannya. Penjualan & laba di laporan ini tanpa PPN. PPN masukan diambil dari faktur supplier yang diposting (Belanja › Faktur supplier){Number(pajak.pembelian?.tanpa_nomor) > 0 ? `; ${pajak.pembelian.tanpa_nomor} faktur belum diisi nomor faktur pajaknya` : ''}. Gunakan sebagai bahan pelaporan pajak bersama konsultan Anda.</span>
           </section>
         )}
 

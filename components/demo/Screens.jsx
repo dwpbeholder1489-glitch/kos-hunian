@@ -467,6 +467,22 @@ export function ScrPromo() {
   );
 }
 
+export function ScrFaktur() {
+  return (
+    <Phone bare>
+      <h3>Faktur supplier</h3>
+      <div className="row between small"><b>INV-0231</b><span><span className="chip gold">Draf</span> <span className="chip warn">Ada selisih</span></span></div>
+      <div className="small"><b>Beras 5 kg</b> <span className="chip good">Cocok</span></div>
+      <div className="row between small"><span>Dipesan · Diterima · Ditagih</span><b>20 · 20 · 20 pcs</b></div>
+      <div className="small"><b>Minyak 1 L</b> <span className="chip warn">Selisih</span></div>
+      <div className="row between small"><span>Dipesan {rp(15000)} · Ditagih</span><b>{rp(15500)}</b></div>
+      <div className="row between small"><span>PPN masukan</span><b>{rp(40920)}</b></div>
+      <div className="row between"><b>Total faktur</b><b>{rp(1612920)}</b></div>
+      <span className="mini-btn cta">Tinjau selisih & posting</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>
