@@ -188,7 +188,7 @@ function ProductForm({ kosId, p, units, bahan, batch, onClose, onSaved }) {
         {!baseLocked && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{BASE_PRESETS.map((x) => <button key={x} className={'sm' + (b.toLowerCase() === x ? ' primary' : '')} onClick={() => setBase(x)}>{x}</button>)}</div>}
         {baseLocked && <span className="small muted">Satuan utama tidak bisa diganti karena sudah ada stok — stok, modal, dan riwayat tercatat dalam {p.base_unit}. Tambahkan satuan lain sebagai satuan jual di bawah.</span>}
         <div className="row">
-          <Field label={`Harga modal per ${b || 'satuan'}`} hint="harga beli rata-rata"><input inputMode="numeric" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="mis. 12000" /></Field>
+          <Field label={p?.consign_contact_id ? `Harga titip per ${b || 'satuan'}` : `Harga modal per ${b || 'satuan'}`} hint={p?.consign_contact_id ? 'Barang titipan: diubah lewat Konsinyasi › Terima titipan' : 'harga beli rata-rata'}><input inputMode="numeric" value={cost} disabled={!!p?.consign_contact_id} onChange={(e) => setCost(e.target.value)} placeholder="mis. 12000" /></Field>
           {!p && <Field label={`Stok sekarang (${b || 'satuan'})`}><input inputMode="decimal" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" /></Field>}
         </div>
         {!bahan && <div className="row">

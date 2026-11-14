@@ -483,6 +483,20 @@ export function ScrFaktur() {
   );
 }
 
+export function ScrKonsinyasi() {
+  return (
+    <Phone bare>
+      <h3>Bu Ani · titipan</h3>
+      <div className="row between"><span className="small">Harus disetor</span><b>{rp(42000)}</b></div>
+      <span className="mini-btn cta">Setor ke penitip</span>
+      <div className="small"><b>Keripik singkong</b></div>
+      <div className="row between small"><span>Harga titip → jual</span><b>{rp(7000)} → {rp(10000)}</b></div>
+      <div className="row between small"><span>Diterima · terjual · sisa</span><b>20 · 6 · 14 pcs</b></div>
+      <div className="row"><span className="mini-btn">+ Terima titipan</span><span className="mini-btn">Kembalikan barang</span></div>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

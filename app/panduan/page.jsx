@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -680,6 +680,19 @@ const PARTS = [
       <>Di <b>Laporan toko</b>, bagian PPN kini menampilkan PPN keluaran, <b>PPN masukan</b> dari faktur supplier, dan selisihnya: <b>kurang bayar</b> atau <b>lebih bayar</b> bulan itu.</>,
       <>Tab <b>Kinerja supplier</b> merangkum tiap supplier: nilai belanja, datang tepat waktu, barang terpenuhi, rata-rata menunggu, retur, dan berapa faktur yang berselisih.</>,
     ], <>PPN masukan dicatat <b>di atas harga belanja</b>: isi harga barang di Belanja tanpa PPN, lalu PPN-nya di faktur. Bila usaha Anda bukan PKP, PPN dari supplier dimasukkan ke harga barang dan tidak dicatat terpisah. Angka ini bahan pelaporan — pastikan dengan konsultan pajak Anda.</>, 'warn', null],
+  ]],
+  ['Y', 'Toko: konsinyasi (titip jual)', [
+    ['Menerima barang titipan', 'Stok › Konsinyasi › + Terima titipan', [
+      <>Untuk barang yang <b>dititipkan orang lain</b> di toko Anda (keripik, kue, kerajinan): barangnya bukan milik toko, dan Anda baru membayar setelah laku.</>,
+      <>Barang titipan baru dibuat dulu di <b>Barang & stok</b> dengan <b>stok awal 0</b> dan harga jualnya. Lalu di <b>Konsinyasi</b> tekan <b>+ Terima titipan</b>, pilih penitip (atau ketik nama penitip baru), pilih barangnya, isi <b>jumlah</b> dan <b>harga titip</b> — yaitu yang nanti Anda setor ke penitip per satuan.</>,
+      <>Di bawah tiap barang tampil "Harga jual Rp 10.000 · laba toko Rp 3.000 per pcs". Simpan: stok bertambah, tetapi <b>belum ada utang</b>.</>,
+    ], <>Barang titipan tidak bisa dibeli lewat Belanja dan tidak diberi stok awal. Barang milik toko yang sudah punya riwayat stok tidak bisa diubah jadi titipan — buat barang baru. Titipan berikutnya dengan harga titip berbeda dihitung rata-rata.</>, 'warn', <ScrKonsinyasi />],
+    ['Menjual, menyetor & mengembalikan', 'Kasir · Konsinyasi › ketuk penitip', [
+      <>Jual lewat <b>Kasir</b> seperti barang lain. Setiap barang titipan yang terjual otomatis menambah <b>Harus disetor</b> sebesar harga titipnya; retur dan pembatalan menguranginya lagi.</>,
+      <>Ketuk nama penitip untuk melihat tiap barangnya: diterima, dikembalikan, terjual, sisa di toko, dan yang harus disetor periode ini.</>,
+      <>Tekan <b>Setor ke penitip</b>, isi jumlah (boleh sebagian), pilih Tunai atau Transfer. Setoran juga terlihat di Kas & kasbon › Utang supplier dan di Kontak penitip.</>,
+      <>Barang tidak laku dibawa pulang penitip: tekan <b>Kembalikan barang</b>, isi jumlahnya. Stok berkurang dan tidak perlu disetor.</>,
+    ], <>Barang titipan yang <b>rusak, kedaluwarsa, atau hilang</b> di toko (dicatat di Barang & stok › Stok) dihitung harus disetor juga, karena menjadi tanggungan toko. Bila penitip sendiri yang menanggung, catat sebagai <b>Kembalikan barang</b>. Di pembukuan, titipan yang belum terjual tercatat sebagai Titipan konsinyasi (bukan utang), dan laba toko = harga jual − harga titip.</>, 'warn', null],
   ]],
 ];
 

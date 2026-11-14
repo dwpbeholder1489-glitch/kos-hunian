@@ -52,6 +52,8 @@ begin
       ('food_cost_report', format('select public.food_cost_report(%L, current_date - 30, current_date)', k)),
       ('promo_list', format('select public.promo_list(%L)', k)),
       ('preq_list', format('select public.preq_list(%L)', k)),
+      ('consign_overview', format('select public.consign_overview(%L)', k)),
+      ('consign_doc_create', format('select public.consign_doc_create(gen_random_uuid(), %L, ''terima'', gen_random_uuid(), ''[]'')', k)),
       ('preq_create', format('select public.preq_create(gen_random_uuid(), %L, ''[]'')', k)),
       ('sinv_list', format('select public.sinv_list(%L)', k)),
       ('supplier_scorecard', format('select public.supplier_scorecard(%L)', k)),
