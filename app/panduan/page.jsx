@@ -588,6 +588,20 @@ const PARTS = [
       <>Daftar harga: <b>Pesanan grosir › Daftar harga</b> › buat (mis. <b>Reseller</b>) › isi harga khusus per barang & satuan (ketuk di luar kolom untuk menyimpan; kosongkan = harga biasa). Pasangkan ke pelanggan lewat Syarat pelanggan.</>,
     ], null, null, null],
   ]],
+  ['S', 'Kedaluwarsa & saran belanja', [
+    ['Mencatat & memantau tanggal kedaluwarsa', 'Barang & stok › Ubah barang · Belanja · Barang › Kedaluwarsa', [
+      <>Buka barang yang bisa kedaluwarsa (susu, roti, obat, makanan) › <b>Ubah</b> › centang <b>Catat tanggal kedaluwarsa</b> › simpan. Stok yang sudah ada dicatat sebagai <b>tanggal belum diisi</b>.</>,
+      <>Saat <b>+ Belanja</b> atau <b>Terima barang</b>, isi <b>Tanggal kedaluwarsa</b> dan <b>No. batch</b> (opsional) per baris. Datang dua tanggal? Tambahkan barang yang sama dua kali dengan tanggal berbeda.</>,
+      <>Penjualan, pemakaian, retur ke supplier, dan mutasi stok <b>otomatis mengambil yang paling cepat kedaluwarsa</b> lebih dulu — kasir tidak perlu memilih. Mutasi membawa tanggalnya ke lokasi tujuan.</>,
+      <>Buka <b>Barang › Kedaluwarsa</b>: ringkasan <b>sudah kedaluwarsa</b>, <b>≤ 30 hari lagi</b>, dan <b>tanggal belum diisi</b>, beserta nilai modalnya. Saring ≤ 30 hari, ≤ 60 hari, atau semua batch.</>,
+      <>Ketuk batch untuk <b>Ubah tanggal</b>, <b>Pisahkan sebagian</b> (stok lama berisi dua tanggal), atau <b>Buang</b> (kedaluwarsa/rusak) — stok berkurang dan kerugiannya tercatat.</>,
+    ], <>Barang yang sudah lewat tetap bisa terjual di Kasir — singkirkan dari rak lalu tekan Buang. Membuang bisa perlu persetujuan pemilik sesuai pengaturan Persetujuan.</>, 'warn', null],
+    ['Saran belanja ulang', 'Belanja › Saran belanja', [
+      <>Tekan <b>Saran belanja</b>. Barang yang perlu dibeli muncul dengan alasannya: <b>habis</b>, <b>di bawah stok minimum</b>, atau <b>akan habis dalam … hari</b>, plus rata-rata keluar per hari dan pesanan yang belum datang.</>,
+      <>Pilih <b>Cukup 1 minggu / 2 minggu / 1 bulan</b>. Jumlah saran memakai satuan beli terakhir (mis. dus) dan dikelompokkan per supplier terakhir.</>,
+      <>Centang dan ubah jumlah bila perlu, lalu <b>Buat pesanan ke …</b>: formulir pesanan ke supplier terbuka dengan barang, jumlah, dan harga beli terakhir sudah terisi.</>,
+    ], <>Atur <b>Waktu tunggu dari supplier</b> per barang di Barang › Ubah (kosong = 3 hari) dan <b>stok minimum</b> agar saran pas. Barang tanpa penjualan dan tanpa stok minimum tidak disarankan.</>, null, null],
+  ]],
 ];
 
 const RULES = [

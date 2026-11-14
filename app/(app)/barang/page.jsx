@@ -16,6 +16,7 @@ import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui'
 import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, MOVE } from '@/lib/retail';
 import { autoQty, isiNum, isiText, quickFractions, unitProblem, measure, one } from '@/lib/units';
+import Kedaluwarsa from '@/components/Kedaluwarsa';
 
 // Muat barang + satuan untuk bisnis aktif
 function useProducts(kosId, ver, multi) {
@@ -40,6 +41,7 @@ export default function Barang() {
   const { d, err, reload } = useProducts(kosId, ver, multi);
   const [q, setQ] = useState('');
   const [f, setF] = useState('aktif');
+  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'kedaluwarsa') setF('kedaluwarsa'); } catch {} }, []);
   const [edit, setEdit] = useState(null);   // null | 'new' | product
   useBaru(() => setEdit('new'));
   const [adj, setAdj] = useState(null);
@@ -72,10 +74,10 @@ export default function Barang() {
       {d.products.length > 0 && <>
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kode, atau barcode" aria-label="Cari barang" />
         <div className="seg">
-          {[['aktif', `Semua (${active.length})`], ['menipis', `Menipis (${low.length})`], ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
+          {[['aktif', `Semua (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
         </div>
       </>}
-      {d.products.length === 0 ? (
+      {f === 'kedaluwarsa' ? <Kedaluwarsa kosId={kosId} ver={ver} multi={multi} tracked={active.some((p) => p.track_expiry)} onChanged={reload} /> : d.products.length === 0 ? (
         <Empty title={bahan ? 'Belum ada bahan' : 'Belum ada barang'} text={bahan ? 'Catat bahan operasional (deterjen, pewangi, plastik, hanger) agar stok dan biaya bahan terpantau. Pemakaian dicatat lewat tombol Stok › Pemakaian bahan.' : 'Tambahkan barang yang dijual. Satu barang bisa punya beberapa satuan, misalnya pcs dan dus isi 40, masing-masing dengan harga eceran dan grosir.'}>
           <button className="primary" onClick={() => setEdit('new')}>+ Tambah barang pertama</button>
         </Empty>
@@ -86,7 +88,7 @@ export default function Barang() {
             <div className="li" key={p.id} style={{ alignItems: 'flex-start', flexWrap: 'wrap', rowGap: 6 }}>
               <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: '1 1 220px', minWidth: 0 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={48} />}
               <div className="main">
-                <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}</b>
+                <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}</b>
                 {p.sku && <span className="small muted">Kode {p.sku}</span>}
                 <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>
                 <span className="small muted">{us.map((u) => bahan ? `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''}` : `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
@@ -104,7 +106,7 @@ export default function Barang() {
           );
         })}</div></section>
       )}
-      {edit && <ProductForm bahan={bahan} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
+      {edit && <ProductForm bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
       {adj && <StockSheet bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
     </div>
   );
@@ -113,7 +115,7 @@ export default function Barang() {
 const blankUnit = () => ({ name: '', qty: '', price_retail: '', price_wholesale: '' });
 const money = (v) => (Number(v) > 0 ? angka(v) : '');
 
-function ProductForm({ kosId, p, units, bahan, onClose, onSaved }) {
+function ProductForm({ kosId, p, units, bahan, batch, onClose, onSaved }) {
   const [name, setName] = useState(p?.name || '');
   const [base, setBase] = useState(p?.base_unit || 'pcs');
   const [cost, setCost] = useState(money(p?.cost));
@@ -121,6 +123,8 @@ function ProductForm({ kosId, p, units, bahan, onClose, onSaved }) {
   const [stock, setStock] = useState('');
   const [rows, setRows] = useState(units.length ? units.map((u) => ({ name: u.name, qty: isiText(u.qty), price_retail: money(u.price_retail), price_wholesale: money(u.price_wholesale), barcode: u.barcode || '' })) : [{ ...blankUnit(), qty: '1' }]);
   const [sku, setSku] = useState(p?.sku || '');
+  const [track, setTrack] = useState(Boolean(p?.track_expiry));
+  const [lead, setLead] = useState(p?.lead_days != null ? String(p.lead_days) : '');
   const [busy, setBusy] = useState(false);
   const set = (i, k, v) => setRows(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
   // nama satuan berat/volume (mis. "250 gram", "½ kg") → isi dihitung otomatis dari satuan terkecil
@@ -139,7 +143,12 @@ function ProductForm({ kosId, p, units, bahan, onClose, onSaved }) {
     const st = stock.trim() ? qtyNum(stock) : 0;
     if (!p && !(st >= 0)) return toast('Stok awal tidak valid.');
     setBusy(true);
-    const ok = await run(() => supabase.rpc('product_save', { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: base, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null }), p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
+    let pid = p?.id || null;
+    const ok = await run(async () => { const r = await supabase.rpc('product_save', { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: base, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null }); if (r.data) pid = r.data; return r; }, p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
+    const leadN = lead.trim() === '' ? null : parseInt(lead, 10);
+    if (ok && pid && (track !== Boolean(p?.track_expiry) || leadN !== (p?.lead_days ?? null))) {
+      await run(() => supabase.rpc('product_set_tracking', { p_product: pid, p_track: track, p_lead_days: Number.isFinite(leadN) ? leadN : null }), track && !p?.track_expiry ? 'Tanggal kedaluwarsa dicatat mulai sekarang' : null, errMsg);
+    }
     setBusy(false);
     if (ok) onSaved();
   };
@@ -160,6 +169,11 @@ function ProductForm({ kosId, p, units, bahan, onClose, onSaved }) {
         {!p && <Field label={`Stok sekarang (${base || 'satuan'})`}><input inputMode="decimal" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" /></Field>}
         <Field label={`Peringatan stok minimum (${base || 'satuan'})`}><input inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
       </div>
+      {batch && <div className="unitbox" style={{ gap: 6 }}>
+        <label className="row small" style={{ flexWrap: 'nowrap', fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={track} onChange={(e) => setTrack(e.target.checked)} />Catat tanggal kedaluwarsa (susu, roti, obat, makanan…)</label>
+        {track && <span className="small muted">Tanggal diisi saat belanja/terima barang. Stok keluar otomatis dari yang paling cepat kedaluwarsa; daftarnya di Barang › Kedaluwarsa.{p && !p.track_expiry && Number(p.stock) > 0 ? ' Stok yang ada sekarang dicatat sebagai "tanggal belum diisi" — isi tanggalnya di tab Kedaluwarsa.' : ''}</span>}
+        <Field label="Waktu tunggu dari supplier (hari, opsional)" hint="untuk saran belanja; kosong = 3 hari"><input inputMode="numeric" value={lead} onChange={(e) => setLead(e.target.value.replace(/\D/g, ''))} placeholder="3" /></Field>
+      </div>}
       {!base.trim() && <p className="small" style={{ margin: 0, color: 'var(--bad)' }}>Satuan terkecil wajib diisi — satuan yang dipakai menghitung stok & modal (mis. kg untuk minyak curah).</p>}
       {unitWord && <p className="small" style={{ margin: 0, color: 'var(--warn, var(--bad))' }}>Kode barang berisi "{sku.trim()}" — kalau maksudnya satuan, isi di kolom <b>Satuan terkecil</b>. Kode barang hanya penanda sendiri dan boleh kosong.</p>}
       {baseChanged && <p className="small" style={{ margin: 0, color: 'var(--bad)' }}>Satuan terkecil diganti dari {p.base_unit} ke {base.trim()}. Angka stok ({angka(p.stock)}) <b>tidak</b> ikut dikonversi — periksa lewat tombol Stok setelah menyimpan.</p>}

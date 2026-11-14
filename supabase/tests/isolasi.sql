@@ -43,6 +43,7 @@ begin
       ('lease_move_room', format('select public.lease_move_room((select id from public.leases where kos_id = %L limit 1), ''{}'')', k)),
       ('so_save', format('select public.so_save(gen_random_uuid(), %L, ''{"lines":[]}'')', k)),
       ('price_list_save', format('select public.price_list_save(%L, null, ''uji'')', k)),
+      ('reorder_suggest', format('select public.reorder_suggest(%L)', k)),
       ('customer_credit', format('select public.customer_credit((select id from public.contacts where kos_id = %L limit 1))', k)),
       ('bb_validate', format('select public.bb_validate(%L)', k)),
       ('bb_dashboard', format('select public.bb_dashboard(%L)', k)),

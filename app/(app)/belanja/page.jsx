@@ -21,7 +21,8 @@ export default function Belanja() {
   const { kosId, ver, kos } = useKos();
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
-  const [form, setForm] = useState(false);
+  const [form, setForm] = useState(false); // false | true | {init}
+  const [saran, setSaran] = useState(false);
   useBaru(() => setForm(true));
   const [open, setOpen] = useState(null);
   const load = async () => {
@@ -52,7 +53,7 @@ export default function Belanja() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Belanja</h2><PageHelp page="belanja" /></div><button className="primary" onClick={() => setForm(true)} disabled={!d.products.length}>+ Belanja</button></div>
+      <div className="row between"><div className="row"><h2>Belanja</h2><PageHelp page="belanja" /></div><div className="row"><button className="sm" onClick={() => setSaran(true)} disabled={!d.products.length}>Saran belanja</button><button className="primary" onClick={() => setForm(true)} disabled={!d.products.length}>+ Belanja</button></div></div>
       <LokasiBar note="Belanja baru dicatat untuk lokasi ini; barang masuk ke stok lokasi tempat belanja dicatat." />
       <div className="grid">
         <Tile label="Belanja bulan ini" value={rp(thisMonth.reduce((a, b) => a + Number(b.total), 0) - retMonth)} sub={`${thisMonth.length} nota${retMonth ? ` · retur ${rp(retMonth)}` : ''}`} />
@@ -72,22 +73,23 @@ export default function Belanja() {
           </button>
         ))}</div></section>
       )}
-      {form && <PurchaseForm kosId={kosId} d={d} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
-      {open && <Detail b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
+      {saran && <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={(init) => { setSaran(false); setForm({ init }); }} />}
+      {form && <PurchaseForm kosId={kosId} d={d} init={form.init} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
+      {open && <Detail tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
     </div>
   );
 }
 
-function PurchaseForm({ kosId, d, onClose, onSaved }) {
+function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
   const [date, setDate] = useState(today());
-  const [supplier, setSupplier] = useState('');
+  const [supplier, setSupplier] = useState(init?.supplier || '');
   const [newSup, setNewSup] = useState('');
   const [q, setQ] = useState('');
-  const [lines, setLines] = useState([]);
+  const [lines, setLines] = useState(() => (init?.lines || []).map((l) => ({ key: uid(), expiry: '', lot: '', ...l })));
   const [method, setMethod] = useState('tunai');
   const [due, setDue] = useState('');
   const [note, setNote] = useState('');
-  const [mode, setMode] = useState('terima');
+  const [mode, setMode] = useState(init ? 'pesan' : 'terima');
   const [expected, setExpected] = useState('');
   const [busy, setBusy] = useState(false);
   const [txId] = useState(uid);
@@ -129,7 +131,7 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
       if (method === 'utang' && !sid) { toast('Pilih supplier atau isi nama supplier baru untuk belanja utang.'); setBusy(false); return; }
       const args = {
         p_id: txId, p_kos: kosId, p_date: date, p_contact: sid,
-        p_lines: lines.map((l) => ({ product_id: l.product_id, unit: l.unit, qty: qtyNum(l.qty), price: parseRp(l.price) })),
+        p_lines: lines.map((l) => ({ product_id: l.product_id, unit: l.unit, qty: qtyNum(l.qty), price: parseRp(l.price), expiry: l.expiry || null, lot: l.lot || null })),
         p_method: method, p_due: method === 'utang' && due ? due : null, p_note: note,
       };
       const { data, error } = mode === 'pesan'
@@ -168,6 +170,11 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
               <Field label="Satuan"><select value={l.unit} onChange={(e) => { const nu = us.find((x) => x.name === e.target.value); const s = suggest(p, nu); set(l.key, { unit: e.target.value, price: s > 0 ? angka(s) : '' }); }}>{us.map((x) => <option key={x.name} value={x.name}>{x.name}{Number(x.qty) !== 1 ? ` (${angka(x.qty)} ${p.base_unit})` : ''}</option>)}</select></Field>
               <Field label={`Harga beli per ${l.unit}`}><input inputMode="numeric" value={l.price} onChange={(e) => set(l.key, { price: e.target.value })} /></Field>
             </div>
+            {p.track_expiry && <div className="row">
+              <Field label={mode === 'pesan' ? 'Kedaluwarsa (bila sudah tahu)' : 'Tanggal kedaluwarsa'}><input type="date" value={l.expiry || ''} onChange={(e) => set(l.key, { expiry: e.target.value })} /></Field>
+              <Field label="No. batch (opsional)"><input value={l.lot || ''} maxLength={40} onChange={(e) => set(l.key, { lot: e.target.value })} /></Field>
+            </div>}
+            {p.track_expiry && mode !== 'pesan' && !l.expiry && <span className="small" style={{ color: 'var(--warn)' }}>Tanggal kedaluwarsa belum diisi — boleh, tapi barang ini tidak masuk peringatan kedaluwarsa sampai tanggalnya diisi (Barang › Kedaluwarsa). Beda tanggal? Tambahkan barang yang sama sekali lagi.</span>}
             {qn > 0 && pr > 0 && (mode === 'pesan' ? <span className="small muted">{rp(qn * pr)} · stok bertambah saat diterima</span> : <span className="small muted">{rp(qn * pr)} · stok +{angka(base)} {p.base_unit} · modal {rp(p.cost)} → <b>{rp(newCost)}</b>/{p.base_unit}</span>)}
           </div>
         );
@@ -191,7 +198,7 @@ function PurchaseForm({ kosId, d, onClose, onSaved }) {
   );
 }
 
-function Detail({ b, supplier, loc, onClose, onChanged }) {
+function Detail({ b, supplier, loc, tracked, onClose, onChanged }) {
   const [lines, setLines] = useState(null);
   const [rets, setRets] = useState([]);   // retur ke supplier: [{...header, lines}]
   const [ret, setRet] = useState(null);   // form retur: {qty: {line_id: '...'}, refund, reason}
@@ -222,13 +229,13 @@ function Detail({ b, supplier, loc, onClose, onChanged }) {
   useEffect(() => { if (b.created_by) supabase.rpc('member_names', { p_kos: b.kos_id }).then(({ data }) => setBy(data?.[b.created_by] || 'karyawan lama')); }, [b.id]);
   const open = b.status === 'dipesan' || b.status === 'sebagian';
   const left = (l) => Math.max(0, Number(l.qty) - Number(l.qty_received));
-  const startRecv = () => setRecv(Object.fromEntries(lines.map((l) => [l.id, { qty: String(left(l)).replace('.', ','), price: angka(l.price) }])));
+  const startRecv = () => setRecv(Object.fromEntries(lines.map((l) => [l.id, { qty: String(left(l)).replace('.', ','), price: angka(l.price), expiry: l.expiry || '', lot: l.lot || '' }])));
   const doVoid = async () => {
     if (await withApproval(() => supabase.rpc('purchase_void', { p_purchase: b.id, p_reason: reason }), Number(b.total) > 0 ? 'Belanja dibatalkan, stok dikurangi lagi' : 'Pesanan dibatalkan',
       { kos: b.kos_id, action: 'batal_belanja', payload: { purchase_id: b.id }, reason })) onChanged();
   };
   const receive = async (close) => {
-    const items = recv ? lines.map((l) => ({ line_id: l.id, qty: qtyNum(recv[l.id].qty) || 0, price: parseRp(recv[l.id].price) })).filter((x) => x.qty > 0) : [];
+    const items = recv ? lines.map((l) => ({ line_id: l.id, qty: qtyNum(recv[l.id].qty) || 0, price: parseRp(recv[l.id].price), expiry: recv[l.id].expiry || null, lot: recv[l.id].lot || null })).filter((x) => x.qty > 0) : [];
     if (!close && !items.length) return toast('Isi jumlah barang yang diterima.');
     setBusy(true);
     const ok = await run(() => supabase.rpc('purchase_receive', { p_purchase: b.id, p_lines: items, p_date: null, p_close: close }), close && !items.length ? 'Pesanan ditutup' : 'Barang diterima, stok bertambah', errMsg);
@@ -251,6 +258,11 @@ function Detail({ b, supplier, loc, onClose, onChanged }) {
             <Field label={`Diterima sekarang (${l.unit})`}><input inputMode="decimal" value={recv[l.id].qty} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], qty: e.target.value } })} /></Field>
             <Field label={`Harga per ${l.unit}`}><input inputMode="numeric" value={recv[l.id].price} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], price: e.target.value } })} /></Field>
           </div>}
+          {recv && tracked?.has(l.product_id) && <div className="row">
+            <Field label="Tanggal kedaluwarsa"><input type="date" value={recv[l.id].expiry} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], expiry: e.target.value } })} /></Field>
+            <Field label="No. batch (opsional)"><input value={recv[l.id].lot} maxLength={40} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], lot: e.target.value } })} /></Field>
+          </div>}
+          {!recv && (l.expiry || l.lot) && <span className="small muted">{l.expiry ? `Exp ${tgl(l.expiry)}` : ''}{l.lot ? ` · batch ${l.lot}` : ''}</span>}
         </div>
       ))}</div>}
       <div className="row between"><b>{open ? 'Sudah diterima' : 'Total'}</b><b>{rp(b.total)}</b></div>
@@ -286,6 +298,52 @@ function Detail({ b, supplier, loc, onClose, onChanged }) {
         <Field label="Alasan pembatalan"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. salah input, barang diretur" /></Field>
         <button className="danger" onClick={doVoid} disabled={!reason.trim()}>Ya, batalkan & kurangi stok</button>
       </>)}
+    </Sheet>
+  );
+}
+
+// Saran belanja ulang (server: reorder_suggest) — dikelompokkan per supplier terakhir, lalu jadi pesanan ke supplier
+function SaranBelanja({ kosId, d, onClose, onPick }) {
+  const [rows, setRows] = useState(null);
+  const [pick, setPick] = useState({});
+  const [cover, setCover] = useState(14);
+  useEffect(() => {
+    setRows(null);
+    supabase.rpc('reorder_suggest', { p_kos: kosId, p_cover: cover, p_lookback: 30, p_safety: 2 }).then(({ data, error }) => {
+      if (error) { toast(errMsg(error)); setRows([]); return; }
+      setRows(data || []);
+      setPick(Object.fromEntries((data || []).map((r) => [r.product_id, { on: true, qty: String(r.suggest) }])));
+    });
+  }, [cover]);
+  const sup = new Map(d.suppliers.map((s) => [s.id, s.name]));
+  const groups = {};
+  for (const r of rows || []) (groups[r.supplier_id || ''] ||= []).push(r);
+  const make = (sid) => {
+    const lines = (groups[sid] || []).filter((r) => pick[r.product_id]?.on && qtyNum(pick[r.product_id].qty) > 0)
+      .map((r) => ({ product_id: r.product_id, unit: r.unit, qty: String(qtyNum(pick[r.product_id].qty)), price: Number(r.price) > 0 ? angka(r.price) : '' }));
+    if (!lines.length) return toast('Centang barang yang mau dipesan.');
+    onPick({ supplier: sid || '', lines });
+  };
+  return (
+    <Sheet title="Saran belanja" onClose={onClose}>
+      <span className="small muted">Dihitung dari rata-rata barang keluar 30 hari terakhir, waktu tunggu supplier (atur di Barang › Ubah), stok minimum, dan pesanan yang belum datang.</span>
+      <div className="seg">{[[7, 'Cukup 1 minggu'], [14, '2 minggu'], [30, '1 bulan']].map(([v, l]) => <button key={v} className={cover === v ? 'on' : ''} onClick={() => setCover(v)}>{l}</button>)}</div>
+      {!rows ? <Loading /> : rows.length === 0 ? <Empty title="Belum ada yang perlu dibeli" text="Stok semua barang masih cukup untuk rentang ini. Barang tanpa penjualan & tanpa stok minimum tidak dihitung." /> :
+        Object.entries(groups).map(([sid, list]) => (
+          <section className="panel" key={sid || 'tanpa'} style={{ gap: 6 }}>
+            <span className="label">{sid ? sup.get(sid) || list[0].supplier || 'Supplier' : 'Belum pernah dibeli / tanpa supplier'}</span>
+            {list.map((r) => (
+              <div key={r.product_id} className="li" style={{ alignItems: 'flex-start', gap: 8 }}>
+                <label className="row small" style={{ flexWrap: 'nowrap', alignItems: 'flex-start', gap: 8, minWidth: 0, flex: 1 }}>
+                  <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pick[r.product_id]?.on || false} onChange={(e) => setPick({ ...pick, [r.product_id]: { ...pick[r.product_id], on: e.target.checked } })} />
+                  <span style={{ minWidth: 0 }}><b>{r.name}</b><br /><span className="muted">Stok {angka(r.stock)} {r.base_unit} · {r.reason}{Number(r.per_day) > 0 ? ` · keluar ±${angka(r.per_day)}/hari` : ''}{Number(r.on_order) > 0 ? ` · dipesan ${angka(r.on_order)}` : ''}</span></span>
+                </label>
+                <span className="row" style={{ flexWrap: 'nowrap', gap: 4, flex: 'none' }}><input inputMode="decimal" value={pick[r.product_id]?.qty || ''} onChange={(e) => setPick({ ...pick, [r.product_id]: { ...pick[r.product_id], qty: e.target.value } })} style={{ width: 64 }} aria-label={`Jumlah ${r.name}`} /><span className="small">{r.unit}</span></span>
+              </div>
+            ))}
+            <button className="primary" onClick={() => make(sid)}>Buat pesanan{sid ? ` ke ${sup.get(sid) || list[0].supplier}` : ''}</button>
+          </section>
+        ))}
     </Sheet>
   );
 }

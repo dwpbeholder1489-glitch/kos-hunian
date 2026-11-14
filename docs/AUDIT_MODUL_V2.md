@@ -79,7 +79,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P1 | ~~Pajak (PPN) & split payment di kasir + jurnal pajak~~ — selesai 14 Nov (PPN keluaran; masukan menyusul bersama faktur pembelian) | 1 |
 | P1 | ~~Penawaran harga → sales order → surat jalan → faktur (grosir) + batas kredit & daftar harga pelanggan~~ — selesai 14 Nov (belum: rute/armada, harga bertingkat per jumlah, reservasi stok keras) | 1–2 |
 | P1 | ~~Pindah kamar penghuni~~ — selesai 14 Nov | 1 |
-| P1 | Batch & kedaluwarsa + saran pemesanan ulang | 1 |
+| P1 | ~~Batch & kedaluwarsa + saran pemesanan ulang~~ — selesai 14 Nov (FEFO otomatis, mutasi membawa batch; belum: nomor seri, blokir jual barang kedaluwarsa opsional) | 1 |
 | P1 | Data karyawan, absensi, shift, gaji (jurnal gaji) | 1 |
 | P1 | Aset tetap & penyusutan otomatis | 1 |
 | P2 | Resep & food cost kuliner (konsumsi bahan otomatis) | 2 |
