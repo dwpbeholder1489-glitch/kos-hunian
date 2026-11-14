@@ -6,6 +6,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePublicPay, PayBox } from '@/components/PublicPay';
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
+const first = (n) => String(n || '').trim().split(/\s+/)[0] || '';
+// Setelah terkirim: pindah ke halaman status (/b/slug/terkirim) — status, langkah berikutnya, kontak pemilik, cara bayar.
+function goDone(slug, q) {
+  const u = new URLSearchParams(Object.entries(q).filter(([, v]) => v != null && v !== '' && v !== false).map(([k, v]) => [k, String(v)]));
+  try { window.scrollTo(0, 0); window.location.assign(`/b/${slug}/terkirim?${u}`); } catch {}
+}
 
 // Formulir permintaan di halaman bisnis publik. Kiriman = permintaan/prospek, bukan pesanan final;
 // harga & ketersediaan dikonfirmasi pemilik. Anti-spam: kolom jebakan, waktu isi minimal, batas per perangkat (di server).
@@ -76,7 +82,7 @@ export default function PublicForm({ page }) {
         }) });
         const d = await r.json().catch(() => ({}));
         if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.');
-        else setDone({ order: true, number: d.number, total: d.total, meja });
+        else { setDone({ order: true, number: d.number, total: d.total, meja }); goDone(page.slug, { k: meja ? 'meja' : 'pesanan', no: d.number, n: first(name), total: page.show_prices && d.total != null ? Math.round(d.total) : '', meja, deliver: logi && deliver ? 1 : '', cek: phone.trim() ? 1 : '' }); }
       } catch { setErr('Koneksi terputus. Coba lagi.'); }
       setBusy(false); return;
     }
@@ -87,7 +93,7 @@ export default function PublicForm({ page }) {
       }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.');
-      else setDone(d.number || 'terkirim');
+      else { setDone(d.number || 'terkirim'); goDone(page.slug, { k: 'permintaan', no: d.number || '', n: first(name) }); }
     } catch { setErr('Koneksi terputus. Coba lagi.'); }
     setBusy(false);
   };
@@ -210,7 +216,8 @@ function ResvPublic({ page }) {
         reserve: true, slug: page.slug, name: f.name, phone: f.phone, party: f.party, note: f.note, starts_at: `${f.date}T${f.time}:00+07:00`, consent, website: hp,
         elapsed: Math.round((Date.now() - started.current) / 1000) }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.'); else setDone(d.number);
+      if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.');
+      else { setDone(d.number); goDone(page.slug, { k: 'reservasi', no: d.number, n: first(f.name), party: f.party, date: f.date, time: f.time }); }
     } catch { setErr('Koneksi terputus. Coba lagi.'); }
     setBusy(false);
   };
@@ -270,7 +277,8 @@ function ApplyForm({ page, rooms }) {
     try {
       const r = await fetch('/api/publik/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apply: true, slug: page.slug, ...f, proof, consent, website: hp, elapsed: Math.round((Date.now() - started.current) / 1000) }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.'); else setDone(d);
+      if (!r.ok || !d.ok) setErr(d.error || 'Gagal mengirim. Coba lagi atau hubungi lewat WhatsApp.');
+      else { setDone(d); goDone(page.slug, { k: f.mode === 'huni' ? 'daftar' : 'booking', no: d.number, n: first(f.name), room: room?.name, date: f.date, plan: f.pay_plan, amt: amount ? Math.round(amount) : '', method: f.pay_method }); }
     } catch { setErr('Koneksi terputus. Coba lagi.'); }
     setBusy(false);
   };

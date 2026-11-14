@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Field, toast } from '@/components/ui';
+import { FirstDue, plusDays } from '@/components/LeaseForms';
 import { rp, tgl, angka, parseRp, errMsg, waLink, today } from '@/lib/format';
 
 const ICON = { ok: '✓', warn: '!', bad: '✕' };
@@ -23,8 +24,8 @@ export default function LeadCheck({ lead, kos, onChanged }) {
     if (error) return setErr(errMsg(error));
     setC(data);
     const p = data.proposal || {};
-    if (data.kind === 'booking') setF({ room_id: (lead.apply?.room_id && (p.rooms || []).some((r) => r.id === lead.apply.room_id) ? lead.apply.room_id : p.room_id) || '', check_in: p.check_in || today(), rent: p.rent != null ? angka(p.rent) : '', months: String(p.months || 1), dp: '', dp_account: lead.apply?.pay_method === 'tunai' ? 'kas' : 'bank', other: false,
-      mode: lead.apply?.mode || 'booking', paid: '', paid_method: ['tunai', 'transfer', 'ewallet'].includes(lead.apply?.pay_method) ? lead.apply.pay_method : 'transfer' });
+    if (data.kind === 'booking') setF({ room_id: (lead.apply?.room_id && (p.rooms || []).some((r) => r.id === lead.apply.room_id) ? lead.apply.room_id : p.room_id) || '', check_in: p.check_in || today(), rent: p.rent != null ? angka(p.rent) : '', months: lead.apply ? '' : String(p.months || ''), dp: '', dp_account: lead.apply?.pay_method === 'tunai' ? 'kas' : 'bank', other: false,
+      mode: lead.apply?.mode || 'booking', paid: '', first_due: plusDays(p.check_in && p.check_in > today() ? p.check_in : today(), 3), paid_method: ['tunai', 'transfer', 'ewallet'].includes(lead.apply?.pay_method) ? lead.apply.pay_method : 'transfer' });
     if (data.kind === 'svc_order') setF({ pickup: false, deliver: false, address: '', fee: '', note: p.date ? `Jemput/antar ${tgl(p.date)}` : '' });
   });
   useEffect(() => { load(); }, [lead.id, lead.stage]);
@@ -45,7 +46,7 @@ export default function LeadCheck({ lead, kos, onChanged }) {
         const paid = parseRp(f.paid) || 0;
         if (paid > rent) return toast('Pembayaran melebihi sewa bulan pertama. Kelebihan catat sebagai deposit di detail penghuni.');
         if (!window.confirm(`Masukkan ${lead.name} sebagai penghuni kamar ${room?.code || ''} mulai ${tgl(f.check_in)}?${paid > 0 ? `\nPembayaran ${rp(paid)} dicatat sudah diterima.` : '\nBelum ada pembayaran yang dicatat.'}`)) return;
-        payload = { mode: 'huni', room_id: f.room_id, check_in: f.check_in, rent, paid_amount: paid, paid_method: f.paid_method };
+        payload = { mode: 'huni', room_id: f.room_id, check_in: f.check_in, rent, paid_amount: paid, paid_method: f.paid_method, ...(paid < rent && f.first_due ? { first_due: f.first_due < f.check_in ? f.check_in : f.first_due } : {}) };
       } else payload = { mode: 'booking', room_id: f.room_id, check_in: f.check_in, rent, months: Number(f.months) || null, other_room: f.other, dp_amount: dp, dp_account: dp > 0 ? f.dp_account : null };
     }
     if (c.kind === 'svc_order') payload = { pickup: f.pickup, deliver: f.deliver, address: f.address, delivery_fee: parseRp(f.fee) || 0, note: f.note };
@@ -96,10 +97,11 @@ export default function LeadCheck({ lead, kos, onChanged }) {
               <Field label="Cara bayar"><select value={f.paid_method} onChange={(e) => set('paid_method', e.target.value)}><option value="transfer">Transfer</option><option value="ewallet">QRIS / e-wallet</option><option value="tunai">Tunai</option></select></Field>
             </div>
             {a && Number(a.pay_amount) > 0 && !f.paid && <button className="sm ghost" onClick={() => set('paid', angka(Math.min(Number(a.pay_amount), parseRp(f.rent) || Number(a.pay_amount))))}>Uang {rp(a.pay_amount)} sudah masuk → isi</button>}
+            {(parseRp(f.paid) || 0) < (parseRp(f.rent) || 0) && <FirstDue start={f.check_in} value={f.first_due < f.check_in ? f.check_in : f.first_due} onChange={(v) => set('first_due', v)} />}
             <span className="small" style={{ color: 'var(--warn)' }}>Isi pembayaran hanya bila uangnya sudah benar-benar diterima (cek mutasi rekening). Konfirmasi membuat data penghuni dari isian pendaftar, memulai sewa, menerbitkan tagihan, dan mencatat pembayaran ini.</span>
           </> : <>
           <div className="row">
-            <Field label="Lama (bulan)"><input inputMode="numeric" value={f.months} onChange={(e) => set('months', e.target.value.replace(/\D/g, ''))} /></Field>
+            <Field label="Lama sewa (bulan, opsional)" hint="Kosong = belum ditentukan"><input inputMode="numeric" value={f.months} placeholder="mis. 6" onChange={(e) => set('months', e.target.value.replace(/\D/g, ''))} /></Field>
             <Field label="DP sudah diterima? (opsional)" hint="Kosongkan bila belum"><input inputMode="numeric" value={f.dp} onChange={(e) => set('dp', e.target.value)} placeholder="Rp" /></Field>
           </div>
           {a && Number(a.pay_amount) > 0 && !f.dp && <button className="sm ghost" onClick={() => set('dp', angka(a.pay_amount))}>Uang {rp(a.pay_amount)} sudah masuk → isi sebagai DP</button>}

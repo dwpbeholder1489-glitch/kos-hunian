@@ -118,7 +118,8 @@ export function ScrStartLease() {
       <div className="seg"><button>Penghuni terdaftar</button><button className="on">Penghuni baru</button></div>
       <div className="row"><F label="Nama lengkap" value="Rizky Ramadhan" /><F label="No. WhatsApp" value="0812-3456-7890" /></div>
       <F label="Harga sewa per bulan" value="700.000" money />
-      <div className="row"><F label="Tanggal masuk" value={dFull(12)} /><F label="Tagihan pertama jatuh tempo" value={dFull(12)} /></div>
+      <div className="row"><F label="Tanggal masuk" value={dFull(12)} /><F label="Sewa dihitung mulai" value={dFull(12)} /></div>
+      <F label="Batas bayar sewa bulan pertama" value={dFull(15) + ' (+3 hari)'} />
       <span className="mini-btn cta">Mulai sewa</span>
     </Phone>
   );

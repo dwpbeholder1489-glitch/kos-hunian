@@ -8,6 +8,7 @@ import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, tgl, today, parseRp, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
+import { FirstDue } from '@/components/LeaseForms';
 import { canArea } from '@/lib/business';
 
 const ACC = [['kas', 'Kas (tunai)'], ['bank', 'Bank / transfer']];
@@ -171,27 +172,34 @@ function Detail({ d, kos, b, onClose }) {
 }
 
 function CheckIn({ d, b, onDone }) {
-  const [start, setStart] = useState(b.check_in);
-  const [bill, setBill] = useState(b.check_in);
+  const [start, setStart] = useState(b.check_in < today() ? today() : b.check_in);
+  const [due, setDue] = useState(addDays(b.check_in < today() ? today() : b.check_in, 3));
+  const [paid, setPaid] = useState('');
+  const [method, setMethod] = useState('tunai');
   const [end, setEnd] = useState('');
   const [occ, setOcc] = useState(''); // '' = penghuni baru dari data booking
   const [apply, setApply] = useState(b.dp_amount > 0);
   const [busy, setBusy] = useState(false);
   const free = d.occupants.filter((o) => !d.activeByOcc.get(o.id));
   const go = async () => {
-    if (bill < start) return toast('Tagihan pertama tidak boleh sebelum tanggal masuk.');
+    if (due < start) return toast('Batas bayar tidak boleh sebelum tanggal masuk.');
+    const pay = parseRp(paid) || 0;
+    if (paid.trim() && !(pay > 0)) return toast('Jumlah pembayaran tidak valid.');
     setBusy(true);
-    const ok = await run(() => supabase.rpc('booking_checkin', { p_booking: b.id, p: { start, billing_start: bill, end: end || null, occupant_id: occ || null, dp_to_invoice: apply } }),
-      b.dp_amount > 0 ? (apply ? 'Check-in selesai. DP dipakai untuk tagihan pertama.' : 'Check-in selesai. DP menjadi deposit.') : 'Check-in selesai. Sewa dimulai.', errMsg);
+    const ok = await run(() => supabase.rpc('booking_checkin', { p_booking: b.id, p: { start, billing_start: start, first_due: due, end: end || null, occupant_id: occ || null, dp_to_invoice: apply, ...(pay > 0 ? { paid_amount: pay, paid_method: method } : {}) } }),
+      'Check-in selesai. Sewa dimulai.' + (b.dp_amount > 0 ? (apply ? ' DP dipakai untuk tagihan pertama.' : ' DP menjadi deposit.') : '') + (pay > 0 ? ` Pembayaran ${rp(pay)} tercatat.` : ` Tagihan pertama jatuh tempo ${tgl(due)}.`), errMsg);
     setBusy(false);
     if (ok) onDone();
   };
   return (
     <div className="unitbox">
+      <Field label="Tanggal masuk" hint="Sewa dihitung mulai tanggal ini"><input type="date" value={start} onChange={(e) => { const v = e.target.value; if (due < v || due === addDays(start, 3)) setDue(addDays(v, 3)); setStart(v); }} /></Field>
       <div className="row">
-        <Field label="Tanggal masuk"><input type="date" value={start} onChange={(e) => { setStart(e.target.value); if (bill < e.target.value) setBill(e.target.value); }} /></Field>
-        <Field label="Tagihan pertama jatuh tempo"><input type="date" value={bill} onChange={(e) => setBill(e.target.value)} /></Field>
+        <Field label="Sewa bulan pertama sudah dibayar?" hint={`Kosongkan bila belum. Sewa ${rp(b.rent)}/bulan`}><input inputMode="numeric" value={paid} onChange={(e) => setPaid(e.target.value)} placeholder="Rp" /></Field>
+        {paid.trim() && <Field label="Cara bayar"><select value={method} onChange={(e) => setMethod(e.target.value)}><option value="tunai">Tunai</option><option value="transfer">Transfer</option><option value="ewallet">QRIS / e-wallet</option></select></Field>}
       </div>
+      {!paid.trim() && <button type="button" className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setPaid(String(Math.max(0, Math.round(b.rent - (apply ? b.dp_amount : 0)))))}>Sudah dibayar penuh → isi {rp(Math.max(0, b.rent - (apply ? b.dp_amount : 0)))}</button>}
+      {(parseRp(paid) || 0) + (apply ? Number(b.dp_amount) : 0) < Number(b.rent) && <FirstDue start={start} value={due} onChange={setDue} />}
       <Field label="Rencana selesai (opsional)" hint={b.months ? `kosongkan = ${b.months} bulan dari tanggal masuk` : undefined}><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
       <Field label="Data penghuni"><select value={occ} onChange={(e) => setOcc(e.target.value)}><option value="">Buat penghuni baru: {b.name}{b.phone ? ` · ${b.phone}` : ''}</option>{free.map((o) => <option key={o.id} value={o.id}>Pakai data lama: {o.name}</option>)}</select></Field>
       {b.dp_amount > 0 && <>

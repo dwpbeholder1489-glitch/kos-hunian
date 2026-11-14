@@ -285,7 +285,7 @@ export default function Mulai() {
         const { c, s: sc, tpl, note } = resolve(code); const b = biz[code] || {};
         const needs = Array.isArray(b.needs) ? b.needs : [];
         const ph = String(b.phone ?? meta.whatsapp ?? '').trim();
-        const Row = ({ k, v, sb }) => <div className="kv"><span>{k}</span><b>{v || <i className="muted" style={{ fontWeight: 500 }}>belum diisi</i>}{!done[code] && <> <button type="button" className="linkbtn" onClick={() => goto(i, sb)}>Ubah</button></>}</b></div>;
+        const Row = ({ k, v, sb }) => <div className="kvrow"><span>{k}</span><b>{v || <i className="muted" style={{ fontWeight: 500 }}>belum diisi</i>}{!done[code] && <> <button type="button" className="linkbtn" onClick={() => goto(i, sb)}>Ubah</button></>}</b></div>;
         return (
           <div className="panel" key={code} style={{ gap: 2 }}>
             <div className="row between"><b>{c.icon} {b.name}</b>{done[code] && <span className="chip good">Draf dibuat</span>}</div>

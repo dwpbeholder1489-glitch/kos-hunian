@@ -80,6 +80,7 @@ function OccDetail({ d, occ, go, onClose }) {
         <dt>Kamar</dt><dd>{l ? d.roomCode(l.room_id) : '—'}</dd>
         {l && <><dt>Sewa</dt><dd>{rp(l.rent)}/bulan sejak {tgl(l.start_date)}</dd></>}
         {l && <><dt>Rencana selesai</dt><dd><EndDate lease={l} /></dd></>}
+        {l && (() => { const fi = d.invoices.find((i) => i.lease_id === l.id && i.kind === 'sewa' && i.period_start === l.billing_start && i.status !== 'batal'); return fi && fi.outstanding > 0 ? <><dt>Batas bayar bulan pertama</dt><dd><FirstDueEdit lease={l} inv={fi} /></dd></> : null; })()}
         <dt>WhatsApp</dt><dd>{occ.phone || '—'}</dd>
         {occ.address && <><dt>Alamat asal</dt><dd style={{ overflowWrap: 'anywhere' }}>{occ.address}</dd></>}
         {occ.emergency && <><dt>Kontak darurat</dt><dd>{occ.emergency}</dd></>}
@@ -155,6 +156,27 @@ function OccEdit({ d, occ, onClose }) {
   );
 }
 
+// Batas bayar tagihan bulan pertama (penghuni baru) — selama belum lunas bisa digeser tanpa mengubah periode sewa
+function FirstDueEdit({ lease, inv }) {
+  const { bump } = useKos();
+  const [edit, setEdit] = useState(false);
+  const [v, setV] = useState(inv.due_date);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('lease_first_due', { p_lease: lease.id, p_due: v || null }), `Batas bayar menjadi ${tgl(v || lease.billing_start)}`, errMsg);
+    setBusy(false);
+    if (ok) { setEdit(false); bump(); }
+  };
+  if (!edit) return <>{tgl(inv.due_date)} <button className="sm ghost" style={{ minHeight: 0, padding: '0 4px' }} onClick={() => setEdit(true)}>ubah</button></>;
+  return (
+    <span className="row" style={{ flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6 }}>
+      <input type="date" value={v} min={lease.billing_start} onChange={(e) => setV(e.target.value)} style={{ width: 150 }} aria-label="Batas bayar bulan pertama" />
+      <button className="sm primary" disabled={busy} onClick={save}>Simpan</button>
+    </span>
+  );
+}
+
 // Ubah rencana selesai sewa (mis. penghuni akan pindah; kamar bisa dibooking untuk setelahnya)
 function EndDate({ lease }) {
   const { bump } = useKos();
@@ -169,7 +191,7 @@ function EndDate({ lease }) {
   };
   if (!edit) return <>{lease.end_date ? tgl(lease.end_date) : 'belum diisi'} <button className="sm ghost" style={{ minHeight: 0, padding: '0 4px' }} onClick={() => setEdit(true)}>ubah</button></>;
   return (
-    <span className="row" style={{ flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
+    <span className="row" style={{ flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6 }}>
       <input type="date" value={v} min={lease.start_date} onChange={(e) => setV(e.target.value)} style={{ width: 150 }} aria-label="Rencana selesai" />
       <button className="sm primary" disabled={busy} onClick={save}>Simpan</button>
     </span>

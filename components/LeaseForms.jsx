@@ -6,6 +6,23 @@ import { Sheet, Field, run, toast } from '@/components/ui';
 import { today, parseRp, rp, angka, errMsg, tgl } from '@/lib/format';
 import { uid } from '@/lib/retail';
 
+const plusDays = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
+
+// Batas bayar tagihan bulan pertama untuk penghuni baru (periode sewa tetap dihitung dari tanggal masuk).
+// Server: leases.first_due lewat booking_checkin/lead_move_in (p.first_due) atau lease_first_due.
+export function FirstDue({ start, value, onChange, label = 'Batas bayar sewa bulan pertama' }) {
+  const opts = [['Hari masuk', 0], ['+3 hari', 3], ['+7 hari', 7]];
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <span className="label">{label}</span>
+      <div className="seg">{opts.map(([l, n]) => { const v = plusDays(start, n); return <button key={l} type="button" className={value === v ? 'on' : ''} onClick={() => onChange(v)}>{l}</button>; })}</div>
+      <input type="date" value={value} min={start} onChange={(e) => onChange(e.target.value)} aria-label={label} />
+      <span className="small muted">Tagihan bulan pertama baru dianggap <b>jatuh tempo</b> pada {tgl(value)} — sebelum itu tidak dihitung telat dan tidak masuk pengingat. Periode sewa tetap dihitung dari tanggal masuk.</span>
+    </div>
+  );
+}
+export { plusDays };
+
 // Isi kamar: pilih penghuni lama atau tambah penghuni baru, lalu mulai sewa
 export function StartLeaseSheet({ d, roomId: fixedRoom, occupantId: fixedOcc, onClose }) {
   const { kosId, bump } = useKos();
@@ -20,6 +37,7 @@ export function StartLeaseSheet({ d, roomId: fixedRoom, occupantId: fixedOcc, on
   const [rent, setRent] = useState(room?.rent ? angka(room.rent) : '');
   const [start, setStart] = useState(today());
   const [bill, setBill] = useState(today());
+  const [due, setDue] = useState(plusDays(today(), 3));
   const [end, setEnd] = useState('');
   const [dep, setDep] = useState('');
   const [depAcc, setDepAcc] = useState('kas');
@@ -46,6 +64,10 @@ export function StartLeaseSheet({ d, roomId: fixedRoom, occupantId: fixedOcc, on
     }
     let leaseId = null;
     const ok = await run(async () => { const res = await supabase.rpc('start_lease', { p_room: roomId, p_occupant: oid, p_start: start, p_rent: r, p_billing_start: bill, p_end: end || null }); leaseId = res.data; return res; }, 'Sewa dimulai. Tagihan dibuat otomatis.', errMsg);
+    if (ok && leaseId && bill === start && due && due !== start) {
+      // penghuni baru: batas bayar tagihan pertama (bila gagal, sewa tetap berjalan; bisa diubah dari detail penghuni)
+      await run(() => supabase.rpc('lease_first_due', { p_lease: leaseId, p_due: due }), null, errMsg);
+    }
     if (ok && leaseId && depAmt > 0) {
       // deposit dicatat terpisah; bila gagal, sewa tetap berjalan dan deposit bisa dicatat dari Penghuni › Deposit
       await run(() => supabase.rpc('deposit_add', { p_id: depId, p_lease: leaseId, p_kind: 'terima', p_amount: depAmt, p_date: start > today() ? today() : start, p_account: depAcc, p_reason: null, p_invoice: null }), `Deposit ${rp(depAmt)} dicatat`, errMsg);
@@ -81,9 +103,10 @@ export function StartLeaseSheet({ d, roomId: fixedRoom, occupantId: fixedOcc, on
       )}
       <Field label="Harga sewa per bulan" hint="Bisa ditulis 750000, 750.000, atau 750rb"><input inputMode="numeric" value={rent} onChange={(e) => setRent(e.target.value)} /></Field>
       <div className="row">
-        <Field label="Tanggal masuk"><input type="date" value={start} onChange={(e) => { setStart(e.target.value); if (bill < e.target.value) setBill(e.target.value); }} /></Field>
-        <Field label="Tagihan pertama jatuh tempo" hint="Penghuni lama: isi jatuh tempo berikutnya yang belum dibayar."><input type="date" value={bill} onChange={(e) => setBill(e.target.value)} /></Field>
+        <Field label="Tanggal masuk"><input type="date" value={start} onChange={(e) => { const v = e.target.value; if (bill === start || bill < v) setBill(v); if (due < v || due === plusDays(start, 3)) setDue(plusDays(v, 3)); setStart(v); }} /></Field>
+        <Field label="Sewa dihitung mulai" hint="Penghuni baru: sama dengan tanggal masuk. Penghuni lama yang sudah bayar: isi awal periode berikutnya yang belum dibayar."><input type="date" value={bill} onChange={(e) => setBill(e.target.value)} /></Field>
       </div>
+      {bill === start && <FirstDue start={start} value={due} onChange={setDue} />}
       <Field label="Rencana selesai (opsional)"><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
       <Field label="Deposit / uang jaminan diterima (opsional)" hint="Bukan pendapatan: dicatat terpisah dan dikembalikan/dipotong saat keluar."><input inputMode="numeric" value={dep} onChange={(e) => setDep(e.target.value)} placeholder="mis. 500rb" /></Field>
       {dep.trim() && <div className="seg">{[['kas', 'Masuk ke kas (tunai)'], ['bank', 'Masuk ke bank']].map(([k, l]) => <button key={k} className={depAcc === k ? 'on' : ''} onClick={() => setDepAcc(k)}>{l}</button>)}</div>}
