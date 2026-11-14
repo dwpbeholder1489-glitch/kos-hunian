@@ -1,94 +1,255 @@
-# PRASARA — Audit Modul & Backlog (Universal Module Ecosystem V2.0)
+# PRASARA — Audit Ulang terhadap Master Prompt "Sistem Modul Semua Bisnis" V2.0
 
-Tanggal audit: 14 Nov 2026 · Dasar: repository `kos-hunian` (commit 0adcb97), 83 migrasi, database uji lokal (124 tabel), database produksi (dibaca lewat MCP, hanya baca).
-Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEEDS IMPROVEMENT**, **PLACEHOLDER**, **MISSING**, **DUPLICATE**, **BLOCKED**.
+Tanggal: 15 Nov 2026 · Dasar: repository `kos-hunian` (commit ac66635), 89 migrasi, database uji lokal (semua migrasi terpasang), 39 file uji SQL.
+Audit ini MENGGANTIKAN versi 14 Nov, yang terlalu longgar: beberapa bab ditandai "VERIFIED" padahal hanya inti yang ada, dan beberapa baris saling bertentangan (mis. Retail ditandai VERIFIED dengan celah "analitik kasir" saja).
 
-## 1. Arsitektur yang ditemukan (Bab 3A)
+**Status yang dipakai (Bab 4):**
+- **ADA** — ada di database + layar + diuji (uji SQL dan/atau render), dipakai di produksi.
+- **SEBAGIAN** — ada, tetapi tidak selengkap yang diminta V2.0 (keterangan di kolom catatan).
+- **BELUM** — tidak ada fungsi nyata. "Template Business Builder" = pemilik bisa menyusun formulir & status sendiri, tetapi TIDAK terhubung ke stok/akuntansi khusus industri itu → dihitung BELUM untuk mesin industrinya.
 
-| Aspek | Temuan |
+Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji aksesibilitas, uji performa/beban, uji keamanan dari luar (pentest). Uji yang ada: uji SQL per fitur + uji isolasi tenant (193 kasus) + render layar 390px.
+
+---
+
+## BAGIAN V — Core (Bab 9–16)
+
+### Bab 9 Command Center — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Pendapatan, biaya, laba kotor, laba bersih | ADA | `/bisnis`, `/pembukuan`, `/analisis` (angka dari jurnal) |
+| Posisi kas, ringkasan piutang & utang | SEBAGIAN | Ada di Kas & kasbon dan Pembukuan, belum satu layar pusat |
+| Peringatan stok, pesanan tertunda, tugas operasional | SEBAGIAN | Per jenis bisnis (dashboard toko/jasa/kos), tidak satu pusat lintas modul |
+| Kesehatan bisnis (Business Health) | BELUM | |
+| Tren & rekomendasi | SEBAGIAN | `/analisis` "Temuan dari data" (aturan tetap); belum standar insight Bab 32 |
+| Filter periode / cabang / perbandingan | SEBAGIAN | Ada di Analisis & Pembukuan; dashboard utama belum |
+| Drill-down, preferensi tersimpan, status pembaruan data | BELUM | |
+| Aksi cepat, empty state | ADA | Tombol + per halaman |
+
+### Bab 10 Sales & POS — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Cari barang, barcode, keranjang, pilih pelanggan | ADA | `/kasir` (kamera, tanpa barcode juga bisa) |
+| **Varian produk** (ukuran/warna/rasa) | **BELUM** | Tiap varian harus dibuat sebagai barang terpisah |
+| Konversi satuan | ADA | Mesin konversi 14 Nov |
+| Harga bertingkat | SEBAGIAN | Eceran/grosir + daftar harga per pelanggan; **harga per jumlah beli BELUM** |
+| Diskon, promo | ADA | |
+| Pajak | SEBAGIAN | PPN keluaran toko saja; tanpa tanggal berlaku tarif; **jasa/kuliner/kos BELUM ada PPN** |
+| Bayar campuran, kasbon, tunai/kredit | ADA | |
+| Faktur, struk, retur, refund | ADA | Faktur dari Pesanan grosir |
+| Shift kasir | ADA | Buka/tutup laci + selisih |
+| **Tutup harian (daily closing)** | **BELUM** | Tidak ada laporan tutup hari yang mengunci & merangkum semua kasir |
+| Pesanan penjualan & penawaran | ADA | Grosir (toko) saja; **jasa BELUM punya penawaran** |
+| **Komisi penjualan** | **BELUM** | |
+| **Kinerja penjualan per kasir/sales** | **BELUM** | |
+
+### Bab 11 Inventory & Gudang — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Master barang, SKU, barcode | ADA | |
+| **Kategori barang** | **BELUM** | Kolom & filter kategori tidak ada |
+| **Varian** | **BELUM** | |
+| Satuan & konversi | ADA | |
+| Gudang/cabang, mutasi antar lokasi | ADA | `branches`, `stock_transfers` |
+| **Lokasi rak (bin)** | **BELUM** | |
+| Terima, keluar, opname, penyesuaian beralasan | ADA | |
+| **Reservasi stok; stok fisik/dipesan/tersedia/dalam perjalanan** | **BELUM** | Mutasi langsung pindah; pesanan grosir tidak memesan stok |
+| Batch & kedaluwarsa (FEFO) | ADA | |
+| **Nomor seri** | **BELUM** | |
+| Titik pesan ulang, stok pengaman | SEBAGIAN | Stok minimum + Saran belanja; stok pengaman = parameter tetap |
+| Valuasi persediaan | SEBAGIAN | Rata-rata tertimbang saja; **FIFO & pilihan metode BELUM** |
+| **Umur stok (aging)** | **BELUM** | |
+| Kartu stok / ledger | ADA | `stock_moves` |
+| **Kebijakan stok minus** | **BELUM** | Kasir & resep mengizinkan minus tanpa setelan |
+
+### Bab 12 Akuntansi — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Bagan akun, jurnal otomatis, jurnal manual, buku besar | ADA | Jurnal manual & rincian buku besar = Bisnis/Pro |
+| **Neraca saldo (trial balance)** | **BELUM** | Tidak ada laporan terpisah |
+| Piutang, utang, kas & bank, rekonsiliasi bank | ADA | |
+| Periode & tutup buku | ADA | |
+| Neraca, laba rugi, arus kas | ADA | |
+| Aset tetap & penyusutan | ADA | Garis lurus saja |
+| **Akrual & biaya dibayar dimuka** | **BELUM** | |
+| Anggaran | ADA | Per kategori biaya |
+| **Pusat biaya (cost center) / departemen** | **BELUM** | |
+| Akuntansi per cabang | SEBAGIAN | Laporan per lokasi (Pro), bukan buku per cabang |
+| Pengaturan pajak | SEBAGIAN | PPN saja; **PPh (21/23/final UMKM) BELUM** |
+
+### Bab 13 Pengadaan — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Supplier, permintaan pembelian + persetujuan, pesanan, terima sebagian | ADA | 15 Nov |
+| **Permintaan penawaran (RFQ) & penawaran supplier, perbandingan** | **BELUM** | |
+| Faktur supplier, pencocokan 3 arah, PPN masukan | ADA | 15 Nov |
+| Retur pembelian, pembayaran supplier | ADA | |
+| Kinerja supplier | ADA | Ringkas |
+| Analitik pembelian | SEBAGIAN | |
+| **Persetujuan pesanan pembelian berdasarkan nominal** | **BELUM** | Persetujuan baru untuk permintaan, belum untuk PO |
+
+### Bab 14 CRM — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Pelanggan, kontak, riwayat penjualan, batas kredit | ADA | Batas kredit untuk grosir |
+| **Klasifikasi/segmen pelanggan** | **BELUM** | |
+| **Loyalti / poin / member** | **BELUM** | |
+| Catatan & tindak lanjut | ADA | `crm_activities`, `crm_tasks` |
+| **Masukan pelanggan (feedback/rating)** | **BELUM** | |
+| Tiket keluhan | SEBAGIAN | Jasa (keluhan pesanan) & kos (perbaikan); **toko BELUM** |
+| **Retensi & profitabilitas pelanggan** | **BELUM** | |
+
+### Bab 15 SDM — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Data karyawan, peran, absensi, shift, lembur, gaji | ADA | 14 Nov |
+| **Struktur organisasi / departemen** | **BELUM** | |
+| Cuti | SEBAGIAN | Status "cuti" di absensi; **pengajuan & saldo cuti BELUM** |
+| Insentif | SEBAGIAN | Bonus manual di gaji |
+| **Komisi, penilaian kinerja, dokumen karyawan** | **BELUM** | |
+| **PPh 21 & BPJS** | **BELUM** | |
+
+### Bab 16 Dokumen — SEBAGIAN
+| Submodul | Status | Catatan |
+|---|---|---|
+| Struk, kwitansi, nota, faktur, surat jalan, penawaran (grosir), slip gaji | ADA | |
+| **Cetak pesanan pembelian (PO) & kontrak sewa** | **BELUM** | |
+| **Template dokumen yang bisa diatur** | **BELUM** | Tata letak tetap |
+| Penomoran | SEBAGIAN | Nomor otomatis per jenis, belum aturan penomoran terpusat yang bisa diatur |
+| **Riwayat versi dokumen** | **BELUM** | |
+| Riwayat persetujuan, lampiran, ekspor Excel, cetak | ADA | |
+| PDF | SEBAGIAN | Lewat cetak browser; PDF langsung hanya sebagian |
+
+## BAGIAN VI — Industri (Bab 17–31)
+
+### Bab 17 Toko & grosir eceran — SEBAGIAN
+| Submodul | Status |
 |---|---|
-| Frontend | Next.js App Router, React client pages, CSS sendiri (`app/globals.css`, token `--gold` = emerald, gelap bawaan) |
-| Backend | Supabase Postgres: RLS + fungsi `security definer` (RPC). API route Next hanya untuk kunci server (webhook, lampiran, media, cron, email) |
-| Pola | **Modular monolith** di database: setiap domain = tabel + RPC; modul industri memakai engine bersama (akuntansi `acct_*`, stok `stock_moves`, kontak `contacts`, persetujuan `approvals`, otomatisasi `automation_*`) — sesuai Bab 7 |
-| Auth | Supabase Auth (email + verifikasi), peran bisnis `kos_members`, peran platform `admin_staff`/`role_perms` + MFA |
-| Job | Cron harian Vercel 07.00 WIB (`/api/cron/reminders`) → pengingat, otomatisasi, ringkasan, pembersihan, portal |
-| Deploy | Push `main` → Vercel + migrasi Supabase otomatis |
-| Uji | 23 file uji SQL (`supabase/tests`), uji isolasi tenant 141 kasus, render statis + screenshot |
+| POS, barcode, konversi satuan, harga eceran/grosir, promo, bundling, konsinyasi, shift, saran belanja, kedaluwarsa, mutasi toko | ADA (konsinyasi tanpa komisi persen & tanpa laporan cetak penitip) |
+| **Varian produk** | **BELUM** |
+| **Tutup harian** | **BELUM** |
+| **Pencegahan kehilangan (susut, pembatalan mencurigakan, selisih kasir berulang)** | **BELUM** |
+| Analitik toko | SEBAGIAN |
+| KPI: omzet, margin kotor | ADA |
+| **KPI: rata-rata keranjang, perputaran persediaan, tingkat stok habis, susut, penjualan per kasir** | **BELUM** |
 
-## 2. Inventaris & status per bab
+### Bab 18 Grosir & distribusi — SEBAGIAN
+| Submodul | Status |
+|---|---|
+| Daftar harga pelanggan, batas kredit, pesanan, surat jalan bertahap, faktur, piutang & umur piutang | ADA |
+| **Harga bertingkat per jumlah** | **BELUM** |
+| **Tenaga penjual (sales rep) & kinerjanya** | **BELUM** |
+| **Jadwal kirim, rute, armada, pengemudi** | **BELUM** |
+| **Alokasi stok & picking** | **BELUM** |
+| Bukti terima | SEBAGIAN (nama penerima; foto/tanda tangan BELUM) |
+| **Penagihan terjadwal (collection)** | **BELUM** |
+| **Biaya distribusi, profitabilitas pelanggan** | **BELUM** |
+| **KPI: fill rate, tepat waktu kirim, margin per pelanggan, biaya per pesanan** | **BELUM** (umur piutang ADA) |
 
-### Core (Bab 9–16)
+### Bab 19 Kuliner — SEBAGIAN
+| Submodul | Status |
+|---|---|
+| Meja, reservasi, QR per meja, layar dapur, bungkus, resep, stok bahan, food cost | ADA |
+| POS restoran | SEBAGIAN (lewat Pesanan + tagihan meja; belum layar kasir restoran khusus) |
+| Waste | SEBAGIAN (dicatat sebagai rusak, tampil di laporan) |
+| **Menu engineering** | **BELUM** (margin per menu ada, klasifikasi star/plowhorse/dll belum) |
+| **Delivery kuliner** | **BELUM** |
+| **Produksi dapur / sub-resep / central kitchen** | **BELUM** |
+| **Kinerja per outlet** | **BELUM** |
+| **KPI: perputaran meja, waktu masak** | **BELUM** |
 
-| Bab | Modul | Status | Bukti / lokasi | Celah |
-|---|---|---|---|---|
-| 9 | Command Center | PARTIAL | `/bisnis` (ringkasan pemilik), `/analisis`, dashboard per jenis | Belum satu dashboard lintas jenis dengan kas, piutang, utang, pesanan tertunda & filter cabang sekaligus; preferensi widget belum ada |
-| 10 | Sales & POS (toko) | VERIFIED (inti) | `/kasir`, `sales`, `sale_lines`, multi-satuan, harga eceran/grosir, diskon, kasbon, retur, shift | **SELESAI 14 Nov:** PPN keluaran (harga termasuk PPN, bebas PPN per barang, jurnal & laporan) dan bayar campuran. **MISSING:** penawaran harga (quotation), sales order B2B, komisi, laporan tutup harian, varian produk |
-| 11 | Inventory | VERIFIED (inti) | `stock_moves` (ledger), `stock_levels` per lokasi, mutasi, opname, penyesuaian beralasan; **mesin konversi satuan** (satuan utama + satuan jual, isi + satuan isi dihitung server, berat↔volume hanya dengan densitas; 14 Nov) | **MISSING:** batch/kedaluwarsa, serial, reservasi stok, saran pemesanan ulang (reorder point/safety stock), umur stok |
-| 12 | Accounting | VERIFIED | `acct_*` double-entry otomatis, periode tutup, buku besar, neraca, laba rugi, arus kas, rekonsiliasi bank, anggaran | **MISSING:** aset tetap & penyusutan otomatis, pajak, cost center, akrual/dibayar dimuka terjadwal |
-| 13 | Procurement | VERIFIED (inti, 15 Nov: permintaan pembelian, faktur supplier + pencocokan 3 arah, PPN masukan, kinerja supplier) | `purchases` (pesan, terima sebagian), retur supplier, pelunasan utang | **MISSING:** permintaan pembelian, RFQ, invoice supplier & 3-way matching, kinerja supplier |
-| 14 | CRM | PARTIAL | `contacts`, `crm_leads/activities/tasks`, riwayat transaksi | **MISSING:** klasifikasi pelanggan, batas kredit, daftar harga khusus, loyalti/member, profitabilitas pelanggan |
-| 15 | HR | VERIFIED (inti) | `/sdm`: `staff` (termasuk tanpa akun), `staff_shifts`, `attendance` (absen sendiri + koreksi pengelola, lembur otomatis), `staff_advances`, `payroll_runs/lines` (bulanan prorata/harian/per jam + tunjangan + lembur + bonus/potongan − kasbon) → pengeluaran "Gaji karyawan" (jurnal), slip cetak/WA | **SELESAI 14 Nov.** **Belum:** pengajuan cuti oleh karyawan, komisi penjualan, BPJS/PPh 21, absen berbasis lokasi/foto |
-| 16 | Dokumen | PARTIAL | Struk, kwitansi, nota, ekspor Excel/PDF, lampiran privat, media publik | **MISSING:** penomoran dokumen terpusat, template PO/surat jalan/penawaran, riwayat versi dokumen |
+### Bab 20 Laundry — SEBAGIAN
+| Submodul | Status |
+|---|---|
+| Katalog, per kg & per item, terima order, nota, antrean & tahap (bisa diatur), tracking, jemput & antar | ADA |
+| Penimbangan | SEBAGIAN (input manual) |
+| Klaim kerusakan | SEBAGIAN (keluhan pesanan; ganti rugi belum tercatat khusus) |
+| **Perawatan mesin** | **BELUM** |
+| **KPI: rata-rata waktu selesai, biaya produksi per kg, tingkat kerusakan, pelanggan kembali** | **BELUM** (pesanan selesai & terlambat ADA) |
 
-### Industri (Bab 17–31)
+### Bab 21 Properti & kos — SEBAGIAN
+| Submodul | Status |
+|---|---|
+| Kamar, penghuni, sewa, tagihan berulang, bayar sebagian, deposit, meteran, perbaikan + biaya, hunian, booking, pindah kamar | ADA |
+| **Multi-properti / gedung dalam satu bisnis** | **BELUM** (satu bisnis = satu properti) |
+| Kontrak sewa | SEBAGIAN (data sewa ada; dokumen kontrak BELUM) |
+| Perpanjangan kontrak | SEBAGIAN (ubah tanggal selesai; alur perpanjangan BELUM) |
+| **Laporan multi-properti, NOI, lama kamar kosong** | **BELUM** |
 
-| Bab | Industri | Status | Catatan |
-|---|---|---|---|
-| 17 | Retail & grocery | VERIFIED (inti) | Promo, konsinyasi, kedaluwarsa selesai (14–15 Nov). Celah: analitik kasir |
-| 18 | Grosir & distribusi | PARTIAL → inti selesai 14 Nov | Penawaran, pesanan, surat jalan bertahap, faktur, batas kredit, tempo, daftar harga, umur piutang, penerima/gagal kirim. **MISSING:** rute & armada, foto bukti kirim, harga bertingkat per jumlah |
-| 19 | F&B (kuliner) | PARTIAL | Meja, reservasi, QR meja, layar dapur, split bill ada; **MISSING** resep, konsumsi bahan, food cost, waste |
-| 20 | Laundry | VERIFIED | Tahap proses, per kg/item, antar jemput, keluhan; celah: perawatan mesin |
-| 21 | Properti & kos | VERIFIED | E2E lulus; celah: multi-properti per gedung, perpanjangan kontrak |
-| 22 | Jasa profesional | PARTIAL | Lewat Business Builder (template) |
-| 23 | E-commerce | MISSING | Halaman bisnis + permintaan ≠ toko online |
-| 24 | Manufaktur | PARTIAL (template Builder) | BOM/produksi belum menjadi mesin |
-| 25–31 | Bengkel, klinik, pendidikan, pertanian, hotel, konstruksi, logistik | PARTIAL (template Builder) | Data & alur via Builder; belum terhubung stok/akuntansi khusus |
+### Bab 22 Jasa profesional — BELUM (mesin)
+Katalog layanan & pesanan memakai mesin Jasa (ADA). **Penawaran jasa, work order bertugas, proyek, tugas, timesheet, penugasan staf, milestone, tagihan proyek, SLA, garansi, masukan pelanggan: BELUM** (hanya template Business Builder `bb_proyek`).
 
-### Intelligence, otomatisasi, platform
+### Bab 23 E-commerce — BELUM
+Halaman bisnis + permintaan (Pro) bukan toko online: tidak ada keranjang online, pembayaran online pelanggan, marketplace, sinkron stok, pengemasan, ongkir, retur online, rekonsiliasi COD.
+
+### Bab 24 Manufaktur — BELUM
+Hanya template Builder `bb_produksi`. BOM, MRP, perintah produksi, pengeluaran bahan, WIP, barang jadi, biaya produksi, kapasitas mesin, QC, traceability, scrap, yield: BELUM. (Keputusan MFG-001…020 di Project.)
+
+### Bab 25–31 — BELUM (mesin)
+| Bab | Industri | Yang ada |
+|---|---|---|
+| 25 | Bengkel | Template Builder `bengkel` (data kendaraan & status). Estimasi, work order mekanik, suku cadang dari stok, tagihan jasa, garansi, pengingat servis: BELUM |
+| 26 | Klinik & apotek | Template `bb_klinik`. Sengaja tidak menyimpan data medis tanpa kontrol khusus |
+| 27 | Pendidikan | Template `bb_pendidikan` |
+| 28 | Pertanian & peternakan | Template `bb_tani` |
+| 29 | Hotel | Tidak ada (kos ≠ hotel harian: check-in/out per malam, housekeeping, channel) |
+| 30 | Konstruksi | Template `bb_proyek` |
+| 31 | Logistik | Template `bb_kirim` |
+
+## BAGIAN VII–XVI — Intelligence, otomatisasi, portal, platform
 
 | Bab | Modul | Status | Catatan |
 |---|---|---|---|
-| 32 | Insight | PARTIAL | `/analisis` (temuan dari data), saran fitur; standar insight (sumber, metode, kecukupan data) belum seragam |
-| 33 | Business Health Score | MISSING | |
-| 34 | Forecast & skenario | MISSING | |
-| 35 | Automation | VERIFIED (resep) | Resep tetap + log + jeda; **MISSING** rule builder bebas (pemicu/syarat/tindakan dipilih pemilik) |
-| 36 | Approval matrix | PARTIAL | Peran, tindakan, nominal, 2 tingkat (Pro); **MISSING** per cabang/departemen |
-| 37–39 | Onboarding adaptif | VERIFIED | `/mulai`, Pusat Konfirmasi, rekomendasi modul dari profil |
-| 40–42 | Portal, tracking, chat | PARTIAL | Portal penghuni, cek status pesanan jasa; **MISSING** login pelanggan, chat & tiket pelanggan |
-| 43–44 | Admin platform | VERIFIED | Peran staf + MFA, akses bantuan terbatas & tercatat, tiket, audit, status sistem; **MISSING** tampilan registry modul |
-| 45 | Entitlement | VERIFIED | `plan_has` di server, uji per fitur |
-| 5–6 | Module Registry & dependensi | PARTIAL → diperbaiki tahap ini | Tabel `modules` + `business_modules` + dependensi wajib; metadata Bab 5 belum lengkap |
-| 8 | Event lintas modul | VERIFIED (14 Nov) | `domain_events` outbox transaksional + idempoten, riwayat aktivitas `/aktivitas`, pemantauan kelengkapan di Admin › Status sistem. Belum ada penangan asinkron (dipakai saat integrasi/notifikasi) |
+| 32 | Business Intelligence | SEBAGIAN | Analisis keuangan bertingkat. Intelijen stok, pelanggan, supplier, harga, karyawan, risiko, pertumbuhan: BELUM; standar insight (sumber, metode, kecukupan data, terakhir diperbarui) belum seragam |
+| 33 | Business Health Score | BELUM | (Skor "kesehatan" di Admin = kesehatan akun pelanggan platform, bukan bisnis) |
+| 34 | Proyeksi & skenario | BELUM | |
+| 35 | Automation rule builder | BELUM | Yang ada = resep otomatisasi tetap + log + jeda (ADA) |
+| 36 | Matriks persetujuan | SEBAGIAN | Per tindakan, nominal, 2 tingkat; per cabang/departemen/risiko BELUM |
+| 37–38 | Onboarding & rekomendasi modul | ADA | |
+| 39 | Adaptasi pertumbuhan | SEBAGIAN | Penawaran naik paket; rekomendasi modul dari sinyal pertumbuhan BELUM |
+| 40 | Portal pelanggan | SEBAGIAN | Portal penghuni kos, cek status pesanan jasa, halaman terkirim. Login pelanggan, riwayat pesanan & faktur pelanggan toko/grosir: BELUM |
+| 41 | Tracking | SEBAGIAN | Tahap jasa bisa diatur; visibilitas & aturan notifikasi per status BELUM; tracking pengiriman grosir BELUM |
+| 42 | Chat & dukungan pelanggan | BELUM | (`u_chat` dalam rencana; tiket di Admin = dukungan platform) |
+| 43–44 | Admin platform | ADA | Peran staf, MFA, akses bantuan tercatat, tiket, registry modul, status sistem; pemantauan error & integrasi SEBAGIAN |
+| 45 | Entitlement | ADA | Cek server `plan_has` |
+| 47–48 | Tampilan HP / desktop | SEBAGIAN | HP ADA; desktop: sidebar ada, pencarian global & personalisasi widget BELUM |
+| 51 | Keamanan multi-tenant | SEBAGIAN | Isolasi diuji (193 kasus), RLS, otorisasi server ADA; rate limiting hanya di jalur publik; backup/pemulihan = bawaan Supabase, belum diuji pemulihannya |
+| 53 | Observability | SEBAGIAN | Log cron, peristiwa, status sistem; pelacakan error terstruktur BELUM |
+| 56 | Pengujian | SEBAGIAN | Uji SQL + isolasi + render; uji unit/E2E frontend, aksesibilitas, performa: BELUM |
+| 57 | Skenario bisnis A–F | A–E ADA (uji SQL), **F manufaktur BELUM** |
 
-## 3. Temuan masalah
+## Ralat klaim sebelumnya
 
-1. **Melanggar keputusan pemilik 13 Nov 2026:** modul `u_asisten` "Asisten AI" masih tampil "Segera hadir" di Konfigurasi › Modul. → dihentikan di tahap ini.
-2. Registry belum mencatat fitur yang sudah ada (Persetujuan, Otomatisasi, Anggaran, Analisis, Media, Lampiran, Lokasi) → katalog tidak lengkap.
-3. Status implementasi platform & status aktivasi pelanggan tercampur di satu kolom `status` (available/segera) — Bab 5 meminta dipisah.
-4. Menonaktifkan modul tidak menampilkan dampak (menu yang hilang, data yang tetap) sebelum dikonfirmasi.
+1. 15 Nov saya menulis "backlog P2 untuk toko sudah habis". **Salah.** Toko masih belum punya varian produk, kategori barang, tutup harian, pencegahan kehilangan, KPI toko (keranjang, perputaran, stok habis, susut, per kasir), komisi, harga per jumlah beli, nomor seri, dan reservasi stok.
+2. Audit 14 Nov menandai Retail, Laundry, Properti, Akuntansi "VERIFIED". Yang benar: **inti**-nya berjalan dan diuji, tetapi tiap bab masih punya submodul BELUM (tabel di atas).
+3. Bisnis jasa, kuliner, dan kos belum mendapat beberapa fitur yang sudah ada di toko (PPN, penawaran, promo).
 
-5. **Aturan terlalu kaku (keluhan pemilik 14 Nov):** sewa tidak bisa diakhiri bila tanggal masuk belum tiba atau tanggal keluar belum tiba; rencana selesai ditahan tagihan; booking −7 hari; langsung huni +7 hari; jemput tanpa opsi "antar sendiri"; pesanan siap tidak bisa dikoreksi; tamu terlambat tidak bisa ditandai datang. → dilonggarkan di migrasi `20261114210000` (keuangan tetap terjaga: tagihan yang sudah dibayar tidak dibatalkan diam-diam). Rekening/QRIS di halaman bisnis kini untuk semua jenis bisnis dengan saklar pemilik.
-6. Celah yang ditemukan saat audit: **pindah kamar** penghuni belum ada (harus akhiri + mulai sewa baru, deposit tidak ikut) → masuk backlog P1.
+## Backlog berprioritas baru (Bab 54–55)
 
-## 4. Backlog berprioritas (Bab 54–55)
-
-| Prio | Pekerjaan | Fase |
+| Prio | Pekerjaan | Jenis bisnis |
 |---|---|---|
-| P0 | ~~Module Registry V2 + dependency graph + dampak nonaktif + registry di Admin~~ — selesai 14 Nov | 0 |
-| P0 | ~~Domain event outbox + riwayat aktivitas per dokumen~~ — selesai 14 Nov | 1 |
-| P1 | ~~Pajak (PPN) & split payment di kasir + jurnal pajak~~ — selesai 14 Nov (PPN keluaran; masukan menyusul bersama faktur pembelian) | 1 |
-| P1 | ~~Penawaran harga → sales order → surat jalan → faktur (grosir) + batas kredit & daftar harga pelanggan~~ — selesai 14 Nov (belum: rute/armada, harga bertingkat per jumlah, reservasi stok keras) | 1–2 |
-| P1 | ~~Pindah kamar penghuni~~ — selesai 14 Nov | 1 |
-| P1 | ~~Batch & kedaluwarsa + saran pemesanan ulang~~ — selesai 14 Nov (FEFO otomatis, mutasi membawa batch; belum: nomor seri, blokir jual barang kedaluwarsa opsional) | 1 |
-| P1 | ~~Data karyawan, absensi, shift, gaji (jurnal gaji)~~ — selesai 14 Nov (belum: cuti diajukan karyawan, komisi, BPJS/PPh 21) | 1 |
-| P1 | ~~Aset tetap & penyusutan otomatis~~ — selesai 14 Nov (garis lurus, pelepasan aset, jurnal otomatis; belum: saldo menurun, penyusutan fiskal, foto/lampiran aset) | 1 |
-| P2 | ~~Resep & food cost kuliner (konsumsi bahan otomatis)~~ — selesai 14 Nov (resep per menu, potong bahan saat selesai, food cost % & margin, porsi tersedia, bahan terbuang; belum: sub-resep/bumbu racikan, menu engineering, yield/susut masak) | 2 |
-| P2 | ~~Promosi & bundling~~ — selesai 14 Nov (diskon barang, beli X gratis Y, paket, minimal belanja; terjadwal; dihitung server; di struk). **Belum:** promo untuk jasa/kuliner, voucher/kode kupon, poin loyalti | 2 |
-| P2 | ~~Konsinyasi (titip jual)~~ — selesai 15 Nov (terima/kembalikan titipan, yang terjual otomatis jadi setoran ke penitip, laba = jual − harga titip; belum: komisi persen, laporan cetak untuk penitip, toko menitip di tempat lain) | 2 |
-| P2 | ~~Permintaan pembelian, invoice supplier, 3-way matching~~ — selesai 15 Nov (+ PPN masukan, kurang/lebih bayar, kinerja supplier; belum: RFQ/perbandingan penawaran, barang dalam perjalanan) | 2 |
-| P3 | Business Health Score per jenis bisnis, proyeksi & skenario | 4 |
-| P3 | Rule builder otomatisasi bebas | 4 |
-| P4 | Login & chat pelanggan, toko online, integrasi keluar | 5 |
-| P2–P3 | Mesin khusus Manufaktur, Logistik, Event (blueprint terpisah) | 3 |
+| P1 | Toko lanjutan 1: kategori barang, varian produk, tutup harian, KPI toko (keranjang, perputaran, stok habis, susut, per kasir) | Toko |
+| P1 | Toko lanjutan 2: harga per jumlah beli, komisi kasir/sales, pencegahan kehilangan, kebijakan stok minus | Toko, grosir |
+| P1 | Kesetaraan lintas bisnis: PPN untuk jasa/kuliner/kos, penawaran untuk jasa, promo untuk kuliner | Jasa, kuliner, kos |
+| P1 | Akuntansi lanjutan: neraca saldo, akrual & dibayar dimuka, pusat biaya/departemen, PPh UMKM | Semua |
+| P1 | Command Center lintas modul (kas, piutang, utang, pesanan tertunda, peringatan, filter cabang & periode) | Semua |
+| P2 | Grosir & distribusi: reservasi stok + picking, jadwal kirim, rute, armada & pengemudi, bukti terima foto, penagihan, sales rep, biaya distribusi | Grosir |
+| P2 | Jasa profesional: penawaran, work order bertugas, proyek & tugas, timesheet, milestone & tagihan proyek, SLA, garansi | Jasa |
+| P2 | Properti: multi-gedung, dokumen kontrak & perpanjangan, NOI, lama kosong | Kos |
+| P2 | Kuliner: delivery, sub-resep & produksi dapur, menu engineering, waktu masak, perputaran meja | Kuliner |
+| P2 | Laundry: perawatan mesin, KPI waktu selesai & biaya per kg, klaim kerusakan dengan ganti rugi | Laundry |
+| P2 | CRM: segmen pelanggan, loyalti/poin/member, masukan pelanggan, profitabilitas pelanggan | Semua |
+| P2 | Pengadaan: RFQ & perbandingan penawaran, persetujuan PO per nominal | Semua |
+| P2 | SDM: departemen, pengajuan & saldo cuti, komisi, penilaian kinerja, dokumen karyawan, PPh 21/BPJS | Semua |
+| P2 | Dokumen: cetak PO & kontrak, aturan penomoran, template, riwayat versi | Semua |
+| P3 | Mesin Manufaktur (MFG-001…020), Logistik, Event | Industri baru |
+| P3 | Bengkel, hotel, pendidikan, pertanian, konstruksi sebagai mesin (bukan hanya template) | Industri baru |
+| P3 | Business Health Score per jenis bisnis, proyeksi & skenario, intelijen stok/pelanggan/supplier | Semua |
+| P3 | Rule builder otomatisasi, matriks persetujuan per cabang/departemen | Semua |
+| P4 | Portal & login pelanggan, chat & tiket pelanggan, toko online & marketplace | Semua |
+| — | Pengujian: uji E2E frontend, aksesibilitas, performa | Platform |
 
-Setiap item: database + RPC + UI + panduan + uji SQL + regresi sebelum dinyatakan selesai (Bab 59).
+Setiap item dinyatakan selesai hanya bila: database + RPC + layar HP + panduan + uji SQL + uji isolasi + regresi penuh lulus + terverifikasi di produksi (Bab 59).
+
+## Riwayat yang sudah selesai (14–15 Nov, tetap berlaku)
+Module Registry V2, peristiwa & riwayat aktivitas, PPN keluaran & bayar campuran (toko), grosir B2B (penawaran → pesanan → surat jalan → faktur, batas kredit, daftar harga), pindah kamar, batch & kedaluwarsa + saran belanja, SDM & gaji, mesin konversi satuan, aset tetap & penyusutan, resep & food cost, promo & bundling, permintaan pembelian + faktur supplier + PPN masukan + kinerja supplier, konsinyasi, landing baru. Rincian teknis di `CLAUDE.md`.
