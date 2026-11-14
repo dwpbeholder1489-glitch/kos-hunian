@@ -185,7 +185,8 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
         p_id: txId, p_kos: kosId, p_tier: tier,
         p_lines: cart.map((c) => ({ product_id: c.product_id, unit: c.unit, qty: c.qty, price: c.price })),
         p_discount: disc, p_method: method, p_paid: method === 'tunai' || (method === 'campuran' && sp.tunai > 0) ? paidN : null, p_contact: cid, p_due: needContact && due ? due : null, p_note: note,
-        p_payments: method === 'campuran' ? Object.entries(sp).filter(([, v]) => v > 0).map(([m, a]) => ({ method: m, amount: a })) : null,
+        // dikirim hanya untuk Campuran: penjualan biasa tetap jalan walau database belum diperbarui
+        ...(method === 'campuran' ? { p_payments: Object.entries(sp).filter(([, v]) => v > 0).map(([m, a]) => ({ method: m, amount: a })) } : {}),
       });
       if (error) throw error;
       if (lead) { const r2 = await supabase.rpc('lead_mark_sold', { p_lead: lead.id, p_sale: txId }); if (r2.error) toast('Penjualan tersimpan, tetapi prospek belum ditandai Jadi: ' + errMsg(r2.error)); }
