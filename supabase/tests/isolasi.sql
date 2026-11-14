@@ -44,6 +44,8 @@ begin
       ('so_save', format('select public.so_save(gen_random_uuid(), %L, ''{"lines":[]}'')', k)),
       ('price_list_save', format('select public.price_list_save(%L, null, ''uji'')', k)),
       ('reorder_suggest', format('select public.reorder_suggest(%L)', k)),
+      ('product_save', format('select public.product_save(%L, null, ''uji'', ''kg'', 0, 0, ''[{"name":"kg"}]'')', k)),
+      ('unit_to_base', format('select public.unit_to_base((select id from public.products where kos_id = %L limit 1), ''kg'', 1)', k)),
       ('staff_save', format('select public.staff_save(%L, null, ''{"name":"uji isolasi"}'')', k)),
       ('staff_me', format('select public.staff_me(%L)', k)),
       ('attendance_clock', format('select public.attendance_clock(%L, ''masuk'', null)', k)),

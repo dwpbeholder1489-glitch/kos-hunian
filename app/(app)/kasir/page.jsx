@@ -11,6 +11,7 @@ import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, today } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, unitPrice, uid, PAY } from '@/lib/retail';
+import { toBase } from '@/lib/units';
 
 const cartKey = (k) => 'prasara.cart.' + k;
 
@@ -161,7 +162,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const ppn = rate && sub ? Math.round(((taxable - (disc * taxable) / sub) * rate) / (100 + rate)) : 0;
   const setLine = (key, patch) => setCart(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)));
   const stockOf = (id) => Number(d.products.find((p) => p.id === id)?.stock || 0);
-  const baseUsed = (id) => cart.filter((c) => c.product_id === id).reduce((s, c) => s + c.qty * c.unit_qty, 0);
+  const baseUsed = (id) => cart.filter((c) => c.product_id === id).reduce((s, c) => s + toBase(c.qty, c.unit_qty), 0);
 
   const pay = async () => {
     if (!cart.length) return toast('Keranjang kosong.');

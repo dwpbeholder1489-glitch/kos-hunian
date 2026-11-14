@@ -8,6 +8,7 @@ import { Field, Loading, Empty, toast } from '@/components/ui';
 import { angka, tgl, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 import { multiLoc } from '@/lib/business';
+import { toBase } from '@/lib/units';
 
 const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })}`; };
 
@@ -53,7 +54,7 @@ export default function Mutasi() {
   const have = (pid, bid) => Number(d.levels.find((l) => l.product_id === pid && l.branch_id === bid)?.qty || 0);
   const term = q.trim().toLowerCase();
   const found = term ? d.products.filter((p) => !items.some((i) => i.product_id === p.id) && term.split(/\s+/).every((w) => p.name.toLowerCase().includes(w))).slice(0, 8) : [];
-  const baseOf = (it) => { const p = d.products.find((x) => x.id === it.product_id); const u = unitsOf(p, d.units).find((x) => x.name === it.unit); return (qtyNum(it.qty) || 0) * Number(u?.qty || 1); };
+  const baseOf = (it) => { const p = d.products.find((x) => x.id === it.product_id); const u = unitsOf(p, d.units).find((x) => x.name === it.unit); return toBase(qtyNum(it.qty) || 0, u?.qty || 1); };
   const bad = items.find((it) => baseOf(it) <= 0 || baseOf(it) > have(it.product_id, from));
 
   const send = async () => {
@@ -61,7 +62,7 @@ export default function Mutasi() {
     if (bad) return toast('Periksa jumlah: harus lebih dari 0 dan tidak melebihi stok di lokasi asal.');
     if (!window.confirm(`Pindahkan ${items.length} barang dari ${name(from)} ke ${name(to)}?`)) return;
     setBusy(true);
-    const { data, error } = await supabase.rpc('stock_transfer', { p_id: txId, p_kos: kosId, p_from: from, p_to: to, p_lines: items.map((it) => ({ product_id: it.product_id, qty: baseOf(it) })), p_note: note });
+    const { data, error } = await supabase.rpc('stock_transfer', { p_id: txId, p_kos: kosId, p_from: from, p_to: to, p_lines: items.map((it) => ({ product_id: it.product_id, unit: it.unit, qty: qtyNum(it.qty) })), p_note: note });
     setBusy(false);
     if (error) return toast(errMsg(error));
     toast(`${data.number} tersimpan`); setItems([]); setNote(''); setTxId(uid()); bump(); load();

@@ -402,6 +402,26 @@ export function ScrGrosir() {
   );
 }
 
+export function ScrSatuan() {
+  return (
+    <Phone bare>
+      <h3>Gula pasir</h3>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Satuan utama · kg</b><span>Modal {rp(12000)}/kg · eceran {rp(14000)}</span></div>
+      <div className="unitbox small" style={{ gap: 4 }}>
+        <b>Kemasan 250 gram</b>
+        <div className="row" style={{ gap: 6 }}><span className="mini-btn">Isi 250</span><span className="mini-btn">gram</span></div>
+        <span>Hasil: <b>1 Kemasan 250 gram = 0,25 kg</b> · modal {rp(3000)} · <span style={{ color: 'var(--good)' }}>untung {rp(700)}</span></span>
+      </div>
+      <div className="unitbox small" style={{ gap: 4 }}>
+        <b>gram</b>
+        <div className="row" style={{ gap: 6 }}><span className="mini-btn">Isi 250</span><span className="mini-btn">kg</span></div>
+        <span style={{ color: 'var(--bad)' }}>Nama "gram" berarti 0,001 kg, tapi isinya 250 kg.</span>
+      </div>
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}><span className="mini-btn">+ ½ kg</span><span className="mini-btn">+ Sak 25 kg</span><span className="mini-btn cta">+ Satuan lain</span></div>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

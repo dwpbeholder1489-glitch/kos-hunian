@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -233,12 +233,13 @@ const PARTS = [
   ['E', 'Retail & Grosir (toko)', [
     ['Barang, satuan, dan stok', 'Menu Barang & stok', [
       <>Buka bisnis toko Anda (ketuk nama bisnis di kiri atas), lalu menu <b>Barang & stok</b>. Tekan <b>+ Tambah barang</b>.</>,
-      <>Isi nama, <b>satuan terkecil</b> (pcs, bungkus, kg) dan <b>harga modal</b> per satuan itu, lalu stok sekarang.</>,
-      <>Di <b>Satuan jual & harga</b>, isi harga eceran dan grosir. Tekan <b>+ Tambah satuan</b> untuk dus/pak/renteng beserta isinya (mis. dus isi 40). Di bawah tiap satuan tampil hitungannya, mis. "1 dus = 40 pcs · modal Rp 112.000 · untung Rp 8.000".</>,
-      <>Barang <b>curah</b> dijual sebagian (minyak/gula/beras per kg): satuan terkecil <b>kg</b>, harga modal per kg, lalu ketuk <b>+ ¼ kg</b> / <b>+ ½ kg</b> — isinya terisi otomatis (0,25 / 0,5). Nama seperti "250 gram" juga dihitung otomatis menjadi 0,25 kg.</>,
+      <>Isi nama, lalu pilih <b>Satuan utama</b> (pcs, kg, gram, liter, ml, bungkus, botol… atau ketik sendiri) — satuan terkecil yang Anda hitung. Stok, harga modal, dan laporan selalu dihitung dalam satuan ini. Isi <b>harga modal</b> per satuan utama, stok sekarang, serta harga eceran/grosirnya.</>,
+      <>Di <b>Satuan jual lain</b>, ketuk satuan siap pakai (mis. <b>+ Kemasan 250 gram</b>, <b>+ ½ kg</b>, <b>+ Lusin</b>, <b>+ Dus</b>) atau <b>+ Satuan lain</b>. Cukup isi <b>Nama</b>, <b>Isi</b>, dan <b>Satuan isi</b> — mis. Kemasan 250 gram · isi 250 · gram, atau Dus · isi 24 · botol, atau Karton · isi 2 · Dus. Tidak perlu menghitung sendiri.</>,
+      <>Baca baris <b>Hasil</b> di bawahnya, mis. "1 Kemasan 250 gram = 0,25 kg · modal Rp 3.000 · untung Rp 700". Sistem menghitung 1 kg = 1.000 gram, 1 ons = 100 gram, 1 kuintal = 100 kg, 1 ton = 1.000 kg, 1 liter = 1.000 ml. Nama yang salah isi (mis. "gram" diisi 250 kg) langsung ditandai merah dan tidak bisa disimpan.</>,
+      <>Berat dan volume <b>tidak pernah</b> dikonversi otomatis. Menjual minyak ber-satuan utama kg per liter? Pilih satuan isi <b>liter</b>, lalu isi <b>Berat 1 liter barang ini</b> (mis. 0,9 kg hasil timbang sendiri).</>,
       <>Untuk menghitung ulang atau mencatat barang rusak, tekan <b>Stok</b> di samping barang, pilih alasannya, isi jumlah, lalu <b>Simpan</b>.</>,
       <>Opsional: isi <b>Kode barang</b> dan <b>Barcode</b> tiap satuan (angka di bawah garis-garis kemasan). Di Kasir, scan barcode atau ketik kodenya lalu Enter — barang langsung masuk keranjang.</>,
-    ], <>Scanner barcode Bluetooth/USB bekerja di iPhone maupun Android. Tombol kamera 📷 Pindai bisa dipakai di iPhone dan Android (izinkan akses kamera). Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Muncul tanda merah jika harga eceran di bawah modal, jika nama satuan sama dengan satuan terkecil, atau jika isinya tidak cocok (mis. "250 gram" diisi 250 padahal satuan terkecil kg) — lengkap dengan tombol <b>Pakai 0,25</b> untuk membetulkannya. Kode barang hanya penanda sendiri, bukan tempat satuan.</>, null, null],
+    ], <>Scanner barcode Bluetooth/USB bekerja di iPhone maupun Android. Tombol kamera 📷 Pindai bisa dipakai di iPhone dan Android (izinkan akses kamera). Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Satuan utama tidak bisa diganti setelah barang punya stok/riwayat (angka lama tercatat dalam satuan itu) — tambahkan satuan lain sebagai satuan jual. Semua menu (Kasir, Belanja, Retur, Mutasi, Pesanan grosir, Stok) memakai isi satuan yang sama, sehingga stok, HPP, dan laba selalu cocok. Kode barang hanya penanda sendiri, bukan tempat satuan.</>, null, <ScrSatuan />],
     ['Jualan di kasir', 'Menu Kasir', [
       <>Buka <b>Kasir</b>. Pilih <b>Eceran</b> atau <b>Grosir</b> di kanan atas — harga mengikuti pilihan ini.</>,
       <>Cari barang, lalu ketuk tombol satuannya (mis. <b>pcs · Rp 3.500</b> atau <b>dus · Rp 125.000</b>). Ketuk lagi untuk menambah jumlah.</>,

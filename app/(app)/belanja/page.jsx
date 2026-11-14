@@ -11,6 +11,7 @@ import { multiLoc } from '@/lib/business';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
+import { toBase } from '@/lib/units';
 
 const BUY = { tunai: 'Tunai', transfer: 'Transfer', utang: 'Utang ke supplier' };
 const REFUND = { potong_utang: 'Potong utang ke supplier', tunai: 'Uang kembali tunai', transfer: 'Uang kembali transfer' };
@@ -159,7 +160,7 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
         const us = unitsOf(p, d.units);
         const u = us.find((x) => x.name === l.unit) || us[0];
         const qn = qtyNum(l.qty) || 0, pr = parseRp(l.price);
-        const base = qn * Number(u.qty);
+        const base = toBase(qn, u.qty);
         const unitCost = u.qty > 0 ? pr / Number(u.qty) : 0;
         const newCost = Number(p.stock) > 0 ? (Number(p.stock) * Number(p.cost) + base * unitCost) / (Number(p.stock) + base) : unitCost;
         return (
