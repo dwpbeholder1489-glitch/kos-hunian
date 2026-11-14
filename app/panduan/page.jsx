@@ -137,13 +137,14 @@ const PARTS = [
       <>Isi <b>Jumlah</b>, <b>Tanggal</b>, dan keterangan, lalu <b>Simpan</b>.</>,
       <>Laporan memisahkannya: prive mengurangi kas tetapi <b>tidak</b> mengurangi laba.</>,
     ], <><b>Jangan tertukar:</b> gaji pengelola/penjaga adalah <b>biaya kos</b> (tab Biaya kos). Uang yang dipakai pemilik untuk keperluan pribadi adalah <b>prive</b> (tab ini).</>, 'warn', <ScrOwner />],
-    ['Penghuni keluar', 'Penghuni (atau Kamar) › Akhiri sewa', [
+    ['Penghuni keluar atau pindah kamar', 'Penghuni (atau Kamar) › Akhiri sewa / Pindah kamar', [
       <>Isi <b>Tanggal keluar</b> yang sebenarnya — boleh <b>lebih awal</b> atau <b>lebih lambat</b> dari rencana — dan alasan bila perlu.</>,
       <>Tekan <b>Akhiri sewa</b>. Kamar kembali <b>Tersedia</b>. Tanggal yang belum tiba disimpan sebagai <b>Rencana selesai</b> (kamar tetap terisi, tagihan berhenti di tanggal itu); penghuni yang <b>batal masuk</b> (tanggal keluar sebelum tanggal masuk) ditutup dan tagihannya dibatalkan.</>,
       <>Tagihan sesudah tanggal keluar yang belum dibayar dibatalkan otomatis. Tunggakan lama tetap tercatat. Sudah ada pembayaran untuk periode sesudah tanggal keluar? Jumlahnya ditampilkan — kembalikan ke penghuni atau biarkan sesuai kesepakatan.</>,
       <>Rencana selesai bisa diubah kapan saja (Penghuni › ketuk nama › Rencana selesai › ubah). Dimajukan: tagihan sesudahnya yang belum dibayar ikut dibatalkan. Dimundurkan/dikosongkan: tagihan itu terbit lagi. Rencana yang sudah lewat tapi sewa masih aktif ditandai di detail penghuni.</>,
       <>Masih ada deposit? Selesaikan di <b>Penghuni › Deposit</b>: kembalikan, potong untuk kerusakan, atau lunasi tunggakan dari deposit (Langkah 51).</>,
-    ], null, null, <ScrEndLease />],
+      <><b>Pindah kamar</b> (penghuni tetap tinggal, hanya ganti kamar): tekan <b>Pindah kamar</b>, pilih kamar kosong, tanggal pindah, dan harga baru. Tanggal tagihan tetap sama: periode yang sedang berjalan tetap di kamar lama, harga baru mulai tagihan berikutnya. Ingin menagih selisih bulan ini? Isi <b>Tagihan selisih</b> (atau ketuk <b>Hitung sisa hari</b>). Deposit dan tagihan yang sudah dibayar di muka ikut pindah; kamar lama kembali <b>Tersedia</b>.</>,
+    ], <>Pindah kamar dicatat saat penghuni benar-benar pindah. Kamar yang sedang dibooking tidak bisa jadi tujuan.</>, null, <ScrEndLease />],
   ]],
   ['C', 'Pengecekan', [
     ['Pantau kondisi kos di Dashboard', 'Dashboard', [

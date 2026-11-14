@@ -148,3 +148,70 @@ export function EndLeaseSheet({ d, lease, onClose }) {
     </Sheet>
   );
 }
+
+// Tambah n bulan seperti PostgreSQL (tanggal 31 → akhir bulan bila bulan tujuan lebih pendek)
+function addMonths(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1 + n, 1));
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+  t.setUTCDate(Math.min(d, last));
+  return t.toISOString().slice(0, 10);
+}
+
+// Pindah kamar: sewa lama ditutup, sewa baru di kamar tujuan; siklus tagihan dilanjutkan, deposit & tagihan yang sudah dibayar di muka ikut.
+// Server: lease_move_room.
+export function MoveRoomSheet({ d, lease, onClose }) {
+  const { bump } = useKos();
+  const free = d.rooms.filter((r) => r.status === 'tersedia' && r.id !== lease.room_id && !d.bookByRoom?.get(r.id));
+  const [roomId, setRoom] = useState(free[0]?.id || '');
+  const room = d.roomById.get(roomId);
+  const [rent, setRent] = useState(room?.rent ? angka(room.rent) : angka(lease.rent));
+  const [date, setDate] = useState(today());
+  const [extra, setExtra] = useState('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const dep = d.depByLease?.get(lease.id) || 0;
+  // periode berjalan & periode berikutnya (siklus tagihan sewa lama)
+  let k = 0; while (addMonths(lease.billing_start, k + 1) <= date && k < 600) k++;
+  const curStart = addMonths(lease.billing_start, k) <= date ? addMonths(lease.billing_start, k) : null;
+  const next = curStart === date ? date : curStart ? addMonths(lease.billing_start, k + 1) : lease.billing_start;
+  const newRent = parseRp(rent) || 0;
+  const days = (a, b) => Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5);
+  const suggest = curStart && next > date && newRent > lease.rent ? Math.round(((newRent - lease.rent) * days(date, next)) / Math.max(1, days(curStart, next)) / 1000) * 1000 : 0;
+  async function save() {
+    if (!roomId) return toast('Pilih kamar tujuan.');
+    if (!(newRent > 0)) return toast('Isi harga sewa kamar tujuan.');
+    const ex = extra.trim() ? parseRp(extra) : 0;
+    if (extra.trim() && !(ex >= 0)) return toast('Tagihan selisih tidak valid.');
+    setBusy(true);
+    const { data, error } = await supabase.rpc('lease_move_room', { p_lease: lease.id, p: { room_id: roomId, date, rent: newRent, extra: ex || 0, reason } });
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    toast(`Pindah ke kamar ${data.to} tercatat. Harga baru mulai tagihan ${tgl(data.next_period)}.` + (Number(data.deposit) > 0 ? ` Deposit ${rp(data.deposit)} ikut pindah.` : '') + (Number(data.extra) > 0 ? ` Tagihan selisih ${rp(data.extra)} dibuat.` : ''));
+    bump(); onClose();
+  }
+  return (
+    <Sheet title={`Pindah kamar · ${d.occName(lease.occupant_id)}`} onClose={onClose}>
+      <span className="small muted">Sekarang di kamar <b>{d.roomCode(lease.room_id)}</b> · {rp(lease.rent)}/bulan</span>
+      {free.length === 0 ? <div className="notice">Tidak ada kamar kosong. Kamar yang dibooking tidak bisa dipilih.</div> : <>
+        <Field label="Pindah ke kamar"><select value={roomId} onChange={(e) => { setRoom(e.target.value); const rr = d.roomById.get(e.target.value); if (rr?.rent) setRent(angka(rr.rent)); }}>
+          {free.map((r) => <option key={r.id} value={r.id}>{r.code}{r.rent ? ' · ' + rp(r.rent) : ''}</option>)}</select></Field>
+        <div className="row">
+          <Field label="Tanggal pindah" hint="saat benar-benar pindah"><input type="date" value={date} min={lease.start_date} max={today()} onChange={(e) => setDate(e.target.value || today())} /></Field>
+          <Field label="Sewa kamar baru/bulan"><input inputMode="numeric" value={rent} onChange={(e) => setRent(e.target.value)} /></Field>
+        </div>
+        <div className="unitbox small" style={{ gap: 4 }}>
+          <span>• Tanggal tagihan tetap sama. {curStart && next > date ? <>Periode berjalan (sampai {tgl(plusDays(next, -1))}) tetap memakai tagihan kamar lama; harga baru mulai tagihan <b>{tgl(next)}</b>.</> : <>Harga baru langsung berlaku mulai <b>{tgl(next)}</b>.</>}</span>
+          <span>• Tagihan bulan depan yang belum dibayar diterbitkan ulang dengan harga baru; yang sudah dibayar di muka ikut pindah.</span>
+          {dep > 0 && <span>• Deposit {rp(dep)} ikut pindah ke kamar baru.</span>}
+          <span>• Kamar {d.roomCode(lease.room_id)} kembali <b>Tersedia</b>.</span>
+        </div>
+        {curStart && next > date && <Field label="Tagihan selisih bulan ini (opsional)" hint={newRent > lease.rent ? 'kosongkan bila tidak ada selisih' : 'biasanya kosong bila pindah ke kamar lebih murah'}>
+          <input inputMode="numeric" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="Rp" /></Field>}
+        {suggest > 0 && !extra.trim() && <button type="button" className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setExtra(angka(suggest))}>Hitung sisa hari: isi {rp(suggest)}</button>}
+        <Field label="Alasan (opsional)"><input value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} placeholder="mis. minta kamar lebih besar, AC rusak" /></Field>
+        <button className="cta" disabled={busy || !roomId} onClick={save}>{busy ? 'Menyimpan…' : `Pindahkan ke ${room?.code || 'kamar baru'}`}</button>
+      </>}
+    </Sheet>
+  );
+}

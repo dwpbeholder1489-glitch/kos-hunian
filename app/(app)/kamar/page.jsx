@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, run } from '@/components/ui';
-import { StartLeaseSheet, EndLeaseSheet } from '@/components/LeaseForms';
+import { StartLeaseSheet, EndLeaseSheet, MoveRoomSheet } from '@/components/LeaseForms';
 import { rp, tgl, angka, parseRp, ROOM_ST, errMsg } from '@/lib/format';
 import Link from 'next/link';
 import { moduleOn, canArea } from '@/lib/business';
@@ -52,6 +52,7 @@ export default function Kamar() {
       {sheet?.t === 'edit' && <RoomEdit d={d} room={sheet.room} onClose={close} />}
       {sheet?.t === 'start' && <StartLeaseSheet d={d} roomId={sheet.id} onClose={close} />}
       {sheet?.t === 'end' && <EndLeaseSheet d={d} lease={sheet.lease} onClose={close} />}
+      {sheet?.t === 'move' && <MoveRoomSheet d={d} lease={sheet.lease} onClose={close} />}
     </div>
   );
 }
@@ -84,7 +85,7 @@ function RoomDetail({ d, room, go, onClose }) {
             <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
             {(d.depByLease?.get(l.id) || 0) > 0 && <><dt>Deposit dipegang</dt><dd>{rp(d.depByLease.get(l.id))}</dd></>}
           </dl>
-          <button className="danger" onClick={() => go({ t: 'end', lease: l })}>Akhiri sewa</button>
+          <div className="row"><button onClick={() => go({ t: 'move', lease: l })}>Pindah kamar</button><button className="danger" onClick={() => go({ t: 'end', lease: l })}>Akhiri sewa</button></div>
         </section>
       ) : room.status === 'tersedia' && !d.bookByRoom?.get(room.id) ? (
         <button className="cta" onClick={() => go({ t: 'start', id: room.id })}>Isi kamar ini</button>

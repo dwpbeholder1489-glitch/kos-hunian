@@ -78,7 +78,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P0 | ~~Domain event outbox + riwayat aktivitas per dokumen~~ — selesai 14 Nov | 1 |
 | P1 | ~~Pajak (PPN) & split payment di kasir + jurnal pajak~~ — selesai 14 Nov (PPN keluaran; masukan menyusul bersama faktur pembelian) | 1 |
 | P1 | Penawaran harga → sales order → pengiriman/surat jalan → invoice (grosir) + batas kredit & daftar harga pelanggan | 1–2 |
-| P1 | Pindah kamar penghuni (sewa lama selesai, sewa baru, deposit & tagihan ikut) | 1 |
+| P1 | ~~Pindah kamar penghuni~~ — selesai 14 Nov | 1 |
 | P1 | Batch & kedaluwarsa + saran pemesanan ulang | 1 |
 | P1 | Data karyawan, absensi, shift, gaji (jurnal gaji) | 1 |
 | P1 | Aset tetap & penyusutan otomatis | 1 |

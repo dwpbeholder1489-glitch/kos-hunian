@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, InvChip, run } from '@/components/ui';
-import { StartLeaseSheet, EndLeaseSheet } from '@/components/LeaseForms';
+import { StartLeaseSheet, EndLeaseSheet, MoveRoomSheet } from '@/components/LeaseForms';
 import { rp, tgl, invTitle, errMsg, waLink, today } from '@/lib/format';
 import { message, caraBayar } from '@/lib/templates';
 import Link from 'next/link';
@@ -56,6 +56,7 @@ export default function Penghuni() {
       {sheet?.t === 'edit' && <OccEdit d={d} occ={sheet.occ} onClose={close} />}
       {sheet?.t === 'start' && <StartLeaseSheet d={d} occupantId={sheet.id} onClose={close} />}
       {sheet?.t === 'end' && <EndLeaseSheet d={d} lease={sheet.lease} onClose={close} />}
+      {sheet?.t === 'move' && <MoveRoomSheet d={d} lease={sheet.lease} onClose={close} />}
     </div>
   );
 }
@@ -102,6 +103,7 @@ function OccDetail({ d, occ, go, onClose }) {
         )}
       </section>
       <div className="row">
+        {l && <button onClick={() => go({ t: 'move', lease: l })}>Pindah kamar</button>}
         {l ? <button className="danger" onClick={() => go({ t: 'end', lease: l })}>Akhiri sewa</button> : <button className="primary" onClick={() => go({ t: 'start', id: occ.id })}>Mulai sewa</button>}
         <button onClick={() => go({ t: 'edit', occ })}>Ubah data</button>
       </div>
