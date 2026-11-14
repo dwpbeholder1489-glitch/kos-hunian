@@ -12,6 +12,7 @@ import { errMsg, angka, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
 import FiturUpgrade from '@/components/FiturUpgrade';
+import CaraBayarToggle from '@/components/CaraBayarToggle';
 
 const LINK_PRESETS = [['📍 Lokasi (Google Maps)', 'Lokasi (Google Maps)'], ['📷 Instagram', 'Instagram'], ['🖼️ Foto (Google Drive/Photos)', 'Foto'], ['🎵 TikTok', 'TikTok']];
 const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
@@ -92,7 +93,7 @@ export default function Halaman() {
           <option value="tidak">Jangan tampilkan daftar</option>
         </select></Field>
         <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.show_prices} onChange={(e) => set('show_prices', e.target.checked)} disabled={!owner} />Tampilkan harga {retail ? 'jual (eceran)' : jasa ? 'layanan' : 'sewa (per bulan)'}</label>
-        {!retail && !jasa && saved && <PayToggle kosId={kosId} on={Boolean(saved.show_payment)} owner={owner} onDone={load} />}
+        <CaraBayarToggle kos={kos} owner={owner} page={saved} onDone={load} ver={ver} />
         <div className="stack" style={{ gap: 6 }}>
           <span className="label">Tautan (opsional)</span>
           <span className="small muted">Mis. lokasi Google Maps, Instagram, atau album foto {retail ? 'toko' : jasa ? 'hasil kerja' : 'kamar'}. Tampil sebagai tombol di halaman. Cara salin di iPhone: buka aplikasinya › <b>Bagikan</b> › <b>Salin tautan</b>, lalu tempel di kolom alamat.</span>
@@ -126,19 +127,3 @@ export default function Halaman() {
 }
 
 // Kos: tampilkan rekening/QRIS (dari Pengaturan › Info untuk penghuni) di formulir pendaftaran calon penghuni
-function PayToggle({ kosId, on, owner, onDone }) {
-  const [busy, setBusy] = useState(false);
-  const flip = async () => {
-    setBusy(true);
-    const { error } = await supabase.rpc('public_page_set_payment', { p_kos: kosId, p_on: !on });
-    setBusy(false);
-    if (error) return toast(errMsg(error));
-    toast(!on ? 'Rekening/QRIS tampil di formulir pendaftaran' : 'Rekening/QRIS disembunyikan'); onDone();
-  };
-  return (
-    <div className="unitbox" style={{ gap: 4 }}>
-      <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={on} onChange={flip} disabled={!owner || busy} />Tampilkan rekening/QRIS di formulir pendaftaran penghuni</label>
-      <span className="small muted">Diambil dari Pengaturan › Info untuk penghuni (cara bayar & QRIS). Calon penghuni bisa langsung transfer DP/lunas dan melampirkan bukti; Anda tetap mengecek mutasi sebelum konfirmasi.</span>
-    </div>
-  );
-}

@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
-import { Sheet, Field, run } from '@/components/ui';
-import { today, parseRp, rp, angka, errMsg } from '@/lib/format';
+import { Sheet, Field, run, toast } from '@/components/ui';
+import { today, parseRp, rp, angka, errMsg, tgl } from '@/lib/format';
 import { uid } from '@/lib/retail';
 
 // Isi kamar: pilih penghuni lama atau tambah penghuni baru, lalu mulai sewa
@@ -102,19 +102,26 @@ export function EndLeaseSheet({ d, lease, onClose }) {
   const dep = d.depByLease?.get(lease.id) || 0;
   async function save() {
     setBusy(true);
-    const ok = await run(() => supabase.rpc('end_lease', { p_lease: lease.id, p_end: end, p_reason: reason }), 'Sewa diakhiri. Kamar kembali tersedia.', errMsg);
+    const { data, error } = await supabase.rpc('end_lease', { p_lease: lease.id, p_end: end, p_reason: reason });
     setBusy(false);
-    if (ok) { bump(); onClose(); }
+    if (error) return toast(errMsg(error));
+    const r = data || {};
+    toast(r.planned ? `Disimpan sebagai rencana selesai ${tgl(end)}. Kamar tetap terisi sampai penghuni keluar — bila sudah keluar, akhiri lagi dengan tanggal sebenarnya.`
+      : r.before_start ? 'Sewa ditutup (batal sebelum masuk). Kamar kembali tersedia.'
+      : 'Sewa diakhiri. Kamar kembali tersedia.' + (r.cancelled > 0 ? ` ${r.cancelled} tagihan sesudah tanggal keluar dibatalkan otomatis.` : '')
+        + (Number(r.paid_after) > 0 ? ` Ada pembayaran ${rp(r.paid_after)} untuk periode sesudah tanggal keluar — kembalikan ke penghuni atau biarkan sesuai kesepakatan.` : ''));
+    bump(); onClose();
   }
   return (
     <Sheet title={`Akhiri sewa · ${d.occName(lease.occupant_id)}`} onClose={onClose}>
-      {out > 0 && <div className="notice">Masih ada tagihan belum lunas {rp(out)}. Tagihan itu tetap tercatat setelah sewa diakhiri.</div>}
+      {out > 0 && !(end && end < lease.start_date) && <div className="notice">Masih ada tagihan belum lunas {rp(out)}. Tagihan itu tetap tercatat setelah sewa diakhiri.</div>}
       {dep > 0 && <div className="notice">Deposit {rp(dep)} masih dipegang. Setelah sewa diakhiri, selesaikan di Penghuni › {d.occName(lease.occupant_id)} › Deposit: <b>Kembalikan</b>, <b>Potong</b> untuk kerusakan, atau lunasi tunggakan lewat Tagihan (metode “Dipotong dari deposit”).</div>}
-      <Field label="Tanggal keluar" hint="hari ini atau sebelumnya"><input type="date" value={end} max={today()} onChange={(e) => setEnd(e.target.value)} /></Field>
-      <span className="small muted">Penghuni belum keluar tapi sudah pasti pindah? Tutup ini dan isi <b>Rencana selesai</b> di detail penghuni — kamar tetap terisi sampai tanggal itu.</span>
+      <Field label="Tanggal keluar" hint="boleh lebih awal atau lebih lambat dari rencana"><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+      {end > today() ? <div className="notice">Tanggal ini belum tiba, jadi disimpan sebagai <b>Rencana selesai</b>: kamar tetap terisi dan tagihan berhenti di tanggal itu. Bila penghuni ternyata keluar lebih cepat atau lebih lama, akhiri lagi dengan tanggal sebenarnya.</div>
+        : end && end < lease.start_date ? <div className="notice">Tanggal ini sebelum tanggal masuk ({tgl(lease.start_date)}) — sewa ditutup sebagai <b>batal sebelum masuk</b> dan semua tagihan yang belum dibayar dibatalkan.</div> : null}
       <Field label="Alasan (opsional)"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. lulus kuliah, pindah kerja" /></Field>
-      <p className="small muted" style={{ margin: 0 }}>Tagihan sewa untuk periode setelah tanggal keluar yang belum dibayar akan dibatalkan otomatis.</p>
-      <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Akhiri sewa'}</button>
+      <p className="small muted" style={{ margin: 0 }}>Tagihan sewa untuk periode setelah tanggal keluar yang belum dibayar akan dibatalkan otomatis. Tagihan yang sudah dibayar tetap tercatat.</p>
+      <button className="cta" onClick={save} disabled={busy || !end}>{busy ? 'Menyimpan…' : end > today() ? 'Simpan rencana selesai' : 'Akhiri sewa'}</button>
     </Sheet>
   );
 }

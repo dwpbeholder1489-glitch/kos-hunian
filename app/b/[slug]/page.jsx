@@ -2,6 +2,7 @@
 // Hanya data yang boleh dipublikasikan yang diambil (lewat fungsi public_page_view); tanpa harga modal, margin, atau stok persis.
 import { notFound } from 'next/navigation';
 import PublicForm from '@/components/PublicForm';
+import PublicPay from '@/components/PublicPay';
 import Linkify from '@/components/Linkify';
 import { logoUrl } from '@/lib/logo';
 import { PublicCover, PublicGallery, ItemThumb } from '@/components/media/PublicPics';
@@ -79,6 +80,7 @@ export default async function PublicPage({ params }) {
       )}
       <PublicForm page={p} />
       {p.type === 'jasa' && p.order && <a href={`/b/${p.slug}/cek`} className="small" style={{ textAlign: 'center' }}>Sudah memesan? Cek status pesanan →</a>}
+      {p.type !== 'properti' && <PublicPay slug={p.slug} panel />}
       {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.policy} /></p></section>}
       <footer className="small muted" style={{ textAlign: 'center' }}>Halaman ini dikelola {p.name} dengan <a href="/">PRASARA</a></footer>
     </main>

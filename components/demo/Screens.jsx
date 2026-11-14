@@ -226,6 +226,7 @@ export function ScrEndLease() {
     <Phone bare>
       <div className="row between"><h3>Akhiri sewa · Nanda Putri</h3><span className="small" style={{ color: 'var(--brand-2)', fontWeight: 800 }}>Tutup</span></div>
       <F label="Tanggal keluar" value={dFull(24)} />
+      <span className="small muted">boleh lebih awal atau lebih lambat dari rencana</span>
       <F label="Alasan (opsional)" value="Lulus kuliah, pulang kampung" />
       <p className="small muted" style={{ margin: 0 }}>Tagihan sewa untuk periode setelah tanggal keluar yang belum dibayar akan dibatalkan otomatis.</p>
       <span className="mini-btn cta">Akhiri sewa</span>

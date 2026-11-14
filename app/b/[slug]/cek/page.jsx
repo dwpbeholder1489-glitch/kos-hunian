@@ -2,6 +2,7 @@
 // Pelanggan cek status pesanan: nomor pesanan + No. WhatsApp yang dipakai saat memesan. Tidak perlu akun.
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import PublicPay from '@/components/PublicPay';
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
 const tz = { timeZone: 'Asia/Jakarta' };
@@ -61,6 +62,7 @@ export default function Cek() {
           )}
           {o.due_at && o.status !== 'selesai' && o.status !== 'batal' && <span className="small">Perkiraan selesai: <b>{waktu(o.due_at)}</b></span>}
           {o.status !== 'batal' && <span className="small">Total {rp(o.total)} · {o.lunas ? 'Lunas' : Number(o.paid) > 0 ? `dibayar ${rp(o.paid)}, sisa ${rp(Number(o.total) - Number(o.paid))}` : 'belum dibayar'}{o.status === 'permintaan' ? ' (perkiraan, dikonfirmasi saat barang diterima)' : ''}</span>}
+          {o.status !== 'batal' && o.status !== 'permintaan' && !o.lunas && <PublicPay slug={slug} note="Setelah membayar, kirim bukti transfer lewat WhatsApp agar pembayaran dicatat." />}
         </section>
       )}
     </main>

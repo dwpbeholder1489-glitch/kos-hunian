@@ -12,6 +12,7 @@ import { KIND, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { strukSample as strukPreview } from '@/lib/struk';
 import DataTutup from '@/components/DataTutup';
+import CaraBayarToggle from '@/components/CaraBayarToggle';
 
 export default function Pengaturan() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function Pengaturan() {
   const [cName, setCName] = useState('');
   const [cKind, setCKind] = useState('operasional');
   const [footer, setFooter] = useState(kos?.receipt_footer || '');
+  useEffect(() => { if (d.ready && window.location.hash === '#cara-bayar') setTimeout(() => document.getElementById('cara-bayar')?.scrollIntoView({ behavior: 'smooth' }), 200); }, [d.ready]);
   if (!d.ready || !kos) return <Loading />;
   const isOwner = kos.owner_id === user?.id;
   const canEdit = canArea(kos, 'settings'); // pemilik & pengelola
@@ -79,7 +81,9 @@ export default function Pengaturan() {
       {canEdit && !retail && <section className="panel"><h3>Info untuk penghuni</h3>
         <p className="small muted" style={{ margin: 0 }}>Tampil di portal penghuni dan dipakai asisten untuk menjawab pertanyaan. Kosongkan jika belum ada.</p>
         <Field label="No. WhatsApp pengelola"><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08…" /></Field>
+        <div id="cara-bayar" />
         <Field label="Cara bayar" hint="Nomor rekening, e-wallet, atau QRIS, dan batas waktu bayar"><textarea value={payInfo} onChange={(e) => setPayInfo(e.target.value)} placeholder={'Transfer ke BRI 1234-5678 a.n. Nama Pemilik\nPaling lambat tanggal jatuh tempo'} /></Field>
+        <CaraBayarToggle kos={kos} owner={canEdit} />
         <Field label="Peraturan kos" hint="Jam malam, tamu, kebersihan, parkir, dll."><textarea value={rules} onChange={(e) => setRules(e.target.value)} placeholder={'Jam malam 22.00\nTamu lawan jenis hanya di ruang tamu'} style={{ minHeight: 110 }} /></Field>
         {isOwner && kos.notify_email !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={notify} onChange={(e) => setNotify(e.target.checked)} /> Kirim email ke {user?.email} saat penghuni mengirim bukti transfer</label>}
         {isOwner && kos.daily_digest !== undefined && <label className="row small" style={{ fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={digest} onChange={(e) => setDigest(e.target.checked)} /> Kirim daftar tagih setiap pagi ke {user?.email} (paket Dasar ke atas)</label>}
@@ -87,8 +91,14 @@ export default function Pengaturan() {
         <a href="/notifikasi" className="small">Atur ringkasan mingguan & bulanan di menu Notifikasi (lonceng) →</a>
         {kos.daily_digest !== undefined && <button onClick={sendNow} disabled={sending}>{sending ? 'Mengirim…' : 'Kirim daftar tagih sekarang (uji)'}</button>}
       </section>}
+      {canEdit && retail && <section className="panel" id="cara-bayar"><h3>Cara bayar pelanggan</h3>
+        <p className="small muted" style={{ margin: 0 }}>Nomor rekening/e-wallet yang boleh dilihat pelanggan. Tampil di halaman bisnis hanya bila saklar di bawah dinyalakan.</p>
+        <Field label="Cara bayar" hint="Nomor rekening, e-wallet, dan ketentuan bayar"><textarea value={payInfo} onChange={(e) => setPayInfo(e.target.value)} maxLength={600} placeholder={'Transfer ke BRI 1234-5678 a.n. Nama Pemilik\nKirim bukti transfer lewat WhatsApp'} /></Field>
+        <button className="primary" onClick={async () => { if (await run(() => supabase.from('kos').update({ payment_info: payInfo.trim() || null }).eq('id', kos.id), 'Cara bayar disimpan', errMsg)) loadKos(); }}>Simpan cara bayar</button>
+        <CaraBayarToggle kos={kos} owner={canEdit} ver={kos.payment_info} />
+      </section>}
       {canEdit && kos.business_type === 'retail' && <PajakBox kos={kos} onSaved={loadKos} />}
-      {canEdit && !retail && <QrisBox kosId={kos.id} />}
+      {canEdit && <QrisBox kosId={kos.id} noun={noun} />}
       {canEdit && !retail && kos.wa_reminder_tpl !== undefined && <TemplateBox kos={kos} onSaved={loadKos} />}
       <section className="panel"><h3>{retail ? 'Jenis biaya' : 'Kategori pengeluaran'}</h3>
         <div className="list">{d.categories.map((c) => (
@@ -114,7 +124,7 @@ export default function Pengaturan() {
   );
 }
 
-function QrisBox({ kosId }) {
+function QrisBox({ kosId, noun }) {
   const [img, setImg] = useState(undefined);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -133,10 +143,10 @@ function QrisBox({ kosId }) {
     try { await save(await compressImage(f, 1100, 0.9)); } catch (er) { toast(er.message); }
   }
   return (
-    <section className="panel"><h3>QRIS kos</h3>
-      <p className="small muted" style={{ margin: 0 }}>Tampil di portal penghuni agar mereka bisa langsung scan dan bayar. Pakai screenshot atau foto QRIS dari aplikasi bank / merchant Anda yang tajam dan tidak terpotong.</p>
+    <section className="panel"><h3>QRIS {noun}</h3>
+      <p className="small muted" style={{ margin: 0 }}>{noun === 'kos' ? 'Tampil di portal penghuni (dan formulir pendaftaran bila diizinkan) agar mereka bisa langsung scan dan bayar.' : 'Tampil di halaman bisnis bila saklar "Tampilkan rekening/QRIS" dinyalakan, agar pelanggan bisa langsung scan dan bayar.'} Pakai screenshot atau foto QRIS dari aplikasi bank / merchant Anda yang tajam dan tidak terpotong.</p>
       {img === undefined ? <p className="small muted" style={{ margin: 0 }}>Memuat…</p> : img ? (
-        <img src={img} alt="QRIS kos" className="qris" />
+        <img src={img} alt={`QRIS ${noun}`} className="qris" />
       ) : <div className="empty"><span className="muted small">Belum ada gambar QRIS</span></div>}
       <label className="f">{img ? 'Ganti gambar QRIS' : 'Unggah gambar QRIS'}<input type="file" accept="image/*" onChange={pick} disabled={busy} /></label>
       {img && <button className="sm ghost danger" onClick={() => confirm('Hapus gambar QRIS?') && save(null)} disabled={busy}>Hapus QRIS</button>}

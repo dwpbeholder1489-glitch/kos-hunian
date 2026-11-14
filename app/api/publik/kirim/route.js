@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 const json = (b, s = 200) => Response.json(b, { status: s });
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// Cara bayar untuk formulir pendaftaran kos — hanya bila pemilik mengizinkan (Halaman bisnis › Tampilkan cara bayar)
+// Cara bayar di halaman bisnis (semua jenis) — hanya bila pemilik mengizinkan (Halaman bisnis/Pengaturan › Tampilkan rekening/QRIS)
 export async function GET(req) {
   const slug = (new URL(req.url).searchParams.get('pay') || '').slice(0, 40);
   if (!slug) return json({ pay: null });

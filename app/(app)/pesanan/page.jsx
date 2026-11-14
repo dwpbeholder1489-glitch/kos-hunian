@@ -279,6 +279,7 @@ function Detail({ o, d, kos, onClose, onChanged }) {
       {/* tindakan tahap */}
       {!['selesai', 'batal', 'permintaan'].includes(o.status) && <div className="row">
         {waitPickup(o) && <button className="primary" disabled={busy} onClick={async () => { setBusy(true); const { error } = await supabase.rpc('svc_pickup', { p_order: o.id, p_action: 'dijemput', p_note: null }); setBusy(false); if (error) return toast(errMsg(error)); toast('Sudah dijemput'); refresh(); }}>Sudah dijemput</button>}
+        {waitPickup(o) && <button className="sm" disabled={busy} onClick={async () => { setBusy(true); const { error } = await supabase.rpc('svc_pickup', { p_order: o.id, p_action: 'sendiri', p_note: null }); setBusy(false); if (error) return toast(errMsg(error)); toast('Dicatat: pelanggan mengantar sendiri'); refresh(); }}>Diantar pelanggan sendiri</button>}
         {o.status !== 'siap' && !waitPickup(o) && <button className="primary" disabled={busy} onClick={() => move('next')}>→ {nextName || 'Siap'}</button>}
         {o.status === 'siap' && o.deliver && !onTheWay(o) && <button className="sm" disabled={busy} onClick={async () => { setBusy(true); const { error } = await supabase.rpc('svc_delivery', { p_order: o.id, p_action: 'berangkat', p_note: null }); setBusy(false); if (error) return toast(errMsg(error)); toast('Dalam pengantaran'); refresh(); }}>Berangkat antar</button>}
         {o.status === 'proses' && <button className="sm" disabled={busy} onClick={() => move('siap')}>Langsung siap</button>}
@@ -297,7 +298,7 @@ function Detail({ o, d, kos, onClose, onChanged }) {
         {o.status !== 'batal' && sisa(o) > 0 && <button className="sm" onClick={() => setMode(mode === 'bayar' ? null : 'bayar')}>+ Bayar</button>}
         {o.status === 'batal' && paid > 0 && <button className="sm" onClick={() => setMode(mode === 'kembali' ? null : 'kembali')}>Pengembalian uang</button>}
         <Link href={`/nota/${o.id}`}><button className="sm">Nota</button></Link>
-        {['permintaan', 'diterima', 'proses'].includes(o.status) && <button className="sm ghost" onClick={() => setMode(mode === 'ubah' ? null : 'ubah')}>Ubah isi</button>}
+        {['permintaan', 'diterima', 'proses', 'siap'].includes(o.status) && <button className="sm ghost" onClick={() => setMode(mode === 'ubah' ? null : 'ubah')}>Ubah isi</button>}
       </div>}
       {o.status !== 'batal' && <div className="row">
         <button className="sm ghost" onClick={() => setMode(mode === 'keluhan' ? null : 'keluhan')}>Catat keluhan</button>

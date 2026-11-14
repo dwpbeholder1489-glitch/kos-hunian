@@ -96,12 +96,9 @@ select (portal_get(:'tok2')->'occupant'->>'name') = 'Budi' as e2e_portal_penghun
 reset role; set role authenticated;
 select id as ls from leases where occupant_id = :'occ' \gset
 select set_config('e2e.ls', :'ls', false) \g /dev/null
-\echo (diharapkan ditolak: tanggal keluar di masa depan — pakai Rencana selesai)
-do $$ declare m text; begin
-  begin perform end_lease(current_setting('e2e.ls')::uuid, current_date + 40, 'pindah'); exception when others then m := sqlerrm; end;
-  if m is null then raise exception 'E2E_GAGAL: tanggal keluar masa depan diterima'; end if;
-  raise notice 'e2e_OK: tanggal keluar masa depan ditolak';
-end $$;
+\echo (tanggal keluar di masa depan = disimpan sebagai Rencana selesai, kamar tetap terisi)
+select (end_lease(:'ls', current_date + 40, 'pindah') ->> 'planned')::boolean as e2e_masa_depan_jadi_rencana;
+select (select status = 'aktif' and end_date = current_date + 40 from leases where id = :'ls') as e2e_rencana_tersimpan;
 select end_lease(:'ls', current_date, 'pindah') \g /dev/null
 select (select status from leases where id = :'ls') = 'selesai' as e2e_sewa_selesai;
 reset role; set role anon;

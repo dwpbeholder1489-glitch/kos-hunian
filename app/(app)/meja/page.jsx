@@ -231,6 +231,8 @@ function ResvSheet({ r, tables, kos, onClose, onEdit, onChanged }) {
       <div className="row">
         {r.status === 'permintaan' && <button className="primary" disabled={busy} onClick={() => act('dipesan')}>Konfirmasi</button>}
         {r.status === 'dipesan' && <button className="primary" disabled={busy} onClick={() => act('datang')}>Tamu datang</button>}
+        {r.status === 'permintaan' && <button className="sm" disabled={busy} onClick={() => act('datang')}>Tamu sudah datang</button>}
+        {r.status === 'tidak_datang' && <button className="primary" disabled={busy} onClick={() => act('datang')}>Ternyata datang (terlambat)</button>}
         {r.status === 'datang' && <button className="primary" disabled={busy} onClick={() => act('selesai')}>Selesai</button>}
         {r.status === 'dipesan' && <button className="sm ghost" disabled={busy} onClick={() => act('tidak_datang')}>Tidak datang</button>}
         {['permintaan', 'dipesan'].includes(r.status) && <button className="sm ghost" onClick={() => onEdit(r)}>Ubah</button>}

@@ -12,7 +12,7 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, InvChip, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet } from '@/components/LeaseForms';
-import { rp, tgl, invTitle, errMsg, waLink } from '@/lib/format';
+import { rp, tgl, invTitle, errMsg, waLink, today } from '@/lib/format';
 import { message, caraBayar } from '@/lib/templates';
 import Link from 'next/link';
 
@@ -85,6 +85,7 @@ function OccDetail({ d, occ, go, onClose }) {
         {occ.emergency && <><dt>Kontak darurat</dt><dd>{occ.emergency}</dd></>}
         <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
       </dl>
+      {l && l.end_date && l.end_date < today() && <div className="notice">Rencana selesai ({tgl(l.end_date)}) sudah lewat dan sewa masih tercatat aktif. Penghuni sudah keluar? Ketuk <b>Akhiri sewa</b> dan isi tanggal keluarnya. Masih tinggal? Ubah <b>Rencana selesai</b> agar tagihan berikutnya terbit lagi.</div>}
       {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
       <IsianTambahan entity="occupant" id={occ.id} extra={occ.extra} area="rent" />
       <Lampiran entity="occupant" id={occ.id} title="Dokumen penghuni" hint="Mis. foto KTP, surat perjanjian sewa (PDF). Hanya pemilik & karyawan bagian sewa yang bisa melihat." />

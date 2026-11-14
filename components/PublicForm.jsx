@@ -3,6 +3,7 @@ import Linkify from '@/components/Linkify';
 import { compressImage } from '@/lib/image';
 import { ItemThumb } from '@/components/media/PublicPics';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePublicPay, PayBox } from '@/components/PublicPay';
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
 
@@ -22,6 +23,7 @@ export default function PublicForm({ page }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
   const [err, setErr] = useState('');
+  const pay = usePublicPay(page.type !== 'properti' ? page.slug : null); // cara bayar (bila pemilik mengizinkan)
   // jasa: pesanan langsung (status "Permintaan masuk" sampai dikonfirmasi pemilik)
   const ord = jasa ? page.order : null;
   const kul = Boolean(ord?.kuliner); // kuliner: tidak ada jemput, "menu" bukan "layanan"
@@ -100,7 +102,8 @@ export default function PublicForm({ page }) {
     <section className="panel">
       <h3>Pesanan Meja {done.meja} terkirim!</h3>
       <p style={{ margin: 0 }}>Nomor pesanan <b>{done.number}</b>. Kasir akan mengonfirmasi, lalu pesanan disiapkan dan diantar ke meja Anda.</p>
-      {page.show_prices && done.total != null && <span className="small">Total {rp(done.total)}. Pembayaran di kasir.</span>}
+      {page.show_prices && done.total != null && <span className="small">Total {rp(done.total)}. Bayar di kasir{pay ? ', atau scan/transfer ke rekening di bawah lalu tunjukkan buktinya ke kasir' : ''}.</span>}
+      <PayBox pay={pay} note="Tunjukkan bukti bayar ke kasir agar pesanan ditandai lunas." />
       {phone.trim() ? <a href={`/b/${page.slug}/cek?no=${encodeURIComponent(done.number)}`}><button className="primary">Cek status pesanan</button></a> : <span className="small muted">Ingin pesan lagi? Muat ulang halaman ini.</span>}
     </section>
   );
@@ -110,6 +113,7 @@ export default function PublicForm({ page }) {
       <p style={{ margin: 0 }}>Nomor pesanan Anda <b>{done.number}</b>. Status: <b>Menunggu konfirmasi</b> dari {page.name}.</p>
       {page.show_prices && done.total != null && <span className="small">Perkiraan total {rp(done.total)}{kul ? ' (belum termasuk ongkos antar bila ada).' : ' — dihitung ulang saat barang diterima (mis. berat sebenarnya).'}</span>}
       <span className="small muted">Pembayaran dilakukan langsung ke {page.name}; pesanan belum dibayar. Simpan nomor pesanan untuk cek status.</span>
+      <PayBox pay={pay} note={`Sebaiknya bayar setelah ${page.name} mengonfirmasi pesanan & totalnya. Kirim bukti transfer lewat WhatsApp.`} />
       <a href={`/b/${page.slug}/cek?no=${encodeURIComponent(done.number)}`}><button className="primary">Cek status pesanan</button></a>
     </section>
   );
@@ -118,6 +122,7 @@ export default function PublicForm({ page }) {
       <h3>Terima kasih, {name.trim()}!</h3>
       <p style={{ margin: 0 }}>Permintaan Anda sudah diterima{done !== 'terkirim' ? <> dengan nomor <b>{done}</b></> : ''}. {page.name} akan menghubungi Anda lewat WhatsApp {phone}.</p>
       <span className="small muted">Ini belum pesanan final: harga, ketersediaan, dan pengiriman akan dikonfirmasi oleh {page.name}.</span>
+      <PayBox pay={pay} note={`Bayar setelah ${page.name} mengonfirmasi harga & ketersediaan. Kirim bukti transfer lewat WhatsApp.`} />
     </section>
   );
   return (
