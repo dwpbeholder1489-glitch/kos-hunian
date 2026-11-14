@@ -27,7 +27,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | 12 | Accounting | VERIFIED | `acct_*` double-entry otomatis, periode tutup, buku besar, neraca, laba rugi, arus kas, rekonsiliasi bank, anggaran | **MISSING:** aset tetap & penyusutan otomatis, pajak, cost center, akrual/dibayar dimuka terjadwal |
 | 13 | Procurement | PARTIAL | `purchases` (pesan, terima sebagian), retur supplier, pelunasan utang | **MISSING:** permintaan pembelian, RFQ, invoice supplier & 3-way matching, kinerja supplier |
 | 14 | CRM | PARTIAL | `contacts`, `crm_leads/activities/tasks`, riwayat transaksi | **MISSING:** klasifikasi pelanggan, batas kredit, daftar harga khusus, loyalti/member, profitabilitas pelanggan |
-| 15 | HR | MISSING (sebagian) | Hanya akun karyawan (`kos_members`) + hak akses | **MISSING:** data karyawan (termasuk tanpa akun), absensi, jadwal shift, cuti, gaji, lembur, komisi |
+| 15 | HR | VERIFIED (inti) | `/sdm`: `staff` (termasuk tanpa akun), `staff_shifts`, `attendance` (absen sendiri + koreksi pengelola, lembur otomatis), `staff_advances`, `payroll_runs/lines` (bulanan prorata/harian/per jam + tunjangan + lembur + bonus/potongan − kasbon) → pengeluaran "Gaji karyawan" (jurnal), slip cetak/WA | **SELESAI 14 Nov.** **Belum:** pengajuan cuti oleh karyawan, komisi penjualan, BPJS/PPh 21, absen berbasis lokasi/foto |
 | 16 | Dokumen | PARTIAL | Struk, kwitansi, nota, ekspor Excel/PDF, lampiran privat, media publik | **MISSING:** penomoran dokumen terpusat, template PO/surat jalan/penawaran, riwayat versi dokumen |
 
 ### Industri (Bab 17–31)
@@ -80,7 +80,7 @@ Status mengikuti Bab 4: **VERIFIED** (diuji otomatis/nyata), **PARTIAL**, **NEED
 | P1 | ~~Penawaran harga → sales order → surat jalan → faktur (grosir) + batas kredit & daftar harga pelanggan~~ — selesai 14 Nov (belum: rute/armada, harga bertingkat per jumlah, reservasi stok keras) | 1–2 |
 | P1 | ~~Pindah kamar penghuni~~ — selesai 14 Nov | 1 |
 | P1 | ~~Batch & kedaluwarsa + saran pemesanan ulang~~ — selesai 14 Nov (FEFO otomatis, mutasi membawa batch; belum: nomor seri, blokir jual barang kedaluwarsa opsional) | 1 |
-| P1 | Data karyawan, absensi, shift, gaji (jurnal gaji) | 1 |
+| P1 | ~~Data karyawan, absensi, shift, gaji (jurnal gaji)~~ — selesai 14 Nov (belum: cuti diajukan karyawan, komisi, BPJS/PPh 21) | 1 |
 | P1 | Aset tetap & penyusutan otomatis | 1 |
 | P2 | Resep & food cost kuliner (konsumsi bahan otomatis) | 2 |
 | P2 | Promosi & bundling, konsinyasi | 2 |

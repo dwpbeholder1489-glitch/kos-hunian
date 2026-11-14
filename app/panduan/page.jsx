@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -54,6 +54,7 @@ const MENUS = [
   ['Laporan', 'Laba rugi, arus kas, tren 6 bulan, ekspor Excel dan PDF'],
   ['Langganan', 'Paket aktif, perpanjang, dan cara bayar'],
   ['Pengaturan', 'Profil kos, kategori pengeluaran, unduh semua data, tutup bisnis, keluar'],
+  ['SDM & gaji', 'Data karyawan, jadwal shift, absensi (karyawan bisa absen sendiri), kasbon, hitung & bayar gaji, slip gaji'],
   ['Karyawan', 'Undang karyawan, atur peran & akses per modul/tindakan, penyetuju, nonaktifkan, hapus'],
   ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan & tingkat persetujuan'],
   ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan/mingguan, penjualan turun, anggaran'],
@@ -601,6 +602,24 @@ const PARTS = [
       <>Pilih <b>Cukup 1 minggu / 2 minggu / 1 bulan</b>. Jumlah saran memakai satuan beli terakhir (mis. dus) dan dikelompokkan per supplier terakhir.</>,
       <>Centang dan ubah jumlah bila perlu, lalu <b>Buat pesanan ke …</b>: formulir pesanan ke supplier terbuka dengan barang, jumlah, dan harga beli terakhir sudah terisi.</>,
     ], <>Atur <b>Waktu tunggu dari supplier</b> per barang di Barang › Ubah (kosong = 3 hari) dan <b>stok minimum</b> agar saran pas. Barang tanpa penjualan dan tanpa stok minimum tidak disarankan.</>, null, null],
+  ]],
+  ['T', 'SDM: absensi, jadwal shift & gaji', [
+    ['Data karyawan & jadwal shift', 'Operasional › SDM & gaji › Karyawan · Jadwal', [
+      <>Buka <b>SDM & gaji › Karyawan › + Tambah karyawan</b>. Isi nama, jabatan, No. HP, dan <b>sistem gaji</b>: <b>Bulanan</b> (gaji pokok per bulan), <b>Harian</b> (per hari hadir), atau <b>Per jam</b>. Tambahkan tunjangan tetap, upah lembur per jam, jam kerja per hari, tanggal mulai kerja, dan rekening gaji.</>,
+      <>Karyawan yang tidak memakai aplikasi (gudang, kebersihan) tetap dicatat di sini. Yang punya akun (undang dulu di menu <b>Karyawan</b>) bisa ditautkan lewat <b>Akun aplikasi</b> agar bisa absen sendiri dari HP.</>,
+      <>Tab <b>Jadwal</b> › <b>Atur jadwal</b>: pilih Pagi / Siang / Malam / Libur (jam bisa diubah), centang beberapa karyawan dan beberapa tanggal sekaligus, lalu Simpan. Ketuk satu hari untuk mengubah jadwal satu orang.</>,
+    ], <>Karyawan berhenti: isi tanggal <b>Berhenti</b> dan hapus centang <b>Masih bekerja</b>. Datanya tetap tersimpan untuk riwayat gaji.</>, null, <ScrSDM />],
+    ['Absensi harian', 'SDM & gaji › Absen saya · Absensi', [
+      <>Karyawan yang akunnya ditautkan membuka <b>SDM & gaji</b> lalu tekan <b>Absen masuk</b> saat datang dan <b>Absen pulang</b> saat selesai. Lupa pulang kemarin? Tombol pulang menutup absen kemarin.</>,
+      <>Pengelola membuka tab <b>Absensi</b>: pilih tanggal (‹ ›), ketuk <b>Hadir / Izin / Sakit / Alpa / Libur</b> untuk yang belum tercatat, atau ketuk status untuk mengoreksi jam masuk/pulang, lembur, dan catatan.</>,
+      <>Lembur dihitung otomatis dari jam kerja melebihi jadwal (atau jam kerja per hari bila tanpa jadwal); bisa diisi manual.</>,
+    ], null, null, null],
+    ['Kasbon & penggajian', 'SDM & gaji › Gaji', [
+      <><b>+ Kasbon</b>: pilih karyawan, jumlah, diambil dari kas/bank. Tercatat sebagai pengeluaran <b>Gaji karyawan</b> saat diberikan dan otomatis dipotong saat gajian.</>,
+      <>Pilih bulan › <b>Hitung gaji</b>. Sistem menghitung dari data karyawan & absensi: bulanan penuh (prorata bila mulai/berhenti di tengah bulan), harian × hari hadir, per jam × jam kerja, ditambah tunjangan dan lembur, dikurangi kasbon.</>,
+      <>Ketuk nama untuk menambah <b>bonus</b>, <b>potongan</b> (mis. alpa, denda), atau mengubah potongan kasbon. Absensi berubah? <b>Hitung ulang</b> — bonus & potongan tetap.</>,
+      <>Pilih dari Kas atau Bank lalu <b>Bayar gaji</b>: satu pengeluaran <b>Gaji karyawan</b> sebesar total dibayar, masuk laporan dan pembukuan. Buka <b>Slip ›</b> untuk mencetak/PDF atau <b>Kirim WA</b> ke karyawan; karyawan yang tertaut melihat slipnya sendiri di Absen saya.</>,
+    ], <>Salah hitung setelah dibayar? <b>Batalkan penggajian</b> (alasan wajib): pengeluarannya ikut dihapus dan kasbon kembali belum dipotong, lalu hitung ulang. Pengeluaran gaji tidak bisa dihapus dari menu Pengeluaran. Kasir/staf lain tidak bisa melihat data gaji.</>, 'warn', null],
   ]],
 ];
 

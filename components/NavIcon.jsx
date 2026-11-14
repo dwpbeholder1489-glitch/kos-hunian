@@ -33,6 +33,7 @@ const P = {
   '/konfigurasi': <><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></>,
   '/persetujuan': <><path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" /></>,
   '/otomatisasi': <><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></>,
+  '/sdm': <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /><path d="M8 15l2.5 2.5L16 13" /></>,
   '/karyawan': <><circle cx="12" cy="7" r="3.5" /><path d="M5 21a7 7 0 0 1 14 0" /></>,
   '/bisnis': <><path d="M4 7h16v13H4z" /><path d="M9 7V4h6v3" /></>,
   '/admin': <><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /></>,

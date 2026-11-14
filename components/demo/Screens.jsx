@@ -402,6 +402,23 @@ export function ScrGrosir() {
   );
 }
 
+export function ScrSDM() {
+  return (
+    <Phone bare>
+      <h3>SDM & gaji</h3>
+      <div className="unitbox small" style={{ gap: 6 }}>
+        <div className="row between"><b>Absen saya · Rina</b><span className="chip">Pagi 08:00–16:00</span></div>
+        <div className="row" style={{ gap: 6 }}><span className="mini-btn" style={{ flex: 1, textAlign: 'center' }}>Masuk 07.56</span><span className="mini-btn cta" style={{ flex: 1, textAlign: 'center' }}>Absen pulang</span></div>
+      </div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn">Absensi</span><span className="mini-btn">Jadwal</span><span className="mini-btn">Karyawan</span><span className="mini-btn cta">Gaji</span></div>
+      <div className="row between small"><span><b>Rina</b> · Bulanan · lembur 2 jam</span><b>{rp(2410000)}</b></div>
+      <div className="row between small"><span><b>Budi</b> · Harian · hadir 22 hari · kasbon −{rp(50000)}</span><b>{rp(2150000)}</b></div>
+      <div className="row between"><b>Total dibayar</b><b>{rp(4560000)}</b></div>
+      <span className="mini-btn cta">Bayar gaji</span>
+    </Phone>
+  );
+}
+
 export function ScrAnalisis() {
   const bars = [42, 48, 45, 55, 52, 60, 58, 63, 61, 70, 66, 78];
   return (
