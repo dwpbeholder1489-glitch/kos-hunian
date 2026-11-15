@@ -170,3 +170,48 @@ export function groupOf(p, products, units, groups) {
   return { id: g.id, name: g.name, attrs: g.attrs || [], base: p.base_unit, cost: Number(p.cost) || 0, category_id: p.category_id, labels: sibs.map((x) => x.variant_label || ''), count: sibs.length,
     price: Number(units.find((u) => u.product_id === p.id && Number(u.qty) === 1)?.price_retail) || 0 };
 }
+
+// Harga per jumlah beli (server: price_breaks_set; harga dipakai Kasir & surat jalan grosir lewat price_break)
+// Satu daftar per satuan. Kasir memakai harga TERENDAH antara harga biasa dan tingkat yang terpenuhi; harga yang diubah manual tidak terpengaruh.
+export function PriceBreakSheet({ p, units, breaks, onClose, onSaved }) {
+  const [unit, setUnit] = useState(units[0]?.name || p.base_unit);
+  const rowsOf = (u) => {
+    const r = breaks.filter((b) => b.product_id === p.id && b.unit === u).sort((a, b) => a.tier.localeCompare(b.tier) || Number(a.min_qty) - Number(b.min_qty))
+      .map((b) => ({ min_qty: angka(b.min_qty), price: angka(b.price), tier: b.tier }));
+    return r.length ? r : [{ min_qty: '', price: '', tier: 'semua' }];
+  };
+  const [rows, setRows] = useState(() => rowsOf(units[0]?.name || p.base_unit));
+  const u = units.find((x) => x.name === unit);
+  const set = (i, patch) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : r)));
+  const pick = (n) => { setUnit(n); setRows(rowsOf(n)); };
+  const save = async () => {
+    const out = rows.filter((r) => String(r.min_qty).trim() || String(r.price).trim()).map((r) => ({ min_qty: qtyNum(r.min_qty), price: parseRp(r.price), tier: r.tier }));
+    if (out.some((r) => !(r.min_qty > 1))) return toast('Jumlah minimal harus lebih dari 1.');
+    if (u && out.some((r) => r.price >= Number(r.tier === 'grosir' && Number(u.price_wholesale) > 0 ? u.price_wholesale : u.price_retail))) toast('Catatan: ada harga yang tidak lebih murah dari harga biasa — Kasir tetap memakai harga yang lebih murah.');
+    if (await run(() => supabase.rpc('price_breaks_set', { p_product: p.id, p_unit: unit, p_rows: out }), out.length ? 'Harga beli banyak disimpan' : 'Harga beli banyak dihapus', errMsg)) onSaved();
+  };
+  return (
+    <Sheet title={`Harga beli banyak · ${p.name}`} onClose={onClose}>
+      <p className="small muted" style={{ margin: 0 }}>Contoh: beli 1–9 {unit} = harga biasa, beli 10 ke atas = Rp 9.500 per {unit}. Kasir mengganti harga otomatis saat jumlahnya tercapai.</p>
+      {units.length > 1 && <Field label="Satuan"><select value={unit} onChange={(e) => pick(e.target.value)}>{units.map((x) => <option key={x.name} value={x.name}>{x.name}</option>)}</select></Field>}
+      {u && <p className="small" style={{ margin: 0 }}>Harga biasa per {unit}: <b>{rp(u.price_retail)}</b>{Number(u.price_wholesale) > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}</p>}
+      {rows.map((r, i) => (
+        <div key={i} className="panel" style={{ padding: 10, display: 'grid', gap: 8 }}>
+          <div className="row">
+            <Field label={`Beli minimal (${unit})`}><input inputMode="decimal" value={r.min_qty} onChange={(e) => set(i, { min_qty: e.target.value })} placeholder="mis. 10" /></Field>
+            <Field label={`Harga per ${unit}`}><input inputMode="numeric" value={r.price} onChange={(e) => set(i, { price: e.target.value })} placeholder="mis. 9500" /></Field>
+          </div>
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <select value={r.tier} onChange={(e) => set(i, { tier: e.target.value })} aria-label="Berlaku untuk" style={{ maxWidth: 200 }}>
+              <option value="semua">Eceran & grosir</option><option value="ecer">Hanya eceran</option><option value="grosir">Hanya grosir</option>
+            </select>
+            <button className="sm ghost" onClick={() => setRows(rows.length > 1 ? rows.filter((_, k) => k !== i) : [{ min_qty: '', price: '', tier: 'semua' }])}>Hapus</button>
+          </div>
+        </div>
+      ))}
+      {rows.length < 10 && <button className="sm" onClick={() => setRows([...rows, { min_qty: '', price: '', tier: 'semua' }])}>+ Tingkat harga</button>}
+      <p className="small muted" style={{ margin: 0 }}>Harga yang diubah manual di Kasir tidak ikut. Promo tetap dihitung sesudahnya.</p>
+      <button className="primary" onClick={save}>Simpan</button>
+    </Sheet>
+  );
+}

@@ -512,6 +512,33 @@ export function ScrVarian() {
   );
 }
 
+export function ScrBeliBanyak() {
+  return (
+    <Phone bare>
+      <h3>Harga beli banyak</h3>
+      <div className="row between small"><span>Harga biasa per pcs</span><b>{rp(10000)}</b></div>
+      <div className="row between small"><span>Beli ≥ 10 pcs</span><b>{rp(9500)}</b></div>
+      <div className="row between small"><span>Beli ≥ 50 pcs</span><b>{rp(9000)}</b></div>
+      <div className="small"><b>Di Kasir: 12 pcs Sabun</b></div>
+      <div className="row between small"><span style={{ color: 'var(--good)' }}>Harga beli banyak {rp(9500)}</span><b>{rp(114000)}</b></div>
+      <span className="mini-btn cta">Simpan</span>
+    </Phone>
+  );
+}
+
+export function ScrKomisi() {
+  return (
+    <Phone bare>
+      <h3>Komisi kasir</h3>
+      <div className="row between small"><span>Semua kasir · semua barang</span><b>1%</b></div>
+      <div className="row between small"><span>Semua kasir · Rokok</span><b>0,5%</b></div>
+      <div className="row between small"><span><b>Rina</b> · penjualan bersih {rp(24500000)}</span><b>{rp(231000)}</b></div>
+      <div className="row between small"><span><b>Budi</b> · penjualan bersih {rp(18200000)}</span><b>{rp(176000)}</b></div>
+      <span className="mini-btn cta">Masukkan komisi ke draf gaji</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

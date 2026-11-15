@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -716,6 +716,27 @@ const PARTS = [
       <><b>Per kasir</b>: jumlah transaksi, rata-rata, retur, pembatalan, dan selisih laci di shift. Pembatalan, retur, atau selisih yang sering pada satu orang patut diperiksa.</>,
       <>Penjualan dan laba <b>per kategori</b> serta <b>per varian</b> (mis. ukuran mana yang paling laku).</>,
     ], <>Semua angka dihitung dari transaksi dan kartu stok yang tercatat; barang titipan konsinyasi tidak ikut dalam nilai persediaan.</>, null, null],
+  ]],
+  ['AA', 'Toko: harga beli banyak, stok minus, komisi & pemeriksaan', [
+    ['Harga beli banyak (harga per jumlah)', 'Barang & stok › Ubah › Harga beli banyak', [
+      <>Buka barang › <b>Ubah</b> › <b>Harga beli banyak</b>. Pilih satuannya bila ada beberapa (mis. pcs dan Dus).</>,
+      <>Isi <b>Beli minimal</b> dan <b>Harga per satuan</b> — mis. beli 10 pcs ke atas Rp 9.500, beli 50 ke atas Rp 9.000. Pilih berlaku untuk eceran & grosir, hanya eceran, atau hanya grosir. Simpan.</>,
+      <>Di <b>Kasir</b>, saat jumlah di keranjang mencapai batasnya, harga turun otomatis dan muncul tulisan "Harga beli banyak". Daftar barang menampilkan tingkat harganya.</>,
+    ], <>Kasir selalu memakai harga yang <b>lebih murah</b> antara harga biasa dan harga beli banyak. Harga yang diubah manual di Kasir dan di Pesanan grosir tidak ikut; promo tetap dihitung sesudahnya. Hanya pemilik/bagian keuangan yang bisa mengatur.</>, null, <ScrBeliBanyak />],
+    ['Aturan stok minus', 'Pengaturan › Stok minus di Kasir', [
+      <><b>Izinkan</b> (bawaan, seperti sebelumnya): barang tetap bisa dijual walau stok tercatat habis; stok menjadi minus dan bisa dibetulkan nanti.</>,
+      <><b>Izinkan + peringatan</b>: Kasir melihat peringatan jelas saat menambah barang yang stoknya tidak cukup, tetapi tetap bisa menjual.</>,
+      <><b>Tolak</b>: penjualan ditolak bila stok di lokasi itu tidak cukup — catat dulu barang masuk atau mutasi stok. Berlaku juga untuk surat jalan grosir.</>,
+    ], <>Pilih Tolak hanya bila semua barang masuk selalu dicatat rapi; bila tidak, kasir bisa tertahan saat pembeli menunggu. Aturan ini tidak memengaruhi penyesuaian stok, pemakaian bahan, atau resep.</>, 'warn', null],
+    ['Komisi kasir', 'Transaksi › Komisi kasir', [
+      <>Tekan <b>+ Aturan</b>: pilih untuk siapa (semua kasir atau satu orang), barang (semua atau satu kategori), dan persen komisinya, lalu Simpan. Bila beberapa aturan cocok, yang paling khusus dipakai.</>,
+      <>Pilih bulan: tiap kasir terlihat <b>penjualan bersih</b> (tanpa PPN, setelah diskon, promo, dan retur) dan komisinya.</>,
+      <>Untuk membayar: buat dulu <b>draf gaji</b> bulan itu di SDM & gaji › Gaji, lalu kembali ke sini dan tekan <b>Masukkan komisi ke draf gaji</b>. Komisi masuk sebagai bonus di baris gaji orangnya, lalu dibayar bersama gaji.</>,
+    ], <>Komisi hanya bisa masuk ke gaji bila akun kasir sudah <b>ditautkan</b> di data karyawan (SDM & gaji › Karyawan). Komisi tiap orang per bulan dimasukkan sekali saja. Penjualan yang dibatalkan tidak dihitung.</>, 'warn', <ScrKomisi />],
+    ['Perlu diperiksa (pencegahan kehilangan)', 'Laporan toko › Perlu diperiksa', [
+      <>Di bawah Indikator toko, daftar temuan bulan ini: harga diubah manual <b>di bawah modal</b>, <b>diskon manual</b> lebih dari 20%, kasir dengan <b>banyak pembatalan</b> atau <b>laci kurang</b> berulang, barang dengan <b>susut/selisih hitung</b> terbesar, dan hari yang <b>berubah setelah ditutup</b>.</>,
+      <>Cek tiap temuan ke orangnya atau ke catatan transaksi (Penjualan, Shift kasir, Tutup harian).</>,
+    ], <>Temuan dibuat dengan aturan tetap supaya mudah dicek — bukan tuduhan. Banyak temuan punya alasan wajar, misalnya harga khusus pelanggan tetap atau barang rusak.</>, null, null],
   ]],
 ];
 

@@ -98,6 +98,7 @@ export default function Pengaturan() {
         <CaraBayarToggle kos={kos} owner={canEdit} ver={kos.payment_info} />
       </section>}
       {canEdit && kos.business_type === 'retail' && <PajakBox kos={kos} onSaved={loadKos} />}
+      {canEdit && kos.business_type === 'retail' && <StokMinusBox kos={kos} onSaved={loadKos} />}
       {canEdit && <QrisBox kosId={kos.id} noun={noun} />}
       {canEdit && !retail && kos.wa_reminder_tpl !== undefined && <TemplateBox kos={kos} onSaved={loadKos} />}
       <section className="panel"><h3>{retail ? 'Jenis biaya' : 'Kategori pengeluaran'}</h3>
@@ -211,6 +212,28 @@ function TemplateBox({ kos, onSaved }) {
 
 // Pajak (PPN) toko: harga di kasir = harga sudah termasuk PPN; sistem memisahkan bagian PPN untuk jurnal & laporan.
 // Tarif diisi pemilik sendiri sesuai ketentuan yang berlaku untuk usahanya (tidak diisi otomatis).
+// Aturan stok minus di Kasir (server: stock_policy_set → trigger stock_moves_policy)
+function StokMinusBox({ kos, onSaved }) {
+  const [mode, setMode] = useState(kos.profile?.stock_policy || 'izinkan');
+  const save = async () => { if (await run(() => supabase.rpc('stock_policy_set', { p_kos: kos.id, p_mode: mode }), 'Aturan stok disimpan', errMsg)) onSaved(); };
+  const opts = [['izinkan', 'Izinkan', 'Tetap bisa dijual walau stok tercatat habis (stok jadi minus). Cocok bila barang sering datang sebelum dicatat.'],
+    ['peringatkan', 'Izinkan + peringatan', 'Kasir melihat peringatan jelas saat stok tidak cukup, tetapi tetap bisa menjual.'],
+    ['tolak', 'Tolak', 'Penjualan ditolak bila stok di lokasi itu tidak cukup. Catat dulu barang masuk/mutasi. Cocok bila stok selalu dicatat rapi.']];
+  return (
+    <section className="panel">
+      <h3>Stok minus di Kasir</h3>
+      <span className="small muted">Bagaimana Kasir bersikap bila barang yang dijual melebihi stok tercatat. Berlaku untuk penjualan (Kasir & surat jalan grosir), bukan untuk penyesuaian stok.</span>
+      {opts.map(([k, l, h]) => (
+        <label key={k} className="row small" style={{ alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+          <input type="radio" name="stokminus" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={mode === k} onChange={() => setMode(k)} />
+          <span><b>{l}</b><br /><span className="muted">{h}</span></span>
+        </label>
+      ))}
+      <button className="primary" onClick={save}>Simpan aturan stok</button>
+    </section>
+  );
+}
+
 function PajakBox({ kos, onSaved }) {
   const t = kos.profile?.tax || {};
   const [on, setOn] = useState(Boolean(t.aktif));

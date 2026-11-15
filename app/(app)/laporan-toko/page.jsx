@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -39,6 +40,7 @@ export default function LaporanToko() {
   const [sort, setSort] = useState('omzet');
   const [pajak, setPajak] = useState(null);
   const [kpi, setKpi] = useState(null);   // indikator toko (retail_kpi)
+  const [loss, setLoss] = useState(null);   // perlu diperiksa (loss_watch)
   const [names, setNames] = useState({});   // laporan PPN keluaran bulan ini (tax_report)
   const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);
   useEffect(() => { supabase.rpc('member_names', { p_kos: kosId }).then(({ data }) => setNames(data || {})); }, [kosId]);
@@ -49,7 +51,8 @@ export default function LaporanToko() {
       supabase.rpc('retail_report', { p_kos: kosId, p_from: ym + '-01', p_to: monthEnd(ym) }),
       supabase.rpc('retail_report', { p_kos: kosId, p_from: pm + '-01', p_to: monthEnd(pm) }),
     ]).then(([a, b]) => (a.error || b.error ? setErr(errMsg(a.error || b.error)) : setD({ r: a.data, prev: b.data })));
-    setPajak(null); setKpi(null);
+    setPajak(null); setKpi(null); setLoss(null);
+    if (canArea(kos, 'finance')) supabase.rpc('loss_watch', { p_kos: kosId, p_from: ym + '-01', p_to: monthEnd(ym) }).then(({ data }) => setLoss(data || null));
     if (canArea(kos, 'finance')) supabase.rpc('retail_kpi', { p_kos: kosId, p_from: ym + '-01', p_to: ym >= thisMonth() ? todayStr() : monthEnd(ym) }).then(({ data }) => setKpi(data || null));
     if (canArea(kos, 'finance')) supabase.rpc('tax_report', { p_kos: kosId, p_month: ym + '-01' }).then(({ data }) => setPajak(data || null));
   }, [kosId, ver, ym]);
@@ -129,6 +132,7 @@ export default function LaporanToko() {
         </section>
 
         {kpi && <Indikator k={kpi} names={names} />}
+        {loss && <PerluDiperiksa w={loss} names={names} />}
 
         {pajak && (pajak.setelan?.aktif || Number(pajak.ppn_keluaran) !== 0 || Number(pajak.ppn_masukan) !== 0) && (
           <section className="panel">
@@ -186,6 +190,31 @@ export default function LaporanToko() {
         ))}</div>}
       </section>
     </div>
+  );
+}
+
+// Perlu diperiksa (pencegahan kehilangan): aturan tetap & terbuka dari loss_watch — temuan untuk dicek, BUKAN tuduhan
+function PerluDiperiksa({ w, names }) {
+  const who = (u) => names[u] || (u ? 'karyawan lama' : 'sistem');
+  const a = w.aturan;
+  const n = w.di_bawah_modal.length + w.diskon_besar.length + w.kasir.length + w.susut_barang.length + w.berubah_setelah_tutup.length;
+  return (
+    <section className="panel">
+      <h3>Perlu diperiksa</h3>
+      <span className="small muted">Daftar ini dibuat dengan aturan tetap agar mudah dicek, bukan tuduhan. Banyak temuan punya alasan wajar (barang rusak, harga khusus pelanggan tetap).</span>
+      {n === 0 ? <span className="small" style={{ color: 'var(--good)' }}>Tidak ada temuan bulan ini.</span> : <>
+        {w.di_bawah_modal.length > 0 && <><span className="label">Harga diubah manual di bawah modal</span><div className="list">{w.di_bawah_modal.map((x, i) => (
+          <div className="li" key={'m' + i}><div className="main"><b>{x.name}</b><span className="small muted">{x.number} · {tgl(x.sale_date)} · {who(x.user_id)} · {angka(x.qty)} {x.unit} @ {rp(x.price)} (modal {rp(x.modal)})</span></div><span className="small" style={{ color: 'var(--bad)' }}>−{rp(x.rugi)}</span></div>))}</div></>}
+        {w.diskon_besar.length > 0 && <><span className="label">Diskon manual lebih dari {a.diskon_pct}%</span><div className="list">{w.diskon_besar.map((x, i) => (
+          <div className="li" key={'d' + i}><div className="main"><b>{x.number}</b><span className="small muted">{tgl(x.sale_date)} · {who(x.user_id)} · belanja {rp(x.subtotal)}</span></div><span className="small">{rp(x.diskon)} ({String(x.pct).replace('.', ',')}%)</span></div>))}</div></>}
+        {w.kasir.length > 0 && <><span className="label">Kasir dengan banyak pembatalan atau laci kurang</span><div className="list">{w.kasir.map((x, i) => (
+          <div className="li" key={'k' + i}><div className="main"><b>{who(x.user_id)}</b><span className="small muted">{angka(x.batal_n)} batal dari {angka(x.trx)} transaksi ({rp(x.batal)}){Number(x.laci_kurang_n) > 0 ? ` · laci kurang ${x.laci_kurang_n}× (${rp(x.laci_kurang)})` : ''}{Number(x.retur_tunai_n) > 0 ? ` · retur tunai ${x.retur_tunai_n}×` : ''}</span></div></div>))}</div>
+          <span className="small muted">Ditandai bila batal ≥ {a.batal_min}× dan lebih dari {a.batal_pct}% transaksinya, atau laci kurang ≥ {a.shift_min}×.</span></>}
+        {w.susut_barang.length > 0 && <><span className="label">Barang dengan susut/selisih hitung terbesar</span><div className="list">{w.susut_barang.map((x, i) => (
+          <div className="li" key={'s' + i}><div className="main"><b>{x.name}</b><span className="small muted">{angka(x.qty)} {x.base_unit} · {x.kali}× dicatat</span></div><span className="small">{rp(x.nilai)}</span></div>))}</div></>}
+        {w.berubah_setelah_tutup.length > 0 && <span className="small">Hari yang berubah setelah ditutup: <b>{w.berubah_setelah_tutup.map((d) => tgl(d)).join(', ')}</b> — cek di <Link href="/tutup-hari">Tutup harian</Link>.</span>}
+      </>}
+    </section>
   );
 }
 

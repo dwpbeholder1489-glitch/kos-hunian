@@ -32,7 +32,7 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | Cari barang, barcode, keranjang, pilih pelanggan | ADA | `/kasir` (kamera, tanpa barcode juga bisa) |
 | Varian produk (ukuran/warna/rasa) | ADA (15 Nov) | Grup varian + kombinasi otomatis; tiap varian = barang dengan stok/harga/barcode sendiri. Belum: gambar per varian di portal |
 | Konversi satuan | ADA | Mesin konversi 14 Nov |
-| Harga bertingkat | SEBAGIAN | Eceran/grosir + daftar harga per pelanggan; **harga per jumlah beli BELUM** |
+| Harga bertingkat | ADA (15 Nov) | Eceran/grosir + daftar harga per pelanggan + harga per jumlah beli (`price_breaks`, Kasir otomatis). Harga per jumlah di daftar harga pelanggan BELUM |
 | Diskon, promo | ADA | |
 | Pajak | SEBAGIAN | PPN keluaran toko saja; tanpa tanggal berlaku tarif; **jasa/kuliner/kos BELUM ada PPN** |
 | Bayar campuran, kasbon, tunai/kredit | ADA | |
@@ -40,7 +40,7 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | Shift kasir | ADA | Buka/tutup laci + selisih |
 | Tutup harian (daily closing) | ADA (15 Nov) | Rekap + bukti per hari/lokasi, kas catatan vs dihitung, tanda berubah setelah ditutup, tutup ulang. Sengaja tidak mengunci transaksi |
 | Pesanan penjualan & penawaran | ADA | Grosir (toko) saja; **jasa BELUM punya penawaran** |
-| **Komisi penjualan** | **BELUM** | |
+| Komisi penjualan | SEBAGIAN (15 Nov) | Komisi kasir % per orang/kategori dari penjualan bersih → bonus draf gaji. Komisi sales grosir per pesanan, target/insentif bertingkat, akrual utang komisi BELUM |
 | Kinerja penjualan per kasir | ADA (15 Nov) | Indikator toko & tutup harian. **Per sales (grosir) BELUM** |
 
 ### Bab 11 Inventory & Gudang — SEBAGIAN
@@ -60,7 +60,7 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | Valuasi persediaan | SEBAGIAN | Rata-rata tertimbang saja; **FIFO & pilihan metode BELUM** |
 | **Umur stok (aging)** | **BELUM** | |
 | Kartu stok / ledger | ADA | `stock_moves` |
-| **Kebijakan stok minus** | **BELUM** | Kasir & resep mengizinkan minus tanpa setelan |
+| Kebijakan stok minus | ADA untuk penjualan (15 Nov) | Izinkan / peringatkan / tolak (per lokasi) di Kasir & surat jalan. Resep/pemakaian bahan tetap boleh minus (sengaja) |
 
 ### Bab 12 Akuntansi — SEBAGIAN
 | Submodul | Status | Catatan |
@@ -106,7 +106,7 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | **Struktur organisasi / departemen** | **BELUM** | |
 | Cuti | SEBAGIAN | Status "cuti" di absensi; **pengajuan & saldo cuti BELUM** |
 | Insentif | SEBAGIAN | Bonus manual di gaji |
-| **Komisi, penilaian kinerja, dokumen karyawan** | **BELUM** | |
+| **Penilaian kinerja, dokumen karyawan** | **BELUM** | Komisi kasir sudah ada (masuk gaji sebagai bonus, 15 Nov) |
 | **PPh 21 & BPJS** | **BELUM** | |
 
 ### Bab 16 Dokumen — SEBAGIAN
@@ -128,7 +128,7 @@ Yang belum pernah diuji sama sekali di proyek ini: uji unit/E2E frontend, uji ak
 | POS, barcode, konversi satuan, harga eceran/grosir, promo, bundling, konsinyasi, shift, saran belanja, kedaluwarsa, mutasi toko | ADA (konsinyasi tanpa komisi persen & tanpa laporan cetak penitip) |
 | Varian produk | ADA (15 Nov) |
 | Tutup harian | ADA (15 Nov) |
-| Pencegahan kehilangan | SEBAGIAN (15 Nov: susut, pembatalan & retur & selisih laci per kasir terlihat; peringatan otomatis & batas pembatalan BELUM) |
+| Pencegahan kehilangan | SEBAGIAN (15 Nov: Laporan toko › Perlu diperiksa — harga di bawah modal, diskon manual besar, kasir sering batal/laci kurang, susut terbesar, hari berubah setelah tutup. Notifikasi otomatis & batas diskon/pembatalan yang memblokir BELUM) |
 | Analitik toko | SEBAGIAN (per kategori & varian ADA) |
 | KPI: omzet, margin kotor | ADA |
 | KPI: rata-rata keranjang, perputaran persediaan, stok habis, susut, penjualan per kasir | ADA (15 Nov, Laporan toko › Indikator toko) |
@@ -229,7 +229,7 @@ Hanya template Builder `bb_produksi`. BOM, MRP, perintah produksi, pengeluaran b
 | Prio | Pekerjaan | Jenis bisnis |
 |---|---|---|
 | P1 | ~~Toko lanjutan 1: kategori barang, varian produk, tutup harian, KPI toko~~ — selesai 15 Nov | Toko |
-| P1 | Toko lanjutan 2: harga per jumlah beli, komisi kasir/sales, pencegahan kehilangan, kebijakan stok minus | Toko, grosir |
+| ~~P1~~ | Toko lanjutan 2 — SELESAI 15 Nov (harga per jumlah, komisi kasir, Perlu diperiksa, stok minus). Sisa: komisi sales grosir, notifikasi kehilangan, nomor seri, reservasi stok | Toko, grosir |
 | P1 | Kesetaraan lintas bisnis: PPN untuk jasa/kuliner/kos, penawaran untuk jasa, promo untuk kuliner | Jasa, kuliner, kos |
 | P1 | Akuntansi lanjutan: neraca saldo, akrual & dibayar dimuka, pusat biaya/departemen, PPh UMKM | Semua |
 | P1 | Command Center lintas modul (kas, piutang, utang, pesanan tertunda, peringatan, filter cabang & periode) | Semua |

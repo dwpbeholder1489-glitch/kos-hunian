@@ -10,10 +10,19 @@ import LokasiBar from '@/components/LokasiBar';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, today } from '@/lib/format';
-import { qtyNum, unitsOf, stockText, isLow, unitPrice, uid, PAY } from '@/lib/retail';
+import { qtyNum, unitsOf, stockText, isLow, unitPrice, breakPrice, uid, PAY } from '@/lib/retail';
 import { toBase } from '@/lib/units';
 import { CategoryBar } from '@/components/TokoLanjut';
 
+// Harga otomatis mengikuti jumlah (harga per jumlah beli); baris berharga manual tidak diubah
+function reprice(cart, d, tier) {
+  return cart.map((c) => {
+    if (!c.auto) return c;
+    const u = d.units.find((x) => x.product_id === c.product_id && x.name === c.unit);
+    if (!u) return c;
+    return { ...c, price: breakPrice(d.breaks, c.product_id, c.unit, tier, c.qty, unitPrice(u, tier)) };
+  });
+}
 const cartKey = (k) => 'prasara.cart.' + k;
 
 export default function Kasir() {
@@ -36,7 +45,7 @@ export default function Kasir() {
     const { data, error } = await supabase.rpc('kasir_catalog', { p_kos: kosId });
     if (error) return setErr(errMsg(error));
     const c = await supabase.from('product_categories').select('id, name, sort').eq('kos_id', kosId).order('sort').order('name');
-    setD({ products: data.products, units: data.units, contacts: data.customers, cats: c.data || [] });
+    setD({ products: data.products, units: data.units, contacts: data.customers, cats: c.data || [], breaks: data.breaks || [], policy: data.stock_policy || 'izinkan' });
   };
   useEffect(() => { load(); }, [kosId, ver]);
   // Keranjang disimpan di HP ini supaya tidak hilang saat pindah menu
@@ -57,9 +66,11 @@ export default function Kasir() {
   const add = (p, u) => {
     const key = p.id + '|' + u.name;
     const ex = cart.find((c) => c.key === key);
-    if (ex) setCart(cart.map((c) => (c.key === key ? { ...c, qty: Math.round((c.qty + 1) * 1000) / 1000 } : c)));
+    if (ex) setCart(reprice(cart.map((c) => (c.key === key ? { ...c, qty: Math.round((c.qty + 1) * 1000) / 1000 } : c)), d, tier));
     else setCart([...cart, { key, product_id: p.id, name: p.name, unit: u.name, unit_qty: Number(u.qty), qty: 1, price: unitPrice(u, tier), auto: true }]);
-    toast(`+1 ${u.name} ${p.name}`);
+    const used = cart.filter((c) => c.product_id === p.id).reduce((t, c) => t + c.qty * Number(c.unit_qty || 1), 0) + Number(u.qty || 1);
+    if (d.policy !== 'izinkan' && used > Number(p.stock || 0)) toast(d.policy === 'tolak' ? `Stok ${p.name} tidak cukup — tidak bisa dibayar sebelum stok dicatat masuk.` : `Perhatian: stok ${p.name} tercatat tinggal ${angka(p.stock)} ${p.base_unit}.`);
+    else toast(`+1 ${u.name} ${p.name}`);
   };
   // Scanner barcode (Bluetooth/USB mengetik kode lalu Enter) atau kamera: barcode cocok → langsung masuk keranjang
   const byCode = (code) => {
@@ -74,7 +85,7 @@ export default function Kasir() {
   };
   const switchTier = (t) => {
     setTier(t);
-    setCart(cart.map((c) => { if (!c.auto) return c; const u = d.units.find((x) => x.product_id === c.product_id && x.name === c.unit); return u ? { ...c, price: unitPrice(u, t) } : c; }));
+    setCart(reprice(cart, d, t));
   };
   const total = cart.reduce((s, c) => s + c.qty * c.price, 0);
   const count = cart.reduce((s, c) => s + c.qty, 0);
@@ -181,14 +192,16 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const rate = tax?.aktif ? Number(tax.rate) || 0 : 0;
   const taxable = cart.filter((c) => !d.products.find((p) => p.id === c.product_id)?.tax_exempt).reduce((s, c) => s + Math.round(c.qty * c.price), 0);
   const ppn = rate && sub ? Math.round(((taxable - ((disc + pro) * taxable) / sub) * rate) / (100 + rate)) : 0;
-  const setLine = (key, patch) => setCart(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)));
+  const setLine = (key, patch) => setCart(reprice(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)), d, tier));
   const stockOf = (id) => Number(d.products.find((p) => p.id === id)?.stock || 0);
   const baseUsed = (id) => cart.filter((c) => c.product_id === id).reduce((s, c) => s + toBase(c.qty, c.unit_qty), 0);
+  const base = (c) => { const u = d.units.find((x) => x.product_id === c.product_id && x.name === c.unit); return u ? unitPrice(u, tier) : 0; };
 
   const pay = async () => {
     if (!cart.length) return toast('Keranjang kosong.');
     if (cart.some((c) => !(c.qty > 0))) return toast('Ada jumlah yang belum benar.');
     if (promoBusy) return toast('Sebentar, promo sedang dihitung.');
+    if (d.policy === 'tolak') { const kurang = cart.find((c) => baseUsed(c.product_id) > stockOf(c.product_id)); if (kurang) return toast(`Stok ${kurang.name} tidak cukup. Catat stok masuk dulu (aturan stok minus: tolak).`); }
     if (disc > sub - pro) return toast(pro > 0 ? `Diskon melebihi sisa setelah promo (${rp(sub - pro)}).` : 'Diskon melebihi subtotal.');
     if (method === 'tunai' && paid.trim() && paidN < total) return toast('Uang diterima kurang dari total.');
     if (method === 'campuran') {
@@ -234,7 +247,8 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
               <span className="small muted">{c.unit} ×</span>
               <input inputMode="numeric" aria-label={`Harga ${c.name}`} style={{ maxWidth: 120 }} value={angka(c.price)} onChange={(e) => setLine(c.key, { price: parseRp(e.target.value), auto: false })} />
             </div>
-            {over && <span className="small" style={{ color: 'var(--bad)' }}>Melebihi stok tercatat. Tetap bisa dijual; periksa stok nanti.</span>}
+            {c.auto && c.price < (base(c) || 0) && <span className="small" style={{ color: 'var(--good)' }}>Harga beli banyak: {rp(c.price)} per {c.unit} (biasa {rp(base(c))})</span>}
+            {over && <span className="small" style={{ color: d.policy === 'tolak' ? 'var(--bad)' : 'var(--warn)' }}>{d.policy === 'tolak' ? 'Melebihi stok — tidak bisa dijual sebelum stok dicatat masuk.' : 'Melebihi stok tercatat. Tetap bisa dijual; periksa stok nanti.'}</span>}
           </div>
         );
       })}</div>
