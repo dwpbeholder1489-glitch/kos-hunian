@@ -67,7 +67,13 @@ Metode HPP (bukan nomor RET di Master Prompt, tetapi wajib dikaji): rata-rata be
 mengubah HPP historis dan laporan. Rekomendasi: tetapkan rata-rata bergerak sebagai metode resmi (umum dipakai UMKM dagang, sesuai SAK EMKM/ETAP
 yang mengizinkan rata-rata tertimbang), FIFO hanya untuk urutan keluar batch kedaluwarsa (sudah: FEFO) — perlu konfirmasi pemilik/akuntan.
 
-## 4. Usulan urutan tahap (setelah keputusan)
+## 3b. Keputusan pemilik 15 Nov 2026 (FINAL)
+
+- **RET-008 urutan harga**: harga manual › daftar harga pelanggan › grosir › eceran; lalu harga beli banyak (ambil termurah); lalu promo (satu barang satu promo). Diresmikan apa adanya.
+- **Metode HPP**: rata-rata bergerak (moving average) = metode resmi; batch kedaluwarsa tetap keluar duluan (FEFO).
+- **Batas diskon & margin minimum**: diisi pemilik sendiri di Pengaturan; bawaan kosong = tanpa batas. Di atas batas → persetujuan pemilik/pengelola.
+
+## 4. Usulan urutan tahap
 
 1. **Toko lanjutan 3 — Persediaan tersedia**: reservasi dari pesanan grosir, mutasi dalam perjalanan (kirim → terima), stok rusak/karantina terpisah dari stok jual, retur barang rusak, stok maksimum + umur stok + fast/slow/dead.
 2. **Toko lanjutan 4 — Tata kelola harga & kredit**: urutan harga yang disetujui, harga per outlet, tanggal berlaku daftar harga/kontrak, batas diskon kasir + persetujuan, margin minimum, riwayat harga & limit, tahan kredit bila lewat jatuh tempo, cek limit untuk kasbon Kasir, tipe/grup pelanggan, sales rep.
