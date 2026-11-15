@@ -69,7 +69,8 @@ export default function Kasir() {
     if (ex) setCart(reprice(cart.map((c) => (c.key === key ? { ...c, qty: Math.round((c.qty + 1) * 1000) / 1000 } : c)), d, tier));
     else setCart([...cart, { key, product_id: p.id, name: p.name, unit: u.name, unit_qty: Number(u.qty), qty: 1, price: unitPrice(u, tier), auto: true }]);
     const used = cart.filter((c) => c.product_id === p.id).reduce((t, c) => t + c.qty * Number(c.unit_qty || 1), 0) + Number(u.qty || 1);
-    if (d.policy !== 'izinkan' && used > Number(p.stock || 0)) toast(d.policy === 'tolak' ? `Stok ${p.name} tidak cukup — tidak bisa dibayar sebelum stok dicatat masuk.` : `Perhatian: stok ${p.name} tercatat tinggal ${angka(p.stock)} ${p.base_unit}.`);
+    const bisa = Number(p.stock || 0) - Number(p.reserved || 0) - Number(p.held || 0);
+    if (d.policy !== 'izinkan' && used > bisa) toast(d.policy === 'tolak' ? `Stok ${p.name} yang bisa dijual tinggal ${angka(Math.max(0, bisa))} ${p.base_unit} — tidak bisa dibayar melebihi itu.` : `Perhatian: ${p.name} yang bisa dijual tinggal ${angka(Math.max(0, bisa))} ${p.base_unit}${Number(p.reserved) > 0 ? ' (sebagian sudah dipesan pelanggan grosir)' : ''}.`);
     else toast(`+1 ${u.name} ${p.name}`);
   };
   // Scanner barcode (Bluetooth/USB mengetik kode lalu Enter) atau kamera: barcode cocok → langsung masuk keranjang
@@ -193,7 +194,8 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const taxable = cart.filter((c) => !d.products.find((p) => p.id === c.product_id)?.tax_exempt).reduce((s, c) => s + Math.round(c.qty * c.price), 0);
   const ppn = rate && sub ? Math.round(((taxable - ((disc + pro) * taxable) / sub) * rate) / (100 + rate)) : 0;
   const setLine = (key, patch) => setCart(reprice(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)), d, tier));
-  const stockOf = (id) => Number(d.products.find((p) => p.id === id)?.stock || 0);
+  // bisa dijual = stok − dipesan pelanggan grosir − ditahan (rusak/karantina)
+  const stockOf = (id) => { const p = d.products.find((x) => x.id === id); return Number(p?.stock || 0) - Number(p?.reserved || 0) - Number(p?.held || 0); };
   const baseUsed = (id) => cart.filter((c) => c.product_id === id).reduce((s, c) => s + toBase(c.qty, c.unit_qty), 0);
   const base = (c) => { const u = d.units.find((x) => x.product_id === c.product_id && x.name === c.unit); return u ? unitPrice(u, tier) : 0; };
 
@@ -248,7 +250,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
               <input inputMode="numeric" aria-label={`Harga ${c.name}`} style={{ maxWidth: 120 }} value={angka(c.price)} onChange={(e) => setLine(c.key, { price: parseRp(e.target.value), auto: false })} />
             </div>
             {c.auto && c.price < (base(c) || 0) && <span className="small" style={{ color: 'var(--good)' }}>Harga beli banyak: {rp(c.price)} per {c.unit} (biasa {rp(base(c))})</span>}
-            {over && <span className="small" style={{ color: d.policy === 'tolak' ? 'var(--bad)' : 'var(--warn)' }}>{d.policy === 'tolak' ? 'Melebihi stok — tidak bisa dijual sebelum stok dicatat masuk.' : 'Melebihi stok tercatat. Tetap bisa dijual; periksa stok nanti.'}</span>}
+            {over && <span className="small" style={{ color: d.policy === 'tolak' ? 'var(--bad)' : 'var(--warn)' }}>{d.policy === 'tolak' ? `Melebihi stok yang bisa dijual (${angka(Math.max(0, stockOf(c.product_id)))}) — tidak bisa dibayar.` : 'Melebihi stok yang bisa dijual (sudah dikurangi pesanan grosir & barang ditahan). Tetap bisa dijual; periksa stok nanti.'}</span>}
           </div>
         );
       })}</div>

@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -737,6 +737,29 @@ const PARTS = [
       <>Di bawah Indikator toko, daftar temuan bulan ini: harga diubah manual <b>di bawah modal</b>, <b>diskon manual</b> lebih dari 20%, kasir dengan <b>banyak pembatalan</b> atau <b>laci kurang</b> berulang, barang dengan <b>susut/selisih hitung</b> terbesar, dan hari yang <b>berubah setelah ditutup</b>.</>,
       <>Cek tiap temuan ke orangnya atau ke catatan transaksi (Penjualan, Shift kasir, Tutup harian).</>,
     ], <>Temuan dibuat dengan aturan tetap supaya mudah dicek — bukan tuduhan. Banyak temuan punya alasan wajar, misalnya harga khusus pelanggan tetap atau barang rusak.</>, null, null],
+  ]],
+  ['AB', 'Toko: stok yang bisa dijual, barang ditahan, kiriman & kesehatan stok', [
+    ['Stok dipesan & stok yang bisa dijual', 'Pesanan grosir · Kasir · Barang & stok', [
+      <>Saat penawaran grosir <b>dikonfirmasi jadi pesanan</b>, sisa barang yang belum dikirim otomatis <b>disisihkan (dipesan)</b>. Di detail pesanan terlihat apakah stok tersedia cukup.</>,
+      <>Di Barang & stok muncul tulisan <b>Bisa dijual … · dipesan … · ditahan …</b> pada barang yang sebagian stoknya sudah dipesan atau ditahan.</>,
+      <>Di Kasir, peringatan "melebihi stok" memakai stok yang <b>bisa dijual</b> (stok − dipesan − ditahan). Bila aturan stok minus = Tolak, penjualan yang memakai barang pesanan pelanggan grosir ditolak.</>,
+      <>Begitu surat jalan dibuat, barang yang dikirim tidak lagi dihitung dipesan. Pesanan yang dibatalkan/ditutup melepas sisanya otomatis.</>,
+    ], <>Stok fisik tidak berubah karena pesanan — yang berubah hanya angka "bisa dijual". Nilai persediaan di laporan tetap memakai stok fisik.</>, null, null],
+    ['Barang ditahan (rusak, karantina, retur rusak)', 'Barang & stok › Stok › Pisahkan · Penjualan › Retur', [
+      <>Barang rusak tapi belum pasti dibuang: buka <b>Stok</b> pada barang › alasan <b>Pisahkan: rusak / karantina</b>, pilih Rusak / Karantina / Perlu diperiksa, isi jumlah, Simpan.</>,
+      <>Pelanggan mengembalikan barang rusak: saat <b>Retur barang</b>, centang <b>Barang rusak</b> — stok tetap bertambah tetapi langsung masuk daftar ditahan.</>,
+      <>Buka Barang & stok › <b>Kesehatan stok</b> › Barang ditahan, ketuk barangnya, lalu pilih: <b>Bisa dijual lagi</b>, <b>Buang (rusak/kedaluwarsa)</b>, atau <b>Sudah diretur</b> (bila sudah dikembalikan ke supplier lewat Belanja). Boleh sebagian.</>,
+    ], <>Barang ditahan tetap dihitung di stok & nilai persediaan sampai diputuskan. Membuang barang mengurangi stok dan nilainya menjadi beban; bila ada aturan persetujuan Penyesuaian stok, hanya pemilik yang bisa membuang.</>, 'warn', null],
+    ['Mutasi dalam perjalanan', 'Mutasi stok › Kirim (dalam perjalanan)', [
+      <>Pilih <b>Kirim (dalam perjalanan)</b>, pilih asal–tujuan dan barangnya, lalu Kirim. Stok asal langsung berkurang; total stok bisnis tidak berubah.</>,
+      <>Di lokasi tujuan, buka Mutasi stok › bagian <b>Dalam perjalanan</b> › <b>Terima</b>. Isi jumlah yang benar-benar datang.</>,
+      <>Bila kurang, pilih <b>Kembali ke asal</b> (dihitung balik ke stok asal) atau <b>Hilang/rusak di jalan</b> (keluar dari stok, menjadi beban). Belum jadi dikirim? <b>Batalkan kiriman</b> dengan alasan — semua kembali ke asal.</>,
+    ], <>Selama dalam perjalanan, barang tidak bisa dijual di lokasi mana pun. Tanggal kedaluwarsa/batch ikut terbawa ke lokasi tujuan.</>, null, null],
+    ['Stok maksimum & kesehatan stok', 'Barang & stok › Ubah · tab Kesehatan stok', [
+      <>Di <b>Ubah</b> barang, isi <b>Stok maksimum</b> (opsional). Saran belanja tidak akan menyarankan melebihi batas ini, dan barang yang lewat ditandai.</>,
+      <>Buka tab <b>Kesehatan stok</b>: barang dikelompokkan menjadi <b>Cepat laku</b>, Normal, <b>Lambat</b>, <b>Tidak bergerak</b>, Baru masuk, dan Habis — lengkap dengan terjual 30/90 hari, stok cukup berapa hari, umur stok, dan nilainya.</>,
+      <>Barang tidak bergerak dan lambat sebaiknya dipromosikan (menu Promo), dibundel, atau diretur ke supplier agar modal tidak tertahan.</>,
+    ], <>Aturan pengelompokan tertulis di bawah daftar (mis. tidak bergerak = ada stok, tidak terjual 90 hari, dan stok sudah ≥ 90 hari). Saran belanja juga menghitung barang yang sudah dipesan pelanggan.</>, null, <ScrKesehatanStok />],
   ]],
 ];
 

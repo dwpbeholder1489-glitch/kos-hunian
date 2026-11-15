@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { Field, Loading, Empty, toast } from '@/components/ui';
+import { Field, Loading, Empty, Sheet, run, toast } from '@/components/ui';
 import { angka, tgl, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 import { multiLoc } from '@/lib/business';
@@ -26,6 +26,8 @@ export default function Mutasi() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [txId, setTxId] = useState(uid);
+  const [mode, setMode] = useState('langsung');   // langsung | kirim (dalam perjalanan)
+  const [recv, setRecv] = useState(null);
   const load = async () => {
     const [p, u, l, h] = await Promise.all([
       supabase.from('products').select('id,name,base_unit,active').eq('kos_id', kosId).eq('active', true).order('name'),
@@ -60,19 +62,32 @@ export default function Mutasi() {
   const send = async () => {
     if (!to || to === from) return toast('Pilih lokasi tujuan yang berbeda.');
     if (bad) return toast('Periksa jumlah: harus lebih dari 0 dan tidak melebihi stok di lokasi asal.');
-    if (!window.confirm(`Pindahkan ${items.length} barang dari ${name(from)} ke ${name(to)}?`)) return;
+    if (!window.confirm(mode === 'kirim' ? `Kirim ${items.length} barang dari ${name(from)} ke ${name(to)}? Stok ${name(from)} berkurang sekarang; ${name(to)} bertambah setelah kiriman diterima.` : `Pindahkan ${items.length} barang dari ${name(from)} ke ${name(to)}?`)) return;
     setBusy(true);
-    const { data, error } = await supabase.rpc('stock_transfer', { p_id: txId, p_kos: kosId, p_from: from, p_to: to, p_lines: items.map((it) => ({ product_id: it.product_id, unit: it.unit, qty: qtyNum(it.qty) })), p_note: note });
+    const { data, error } = await supabase.rpc(mode === 'kirim' ? 'stock_transfer_send' : 'stock_transfer', { p_id: txId, p_kos: kosId, p_from: from, p_to: to, p_lines: items.map((it) => ({ product_id: it.product_id, unit: it.unit, qty: qtyNum(it.qty) })), p_note: note });
     setBusy(false);
     if (error) return toast(errMsg(error));
-    toast(`${data.number} tersimpan`); setItems([]); setNote(''); setTxId(uid()); bump(); load();
+    toast(mode === 'kirim' ? `${data.number} dikirim — tunggu diterima di ${name(to)}` : `${data.number} tersimpan`); setItems([]); setNote(''); setTxId(uid()); bump(); load();
   };
 
   return (
     <div className="stack">
       <div className="row"><h2>Mutasi stok</h2><PageHelp page="mutasi" /></div>
       <p className="small muted" style={{ margin: 0 }}>Pindahkan barang antar lokasi (mis. dari gudang ke toko). Stok asal berkurang, stok tujuan bertambah, total stok dan nilai modal tidak berubah.</p>
+      {d.hist.some((h) => h.status === 'dikirim') && <section className="panel">
+        <h3>Dalam perjalanan</h3>
+        <div className="list">{d.hist.filter((h) => h.status === 'dikirim').map((h) => (
+          <div className="li" key={h.id} style={{ alignItems: 'flex-start', flexWrap: 'wrap', rowGap: 6 }}>
+            <div className="main"><b className="small">{name(h.from_branch)} → {name(h.to_branch)}</b>
+              <span className="small muted">{h.number} · dikirim {when(h.created_at)}{h.note ? ` · ${h.note}` : ''}</span>
+              <span className="small">{(h.lines || []).map((x) => `${x.name} ${angka(x.qty)} ${x.unit}`).join(', ')}</span></div>
+            <button className="sm primary" onClick={() => setRecv(h)}>Terima</button>
+          </div>
+        ))}</div>
+      </section>}
       <section className="panel">
+        <div className="seg">{[['langsung', 'Langsung sampai'], ['kirim', 'Kirim (dalam perjalanan)']].map(([k, l]) => <button key={k} className={mode === k ? 'on' : ''} onClick={() => setMode(k)}>{l}</button>)}</div>
+        <span className="small muted">{mode === 'kirim' ? 'Untuk pengiriman yang butuh waktu (beda kota, lewat ekspedisi). Stok asal berkurang saat dikirim; lokasi tujuan menekan Terima dan mengisi jumlah yang benar-benar datang.' : 'Barang dipindah dan langsung diterima (mis. gudang di sebelah toko).'}</span>
         <div className="row">
           <Field label="Dari">{locked ? <input value={name(from)} disabled /> : <select value={from} onChange={(e) => setFrom(e.target.value)}>{locs.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select>}</Field>
           <Field label="Ke"><select value={to} onChange={(e) => setTo(e.target.value)}><option value="">— pilih —</option>{locs.filter((b) => b.id !== from).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>
@@ -101,19 +116,69 @@ export default function Mutasi() {
         })}
         {items.length > 0 && <>
           <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. kirim pagi, dibawa motor" /></Field>
-          <button className="cta" onClick={send} disabled={busy || !to || Boolean(bad)}>{busy ? 'Menyimpan…' : `Pindahkan ${items.length} barang`}</button>
+          <button className="cta" onClick={send} disabled={busy || !to || Boolean(bad)}>{busy ? 'Menyimpan…' : mode === 'kirim' ? `Kirim ${items.length} barang` : `Pindahkan ${items.length} barang`}</button>
         </>}
       </section>
       <section className="panel">
         <h3>Riwayat mutasi</h3>
         {d.hist.length === 0 ? <span className="small muted">Belum ada mutasi.</span> : <div className="list">{d.hist.map((h) => (
           <div className="li" key={h.id} style={{ alignItems: 'flex-start' }}>
-            <div className="main"><b className="small">{name(h.from_branch)} → {name(h.to_branch)}</b>
+            <div className="main"><b className="small">{name(h.from_branch)} → {name(h.to_branch)} {h.status === 'dikirim' ? <span className="chip warn">Dalam perjalanan</span> : h.status === 'batal' ? <span className="chip void">Dibatalkan</span> : null}</b>
               <span className="small muted">{h.number} · {when(h.created_at)}{h.created_email ? ` · ${h.created_email}` : ''}{h.note ? ` · ${h.note}` : ''}</span>
-              <span className="small">{(h.lines || []).map((x) => `${x.name} ${angka(x.qty)} ${x.unit}`).join(', ')}</span></div>
+              <span className="small">{(h.received || h.lines || []).map((x) => (x.received != null && Number(x.short) > 0 ? `${x.name} dikirim ${angka(x.sent)}, diterima ${angka(x.received)}` : `${x.name} ${angka(x.qty ?? x.received)} ${x.unit || ''}`)).join(', ')}</span>
+              {h.received_at && h.status !== 'dikirim' && <span className="small muted">{h.status === 'batal' ? 'Dibatalkan' : 'Diterima'} {when(h.received_at)}{h.received_email ? ` · ${h.received_email}` : ''}{h.receive_note ? ` · ${h.receive_note}` : ''}</span>}</div>
           </div>
         ))}</div>}
       </section>
+      {recv && <ReceiveSheet t={recv} name={name} onClose={() => setRecv(null)} onDone={() => { setRecv(null); bump(); load(); }} />}
     </div>
+  );
+}
+
+// Terima kiriman: isi yang benar-benar datang; kekurangan kembali ke asal atau dicatat hilang di jalan
+function ReceiveSheet({ t, name, onClose, onDone }) {
+  const [qty, setQty] = useState(Object.fromEntries((t.lines || []).map((x) => [x.product_id, angka(x.qty)])));
+  const [short, setShort] = useState('kembali');
+  const [note, setNote] = useState('');
+  const [cancel, setCancel] = useState(false);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const got = (x) => qtyNum(qty[x.product_id] ?? '');
+  const bad = (t.lines || []).find((x) => !(got(x) >= 0) || got(x) > Number(x.qty));
+  const anyShort = (t.lines || []).some((x) => got(x) < Number(x.qty));
+  const save = async () => {
+    if (bad) return toast(`Jumlah ${bad.name} antara 0 dan ${angka(bad.qty)}.`);
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('stock_transfer_receive', { p_id: t.id, p_lines: (t.lines || []).map((x) => ({ product_id: x.product_id, qty: got(x) })), p_short: short, p_note: note }), `${t.number} diterima di ${name(t.to_branch)}`, errMsg);
+    setBusy(false);
+    if (ok) onDone();
+  };
+  const doCancel = async () => {
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('stock_transfer_cancel', { p_id: t.id, p_reason: reason }), `${t.number} dibatalkan, barang kembali ke ${name(t.from_branch)}`, errMsg);
+    setBusy(false);
+    if (ok) onDone();
+  };
+  return (
+    <Sheet title={`Terima ${t.number}`} onClose={onClose}>
+      <span className="small muted">{name(t.from_branch)} → {name(t.to_branch)} · dikirim {when(t.created_at)}</span>
+      {(t.lines || []).map((x) => (
+        <div key={x.product_id} className="row" style={{ flexWrap: 'nowrap', alignItems: 'flex-end' }}>
+          <span className="small" style={{ flex: 1, minWidth: 0 }}>{x.name}<br /><span className="muted">dikirim {angka(x.qty)} {x.unit}</span></span>
+          <Field label="Diterima"><input inputMode="decimal" style={{ maxWidth: 110 }} value={qty[x.product_id] ?? ''} onChange={(e) => setQty({ ...qty, [x.product_id]: e.target.value })} /></Field>
+        </div>
+      ))}
+      {anyShort && <>
+        <span className="label">Barang yang kurang</span>
+        <div className="seg">{[['kembali', 'Kembali ke asal'], ['hilang', 'Hilang/rusak di jalan']].map(([k, l]) => <button key={k} className={short === k ? 'on' : ''} onClick={() => setShort(k)}>{l}</button>)}</div>
+        <span className="small muted">{short === 'kembali' ? `Kekurangannya dihitung kembali ke stok ${name(t.from_branch)}.` : 'Kekurangannya keluar dari stok; nilainya menjadi beban. Bila ada aturan persetujuan Penyesuaian stok, hanya pemilik yang bisa memilih ini.'}</span>
+      </>}
+      <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. 1 dus penyok" /></Field>
+      <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan penerimaan'}</button>
+      {!cancel ? <button className="ghost" onClick={() => setCancel(true)}>Batalkan kiriman</button> : <div className="unitbox">
+        <Field label="Alasan pembatalan"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. tidak jadi dikirim" /></Field>
+        <button className="danger" onClick={doCancel} disabled={busy || reason.trim().length < 3}>Ya, batalkan — semua kembali ke {name(t.from_branch)}</button>
+      </div>}
+    </Sheet>
   );
 }

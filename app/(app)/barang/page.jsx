@@ -17,6 +17,7 @@ import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, MOVE } from '@/lib/retail';
 import { isiNum, isiText, measure, toBase, resolveUnit, contentOf, contentChoices, presetsFor, crossDim, unitProblem, BASE_PRESETS } from '@/lib/units';
 import Kedaluwarsa from '@/components/Kedaluwarsa';
+import StokSehat, { availLine } from '@/components/StokSehat';
 import { CategoryBar, CategorySheet, VariantForm, PriceBreakSheet, groupOf } from '@/components/TokoLanjut';
 
 // Muat barang + satuan untuk bisnis aktif
@@ -24,16 +25,17 @@ function useProducts(kosId, ver, multi) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const load = useCallback(async () => {
-    const [p, u, l, c, g, b] = await Promise.all([
+    const [p, u, l, c, g, b, av] = await Promise.all([
       supabase.from('products').select('*').eq('kos_id', kosId).order('name'),
       supabase.from('product_units').select('*').eq('kos_id', kosId),
       multi ? supabase.rpc('stock_levels_list', { p_kos: kosId }) : Promise.resolve({ data: [] }),
       supabase.from('product_categories').select('*').eq('kos_id', kosId).order('sort').order('name'),
       supabase.from('product_variant_groups').select('*').eq('kos_id', kosId),
       supabase.from('price_breaks').select('*').eq('kos_id', kosId),
+      supabase.rpc('stock_avail', { p_kos: kosId }),
     ]);
     if (p.error || u.error) return setErr(errMsg(p.error || u.error));
-    setD({ products: p.data, units: u.data, levels: l.data || [], cats: c.data || [], groups: g.data || [], breaks: b.data || [] });
+    setD({ products: p.data, units: u.data, levels: l.data || [], cats: c.data || [], groups: g.data || [], breaks: b.data || [], avail: av.data || { products: [], levels: [] } });
   }, [kosId, multi]);
   useEffect(() => { load(); }, [load, ver]);
   return { d, err, reload: load };
@@ -45,7 +47,7 @@ export default function Barang() {
   const { d, err, reload } = useProducts(kosId, ver, multi);
   const [q, setQ] = useState('');
   const [f, setF] = useState('aktif');
-  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'kedaluwarsa') setF('kedaluwarsa'); } catch {} }, []);
+  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['kedaluwarsa', 'kesehatan'].includes(t)) setF(t); } catch {} }, []);
   const [edit, setEdit] = useState(null);   // null | 'new' | product
   useBaru(() => setEdit('new'));
   const [adj, setAdj] = useState(null);
@@ -85,11 +87,11 @@ export default function Barang() {
       {d.products.length > 0 && <>
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kode, atau barcode" aria-label="Cari barang" />
         <div className="seg">
-          {[['aktif', `Aktif (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
+          {[['aktif', `Aktif (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['kesehatan', 'Kesehatan stok'], ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
         </div>
-        {f !== 'kedaluwarsa' && <CategoryBar cats={d.cats} value={cat} onChange={setCat} counts={catCount} onManage={() => setCatSheet(true)} />}
+        {!['kedaluwarsa', 'kesehatan'].includes(f) && <CategoryBar cats={d.cats} value={cat} onChange={setCat} counts={catCount} onManage={() => setCatSheet(true)} />}
       </>}
-      {f === 'kedaluwarsa' ? <Kedaluwarsa kosId={kosId} ver={ver} multi={multi} tracked={active.some((p) => p.track_expiry)} onChanged={reload} /> : d.products.length === 0 ? (
+      {f === 'kedaluwarsa' ? <Kedaluwarsa kosId={kosId} ver={ver} multi={multi} tracked={active.some((p) => p.track_expiry)} onChanged={reload} /> : f === 'kesehatan' ? <StokSehat kosId={kosId} ver={ver} kos={kos} multi={multi} onChanged={reload} /> : d.products.length === 0 ? (
         <Empty title={bahan ? 'Belum ada bahan' : 'Belum ada barang'} text={bahan ? 'Catat bahan operasional (deterjen, pewangi, plastik, hanger) agar stok dan biaya bahan terpantau. Pemakaian dicatat lewat tombol Stok › Pemakaian bahan.' : 'Tambahkan barang yang dijual. Satu barang bisa punya beberapa satuan, misalnya pcs dan dus isi 40, masing-masing dengan harga eceran dan grosir.'}>
           <button className="primary" onClick={() => setEdit('new')}>+ Tambah barang pertama</button>
         </Empty>
@@ -103,6 +105,7 @@ export default function Barang() {
                 <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}</b>
                 {(p.sku || p.category_id || p.variant_group_id) && <span className="small muted">{[p.variant_group_id && 'Varian', p.category_id && catName(p.category_id), p.sku && `Kode ${p.sku}`].filter(Boolean).join(' · ')}</span>}
                 <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>
+                {availLine(d.avail, p, multi ? kos.locs?.current : null)}
                 {us.some((u, k) => k > 0 && unitProblem(u, p.base_unit)) && <span className="small" style={{ color: 'var(--bad)' }}>Periksa satuan: {us.filter((u, k) => k > 0 && unitProblem(u, p.base_unit)).map((u) => unitProblem(u, p.base_unit)).join(' ')} Buka Ubah untuk memperbaiki.</span>}
                 {!bahan && d.breaks.some((x) => x.product_id === p.id) && <span className="small" style={{ color: 'var(--good)' }}>Beli banyak: {d.breaks.filter((x) => x.product_id === p.id).sort((a, b) => Number(a.min_qty) - Number(b.min_qty)).slice(0, 3).map((x) => `≥${angka(x.min_qty)} ${x.unit} ${rp(x.price)}${x.tier !== 'semua' ? ` (${x.tier === 'grosir' ? 'grosir' : 'ecer'})` : ''}`).join(' · ')}</span>}
                 <span className="small muted">{us.map((u) => bahan ? `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''}` : `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
@@ -139,6 +142,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
   const [base, setBaseRaw] = useState(p?.base_unit || '');
   const [cost, setCost] = useState(money(p?.cost));
   const [min, setMin] = useState(p && Number(p.min_stock) > 0 ? String(Number(p.min_stock)) : '');
+  const [max, setMax] = useState(p && Number(p.max_stock) > 0 ? String(Number(p.max_stock)) : '');
   const [stock, setStock] = useState('');
   const [density, setDensity] = useState(kgText(p?.density));
   const [rows, setRows] = useState(units.length
@@ -184,6 +188,8 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
     let pid = p?.id || null;
     const ok = await run(async () => { const r = await supabase.rpc('product_save', { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null, p_density: densN }); if (r.data) pid = r.data; return r; }, p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
     const leadN = lead.trim() === '' ? null : parseInt(lead, 10);
+    const maxN = max.trim() ? qtyNum(max) : null;
+    if (ok && pid && (maxN || null) !== (Number(p?.max_stock) || null)) await run(() => supabase.rpc('product_set_max', { p_product: pid, p_max: maxN || null }), null, errMsg);
     if (ok && pid && (catId || null) !== (p?.category_id || null)) await run(() => supabase.rpc('product_set_category', { p_products: [pid], p_category: catId || null }), null, errMsg);
     if (ok && pid && (track !== Boolean(p?.track_expiry) || leadN !== (p?.lead_days ?? null))) {
       await run(() => supabase.rpc('product_set_tracking', { p_product: pid, p_track: track, p_lead_days: Number.isFinite(leadN) ? leadN : null }), track && !p?.track_expiry ? 'Tanggal kedaluwarsa dicatat mulai sekarang' : null, errMsg);
@@ -270,6 +276,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
       <Field label="Kode barang (opsional)" hint="kode sendiri, mis. GL-1"><input value={sku} maxLength={40} autoCapitalize="characters" onChange={(e) => setSku(e.target.value)} /></Field>
       {unitWord && <p className="small" style={{ margin: 0, color: 'var(--warn, var(--bad))' }}>Kode barang berisi "{sku.trim()}" — kalau maksudnya satuan, isi di <b>Satuan utama</b>. Kode barang hanya penanda sendiri dan boleh kosong.</p>}
       <Field label={`Peringatan stok minimum (${b || 'satuan'})`}><input inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
+      <Field label={`Stok maksimum (${b || 'satuan'}, opsional)`} hint="saran belanja tidak menyarankan melebihi ini; tanda di Kesehatan stok bila lewat"><input inputMode="decimal" value={max} onChange={(e) => setMax(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
       {batch && <div className="unitbox" style={{ gap: 6 }}>
         <label className="row small" style={{ flexWrap: 'nowrap', fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={track} onChange={(e) => setTrack(e.target.checked)} />Catat tanggal kedaluwarsa (susu, roti, obat, makanan…)</label>
         {track && <span className="small muted">Tanggal diisi saat belanja/terima barang. Stok keluar otomatis dari yang paling cepat kedaluwarsa; daftarnya di Barang › Kedaluwarsa.{p && !p.track_expiry && Number(p.stock) > 0 ? ' Stok yang ada sekarang dicatat sebagai "tanggal belum diisi" — isi tanggalnya di tab Kedaluwarsa.' : ''}</span>}
@@ -286,6 +293,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
 const PAKAI = ['pakai', 'Pemakaian bahan', 'Jumlah yang terpakai'];
 const REASONS = [
   ['opname', 'Stok opname (hitung ulang)', 'Jumlah fisik hasil hitung'],
+  ['tahan', 'Pisahkan: rusak / karantina (belum dibuang)', 'Jumlah yang dipisahkan'],
   ['rusak', 'Barang rusak', 'Jumlah yang rusak'],
   ['kedaluwarsa', 'Kedaluwarsa', 'Jumlah yang kedaluwarsa'],
   ['koreksi', 'Koreksi (tambah/kurang)', 'Jumlah'],
@@ -309,12 +317,19 @@ function StockSheet({ p, units, loc, bahan, onClose, onSaved }) {
   const n = qtyNum(qty);
   const base = isFinite(n) ? toBase(Math.abs(n), mult) * (reason === 'koreksi' ? dir : 1) : NaN;
   const cur = loc ? Number(loc.here) : Number(p.stock); // stok di lokasi kerja (bila ada beberapa lokasi)
-  const delta = reason === 'opname' ? base - cur : reason === 'koreksi' ? base : -base;
+  const delta = reason === 'tahan' ? 0 : reason === 'opname' ? base - cur : reason === 'koreksi' ? base : -base;
+  const [holdWhy, setHoldWhy] = useState('rusak');
 
   const save = async () => {
     if (!isFinite(base) || (reason !== 'koreksi' && base < 0) || (reason !== 'opname' && base === 0)) return toast('Isi jumlahnya.');
     if (reason === 'opname' && delta === 0) { toast('Tidak ada selisih.'); return onClose(); }
     setBusy(true);
+    if (reason === 'tahan') {
+      const ok2 = await run(() => supabase.rpc('hold_create', { p_kos: p.kos_id, p_product: p.id, p_unit: null, p_qty: base, p_reason: holdWhy, p_note: note }), `${angka(base)} ${p.base_unit} ${p.name} dipisahkan — tidak dijual sampai diputuskan`, errMsg);
+      setBusy(false);
+      if (ok2) onSaved();
+      return;
+    }
     const ok = await withApproval(() => supabase.rpc('stock_adjust', { p_product: p.id, p_reason: reason, p_qty: base, p_note: note }), `Stok ${p.name} ${delta > 0 ? '+' : ''}${angka(delta)} ${p.base_unit}`,
       { kos: p.kos_id, action: 'penyesuaian_stok', payload: { product_id: p.id, reason, qty: base, note }, reason: note || reason });
     setBusy(false);
@@ -328,12 +343,16 @@ function StockSheet({ p, units, loc, bahan, onClose, onSaved }) {
         {loc.rows.length > 0 && <span className="small muted">{loc.rows.map(([n, q]) => `${n} ${angka(q)} ${p.base_unit}`).join(' · ')}</span>}
       </> : <p style={{ margin: 0 }}>Tercatat <b>{stockText(p.stock, units, p.base_unit)}</b>{units.length > 1 ? ` (${angka(p.stock)} ${p.base_unit})` : ''}</p>}
       <Field label="Alasan"><select value={reason} onChange={(e) => setReason(e.target.value)}>{reasons.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+      {reason === 'tahan' && <>
+        <div className="seg">{[['rusak', 'Rusak'], ['karantina', 'Karantina'], ['periksa', 'Perlu diperiksa']].map(([k, l]) => <button key={k} className={holdWhy === k ? 'on' : ''} onClick={() => setHoldWhy(k)}>{l}</button>)}</div>
+        <span className="small muted">Barang tetap tercatat di stok & nilai persediaan, tetapi tidak dihitung "tersedia" untuk dijual. Putuskan nanti di Barang › Kesehatan stok: kembalikan ke stok jual, buang, atau tandai sudah diretur ke supplier.</span>
+      </>}
       {reason === 'koreksi' && <div className="seg">{[[1, 'Tambah stok'], [-1, 'Kurangi stok']].map(([v, l]) => <button key={v} className={dir === v ? 'on' : ''} onClick={() => setDir(v)}>{l}</button>)}</div>}
       <div className="row">
         <Field label={r[2]}><input inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} /></Field>
         {units.length > 1 && <Field label="Satuan"><select value={unit} onChange={(e) => setUnit(e.target.value)}>{units.map((u) => <option key={u.name} value={u.name}>{u.name}</option>)}</select></Field>}
       </div>
-      {isFinite(base) && qty.trim() !== '' && <p className="small" style={{ margin: 0 }}>Perubahan: <b>{delta > 0 ? '+' : ''}{angka(delta)} {p.base_unit}</b> → stok{loc ? ` di ${loc.name}` : ''} menjadi {stockText(cur + delta, units, p.base_unit)}{p.cost > 0 ? ` · nilai ${rp(delta * p.cost)}` : ''}</p>}
+      {isFinite(base) && qty.trim() !== '' && reason !== 'tahan' && <p className="small" style={{ margin: 0 }}>Perubahan: <b>{delta > 0 ? '+' : ''}{angka(delta)} {p.base_unit}</b> → stok{loc ? ` di ${loc.name}` : ''} menjadi {stockText(cur + delta, units, p.base_unit)}{p.cost > 0 ? ` · nilai ${rp(delta * p.cost)}` : ''}</p>}
       <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. dimakan tikus, hitung ulang akhir bulan" /></Field>
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
       <span className="label">Riwayat stok</span>

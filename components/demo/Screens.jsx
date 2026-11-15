@@ -539,6 +539,19 @@ export function ScrKomisi() {
   );
 }
 
+export function ScrKesehatanStok() {
+  return (
+    <Phone bare>
+      <h3>Kesehatan stok</h3>
+      <div className="row between small"><span><b>Barang ditahan</b> · Gula 1 kg (retur rusak)</span><b>1 kg</b></div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn">Cepat laku 18</span><span className="mini-btn">Lambat 7</span><span className="mini-btn cta">Tidak bergerak 3</span></div>
+      <div className="row between small"><span>Payung lipat · 120 hari, belum terjual</span><b>{rp(120000)}</b></div>
+      <div className="row between small"><span>Kaos Polos — Putih / XL · cukup ±140 hari</span><b>{rp(450000)}</b></div>
+      <div className="row between small"><span>Beras 5 kg · bisa dijual 12 · dipesan 8</span><b>20 karung</b></div>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

@@ -80,7 +80,7 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
   const left = (l) => Number(l.qty) - Number(l.returned || 0);
   const retTotal = ret && lines ? lines.reduce((a, l) => a + (qtyNum(ret.qty[l.id] || '') || 0) * Number(l.price) * (Number(s.subtotal) > 0 ? Number(s.total) / Number(s.subtotal) : 1), 0) : 0;
   const doReturn = async () => {
-    const items = lines.map((l) => ({ line_id: l.id, qty: qtyNum(ret.qty[l.id] || '') || 0 })).filter((x) => x.qty > 0);
+    const items = lines.map((l) => ({ line_id: l.id, qty: qtyNum(ret.qty[l.id] || '') || 0, ...(ret.rusak?.[l.id] ? { rusak: true } : {}) })).filter((x) => x.qty > 0);
     if (!items.length) return toast('Isi jumlah barang yang dikembalikan.');
     setBusy(true);
     const req = { kos: s.kos_id, action: 'retur_penjualan', payload: { sale_id: s.id, lines: items, refund: ret.refund }, reason: ret.reason };
@@ -103,6 +103,7 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
         <div className="li" key={l.id} style={{ flexWrap: 'wrap' }}>
           <div className="main"><b className="small">{l.name}</b><span className="small muted">{angka(l.qty)} {l.unit} × {rp(l.price)}{Number(l.returned) > 0 ? ` · diretur ${angka(l.returned)}` : ''}</span></div><b className="small">{rp(l.line_total)}</b>
           {ret && left(l) > 0 && <Field label={`Kembali (maks ${angka(left(l))} ${l.unit})`}><input inputMode="decimal" value={ret.qty[l.id] || ''} onChange={(e) => setRet({ ...ret, qty: { ...ret.qty, [l.id]: e.target.value } })} placeholder="0" /></Field>}
+          {ret && left(l) > 0 && qtyNum(ret.qty[l.id] || '') > 0 && <label className="row small" style={{ width: '100%' }}><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={!!ret.rusak?.[l.id]} onChange={(e) => setRet({ ...ret, rusak: { ...(ret.rusak || {}), [l.id]: e.target.checked } })} />Barang rusak — pisahkan, jangan dijual lagi</label>}
         </div>
       ))}</div>}
       {rets.length > 0 && <div className="notice">{rets.map((r) => <div key={r.number} className="small">{r.number} · {tgl(r.date)} · {r.items?.map((i) => `${angka(i.qty)} ${i.unit} ${i.name}`).join(', ')} · {REFUND[r.refund_method]} {rp(r.total)} — {r.reason}</div>)}</div>}
@@ -113,7 +114,7 @@ function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {
       {s.cashier && <span className="small muted">Kasir: {s.cashier}</span>}
       <Link href={`/struk/${s.id}`}><button className="primary" style={{ width: '100%' }}>Lihat / kirim struk</button></Link>
       {s.status === 'selesai' && !voiding && lines && lines.some((l) => left(l) > 0) && (!ret ? <button onClick={() => setRet({ id: uid(), qty: {}, refund: s.pay_method === 'kasbon' ? 'kasbon' : s.pay_method, reason: '' })}>{fin ? 'Retur barang (dikembalikan pelanggan)' : 'Minta retur barang'}</button> : <>
-        <span className="small muted">Isi jumlah yang dikembalikan di setiap barang di atas. Stok bertambah lagi.</span>
+        <span className="small muted">Isi jumlah yang dikembalikan di setiap barang di atas. Stok bertambah lagi; barang yang dicentang rusak masuk daftar <b>ditahan</b> (Barang › Kesehatan stok) dan tidak dihitung bisa dijual.</span>
         <div className="seg">{Object.entries(REFUND).filter(([k]) => k !== 'kasbon' || Number(s.amt_kasbon ?? (s.pay_method === 'kasbon' ? 1 : 0)) > 0).map(([k, l]) => <button key={k} className={ret.refund === k ? 'on' : ''} onClick={() => setRet({ ...ret, refund: k })}>{l}</button>)}</div>
         <Field label="Alasan retur"><input value={ret.reason} onChange={(e) => setRet({ ...ret, reason: e.target.value })} placeholder="mis. kemasan rusak, salah ambil" /></Field>
         <div className="row between"><b>{ret.refund === 'kasbon' ? 'Kasbon berkurang' : 'Uang dikembalikan'}</b><b>{rp(Math.round(retTotal))}</b></div>

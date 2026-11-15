@@ -231,6 +231,9 @@ function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { supabase.rpc('customer_credit', { p_contact: o.contact_id }).then(({ data }) => setCr(data || null)); }, [o.id, o.status]);
+  const [sc, setSc] = useState(null);   // cek stok tersedia (so_stock_check): stok lokasi − ditahan − dipesan pesanan lain
+  useEffect(() => { if (['penawaran', 'dikonfirmasi', 'sebagian'].includes(o.status)) supabase.rpc('so_stock_check', { p_order: o.id }).then(({ data }) => setSc(data || [])); }, [o.id, o.status, o.updated_at]);
+  const short = (sc || []).filter((x) => Number(x.need) > Number(x.available) + 0.0005);
   const remaining = lines.reduce((a, l) => a + (Number(l.qty) - Number(l.qty_sent)) * Number(l.price), 0);
   const owner = canArea(kos, 'settings');
   const over = cr?.limit != null && o.status === 'penawaran' && Number(cr.balance) + Number(cr.open_orders) + Number(o.total) > Number(cr.limit);
@@ -267,6 +270,8 @@ function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
         ))}</div>
         <div className="row between"><b>Total</b><b>{rp(o.total)}</b></div>
         {['dikonfirmasi', 'sebagian'].includes(o.status) && <span className="small muted">Belum dikirim senilai {rp(remaining)}</span>}
+        {sc && (short.length ? <div className="notice small">{o.status === 'penawaran' ? 'Bila dikonfirmasi, stok belum cukup untuk:' : 'Stok tersedia belum cukup untuk:'} {short.map((x) => `${x.name} (perlu ${angka(Number(x.need) / Number(x.unit_qty))} ${x.unit}, tersedia ${angka(Math.max(0, Number(x.available)) / Number(x.unit_qty))}${Number(x.incoming) > 0 ? `, akan datang ${angka(Number(x.incoming) / Number(x.unit_qty))}` : ''})`).join('; ')}. Pesanan tetap bisa dikonfirmasi & dikirim bertahap.</div>
+          : <span className="small" style={{ color: 'var(--good)' }}>{o.status === 'penawaran' ? 'Stok tersedia cukup.' : 'Stok sisa pesanan sudah disisihkan (dipesan) — tidak terjual di Kasir bila aturan stok minus = Tolak.'}</span>)}
       </section>
 
       {dvs.length > 0 && <section className="panel" style={{ gap: 6 }}><span className="label">Surat jalan & faktur</span>
