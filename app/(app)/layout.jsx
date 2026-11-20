@@ -7,7 +7,7 @@ import Bagikan from '@/components/Bagikan';
 import { LogoMark } from '@/components/Logo';
 import Link from 'next/link';
 import { ClosedBar } from '@/components/DataTutup';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sheet } from '@/components/ui';
 import NavIcon from '@/components/NavIcon';
@@ -23,6 +23,7 @@ import { groupsFor, fourthTab, quickActions, GROUP_ICON } from '@/lib/menu';
 import HomeTop from '@/components/HomeTop';
 import { createPortal } from 'react-dom';
 import { logoUrl } from '@/lib/logo';
+import { Sidebar, Topbar, Crumbs, toggleSide } from '@/components/AppShell';
 
 
 function PlanBar({ kos }) {
@@ -68,18 +69,33 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
   return typeof document === 'undefined' ? el : createPortal(el, document.body);
 }
 
+// Tablet & desktop (≥768px) memakai sidebar + topbar; HP memakai header + menu bawah. Hanya satu yang dirender agar
+// lonceng/bagikan tidak memuat data dua kali. CSS juga menyembunyikan yang tidak sesuai (cadangan).
+function useWide() {
+  const q = '(min-width: 768px)';
+  const [w, setW] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const f = () => setW(m.matches);
+    f();
+    m.addEventListener ? m.addEventListener('change', f) : m.addListener(f);
+    return () => (m.removeEventListener ? m.removeEventListener('change', f) : m.removeListener(f));
+  }, []);
+  return w;
+}
+
 export default function AppLayout({ children }) {
   const path = usePathname();
   const router = useRouter();
   const { session, list, kos, kosId, pickKos, isAdmin } = useKos();
   const [sheet, setSheet] = useState(null); // 'biz' | 'menu' | 'quick'
+  const wide = useWide();
 
   if (!session || !list || !kos) {
     return <main className="wrap"><p className="muted">Membuka PRASARA…</p></main>;
   }
   const type = typeOf(kos);
   const own = tabsFor(kos);
-  const tabs = isAdmin ? [...own, ['/admin', 'Admin']] : own;
   const role = roleOf(kos);
   const allowed = pathAllowed(kos, path);
   const on = (h) => path === h || path.startsWith(h + '/');
@@ -87,10 +103,16 @@ export default function AppLayout({ children }) {
   const fourth = fourthTab(kos);
   const quick = quickActions(kos);
   const opsOn = on('/operasional') || (!on(home) && !(fourth && on(fourth[0])) && !on('/akun') && !on('/bantuan'));
+  const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <NotifBell /> : null) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailBell /> : null);
+  // Tombol menu topbar: tablet (icon rail) → menu samping lengkap; desktop → lebarkan/ciutkan sidebar
+  const onMenu = () => (window.innerWidth < 1024 ? setSheet('menu') : toggleSide());
   const go = (k) => { setSheet(null); if (k === '+') return router.push('/mulai'); pickKos(k.id); router.push(homeOf(k)); };
 
   return (
-    <>
+    <div className="shell">
+      {wide && <Sidebar kos={kos} path={path} on={on} admin={isAdmin} onBiz={() => setSheet('biz')} />}
+      <div className="shell-main">
+      {wide ? <Topbar kos={kos} quick={quick} bell={bell} share={!kos.closed_at ? <Bagikan /> : null} admin={isAdmin} onMenu={onMenu} onBiz={() => setSheet('biz')} /> : (
       <header className="top">
         <div className="wrap">
           <div className="brandrow">
@@ -101,18 +123,14 @@ export default function AppLayout({ children }) {
             </button>
             <div className="right">
               <Link href="/operasional?cari=1" className="helpbtn" aria-label="Cari menu" title="Cari menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></Link>
-              {isDraft(kos) ? null : kos.business_type !== 'retail' ? canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') && <NotifBell /> : canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') && <RetailBell />}
+              {bell}
               {!kos.closed_at && <Bagikan />}
               <button className="helpbtn menubtn" onClick={() => setSheet('menu')} aria-label="Buka menu" aria-haspopup="dialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button>
             </div>
           </div>
-          <nav className="tabs" aria-label="Menu">
-            {tabs.map(([href, label]) => (
-              <Link key={href} href={href} className={on(href) ? 'on' : ''} aria-current={on(href) ? 'page' : undefined}>{label}</Link>
-            ))}
-          </nav>
         </div>
       </header>
+      )}
       {!path.startsWith('/langganan') && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
@@ -120,7 +138,7 @@ export default function AppLayout({ children }) {
       {role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
       <AnnounceBanner />
       <ClosedBar />
-      <main className="wrap" key={kosId}>{kos.suspended_at ? (
+      <main className="wrap" key={kosId}><Crumbs kos={kos} path={path} />{kos.suspended_at ? (
         <div className="empty"><h2>Bisnis ini sedang ditangguhkan</h2><p className="muted">Alasan: {kos.suspend_reason || '—'}. Data Anda tetap tersimpan dan tidak dihapus.</p>
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
@@ -134,14 +152,15 @@ export default function AppLayout({ children }) {
       ) : (
         <div className="empty"><h2>Menu ini bukan untuk {type.name}</h2><p className="muted">{kos.name} adalah bisnis {type.name}. Pilih menu lain, atau pindah bisnis dengan mengetuk nama bisnis di kiri atas.</p><Link href={homeOf(kos)}><button className="primary">Buka menu utama</button></Link></div>
       )}</main>
+      </div>
 
-      <nav className={'bnav' + (quick.length ? ' hasfab' : '')} aria-label="Menu utama">
+      {!wide && <nav className={'bnav' + (quick.length ? ' hasfab' : '')} aria-label="Menu utama">
         <Link href={home} className={on(home) ? 'on' : ''} aria-current={on(home) ? 'page' : undefined}><NavIcon name="/beranda" />Beranda</Link>
         <Link href="/operasional" className={opsOn ? 'on' : ''} aria-current={on('/operasional') ? 'page' : undefined}><NavIcon name="/layers" />Operasional</Link>
         {quick.length > 0 && <button className="fab" onClick={() => setSheet('quick')} aria-label="Aksi cepat" aria-haspopup="dialog"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>}
         {fourth && <Link href={fourth[0]} className={on(fourth[0]) ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>}
         <Link href="/akun" className={on('/akun') ? 'on' : ''} aria-current={on('/akun') ? 'page' : undefined}><NavIcon name="/akun" />Akun</Link>
-      </nav>
+      </nav>}
 
       {sheet === 'menu' && <Drawer kos={kos} on={on} onClose={() => setSheet(null)} onBiz={() => setSheet('biz')} admin={isAdmin} />}
       {sheet === 'quick' && (
@@ -167,6 +186,6 @@ export default function AppLayout({ children }) {
           {list.length > 1 && canArea(kos, 'finance') && <Link href="/bisnis" onClick={() => setSheet(null)} className="small">Lihat ringkasan semua bisnis →</Link>}
         </Sheet>
       )}
-    </>
+    </div>
   );
 }

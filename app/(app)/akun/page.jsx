@@ -45,7 +45,7 @@ export default function Akun() {
         </div>
         {list.length > 1 && canArea(kos, 'finance') && <Link href="/bisnis" className="small">Ringkasan semua bisnis →</Link>}
       </section>
-      <section className="panel"><ThemeSwitch /><span className="small muted">Gelap adalah tampilan bawaan. Pilihan ini hanya untuk HP/perangkat ini.</span></section>
+      <section className="panel"><ThemeSwitch /><span className="small muted">Terang adalah tampilan bawaan. Pilihan ini hanya untuk HP/perangkat ini.</span></section>
       <div className="modlist">
         <Link href="/bantuan" className="modrow"><span className="modic"><NavIcon name="/bantuan" /></span><span className="t"><b>Pusat bantuan</b><small>Panduan, tanya jawab, tiket bantuan</small></span></Link>
         <Link href="/panduan" className="modrow"><span className="modic"><NavIcon name="/catatan" /></span><span className="t"><b>Panduan bergambar</b><small>Langkah demi langkah semua menu</small></span></Link>

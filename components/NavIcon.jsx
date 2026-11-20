@@ -60,6 +60,7 @@ const P = {
   '/aktivitas': <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   '/analisis': <><path d="M3 20h18M4 16l5-5 4 3 7-8" /><path d="M16 6h4v4" /></>,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
+  logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></>,
   swap: <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
 };
 export default function NavIcon({ name, size = 22 }) {

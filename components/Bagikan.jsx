@@ -21,9 +21,9 @@ export async function qrPng(url, name, line) {
   const q = (n + 8) * cell; const W = q + 80, H = q + 260;
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-  g.fillStyle = '#0f1b2d'; g.textAlign = 'center'; g.font = '800 44px "Plus Jakarta Sans", system-ui, sans-serif';
+  g.fillStyle = '#0f1b2d'; g.textAlign = 'center'; g.font = '800 44px "Inter", system-ui, sans-serif';
   g.fillText(name.length > 28 ? name.slice(0, 27) + '…' : name, W / 2, 70);
-  g.fillStyle = '#5b5b5b'; g.font = '600 28px "Plus Jakarta Sans", system-ui, sans-serif'; g.fillText(line, W / 2, 115);
+  g.fillStyle = '#5b5b5b'; g.font = '600 28px "Inter", system-ui, sans-serif'; g.fillText(line, W / 2, 115);
   g.fillStyle = '#000';
   m.forEach((row, y) => row.forEach((v, x) => { if (v) g.fillRect(40 + (x + 4) * cell, 140 + (y + 4) * cell, cell, cell); }));
   g.fillStyle = '#5b5b5b'; g.font = '500 22px system-ui, sans-serif'; g.fillText(url.replace(/^https?:\/\//, ''), W / 2, H - 40);

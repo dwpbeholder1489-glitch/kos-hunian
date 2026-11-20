@@ -810,9 +810,12 @@ export default function Panduan() {
         <h2 style={{ color: 'var(--brand-2)' }}>Cara berpindah menu</h2>
         <ul style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <li>Di HP, menu bawah berisi <b>Beranda</b>, <b>Operasional</b> (semua modul bisnis, dikelompokkan: Operasional, Transaksi, Pelanggan, Inventaris, Keuangan, Laporan, Pengaturan), tombol <b>+</b> (aksi cepat, mis. catat pembayaran atau pesanan baru), <b>Laporan</b>, dan <b>Akun</b>.</li>
-          <li>Tombol <b>☰</b> di kanan atas membuka menu samping berisi semua kelompok menu; ikon <b>🔍</b> mencari menu. Pilihan <b>Tampilan</b> (Gelap / Terang / Ikuti HP) dan Keluar ada di <b>Akun</b>.</li>
+          <li>Tombol <b>☰</b> di kanan atas membuka menu samping berisi semua kelompok menu; ikon <b>🔍</b> mencari menu. Pilihan <b>Tampilan</b> (Terang / Gelap / Ikuti HP — bawaannya Terang) dan Keluar ada di <b>Akun</b>.</li>
           <li>Ikon <b>Bagikan</b> (panah ke atas) di pojok kanan atas: tautan & <b>QR code</b> halaman bisnis, siap dikirim atau dicetak, dari menu mana pun.</li>
-          <li>Di laptop, semua menu tampil di bagian atas.</li>
+          <li>Di <b>tablet</b> (lebar layar 768 px ke atas), menu tampil sebagai <b>deretan ikon di kiri</b>. Ketuk ikon kelompok untuk membuka daftar menunya, atau ketuk <b>☰</b> di kiri atas untuk menu lengkap dengan nama.</li>
+          <li>Di <b>laptop & komputer</b>, menu ada di <b>sidebar kiri</b> dengan tiga bagian: <b>Workspace</b> (Beranda, Operasional, Pelanggan, Keuangan, Laporan), <b>Modul bisnis</b> (Transaksi, Inventaris), dan <b>Sistem</b> (Pengaturan Bisnis). Klik nama kelompok untuk membuka submenu. Tombol <b>‹</b> di samping logo (atau <b>☰</b>) menciutkan sidebar menjadi ikon saja; pilihan ini diingat di perangkat itu. Saat diciutkan, arahkan kursor ke ikon untuk melihat namanya.</li>
+          <li>Bagian atas laptop/tablet berisi <b>kotak cari menu</b> (tekan <b>Ctrl K</b> atau <b>/</b> untuk langsung mengetik), tombol <b>+ Aksi cepat</b>, <b>Bantuan</b>, <b>Notifikasi</b>, <b>Bagikan</b>, dan <b>profil</b> (Akun & tampilan, Ganti bisnis, Panduan, Keluar). Di atas judul tiap halaman ada <b>jejak lokasi</b>, mis. Beranda / Transaksi / Penjualan.</li>
+          <li>Isi menu di semua perangkat sama: hanya modul yang sesuai jenis bisnis, paket, modul aktif, dan peran Anda.</li>
           <li><b>Ketuk nama bisnis di kiri atas</b> untuk pindah bisnis atau menambah bisnis baru.</li>
           <li>Karyawan hanya melihat menu sesuai perannya.</li>
         </ul>

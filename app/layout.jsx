@@ -19,14 +19,14 @@ export const metadata = {
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: [IMAGE.url] },
 };
 
-export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#08110F' };
+export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#F7FAF8' };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
