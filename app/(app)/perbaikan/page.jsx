@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import Lampiran from '@/components/Lampiran';
 import { rp, parseRp, errMsg, waLink } from '@/lib/format';
@@ -50,19 +50,27 @@ export default function Perbaikan() {
     <div className="stack">
       <PageHeader title="Keluhan & perbaikan" help={<PageHelp page="perbaikan" />} actions={<><button className="primary" onClick={() => setNeu({})}>+ Catat keluhan</button></>} />
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor, keluhan, atau kamar" aria-label="Cari keluhan" />
+      <FilterToolbar q={q} onQ={setQ} placeholder="Cari nomor, keluhan, atau kamar" />
       {shown.length === 0 ? <Empty title={f === 'terbuka' ? 'Tidak ada keluhan terbuka' : 'Tidak ada data'} text="Catat kerusakan atau keluhan penghuni agar tidak terlupa dan biaya perbaikannya tercatat." /> : (
-        <section className="panel"><div className="list">{shown.map((r) => (
-          <button key={r.id} className="li click" onClick={() => setOpen(r.id)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
-            <div className="main"><b className="small">{r.title}</b>
-              <span className="small muted">{r.number} · {r.room_id ? `Kamar ${d.roomCode(r.room_id)}` : 'Area umum'} · {CAT[r.category]}{r.source === 'penghuni' ? ' · dari penghuni' : ''}</span>
-              <span className="small muted">{OPEN.includes(r.status) ? `${umur(r.created_at)}${r.assigned_to ? ` · ${r.assigned_to}` : ''}` : waktu(r.resolved_at || r.updated_at)}{Number(r.cost) > 0 ? ` · biaya ${rp(r.cost)}` : ''}</span></div>
-            <div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
+        <DataTable rows={shown} caption="Keluhan & perbaikan" onRow={(r) => setOpen(r.id)} rowLabel={(r) => `${r.number} ${r.title}`} pageSize={50}
+          columns={[
+            { key: 'no', label: 'Nomor', sort: (r) => r.number, render: (r) => <span style={{ whiteSpace: 'nowrap' }}>{r.number}</span> },
+            { key: 'title', label: 'Keluhan', sort: (r) => r.title.toLowerCase(), render: (r) => <><b className="small">{r.title}</b>{r.source === 'penghuni' && <div className="small muted">dari penghuni</div>}</> },
+            { key: 'room', label: 'Lokasi', sort: (r) => (r.room_id ? d.roomCode(r.room_id) : ''), render: (r) => (r.room_id ? `Kamar ${d.roomCode(r.room_id)}` : 'Area umum') },
+            { key: 'cat', label: 'Jenis', hide: 'tablet', render: (r) => CAT[r.category] },
+            { key: 'age', label: 'Umur / selesai', render: (r) => <span className="small">{OPEN.includes(r.status) ? `${umur(r.created_at)}${r.assigned_to ? ` · ${r.assigned_to}` : ''}` : waktu(r.resolved_at || r.updated_at)}</span> },
+            { key: 'cost', label: 'Biaya', align: 'right', hide: 'tablet', sort: (r) => Number(r.cost) || 0, render: (r) => (Number(r.cost) > 0 ? rp(r.cost) : <span className="muted">—</span>) },
+            { key: 'st', label: 'Status', render: (r) => <div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
               <span className={'chip ' + ST[r.status][1]}>{ST[r.status][0]}</span>
               {r.priority === 'tinggi' && OPEN.includes(r.status) && <span className="chip bad">Penting</span>}
-            </div>
-          </button>
-        ))}</div></section>
+            </div> },
+          ]}
+          card={(r) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b className="small">{r.title}</b>
+              <span className="small muted">{r.number} · {r.room_id ? `Kamar ${d.roomCode(r.room_id)}` : 'Area umum'} · {CAT[r.category]}{r.source === 'penghuni' ? ' · dari penghuni' : ''}</span>
+              <span className="small muted">{OPEN.includes(r.status) ? `${umur(r.created_at)}${r.assigned_to ? ` · ${r.assigned_to}` : ''}` : waktu(r.resolved_at || r.updated_at)}{Number(r.cost) > 0 ? ` · biaya ${rp(r.cost)}` : ''}</span></div><div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
+              <span className={'chip ' + ST[r.status][1]}>{ST[r.status][0]}</span>
+              {r.priority === 'tinggi' && OPEN.includes(r.status) && <span className="chip bad">Penting</span>}
+            </div></div>} />
       )}
       {neu && <NewTicket d={d} kosId={kosId} init={neu} onClose={() => setNeu(null)} onSaved={(id) => { setNeu(null); load().then(() => setOpen(id)); }} />}
       {cur && <Detail d={d} kos={kos} t={cur} onClose={() => setOpen(null)} onChanged={done} />}

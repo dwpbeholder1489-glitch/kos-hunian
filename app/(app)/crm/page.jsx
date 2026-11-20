@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import Timeline from '@/components/CrmTimeline';
 import LeadCheck from '@/components/LeadCheck';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
@@ -55,14 +55,18 @@ export default function Crm() {
           {[['aktif', `Aktif (${active.length})`], ...Object.entries(STAGES).map(([k, [l]]) => [k, `${l} (${d.leads.filter((x) => x.stage === k).length})`])].map(([k, l]) => <button key={k} className={stage === k ? 'on' : ''} onClick={() => setStage(k)}>{l}</button>)}
         </div>
         {shown.length === 0 ? <Empty title="Belum ada prospek di sini" text="Tekan + Prospek baru setiap ada orang yang bertanya atau tertarik." /> : (
-          <section className="panel"><div className="list">{shown.map((l) => (
-            <button key={l.id} className="li click" onClick={() => setOpen(l)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
-              <div className="main"><b className="small">{l.name}{l.source === 'halaman' && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || 'Halaman'}</span>}</b>
+          <DataTable rows={shown} caption="Daftar prospek" onRow={setOpen} rowLabel={(l) => l.name} pageSize={50}
+            columns={[
+              { key: 'name', label: 'Nama', sort: (l) => l.name.toLowerCase(), render: (l) => <><b>{l.name}</b>{l.source === 'halaman' && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || 'Halaman'}</span>}</> },
+              { key: 'need', label: 'Kebutuhan', hide: 'tablet', render: (l) => <span className="small">{l.need || '—'}</span> },
+              { key: 'src', label: 'Sumber', render: (l) => SOURCE[l.source] },
+              { key: 'val', label: 'Perkiraan nilai', align: 'right', sort: (l) => Number(l.est_value) || 0, render: (l) => (Number(l.est_value) > 0 ? rp(l.est_value) : <span className="muted">—</span>) },
+              { key: 'next', label: 'Tindak lanjut', sort: (l) => l.next_due || '', render: (l) => (l.next_due ? <span style={{ color: l.next_due <= today() ? 'var(--bad)' : undefined }}>{tgl(l.next_due)}</span> : <span className="muted">—</span>) },
+              { key: 'st', label: 'Tahap', render: (l) => <span className={'chip ' + (waiting.includes(l) ? 'gold' : STAGES[l.stage][1])}>{waiting.includes(l) ? 'Perlu konfirmasi' : l.ref_number ? `✓ ${l.ref_number}` : STAGES[l.stage][0]}</span> },
+            ]}
+            card={(l) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b className="small">{l.name}{l.source === 'halaman' && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || 'Halaman'}</span>}</b>
                 <span className="small muted">{l.need ? `${l.need} · ` : ''}{SOURCE[l.source]}{Number(l.est_value) > 0 ? ` · ${rp(l.est_value)}` : ''}</span>
-                {l.next_due && <span className="small" style={{ color: l.next_due <= today() ? 'var(--bad)' : 'var(--muted)' }}>Tindak lanjut {tgl(l.next_due)}</span>}</div>
-              <span className={'chip ' + (waiting.includes(l) ? 'gold' : STAGES[l.stage][1])}>{waiting.includes(l) ? 'Perlu konfirmasi' : l.ref_number ? `✓ ${l.ref_number}` : STAGES[l.stage][0]}</span>
-            </button>
-          ))}</div></section>
+                {l.next_due && <span className="small" style={{ color: l.next_due <= today() ? 'var(--bad)' : 'var(--muted)' }}>Tindak lanjut {tgl(l.next_due)}</span>}</div><span className={'chip ' + (waiting.includes(l) ? 'gold' : STAGES[l.stage][1])}>{waiting.includes(l) ? 'Perlu konfirmasi' : l.ref_number ? `✓ ${l.ref_number}` : STAGES[l.stage][0]}</span></div>} />
         )}
       </>}
 

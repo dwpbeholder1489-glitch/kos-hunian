@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
@@ -54,13 +54,16 @@ export default function Promo() {
         <Empty title="Belum ada promo" text="Buat diskon, beli X gratis Y, paket bundling, atau potongan minimal belanja. Promo terpasang otomatis di Kasir pada tanggal yang Anda tentukan dan tercetak di struk.">
           <button className="primary" onClick={() => setForm({})}>+ Buat promo pertama</button>
         </Empty>
-      ) : <section className="panel"><div className="list">{d.promos.map((p) => (
-        <button key={p.id} className="li click" style={LI} onClick={() => setForm(p)}>
-          <div className="main"><b>{p.name}</b><span className="small">{promoText(p)}</span><span className="small muted">{jadwal(p)}</span>
-            {p.used > 0 && <span className="small muted">Dipakai {angka(p.used)}× · total potongan {rp(p.given)}</span>}</div>
-          <span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span>
-        </button>
-      ))}</div></section>}
+      ) : <DataTable rows={d.promos} caption="Daftar promo" onRow={setForm} rowLabel={(p) => p.name}
+        columns={[
+          { key: 'name', label: 'Promo', sort: (p) => p.name.toLowerCase(), render: (p) => <><b>{p.name}</b><div className="small">{promoText(p)}</div></> },
+          { key: 'when', label: 'Jadwal', render: (p) => <span className="small">{jadwal(p)}</span> },
+          { key: 'used', label: 'Dipakai', align: 'right', sort: (p) => Number(p.used) || 0, render: (p) => (p.used > 0 ? `${angka(p.used)}×` : <span className="muted">—</span>) },
+          { key: 'given', label: 'Total potongan', align: 'right', hide: 'tablet', sort: (p) => Number(p.given) || 0, render: (p) => (p.used > 0 ? rp(p.given) : <span className="muted">—</span>) },
+          { key: 'st', label: 'Status', render: (p) => <span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span> },
+        ]}
+        card={(p) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{p.name}</b><span className="small">{promoText(p)}</span><span className="small muted">{jadwal(p)}</span>
+            {p.used > 0 && <span className="small muted">Dipakai {angka(p.used)}× · total potongan {rp(p.given)}</span>}</div><span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span></div>} />}
       <span className="small muted">Promo dihitung otomatis saat Bayar di Kasir. Satu barang hanya kena satu promo (urutan: paket → beli X gratis Y → diskon barang → minimal belanja). Barang yang harganya diubah manual di kasir tidak ikut promo. Potongan promo mengurangi penjualan di laporan, sama seperti diskon.</span>
       {form && <PromoForm kosId={kosId} p={form.id ? form : null} prods={prods} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}
     </div>

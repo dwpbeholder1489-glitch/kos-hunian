@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import Lampiran from '@/components/Lampiran';
 import { errMsg } from '@/lib/format';
@@ -73,12 +74,12 @@ export default function Catatan() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>{o.icon} {o.name}</h2><PageHelp page="catatan" /></div>{!archived && <button className="primary" onClick={() => setForm({})}>+ {o.name}</button>}</div>
+      <PageHeader title={<>{o.icon} {o.name}</>} help={<PageHelp page="catatan" />} actions={!archived ? <button className="primary" onClick={() => setForm({})}>+ {o.name}</button> : null} />
       {objects.length > 1 && <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{objects.map((x) => <button key={x.id} className={x.id === obj ? 'on' : ''} onClick={() => pick(x)} style={{ whiteSpace: 'nowrap' }}>{x.icon} {x.name}</button>)}</div>}
       {o.workflow && !archived && rows && <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
         {[['aktif', `Belum selesai (${rows.filter((r) => !statusById(cfg, r.status_id)?.is_final).length})`], ...sts.map((s) => [s.id, `${s.label} (${cnt(s.id)})`]), ['semua', 'Semua']].map(([k, l]) => <button key={k} className={st === k ? 'on' : ''} onClick={() => setSt(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}
       </div>}
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Cari ${[...new Set(['nomor', 'judul', ...searchF.map((f) => f.label.toLowerCase())])].join(', ')}`} aria-label="Cari catatan" />
+      <FilterToolbar q={q} onQ={setQ} placeholder={`Cari ${[...new Set(['nomor', 'judul', ...searchF.map((f) => f.label.toLowerCase())])].join(', ')}`} />
       {filterF.length > 0 && <div className="row">{filterF.map((f) => (
         <select key={f.key} value={flt[f.key] ?? ''} onChange={(e) => setFlt({ ...flt, [f.key]: e.target.value })} aria-label={`Saring ${f.label}`} style={{ width: 'auto', flex: '1 1 130px' }}>
           <option value="">{f.label}: semua</option>
@@ -86,21 +87,25 @@ export default function Catatan() {
             : [...new Set((rows || []).map((r) => r.data[f.key]).filter(Boolean))].sort().map((c) => <option key={c} value={c}>{c}</option>)}
         </select>))}</div>}
       {!rows ? <Loading /> : shown.length === 0 ? <Empty title={archived ? 'Tidak ada arsip' : `Belum ada ${o.name.toLowerCase()}`} text={archived ? '' : `Tekan + ${o.name} untuk mencatat.`} /> : (
-        <section className="panel"><div className="list">{shown.map((r) => {
-          const s = statusById(cfg, r.status_id);
-          const late = s?.sla_hours && !s.is_final && Date.now() - new Date(r.status_since).getTime() > s.sla_hours * 36e5;
-          return (
-            <button key={r.id} className="li click" onClick={() => setOpen(r.id)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
-              <div className="main"><b className="small">{r.title || r.number}</b>
-                <span className="small muted">{r.number}{listF.map((f) => r.data[f.key] != null && r.data[f.key] !== '' ? ` · ${f.type === 'boolean' ? (r.data[f.key] ? f.label : '') : show(f, r.data[f.key], refs)}` : '').join('')}</span>
-                <span className="small muted">{waktu(r.created_at)}{r.assigned_to ? ` · ${r.assigned_to}` : ''}</span></div>
-              <div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
+        <DataTable rows={shown} caption={o.name} onRow={(r) => setOpen(r.id)} rowLabel={(r) => r.title || r.number} pageSize={50}
+          columns={[
+            { key: 'no', label: 'Nomor', sort: (r) => r.number, render: (r) => <span style={{ whiteSpace: 'nowrap' }}>{r.number}</span> },
+            { key: 'title', label: 'Judul', sort: (r) => (r.title || r.number).toLowerCase(), render: (r) => <b className="small">{r.title || r.number}</b> },
+            ...listF.map((f) => ({ key: 'f_' + f.key, label: f.label, hide: 'tablet', align: f.type === 'number' || f.type === 'currency' ? 'right' : undefined,
+              sort: f.type === 'number' || f.type === 'currency' ? (r) => Number(r.data[f.key]) || 0 : (r) => String(r.data[f.key] ?? ''),
+              render: (r) => (r.data[f.key] != null && r.data[f.key] !== '' ? <span className="small">{f.type === 'boolean' ? (r.data[f.key] ? 'Ya' : 'Tidak') : show(f, r.data[f.key], refs)}</span> : <span className="muted">—</span>) })),
+            { key: 'at', label: 'Dibuat', sort: (r) => r.created_at, render: (r) => <span className="small">{waktu(r.created_at)}{r.assigned_to ? ` · ${r.assigned_to}` : ''}</span> },
+            { key: 'st', label: 'Status', render: (r) => { const s = statusById(cfg, r.status_id); const late = s?.sla_hours && !s.is_final && Date.now() - new Date(r.status_since).getTime() > s.sla_hours * 36e5; return <div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
                 {s && <span className={'chip ' + s.tone}>{s.label}</span>}
                 {late && <span className="chip bad">Lewat {s.sla_hours} jam</span>}
-              </div>
-            </button>
-          );
-        })}</div></section>
+              </div>; } },
+          ]}
+          card={(r) => { const s = statusById(cfg, r.status_id); const late = s?.sla_hours && !s.is_final && Date.now() - new Date(r.status_since).getTime() > s.sla_hours * 36e5; return <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b className="small">{r.title || r.number}</b>
+                <span className="small muted">{r.number}{listF.map((f) => r.data[f.key] != null && r.data[f.key] !== '' ? ` · ${f.type === 'boolean' ? (r.data[f.key] ? f.label : '') : show(f, r.data[f.key], refs)}` : '').join('')}</span>
+                <span className="small muted">{waktu(r.created_at)}{r.assigned_to ? ` · ${r.assigned_to}` : ''}</span></div><div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
+                {s && <span className={'chip ' + s.tone}>{s.label}</span>}
+                {late && <span className="chip bad">Lewat {s.sla_hours} jam</span>}
+              </div></div>; }} />
       )}
       <button className="sm ghost" onClick={() => setArchived(!archived)}>{archived ? '← Kembali ke catatan aktif' : 'Lihat arsip'}</button>
       {form && <RecordForm kosId={kosId} cfg={cfg} o={o} rec={form.rec} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); loadRows(); loadRefs(); bump(); if (!form.rec) setOpen(id); }} />}

@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useBaru } from '@/lib/useBaru';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
@@ -73,17 +73,20 @@ export default function Grosir() {
         <Empty title={tab === 'penawaran' ? 'Belum ada penawaran' : tab === 'jalan' ? 'Tidak ada pesanan berjalan' : 'Belum ada pesanan selesai'}
           text={tab === 'selesai' ? 'Pesanan yang semua barangnya sudah dikirim atau dibatalkan tampil di sini.' : 'Buat penawaran harga untuk pelanggan grosir/toko, lalu konfirmasi jadi pesanan saat disetujui. Barang dikirim dengan surat jalan (boleh bertahap); fakturnya terbit otomatis.'} />
       ) : (
-        <section className="panel"><div className="list">{list.map((o) => {
-          const dvs = d.deliveries.filter((x) => x.order_id === o.id);
-          const expired = o.status === 'penawaran' && o.valid_until && o.valid_until < t0;
-          return (
-            <button className="li click" key={o.id} onClick={() => setOpen(o.id)} style={LI}>
-              <div className="main"><b>{cust.get(o.contact_id)?.name || '—'} <span className={'chip ' + SO_ST[o.status][1]} style={{ marginLeft: 4 }}>{SO_ST[o.status][0]}</span>{expired && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}</b>
-                <span className="small muted">{o.number} · {tgl(o.order_date)}{o.customer_ref ? ` · ${/^po/i.test(o.customer_ref) ? '' : 'PO '}${o.customer_ref}` : ''}{o.need_date ? ` · perlu ${tgl(o.need_date)}` : ''}{dvs.length ? ` · ${dvs.length} surat jalan` : ''}</span></div>
-              <div style={{ textAlign: 'right' }}><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</div>
-            </button>
-          );
-        })}</div></section>
+        <DataTable rows={list} caption="Pesanan grosir" onRow={(o) => setOpen(o.id)} rowLabel={(o) => `${o.number} ${cust.get(o.contact_id)?.name || ''}`} pageSize={50}
+          columns={[
+            { key: 'date', label: 'Tanggal', sort: (o) => o.order_date, render: (o) => tgl(o.order_date) },
+            { key: 'no', label: 'Nomor', sort: (o) => o.number, render: (o) => <span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> },
+            { key: 'cust', label: 'Pelanggan', sort: (o) => (cust.get(o.contact_id)?.name || '').toLowerCase(), render: (o) => <><b>{cust.get(o.contact_id)?.name || '—'}</b>{o.customer_ref && <div className="small muted">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</div>}</> },
+            { key: 'need', label: 'Perlu', hide: 'tablet', sort: (o) => o.need_date || '', render: (o) => (o.need_date ? tgl(o.need_date) : <span className="muted">—</span>) },
+            { key: 'sj', label: 'Surat jalan', hide: 'tablet', align: 'right', render: (o) => d.deliveries.filter((x) => x.order_id === o.id).length || <span className="muted">—</span> },
+            { key: 'st', label: 'Status', render: (o) => <><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.status === 'penawaran' && o.valid_until && o.valid_until < t0 && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}</> },
+            { key: 'tot', label: 'Total', align: 'right', sort: (o) => Number(o.total), render: (o) => <><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</> },
+          ]}
+          card={(o) => { const dvs = d.deliveries.filter((x) => x.order_id === o.id); const expired = o.status === 'penawaran' && o.valid_until && o.valid_until < t0; return <>
+            <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{cust.get(o.contact_id)?.name || '—'} <span className={'chip ' + SO_ST[o.status][1]} style={{ marginLeft: 4 }}>{SO_ST[o.status][0]}</span>{expired && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}</b>
+                <span className="small muted">{o.number} · {tgl(o.order_date)}{o.customer_ref ? ` · ${/^po/i.test(o.customer_ref) ? '' : 'PO '}${o.customer_ref}` : ''}{o.need_date ? ` · perlu ${tgl(o.need_date)}` : ''}{dvs.length ? ` · ${dvs.length} surat jalan` : ''}</span></div><div style={{ textAlign: 'right' }}><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</div></div>
+          </>; }} />
       )}
       {form && <OrderForm kosId={kosId} kos={kos} d={d} order={form.order} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); load(); setOpen(id); }} />}
       {open && d.orders.find((o) => o.id === open) && <OrderDetail kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={load} />}
