@@ -7,6 +7,7 @@ import PageHelp from '@/components/PageHelp';
 import Rekomendasi from '@/components/Rekomendasi';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { tgl, errMsg } from '@/lib/format';
+import { diffText } from '@/lib/riwayat';
 import { canArea, BUSINESS_TYPES } from '@/lib/business';
 import { ENTITY, ENTITY_FOR, CF_TYPES } from '@/components/IsianTambahan';
 import { FEATURE_CODES } from '@/lib/plan';
@@ -15,6 +16,7 @@ import { GROUPS, LEGAL_KIND, PROFILE_Q, qFor, recommend, MODULE_TYPES } from '@/
 
 const RISK = { rendah: ['Risiko rendah', 'good'], menengah: ['Perlu persetujuan', 'gold'], tinggi: ['Risiko tinggi', 'bad'] };
 const ACT = {
+  batas_harga: 'Mengubah batas diskon & margin', daftar_harga_berlaku: 'Mengubah masa berlaku daftar harga', syarat_pelanggan: 'Mengubah syarat pelanggan', profil_pelanggan: 'Mengubah tipe/sales pelanggan',
   aktifkan_modul: 'Mengaktifkan modul', nonaktifkan_modul: 'Menonaktifkan modul', minta_persetujuan: 'Meminta persetujuan', tolak_persetujuan: 'Menolak permintaan',
   konfigurasi_awal: 'Konfigurasi awal', terbitkan_halaman: 'Menerbitkan halaman bisnis', sembunyikan_halaman: 'Menyembunyikan halaman bisnis', ubah_halaman: 'Mengubah halaman bisnis', rekomendasi_diterima: 'Menerapkan saran', rekomendasi_diabaikan: 'Mengabaikan saran', ekspor_data: 'Mengunduh semua data', tutup_bisnis: 'Menutup bisnis', buka_bisnis: 'Membuka kembali bisnis', lokasi_karyawan: 'Menetapkan lokasi kerja karyawan', jurnal_manual: 'Jurnal manual', tutup_periode: 'Menutup periode buku', buka_periode: 'Membuka kembali periode buku', ubah_aturan_persetujuan: 'Mengubah aturan persetujuan', nyalakan_otomatisasi: 'Menyalakan otomatisasi', matikan_otomatisasi: 'Mematikan otomatisasi', arsip_kontak: 'Mengarsipkan kontak', hapus_kontak: 'Menghapus kontak', pulihkan_kontak: 'Memulihkan kontak', ubah_profil: 'Mengubah profil bisnis', tambah_cabang: 'Menambah cabang/gudang', ubah_cabang: 'Mengubah cabang/gudang', ubah_layanan: 'Mengubah layanan/harga jasa', ubah_tahap_jasa: 'Mengubah tahap proses', ubah_tarif_meteran: 'Mengubah tarif meteran', isian_tambahan: 'Mengubah isian tambahan', builder_uang: 'Mengatur uang masuk (Builder)', builder_profil: 'Mengubah profil (Builder)', builder_jenis_data: 'Mengubah jenis data (Builder)', builder_field: 'Mengubah field (Builder)', builder_alur: 'Mengubah alur (Builder)', builder_aktifkan: 'Mengaktifkan bisnis (Builder)',
 };
@@ -84,6 +86,7 @@ export default function Konfigurasi() {
             <div className="main">
               <b className="small">{ACT[h.action] || h.action}{h.target && h.target !== 'profil' && h.target !== 'modul' ? `: ${name(h.target)}` : ''}</b>
               <span className="small muted">{h.actor || 'sistem'}{h.approved_by && h.approved_by !== h.actor ? ` · disetujui ${h.approved_by}` : ''}{h.reason ? ` · "${h.reason}"` : ''}</span>
+              {diffText(h) && <span className="small" style={{ overflowWrap: 'anywhere' }}>{diffText(h)}</span>}
             </div>
             <div style={{ textAlign: 'right' }}>{h.risk && <span className={'chip ' + (RISK[h.risk]?.[1] || '')}>{h.risk}</span>}<br /><span className="small muted" style={{ whiteSpace: 'nowrap' }}>{when(h.created_at)}</span></div>
           </div>

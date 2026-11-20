@@ -552,6 +552,20 @@ export function ScrKesehatanStok() {
   );
 }
 
+export function ScrHargaPelanggan() {
+  return (
+    <Phone bare>
+      <h3>Bayar · harga eceran</h3>
+      <div className="row between small"><span><b>Pelanggan</b> · Warung Bu Sri · Harga reseller</span></div>
+      <div className="row between small"><span>Minyak goreng 1 L × 5</span><b>{rp(80000)}</b></div>
+      <span className="small" style={{ color: 'var(--good)' }}>Harga khusus Harga reseller</span>
+      <div className="row between small"><span>Gula pasir 1 kg × 2</span><b>{rp(34000)}</b></div>
+      <span className="small" style={{ color: 'var(--warn)' }}>Kasbon ini membuat piutang {rp(2150000)} melewati batas kredit {rp(2000000)}. Transaksi tetap bisa disimpan.</span>
+      <span className="mini-btn cta">Simpan · {rp(114000)}</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

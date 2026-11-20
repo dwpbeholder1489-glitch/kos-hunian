@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -760,6 +760,33 @@ const PARTS = [
       <>Buka tab <b>Kesehatan stok</b>: barang dikelompokkan menjadi <b>Cepat laku</b>, Normal, <b>Lambat</b>, <b>Tidak bergerak</b>, Baru masuk, dan Habis — lengkap dengan terjual 30/90 hari, stok cukup berapa hari, umur stok, dan nilainya.</>,
       <>Barang tidak bergerak dan lambat sebaiknya dipromosikan (menu Promo), dibundel, atau diretur ke supplier agar modal tidak tertahan.</>,
     ], <>Aturan pengelompokan tertulis di bawah daftar (mis. tidak bergerak = ada stok, tidak terjual 90 hari, dan stok sudah ≥ 90 hari). Saran belanja juga menghitung barang yang sudah dipesan pelanggan.</>, null, <ScrKesehatanStok />],
+  ]],
+  ['AC', 'Toko: tata kelola harga & kredit', [
+    ['Urutan harga & harga khusus pelanggan di Kasir', 'Kasir › Bayar › Pelanggan', [
+      <>Harga ditentukan dengan urutan tetap: <b>harga yang diubah manual</b> › <b>daftar harga pelanggan</b> (bila sedang berlaku) › <b>harga outlet</b> atau harga umum (grosir/eceran) › <b>harga beli banyak</b> (diambil yang termurah) › <b>promo</b> (satu barang satu promo).</>,
+      <>Di layar Bayar, pilih <b>Pelanggan</b> — sekarang bisa untuk semua cara bayar, bukan hanya kasbon. Bila pelanggan punya daftar harga, harga barang di keranjang langsung berubah dan tertulis <b>Harga khusus …</b>.</>,
+      <>Tidak memilih pelanggan = harga umum. Angka akhir selalu dihitung ulang oleh server saat disimpan, jadi sama di Kasir, struk, dan laporan.</>,
+    ], <>Pasangkan daftar harga ke pelanggan di Pelanggan & supplier › ketuk nama › Syarat pelanggan.</>, null, <ScrHargaPelanggan />],
+    ['Masa berlaku daftar harga', 'Grosir › Daftar harga › ketuk daftar', [
+      <>Isi <b>Berlaku mulai</b> dan/atau <b>Berakhir</b>, lalu <b>Simpan masa berlaku</b>. Kosongkan = berlaku terus.</>,
+      <>Di luar masa berlaku, pelanggan otomatis kembali ke harga biasa — di pesanan grosir maupun Kasir. Daftar menampilkan tanda <b>Berakhir</b> / <b>Mulai …</b>.</>,
+    ], <>Cocok untuk harga kontrak atau harga promo musiman pelanggan tertentu. Perubahan masa berlaku tercatat di riwayat pengaturan.</>, null, null],
+    ['Batas diskon & margin minimum', 'Pengaturan › Batas diskon & margin di Kasir', [
+      <>Isi <b>Diskon manual maks. (%)</b> dan/atau <b>Margin minimum (%)</b>, lalu Simpan. Kosong = tanpa batas (bawaan).</>,
+      <>Bila kasir memberi diskon di atas batas, atau harga membuat margin di bawah minimum, transaksi <b>tidak tersimpan</b> dan muncul pesan batasnya.</>,
+      <>Pemilik/pengelola yang sedang login melihat kolom <b>Alasan mengizinkan</b> → isi alasan → <b>Izinkan & simpan</b>. Kasir biasa tidak bisa mengizinkan sendiri.</>,
+    ], <>Diskon promo otomatis tidak dihitung. Margin = (total jual − modal barang) ÷ total jual, dari harga termasuk PPN. Setiap izin tersimpan bersama alasannya dan siapa yang mengizinkan.</>, 'warn', null],
+    ['Harga per outlet & riwayat harga', 'Barang & stok › Ubah barang', [
+      <>Punya lebih dari satu outlet? Di <b>Ubah</b> barang ketuk <b>Harga per outlet</b>, isi harga eceran/grosir yang berbeda untuk outlet tertentu, Simpan. Kosong = harga umum.</>,
+      <>Kasir di outlet itu otomatis memakai harga outletnya (outlet = lokasi kerja kasir). Daftar harga pelanggan tetap lebih diutamakan.</>,
+      <>Ketuk <b>Riwayat harga</b> untuk melihat setiap perubahan harga eceran, grosir, daftar harga, dan outlet: harga lama → harga baru, tanggal, dan siapa yang mengubah.</>,
+    ], <>Riwayat harga dan harga outlet hanya bisa dilihat/diatur pemilik dan bagian keuangan.</>, null, null],
+    ['Tipe pelanggan, sales & peringatan kasbon', 'Pelanggan & supplier › ketuk nama › Syarat pelanggan', [
+      <>Pilih <b>Tipe pelanggan</b> (Umum, Reseller, Distributor, Institusi) dan <b>Sales yang memegang</b>, lalu <b>Simpan tipe & sales</b>.</>,
+      <>Saat kasbon di Kasir membuat piutang pelanggan <b>melewati batas kredit</b>, atau pelanggan punya piutang <b>lewat jatuh tempo</b>, muncul peringatan kuning.</>,
+      <>Peringatan tidak menghalangi: kasbon tetap bisa disimpan dan tercatat di riwayat pelanggan. Pada pesanan grosir, piutang lewat jatuh tempo juga hanya diberi peringatan.</>,
+      <>Setiap perubahan <b>batas kredit, tempo, daftar harga, tipe, dan sales</b> tercatat sebelum → sesudah di bagian <b>Riwayat syarat</b> (layar pelanggan) dan Konfigurasi › Riwayat — hanya terlihat oleh pemilik/pengelola.</>,
+    ], <>Sales harus anggota tim bisnis ini. Laporan kinerja per sales menyusul bersama indikator grosir.</>, null, null],
   ]],
 ];
 

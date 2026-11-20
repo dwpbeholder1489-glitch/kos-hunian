@@ -99,6 +99,7 @@ export default function Pengaturan() {
       </section>}
       {canEdit && kos.business_type === 'retail' && <PajakBox kos={kos} onSaved={loadKos} />}
       {canEdit && kos.business_type === 'retail' && <StokMinusBox kos={kos} onSaved={loadKos} />}
+      {canEdit && kos.business_type === 'retail' && <BatasHargaBox kos={kos} onSaved={loadKos} />}
       {canEdit && <QrisBox kosId={kos.id} noun={noun} />}
       {canEdit && !retail && kos.wa_reminder_tpl !== undefined && <TemplateBox kos={kos} onSaved={loadKos} />}
       <section className="panel"><h3>{retail ? 'Jenis biaya' : 'Kategori pengeluaran'}</h3>
@@ -230,6 +231,32 @@ function StokMinusBox({ kos, onSaved }) {
         </label>
       ))}
       <button className="primary" onClick={save}>Simpan aturan stok</button>
+    </section>
+  );
+}
+
+// Batas diskon kasir & margin minimum (server: price_policy_set; dijaga discount_guard di sale_create). Kosong = tanpa batas.
+function BatasHargaBox({ kos, onSaved }) {
+  const p = kos.profile?.price_policy || {};
+  const fmt = (v) => (v != null ? String(v).replace('.', ',') : '');
+  const [maxDisc, setMaxDisc] = useState(fmt(p.max_disc));
+  const [minMargin, setMinMargin] = useState(fmt(p.min_margin));
+  const num = (s) => (String(s).trim() === '' ? null : Number(String(s).replace(',', '.')));
+  const save = async () => {
+    const a = num(maxDisc); const b = num(minMargin);
+    if ((a != null && !(a >= 0 && a <= 100)) || (b != null && !(b >= 0 && b <= 100))) return toast('Isi 0–100 persen, atau kosongkan.');
+    if (await run(() => supabase.rpc('price_policy_set', { p_kos: kos.id, p_max_disc: a, p_min_margin: b }), 'Batas diskon & margin disimpan', errMsg)) onSaved();
+  };
+  return (
+    <section className="panel">
+      <h3>Batas diskon & margin di Kasir</h3>
+      <span className="small muted">Kosongkan bila tidak ingin dibatasi. Bila diisi, penjualan dengan diskon manual di atas batas atau margin di bawah minimum hanya bisa disimpan bila pemilik/pengelola mengizinkan dengan alasan (tercatat). Diskon promo otomatis tidak dihitung.</span>
+      <div className="row">
+        <Field label="Diskon manual maks. (%)"><input inputMode="decimal" value={maxDisc} onChange={(e) => setMaxDisc(e.target.value)} placeholder="tanpa batas" /></Field>
+        <Field label="Margin minimum (%)"><input inputMode="decimal" value={minMargin} onChange={(e) => setMinMargin(e.target.value)} placeholder="tanpa batas" /></Field>
+      </div>
+      <span className="small muted">Margin = (total jual − modal barang) ÷ total jual, dari harga yang sudah termasuk PPN. Contoh: jual Rp10.000, modal Rp8.000 → margin 20%.</span>
+      <button className="primary" onClick={save}>Simpan batas</button>
     </section>
   );
 }

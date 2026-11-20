@@ -72,13 +72,42 @@ yang mengizinkan rata-rata tertimbang), FIFO hanya untuk urutan keluar batch ked
 - **RET-008 urutan harga**: harga manual › daftar harga pelanggan › grosir › eceran; lalu harga beli banyak (ambil termurah); lalu promo (satu barang satu promo). Diresmikan apa adanya.
 - **Metode HPP**: rata-rata bergerak (moving average) = metode resmi; batch kedaluwarsa tetap keluar duluan (FEFO).
 - **Batas diskon & margin minimum**: diisi pemilik sendiri di Pengaturan; bawaan kosong = tanpa batas. Di atas batas → persetujuan pemilik/pengelola.
+- **Tahap 1 — jatuh tempo (15 Nov 2026)**: piutang lewat jatuh tempo HANYA memberi peringatan (tidak menahan pesanan grosir).
+- **Tahap 1 — kasbon Kasir melewati batas kredit (15 Nov 2026)**: tidak kaku. Sistem mengizinkan, memberi peringatan, dan mencatat di riwayat. Pemilik meminta sistem selalu siap menghadapi kondisi lapangan yang tidak bisa dikendalikan.
 
 ## 4. Usulan urutan tahap
 
 1. ~~**Toko lanjutan 3 — Persediaan tersedia**~~ SELESAI 15 Nov: reservasi dari pesanan grosir, mutasi dalam perjalanan (kirim → terima), stok rusak/karantina terpisah dari stok jual, retur barang rusak, stok maksimum + umur stok + fast/slow/dead.
-2. **Toko lanjutan 4 — Tata kelola harga & kredit**: urutan harga yang disetujui, harga per outlet, tanggal berlaku daftar harga/kontrak, batas diskon kasir + persetujuan, margin minimum, riwayat harga & limit, tahan kredit bila lewat jatuh tempo, cek limit untuk kasbon Kasir, tipe/grup pelanggan, sales rep.
-3. **Katalog lanjutan**: multi-barcode, merek produk, paket/kit yang memotong stok komponen, nomor seri + garansi (toko elektronik/specialty), tukar barang & nota kredit.
-4. **Distribusi**: picking/packing list, kendaraan & driver, jadwal kirim, POD (nama + foto), retur sebagian dari pengiriman, rekonsiliasi & biaya kirim, KPI distribusi.
-5. **Laporan akuntansi dagang**: neraca saldo, umur utang, nilai persediaan, harga & MOQ per supplier, KPI grosir (fill rate, DSO, margin per pelanggan/sales).
-6. **Portal toko & B2B**: keranjang + pesanan langsung, akun pelanggan B2B dengan harga kontrak & riwayat/faktur.
-7. **POS offline** (antrean lokal + sinkron idempoten, batas jelas apa yang boleh offline).
+Urutan yang disetujui pemilik 15 Nov 2026 (sesuai Master Prompt Bagian 24 & Blueprint §17; wajib selesai semua sebelum pindah ke bisnis atau modul lain):
+
+2. ✅ **Tahap 1 — Tata kelola harga & kredit** (Phase 3, SELESAI 20 Nov 2026 — lihat §5): urutan harga yang disetujui, harga per outlet, tanggal berlaku daftar harga/kontrak, batas diskon kasir + persetujuan, margin minimum, riwayat harga & limit, tahan kredit bila lewat jatuh tempo, cek limit untuk kasbon Kasir, tipe/grup pelanggan, sales rep. (RET-003, RET-008, RET-014, RET-004, RET-009)
+3. **Tahap 2 — Fondasi akuntansi dagang** (Phase 1): neraca saldo (trial balance), umur utang (AP aging), laporan nilai persediaan.
+4. **Tahap 3 — Katalog lanjutan** (Phase 1, RET-001): multi-barcode per satuan, merek produk, paket/kit yang memotong stok komponen, nomor seri + garansi (toko elektronik/specialty), tukar barang & nota kredit (RET-008), harga & MOQ per supplier.
+5. **Tahap 4 — POS offline** (prioritas: Master Bagian 18, ADR-003): antrean lokal + sinkron idempoten, deteksi konflik stok/harga, batas jelas apa yang boleh offline.
+6. **Tahap 5 — Portal B2B & pesanan langsung** (Phase 3): keranjang + pesanan langsung toko, akun pelanggan B2B dengan harga kontrak, riwayat dan faktur, pemesanan ulang.
+7. **Tahap 6 — Distribusi** (Phase 4, RET-005, RET-012, RET-013): picking/packing list, kendaraan & driver internal serta pihak ketiga, jadwal kirim, POD (nama + foto), retur sebagian dari pengiriman, rekonsiliasi & biaya kirim, KPI distribusi.
+8. **Tahap 7 — Multi-outlet, konsolidasi & franchise** (Phase 5–6): katalog & harga per outlet terkonsolidasi, laporan gabungan lintas outlet, standarisasi katalog franchise (RET-012), tampilan per tier (Blueprint §19).
+
+Aturan pengerjaan: setiap tahap wajib lengkap (backend, database, UI, uji, panduan) sebelum tahap berikutnya dimulai. KPI grosir (fill rate, DSO, margin per pelanggan/sales) dikerjakan bersama tahap 1–2 karena bergantung pada data kredit dan akuntansi.
+
+## 5. Status Tahap 1 — Tata kelola harga & kredit (20 Nov 2026)
+
+Migrasi `20261115140000`–`20261115180000`. Uji `supabase/tests/tata_kelola_harga_1.sql` (28), `_2.sql` (21), `_3.sql` (24), `_4.sql` (11) lulus semua; regresi penuh (44 berkas uji) dan isolasi (220) lulus. Layar diuji di lebar HP 390 px (terang & gelap).
+
+| Butir | Status | Bukti |
+|---|---|---|
+| Urutan harga resmi (manual › daftar pelanggan › outlet/umum › beli banyak › promo) | Verified Implemented | `price_resolve` dipakai `sale_create` & `promo_preview`; sebelumnya Kasir TIDAK memakai daftar harga pelanggan — diperbaiki. Pratinjau Kasir = server (`kasir_catalog.list_items`, harga outlet di `units`) |
+| Harga per outlet (RET-003) | Verified Implemented | `outlet_prices` + `outlet_price_set`; outlet = lokasi kerja (`stock_loc`) |
+| Tanggal berlaku daftar harga / kontrak (RET-003) | Verified Implemented | `price_lists.valid_from/valid_to`, `price_list_live` |
+| Batas diskon kasir & margin minimum + persetujuan (Bagian 10) | Verified Implemented | `price_policy_set`, `discount_guard` (`BATAS_DISKON`), izin pemilik/pengelola + alasan → `discount_overrides` |
+| Riwayat perubahan harga (RET-014, §20) | Verified Implemented | `price_history` (eceran/grosir/daftar/outlet), `price_history_list` |
+| Riwayat perubahan limit kredit (RET-014, §20) | Verified Implemented | `customer_terms_set` kini menyimpan nilai sebelum; tampil sebelum → sesudah di Syarat pelanggan & Konfigurasi › Riwayat |
+| Tahan kredit lewat jatuh tempo (§11.3) | Verified Implemented — sesuai keputusan pemilik: PERINGATAN saja | `so_confirm` (sudah ada) + `kasbon_check` |
+| Cek limit kasbon di Kasir (§11.3) | Verified Implemented — PERINGATAN, tidak memblokir (keputusan pemilik) | `kasbon_check`, peringatan kuning di Kasir |
+| Tipe/grup pelanggan (RET-004, RET-009) | Verified Implemented | `contacts.tipe` (umum/reseller/distributor/institusi), tampil di daftar kontak |
+| Sales yang memegang pelanggan (§11.2) | Verified Implemented (penugasan) | `contacts.sales_user`, `customer_profile_set` |
+| Laporan kinerja per sales, margin per pelanggan, DSO, fill rate (§17 KPI grosir) | Not Started | dikerjakan bersama Tahap 2 (bergantung data akuntansi) |
+| Limit kredit per cabang pelanggan (§11.3) | Not Started | pelanggan belum punya cabang; menunggu kebutuhan nyata |
+| Persetujuan diskon jarak jauh (pemilik tidak di tempat) | Not Started | sekarang pemilik/pengelola harus login di perangkat itu (pola `BATAS_KREDIT`) |
+
+Status proposal: RET-008 (Pricing Resolution Engine) dan RET-014 (audit & persetujuan harga/kredit) sudah diimplementasikan sesuai keputusan pemilik 15 Nov, tetapi statusnya tetap **proposal** sampai pemilik menyatakan final.

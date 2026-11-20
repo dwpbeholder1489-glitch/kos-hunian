@@ -386,10 +386,10 @@ function PriceLists({ d, kosId, canEdit, onChanged }) {
   };
   return (
     <div className="stack">
-      <p className="small muted" style={{ margin: 0 }}>Harga khusus untuk kelompok pelanggan (mis. <b>Reseller</b>, <b>Toko langganan</b>). Pasangkan ke pelanggan di <Link href="/kontak">Pelanggan & supplier</Link> › ketuk nama › Syarat pelanggan. Barang yang tidak diisi memakai harga grosir (atau eceran bila harga grosir kosong).</p>
+      <p className="small muted" style={{ margin: 0 }}>Harga khusus untuk kelompok pelanggan (mis. <b>Reseller</b>, <b>Toko langganan</b>). Pasangkan ke pelanggan di <Link href="/kontak">Pelanggan & supplier</Link> › ketuk nama › Syarat pelanggan. Berlaku di pesanan grosir dan di Kasir saat pelanggannya dipilih. Barang yang tidak diisi memakai harga grosir (atau eceran bila harga grosir kosong).</p>
       {d.lists.length === 0 ? <Empty title="Belum ada daftar harga" text="Buat daftar harga pertama, lalu isi harga khususnya per barang." /> :
         <section className="panel"><div className="list">{d.lists.map((pl) => (
-          <button key={pl.id} className="li click" style={LI} onClick={() => setOpen(pl.id)}><div className="main"><b>{pl.name}</b><span className="small muted">{usedBy(pl.id).length} pelanggan{usedBy(pl.id).length ? `: ${usedBy(pl.id).slice(0, 3).map((c) => c.name).join(', ')}${usedBy(pl.id).length > 3 ? '…' : ''}` : ''}</span></div><span className="small muted">atur ›</span></button>
+          <button key={pl.id} className="li click" style={LI} onClick={() => setOpen(pl.id)}><div className="main"><b>{pl.name}{(() => { const t = today(); return pl.valid_to && pl.valid_to < t ? <span className="chip bad" style={{ marginLeft: 6 }}>Berakhir</span> : pl.valid_from && pl.valid_from > t ? <span className="chip" style={{ marginLeft: 6 }}>Mulai {tgl(pl.valid_from)}</span> : pl.valid_to ? <span className="chip good" style={{ marginLeft: 6 }}>s.d. {tgl(pl.valid_to)}</span> : null; })()}</b><span className="small muted">{usedBy(pl.id).length} pelanggan{usedBy(pl.id).length ? `: ${usedBy(pl.id).slice(0, 3).map((c) => c.name).join(', ')}${usedBy(pl.id).length > 3 ? '…' : ''}` : ''}</span></div><span className="small muted" style={{ whiteSpace: 'nowrap', flex: 'none' }}>atur ›</span></button>
         ))}</div></section>}
       {canEdit && <div className="row" style={{ flexWrap: 'nowrap' }}><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama daftar harga baru, mis. Reseller" maxLength={60} aria-label="Nama daftar harga" /><button className="primary" disabled={busy} onClick={add}>Buat</button></div>}
       {!canEdit && <span className="small muted">Hanya pemilik/bagian keuangan yang bisa mengubah daftar harga.</span>}
@@ -404,6 +404,15 @@ function PriceListEdit({ pl, d, canEdit, onClose, onChanged }) {
   const load = () => supabase.from('price_list_items').select('*').eq('list_id', pl.id).then(({ data }) => setItems(data || []));
   useEffect(() => { load(); }, [pl.id]);
   const val = (pid, unit) => items?.find((x) => x.product_id === pid && x.unit === unit);
+  // Masa berlaku (server: price_list_dates_set). Kosong = tanpa batas. Di luar masa → pelanggan kembali ke harga biasa.
+  const [from, setFrom] = useState(pl.valid_from || '');
+  const [to, setTo] = useState(pl.valid_to || '');
+  const saveDates = async () => {
+    if (from && to && to < from) return toast('Tanggal berakhir harus sama atau sesudah tanggal mulai.');
+    const { error } = await supabase.rpc('price_list_dates_set', { p_list: pl.id, p_from: from || null, p_to: to || null });
+    if (error) return toast(errMsg(error));
+    toast('Masa berlaku disimpan'); onChanged();
+  };
   const save = async (p, u, raw) => {
     const v = raw.trim() === '' ? null : parseRp(raw);
     const cur = val(p.id, u.name);
@@ -422,6 +431,12 @@ function PriceListEdit({ pl, d, canEdit, onClose, onChanged }) {
   const prods = d.products.filter((p) => !w || p.name.toLowerCase().includes(w));
   return (
     <Sheet title={`Daftar harga · ${pl.name}`} onClose={onClose}>
+      <div className="row">
+        <Field label="Berlaku mulai"><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} disabled={!canEdit} /></Field>
+        <Field label="Berakhir"><input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} disabled={!canEdit} /></Field>
+      </div>
+      {canEdit && <button className="sm" style={{ alignSelf: 'flex-start' }} onClick={saveDates}>Simpan masa berlaku</button>}
+      <span className="small muted">Kosongkan tanggal = berlaku terus. Di luar masa berlaku, pelanggan otomatis kembali ke harga biasa di pesanan grosir dan Kasir.</span>
       <span className="small muted">Isi harga khusus lalu ketuk di luar kolom untuk menyimpan. Kosongkan = kembali ke harga biasa. {items ? `${items.length} harga khusus.` : ''}</span>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari barang" aria-label="Cari barang" />
       {!items ? <Loading /> : <div className="list">{prods.slice(0, 80).map((p) => unitsOf(p, d.units).map((u) => {

@@ -10,9 +10,11 @@ import PageHelp from '@/components/PageHelp';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import CrmTimeline from '@/components/CrmTimeline';
 import { rp, tgl, errMsg, waLink, angka, parseRp, today } from '@/lib/format';
+import { diffText } from '@/lib/riwayat';
 import { canArea, moduleOn } from '@/lib/business';
 
 const KIND = { pelanggan: 'Pelanggan', supplier: 'Supplier' };
+const TIPE = { umum: 'Umum', reseller: 'Reseller', distributor: 'Distributor', institusi: 'Institusi' };
 const ST = { batal: 'Batal', dipesan: 'Dipesan', sebagian: 'Sebagian' };
 
 // Pelanggan & supplier: daftar, saldo kasbon/utang, riwayat transaksi, ubah nama & nomor
@@ -43,17 +45,17 @@ export default function Kontak() {
       {shown.length === 0 && arsip ? <Empty title="Arsip kosong" /> : shown.length === 0 ? <Empty title={`Belum ada ${KIND[tab].toLowerCase()}`} text={tab === 'pelanggan' ? 'Pelanggan juga bisa ditambahkan dari Kasir saat memilih Kasbon.' : 'Supplier juga bisa ditambahkan dari Belanja.'} /> : (
         <section className="panel"><div className="list">{shown.map((c) => (
           <button key={c.id} className="li click" onClick={() => setOpen(c)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' }}>
-            <div className="main"><b>{c.name}</b><span className="small muted">{c.phone || 'tanpa nomor'} · {c.trx} transaksi{c.last_at ? ` · terakhir ${tgl(String(c.last_at).slice(0, 10))}` : ''}</span></div>
+            <div className="main"><b>{c.name}{c.tipe && <span className="chip" style={{ marginLeft: 6 }}>{TIPE[c.tipe]}</span>}</b><span className="small muted">{c.phone || 'tanpa nomor'} · {c.trx} transaksi{c.last_at ? ` · terakhir ${tgl(String(c.last_at).slice(0, 10))}` : ''}</span></div>
             {c.balance != null && Number(c.balance) > 0 && <span className="chip bad">{tab === 'pelanggan' ? 'Kasbon' : 'Utang'} {rp(c.balance)}</span>}
           </button>
         ))}</div></section>
       )}
-      {open && <Detail c={open} fin={fin} kosId={kosId} kos={kos} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} />}
+      {open && <Detail c={open} fin={fin} kosId={kosId} kos={kos} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} onReload={load} />}
     </div>
   );
 }
 
-function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
+function Detail({ c, fin, kosId, kos, onClose, onSaved, onReload }) {
   const isNew = !c.id;
   const [name, setName] = useState(c.name || '');
   const [phone, setPhone] = useState(c.phone || '');
@@ -83,7 +85,7 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
       {!isNew && (c.archived_at
         ? <button onClick={restore}>Pulihkan dari arsip</button>
         : <button className="ghost danger" onClick={del}>Hapus {c.kind === 'supplier' ? 'supplier' : 'pelanggan'}</button>)}
-      {!isNew && c.kind === 'pelanggan' && !c.archived_at && kos.business_type === 'retail' && moduleOn(kos, 'u_kredit') && <SyaratPelanggan c={c} kosId={kosId} canEdit={fin} />}
+      {!isNew && c.kind === 'pelanggan' && !c.archived_at && kos.business_type === 'retail' && moduleOn(kos, 'u_kredit') && <SyaratPelanggan c={c} kosId={kosId} canEdit={fin} onReload={onReload} />}
       {!isNew && <IsianTambahan entity="contact" id={c.id} area="sell,stock,finance" />}
       {!isNew && c.kind === 'pelanggan' && !c.archived_at && moduleOn(kos, 'u_crm') && canArea(kos, 'sell,rent') && <>
         <h3 style={{ margin: '8px 0 0' }}>Catatan & tindak lanjut</h3>
@@ -103,12 +105,27 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved }) {
 }
 
 // Syarat pelanggan grosir: batas kredit, tempo, daftar harga khusus, alamat kirim, NPWP + umur piutang (server: customer_credit, customer_terms_set)
-function SyaratPelanggan({ c, kosId, canEdit }) {
+function SyaratPelanggan({ c, kosId, canEdit, onReload }) {
   const [cr, setCr] = useState(null);
   const [lists, setLists] = useState([]);
   const [open, setOpen] = useState([]);
   const [f, setF] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Tipe pelanggan & sales yang memegang (server: customer_profile_set; sales harus anggota bisnis)
+  const [tipe, setTipe] = useState(c.tipe || '');
+  const [sales, setSales] = useState(c.sales_user || '');
+  const [names, setNames] = useState({});
+  const [hist, setHist] = useState([]);
+  // Riwayat syarat & profil pelanggan (sebelum → sesudah). config_history hanya terbaca pemilik/pengelola; selain itu kosong.
+  const loadHist = () => supabase.from('config_history').select('*').eq('kos_id', kosId).in('action', ['syarat_pelanggan', 'profil_pelanggan'])
+    .in('target', [`Syarat pelanggan ${c.name}`, `Profil pelanggan ${c.name}`]).order('created_at', { ascending: false }).limit(10).then(({ data }) => setHist(data || []));
+  useEffect(() => { loadHist(); }, [c.id]);
+  useEffect(() => { supabase.rpc('member_names', { p_kos: kosId }).then(({ data }) => setNames(data || {})); }, [kosId]);
+  const saveProfile = async () => {
+    const { error } = await supabase.rpc('customer_profile_set', { p_contact: c.id, p_tipe: tipe || null, p_sales: sales || null });
+    if (error) return toast(errMsg(error));
+    toast('Tipe & sales disimpan'); onReload?.(); loadHist();
+  };
   const load = () => {
     supabase.rpc('customer_credit', { p_contact: c.id }).then(({ data }) => {
       setCr(data || null);
@@ -127,12 +144,17 @@ function SyaratPelanggan({ c, kosId, canEdit }) {
     const { error } = await supabase.rpc('customer_terms_set', { p_contact: c.id, p: { ...f, credit_limit: f.credit_limit.trim() === '' ? null : parseRp(f.credit_limit), terms_days: f.terms_days === '' ? null : f.terms_days } });
     setBusy(false);
     if (error) return toast(errMsg(error));
-    toast('Syarat pelanggan disimpan'); load();
+    toast('Syarat pelanggan disimpan'); load(); loadHist();
   };
   const t0 = today();
   return (
     <section className="panel" style={{ gap: 8 }}>
       <span className="label">Syarat pelanggan (grosir)</span>
+      <div className="row">
+        <Field label="Tipe pelanggan"><select value={tipe} onChange={(e) => setTipe(e.target.value)} disabled={!canEdit}><option value="">— belum diatur —</option>{[['umum', 'Umum'], ['reseller', 'Reseller'], ['distributor', 'Distributor'], ['institusi', 'Institusi / kantor']].map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+        <Field label="Sales yang memegang"><select value={sales} onChange={(e) => setSales(e.target.value)} disabled={!canEdit}><option value="">— tidak ada —</option>{Object.entries(names).map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select></Field>
+      </div>
+      {canEdit && <button className="sm" onClick={saveProfile} style={{ alignSelf: 'flex-start' }}>Simpan tipe & sales</button>}
       <div className="row">
         <Field label="Batas kredit" hint="kosong = tanpa batas"><input inputMode="numeric" value={f.credit_limit} onChange={(e) => set('credit_limit', e.target.value)} disabled={!canEdit} placeholder="mis. 5jt" /></Field>
         <Field label="Tempo bayar (hari)"><input inputMode="numeric" value={f.terms_days} onChange={(e) => set('terms_days', e.target.value.replace(/\D/g, ''))} disabled={!canEdit} placeholder="mis. 14" /></Field>
@@ -148,6 +170,14 @@ function SyaratPelanggan({ c, kosId, canEdit }) {
           <b className="small">{rp(r.open_amount)}</b></div>
       ))}</div>}
       {open.length > 0 && <span className="small muted">Pembayaran melunasi faktur terlama lebih dulu.</span>}
+      {hist.filter((h) => diffText(h)).length > 0 && <>
+        <span className="label" style={{ marginTop: 6 }}>Riwayat syarat</span>
+        <div className="list">{hist.filter((h) => diffText(h)).map((h) => (
+          <div className="li" key={h.id} style={{ alignItems: 'flex-start' }}><div className="main" style={{ minWidth: 0 }}>
+            <span className="small" style={{ overflowWrap: 'anywhere' }}>{diffText(h)}</span>
+            <span className="small muted" style={{ overflowWrap: 'anywhere' }}>{tgl(String(h.created_at).slice(0, 10))} · {h.actor || 'sistem'}</span></div></div>
+        ))}</div>
+      </>}
     </section>
   );
 }

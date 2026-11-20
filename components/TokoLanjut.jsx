@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Sheet, Field, run, toast } from '@/components/ui';
-import { rp, angka, parseRp, errMsg } from '@/lib/format';
+import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
 import { qtyNum } from '@/lib/retail';
 import { BASE_PRESETS, isiNum } from '@/lib/units';
 
@@ -212,6 +212,77 @@ export function PriceBreakSheet({ p, units, breaks, onClose, onSaved }) {
       {rows.length < 10 && <button className="sm" onClick={() => setRows([...rows, { min_qty: '', price: '', tier: 'semua' }])}>+ Tingkat harga</button>}
       <p className="small muted" style={{ margin: 0 }}>Harga yang diubah manual di Kasir tidak ikut. Promo tetap dihitung sesudahnya.</p>
       <button className="primary" onClick={save}>Simpan</button>
+    </Sheet>
+  );
+}
+
+// Harga per outlet (server: outlet_price_set; RLS outlet_prices). Kosong = harga umum. Hanya mengganti harga DASAR
+// (eceran/grosir) di outlet itu; daftar harga pelanggan tetap menang (urutan resmi: manual › daftar › outlet/umum).
+export function OutletPriceSheet({ p, units, locs, kosId, onClose }) {
+  const outlets = (locs || []).filter((b) => b.kind !== 'gudang');
+  const [unit, setUnit] = useState(units[0]?.name || p.base_unit);
+  const [rows, setRows] = useState(null);
+  const [vals, setVals] = useState({});
+  const load = () => supabase.from('outlet_prices').select('*').eq('product_id', p.id).then(({ data }) => {
+    setRows(data || []);
+    const v = {};
+    (data || []).forEach((r) => { v[r.branch_id + '|' + r.unit] = { r: r.price_retail != null ? angka(r.price_retail) : '', w: r.price_wholesale != null ? angka(r.price_wholesale) : '' }; });
+    setVals(v);
+  });
+  useEffect(() => { load(); }, [p.id]);
+  const u = units.find((x) => x.name === unit);
+  const cell = (bid) => vals[bid + '|' + unit] || { r: '', w: '' };
+  const setCell = (bid, patch) => setVals({ ...vals, [bid + '|' + unit]: { ...cell(bid), ...patch } });
+  const save = async (b) => {
+    const c = cell(b.id);
+    const r = String(c.r).trim() === '' ? null : parseRp(c.r);
+    const w = String(c.w).trim() === '' ? null : parseRp(c.w);
+    if (await run(() => supabase.rpc('outlet_price_set', { p_kos: kosId, p_branch: b.id, p_product: p.id, p_unit: unit, p_retail: r, p_wholesale: w }),
+      r == null && w == null ? `${b.name}: kembali ke harga umum` : `${b.name}: harga disimpan`, errMsg)) load();
+  };
+  return (
+    <Sheet title={`Harga per outlet · ${p.name}`} onClose={onClose}>
+      <span className="small muted">Isi bila harga di outlet tertentu berbeda dari harga umum. Kosongkan = memakai harga umum. Daftar harga khusus pelanggan tetap lebih diutamakan.</span>
+      {units.length > 1 && <div className="seg">{units.map((x) => <button key={x.name} className={unit === x.name ? 'on' : ''} onClick={() => setUnit(x.name)}>{x.name}</button>)}</div>}
+      {u && <span className="small muted">Harga umum {unit}: eceran {rp(u.price_retail)}{Number(u.price_wholesale) > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}</span>}
+      {outlets.length < 2 ? <span className="small muted">Harga per outlet dipakai bila bisnis punya lebih dari satu outlet (Konfigurasi › Cabang & gudang).</span> : !rows ? <span className="small muted">Memuat…</span> :
+        <div className="list">{outlets.map((b) => (
+          <div className="li" key={b.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
+            <b className="small">{b.name}</b>
+            <div className="row" style={{ flexWrap: 'nowrap', gap: 6 }}>
+              <Field label="Eceran"><input inputMode="numeric" value={cell(b.id).r} placeholder={angka(u?.price_retail || 0)} onChange={(e) => setCell(b.id, { r: e.target.value })} /></Field>
+              <Field label="Grosir"><input inputMode="numeric" value={cell(b.id).w} placeholder={Number(u?.price_wholesale) > 0 ? angka(u.price_wholesale) : 'umum'} onChange={(e) => setCell(b.id, { w: e.target.value })} /></Field>
+              <button className="sm" style={{ alignSelf: 'flex-end' }} onClick={() => save(b)}>Simpan</button>
+            </div>
+          </div>
+        ))}</div>}
+    </Sheet>
+  );
+}
+
+// Riwayat perubahan harga jual satu barang (server: price_history_list, khusus keuangan/pemilik)
+const KIND_HARGA = { eceran: 'Eceran', grosir: 'Grosir', daftar: 'Daftar harga', outlet: 'Outlet' };
+export function PriceHistorySheet({ p, kosId, onClose }) {
+  const [rows, setRows] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    supabase.rpc('price_history_list', { p_kos: kosId, p_product: p.id, p_limit: 200 }).then(({ data, error }) => {
+      if (error) setErr(errMsg(error)); else setRows(data || []);
+    });
+  }, [p.id]);
+  return (
+    <Sheet title={`Riwayat harga · ${p.name}`} onClose={onClose}>
+      <span className="small muted">Tercatat otomatis setiap harga eceran, grosir, daftar harga, atau harga outlet berubah. Harga yang diketik manual di Kasir tidak masuk sini (ada di detail penjualan).</span>
+      {err ? <div className="notice bad">{err}</div> : !rows ? <span className="small muted">Memuat…</span> : rows.length === 0 ? <span className="small muted">Belum ada perubahan harga sejak fitur ini aktif.</span> :
+        <div className="list">{rows.map((r) => (
+          <div className="li" key={r.id}>
+            <div className="main" style={{ minWidth: 0 }}>
+              <b className="small">{KIND_HARGA[r.kind] || r.kind}{r.list_name ? ` · ${r.list_name}` : ''} · {r.unit}</b>
+              <span className="small muted">{tgl(String(r.changed_at).slice(0, 10))}{r.changed_by ? ` · ${r.changed_by}` : ''}</span>
+            </div>
+            <span className="small" style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{r.old_price != null ? rp(r.old_price) : 'baru'} → <b>{r.new_price != null ? rp(r.new_price) : 'dihapus'}</b></span>
+          </div>
+        ))}</div>}
     </Sheet>
   );
 }

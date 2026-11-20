@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
-import { moduleOn } from '@/lib/business';
+import { moduleOn, canArea } from '@/lib/business';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -14,13 +14,22 @@ import { qtyNum, unitsOf, stockText, isLow, unitPrice, breakPrice, uid, PAY } fr
 import { toBase } from '@/lib/units';
 import { CategoryBar } from '@/components/TokoLanjut';
 
-// Harga otomatis mengikuti jumlah (harga per jumlah beli); baris berharga manual tidak diubah
-function reprice(cart, d, tier) {
+// Harga dasar = sama dengan price_resolve di server: daftar harga pelanggan (bila berlaku) › harga outlet/umum
+// (katalog sudah membawa harga outlet lokasi ini). Pratinjau saja — angka resmi dihitung server saat disimpan.
+const listPrice = (d, contactId, pid, unit) => {
+  const c = contactId ? d.contacts.find((x) => x.id === contactId) : null;
+  if (!c?.price_list_id) return null;
+  const it = (d.listItems || []).find((x) => x.list_id === c.price_list_id && x.product_id === pid && x.unit === unit);
+  return it ? Number(it.price) : null;
+};
+const basePrice = (d, u, tier, contactId) => listPrice(d, contactId, u.product_id, u.name) ?? unitPrice(u, tier);
+// Harga otomatis mengikuti pelanggan & jumlah (harga per jumlah beli); baris berharga manual tidak diubah
+function reprice(cart, d, tier, contactId) {
   return cart.map((c) => {
     if (!c.auto) return c;
     const u = d.units.find((x) => x.product_id === c.product_id && x.name === c.unit);
     if (!u) return c;
-    return { ...c, price: breakPrice(d.breaks, c.product_id, c.unit, tier, c.qty, unitPrice(u, tier)) };
+    return { ...c, price: breakPrice(d.breaks, c.product_id, c.unit, tier, c.qty, basePrice(d, u, tier, contactId)) };
   });
 }
 const cartKey = (k) => 'prasara.cart.' + k;
@@ -45,7 +54,8 @@ export default function Kasir() {
     const { data, error } = await supabase.rpc('kasir_catalog', { p_kos: kosId });
     if (error) return setErr(errMsg(error));
     const c = await supabase.from('product_categories').select('id, name, sort').eq('kos_id', kosId).order('sort').order('name');
-    setD({ products: data.products, units: data.units, contacts: data.customers, cats: c.data || [], breaks: data.breaks || [], policy: data.stock_policy || 'izinkan' });
+    setD({ products: data.products, units: data.units, contacts: data.customers, cats: c.data || [], breaks: data.breaks || [], policy: data.stock_policy || 'izinkan',
+      listItems: data.list_items || [], pricePolicy: data.price_policy || {} });
   };
   useEffect(() => { load(); }, [kosId, ver]);
   // Keranjang disimpan di HP ini supaya tidak hilang saat pindah menu
@@ -165,12 +175,16 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const [promoBusy, setPromoBusy] = useState(false);
   // baris berharga otomatis tidak mengirim harga (server memakai harga resmi → ikut promo); harga yang diubah manual dikirim & tidak ikut promo
   const lineOut = (c) => ({ product_id: c.product_id, unit: c.unit, qty: c.qty, ...(c.auto ? {} : { price: c.price }) });
-  const cartKey = JSON.stringify(cart.map((c) => [c.product_id, c.unit, c.qty, c.auto ? null : c.price])) + tier;
+  const [kw, setKw] = useState([]);   // peringatan kasbon (tidak memblokir)
+  const [ov, setOv] = useState(null);  // diskon/margin melewati batas → izin pemilik/pengelola {msg, reason}
+  // Pilih pelanggan → harga dasar ikut daftar harganya (bila ada)
+  useEffect(() => { setCart(reprice(cart, d, tier, contact || null)); }, [contact]);
+  const cartKey = JSON.stringify(cart.map((c) => [c.product_id, c.unit, c.qty, c.auto ? null : c.price])) + tier + (contact || '');
   useEffect(() => {
     if (!cart.length || cart.some((c) => !(c.qty > 0))) { setPromo({ total: 0, items: [] }); return undefined; }
     setPromoBusy(true);
     const t = setTimeout(async () => {
-      const { data, error } = await supabase.rpc('promo_preview', { p_kos: kosId, p_tier: tier, p_lines: cart.map(lineOut) });
+      const { data, error } = await supabase.rpc('promo_preview', { p_kos: kosId, p_tier: tier, p_lines: cart.map(lineOut), ...(contact ? { p_contact: contact } : {}) });
       setPromo(error || !data ? { total: 0, items: [] } : { total: Number(data.total) || 0, items: data.items || [] });
       setPromoBusy(false);
     }, 350);
@@ -193,13 +207,30 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const rate = tax?.aktif ? Number(tax.rate) || 0 : 0;
   const taxable = cart.filter((c) => !d.products.find((p) => p.id === c.product_id)?.tax_exempt).reduce((s, c) => s + Math.round(c.qty * c.price), 0);
   const ppn = rate && sub ? Math.round(((taxable - ((disc + pro) * taxable) / sub) * rate) / (100 + rate)) : 0;
-  const setLine = (key, patch) => setCart(reprice(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)), d, tier));
+  const setLine = (key, patch) => setCart(reprice(cart.map((c) => (c.key === key ? { ...c, ...patch } : c)), d, tier, contact || null));
   // bisa dijual = stok − dipesan pelanggan grosir − ditahan (rusak/karantina)
   const stockOf = (id) => { const p = d.products.find((x) => x.id === id); return Number(p?.stock || 0) - Number(p?.reserved || 0) - Number(p?.held || 0); };
   const baseUsed = (id) => cart.filter((c) => c.product_id === id).reduce((s, c) => s + toBase(c.qty, c.unit_qty), 0);
-  const base = (c) => { const u = d.units.find((x) => x.product_id === c.product_id && x.name === c.unit); return u ? unitPrice(u, tier) : 0; };
+  const base = (c) => { const u = d.units.find((x) => x.product_id === c.product_id && x.name === c.unit); return u ? basePrice(d, u, tier, contact || null) : 0; };
+  const cust = contact ? d.contacts.find((x) => x.id === contact) : null;
+  // Batas diskon (pratinjau; server yang memutuskan, termasuk margin minimum yang butuh harga modal)
+  const pol = d.pricePolicy || {};
+  const discPct = sub > 0 ? Math.round((disc * 10000) / sub) / 100 : 0;
+  const overDisc = pol.max_disc != null && discPct > Number(pol.max_disc);
+  const canAllow = canArea(kos, 'settings');
+  // Peringatan kasbon melewati batas kredit / piutang lewat jatuh tempo — tidak memblokir (keputusan pemilik)
+  const kasbonAmt = method === 'kasbon' ? total : method === 'campuran' ? sp.kasbon : 0;
+  useEffect(() => {
+    if (!contact || !(kasbonAmt > 0)) { setKw([]); return undefined; }
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc('kasbon_check', { p_kos: kosId, p_contact: contact, p_amount: kasbonAmt });
+      setKw(error ? [] : data?.warnings || []);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [contact, kasbonAmt]);
+  useEffect(() => { setOv(null); }, [cartKey, discount]);
 
-  const pay = async () => {
+  const pay = async (override) => {
     if (!cart.length) return toast('Keranjang kosong.');
     if (cart.some((c) => !(c.qty > 0))) return toast('Ada jumlah yang belum benar.');
     if (promoBusy) return toast('Sebentar, promo sedang dihitung.');
@@ -219,7 +250,9 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
         if (error) throw error;
         cid = data; setContact(data); reloadContacts();
       }
-      const { data, error } = await supabase.rpc('sale_create', {
+      // Diskon/margin melewati batas: pemilik/pengelola mengizinkan dengan alasan (sale_create_ov); selain itu sale_create biasa
+      const { data, error } = await supabase.rpc(override ? 'sale_create_ov' : 'sale_create', {
+        ...(override ? { p_override: override } : {}),
         p_id: txId, p_kos: kosId, p_tier: tier,
         p_lines: cart.map(lineOut),
         p_discount: disc, p_method: method, p_paid: method === 'tunai' || (method === 'campuran' && sp.tunai > 0) ? paidN : null, p_contact: cid, p_due: needContact && due ? due : null, p_note: note,
@@ -229,7 +262,10 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
       if (error) throw error;
       if (lead) { const r2 = await supabase.rpc('lead_mark_sold', { p_lead: lead.id, p_sale: txId }); if (r2.error) toast('Penjualan tersimpan, tetapi prospek belum ditandai Jadi: ' + errMsg(r2.error)); }
       onDone({ ...data, change: method === 'tunai' || method === 'campuran' ? Math.max(0, change) : 0, method: data.method || method });
-    } catch (e) { toast(errMsg(e)); }
+    } catch (e) {
+      if (/BATAS_DISKON/.test(e?.message || '')) setOv({ msg: errMsg(e), reason: '' });
+      else toast(errMsg(e));
+    }
     setBusy(false);
   };
 
@@ -239,7 +275,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
         const over = baseUsed(c.product_id) > stockOf(c.product_id);
         return (
           <div className="li" key={c.key} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
-            <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{c.name}</b><b className="small">{rp(c.qty * c.price)}</b></div>
+            <div className="row between" style={{ flexWrap: 'nowrap', alignItems: 'flex-start', gap: 8 }}><b className="small" style={{ minWidth: 0, flex: 1, overflowWrap: 'anywhere', whiteSpace: 'normal' }}>{c.name}</b><b className="small" style={{ flex: 'none', whiteSpace: 'nowrap' }}>{rp(c.qty * c.price)}</b></div>
             <div className="row" style={{ flexWrap: 'nowrap' }}>
               <div className="qtybox">
                 <button aria-label="Kurangi" onClick={() => (c.qty <= 1 ? setCart(cart.filter((x) => x.key !== c.key)) : setLine(c.key, { qty: Math.round((c.qty - 1) * 1000) / 1000 }))}>−</button>
@@ -249,6 +285,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
               <span className="small muted">{c.unit} ×</span>
               <input inputMode="numeric" aria-label={`Harga ${c.name}`} style={{ maxWidth: 120 }} value={angka(c.price)} onChange={(e) => setLine(c.key, { price: parseRp(e.target.value), auto: false })} />
             </div>
+            {c.auto && listPrice(d, contact || null, c.product_id, c.unit) != null && <span className="small" style={{ color: 'var(--good)' }}>Harga khusus pelanggan{cust?.price_list ? ` (${cust.price_list})` : ''}</span>}
             {c.auto && c.price < (base(c) || 0) && <span className="small" style={{ color: 'var(--good)' }}>Harga beli banyak: {rp(c.price)} per {c.unit} (biasa {rp(base(c))})</span>}
             {over && <span className="small" style={{ color: d.policy === 'tolak' ? 'var(--bad)' : 'var(--warn)' }}>{d.policy === 'tolak' ? `Melebihi stok yang bisa dijual (${angka(Math.max(0, stockOf(c.product_id)))}) — tidak bisa dibayar.` : 'Melebihi stok yang bisa dijual (sudah dikurangi pesanan grosir & barang ditahan). Tetap bisa dijual; periksa stok nanti.'}</span>}
           </div>
@@ -258,6 +295,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
       {promo.items.map((x) => <div className="row between small" key={x.id} style={{ color: 'var(--good)', flexWrap: 'nowrap', gap: 8 }}><span style={{ minWidth: 0 }}>Promo · {x.name}</span><b style={{ whiteSpace: 'nowrap' }}>−{rp(x.amount)}</b></div>)}
       {promo.items.length > 0 && cart.some((c) => !c.auto) && <span className="small muted">Barang yang harganya diubah manual tidak ikut promo.</span>}
       <Field label={pro > 0 ? 'Diskon tambahan (opsional)' : 'Diskon (opsional)'}><input inputMode="numeric" value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="0" /></Field>
+      {overDisc && <span className="small" style={{ color: 'var(--warn)' }}>Diskon {angka(discPct)}% melewati batas {angka(pol.max_disc)}% dari pemilik. {canAllow ? 'Anda bisa mengizinkannya dengan alasan saat menyimpan.' : 'Perlu izin pemilik/pengelola, atau kurangi diskon.'}</span>}
       <div className="row between" style={{ fontSize: 20 }}><b>Total</b><b>{rp(total)}</b></div>
       {ppn > 0 && <span className="small muted">Termasuk PPN {rate}% ± {rp(ppn)} (dihitung pasti saat disimpan; barang bebas PPN tidak dikenai)</span>}
 
@@ -282,13 +320,27 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
         {paid.trim() && <div className="row between"><span>Kembalian</span><b style={{ color: change < 0 ? 'var(--bad)' : 'var(--good)' }}>{change < 0 ? 'kurang ' + rp(-change) : rp(change)}</b></div>}
       </>}
       {method === 'transfer' && <p className="small muted" style={{ margin: 0 }}>Simpan setelah uang masuk ke rekening atau QRIS terkonfirmasi.</p>}
+      {/* Pelanggan: wajib untuk kasbon; untuk cara bayar lain opsional (harga khusus pelanggan & riwayat belanja) */}
+      {(needContact || d.contacts.length > 0) && <Field label={needContact ? 'Pelanggan' : 'Pelanggan (opsional)'}>
+        <select value={contact} onChange={(e) => setContact(e.target.value)}>
+          <option value="">{needContact ? '+ Pelanggan baru' : 'Tanpa pelanggan'}</option>
+          {d.contacts.map((c) => <option key={c.id} value={c.id}>{c.name}{c.price_list ? ` · ${c.price_list}` : ''}</option>)}
+        </select></Field>}
+      {!needContact && cust?.price_list && <span className="small muted">Harga mengikuti daftar harga <b>{cust.price_list}</b> untuk barang yang ada di daftar itu.</span>}
       {needContact && <>
-        <Field label="Pelanggan"><select value={contact} onChange={(e) => setContact(e.target.value)}><option value="">+ Pelanggan baru</option>{d.contacts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
         {!contact && <div className="row"><Field label="Nama pelanggan baru"><input value={newName} onChange={(e) => setNewName(e.target.value)} /></Field><Field label="No. HP (opsional)"><input inputMode="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} /></Field></div>}
         <Field label="Janji bayar (opsional)"><input type="date" min={today()} value={due} onChange={(e) => setDue(e.target.value)} /></Field>
       </>}
+      {kw.map((w) => <div key={w} className="notice small" style={{ borderColor: 'var(--warn)', color: 'var(--warn)' }}>{w}</div>)}
       <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-      <button className="cta" onClick={pay} disabled={busy}>{busy ? 'Menyimpan…' : `Simpan · ${rp(total)}`}</button>
+      {ov && <div className="notice small" style={{ display: 'grid', gap: 8 }}>
+        <span>{ov.msg}</span>
+        {canAllow ? <>
+          <Field label="Alasan mengizinkan"><input value={ov.reason} onChange={(e) => setOv({ ...ov, reason: e.target.value })} placeholder="mis. pelanggan langganan, barang hampir kedaluwarsa" /></Field>
+          <button className="primary" disabled={busy || ov.reason.trim().length < 3} onClick={() => pay(ov.reason.trim())}>Izinkan & simpan</button>
+        </> : <span className="muted">Kurangi diskon, atau minta pemilik/pengelola menyimpan transaksi ini dari akun mereka.</span>}
+      </div>}
+      <button className="cta" onClick={() => pay()} disabled={busy}>{busy ? 'Menyimpan…' : `Simpan · ${rp(total)}`}</button>
       <button className="ghost" onClick={() => { setCart([]); onClose(); }}>Kosongkan keranjang</button>
     </Sheet>
   );
