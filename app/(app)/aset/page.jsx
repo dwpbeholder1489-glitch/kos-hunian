@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
@@ -53,16 +53,21 @@ export default function Aset() {
         </Empty>
       ) : <>
         {nLepas > 0 && <div className="seg">{[['aktif', `Dipakai (${d.assets.length - nLepas})`], ['lepas', `Sudah dilepas (${nLepas})`]].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>}
-        {shown.length === 0 ? <Empty title="Tidak ada" /> : <section className="panel"><div className="list">{shown.map((a) => (
-          <button key={a.id} className="li click" style={LI} onClick={() => setOpen(a)}>
-            <div className="main"><b>{a.name}</b>
-              <span className="small muted">{a.category ? `${a.category} · ` : ''}{tgl(a.start_date)} · {rp(a.cost)} · {umurTeks(a.life_months)}</span>
-              {a.status === 'aktif' ? (a.life_months != null && <span className="small">{a.months_left > 0 ? <>susut {rp(a.monthly)}/bulan · sisa {a.months_left} bulan</> : <span className="muted">sudah habis disusutkan</span>}</span>)
-                : <span className="small">{LEPAS[a.disposal_kind]} {tgl(a.disposed_date)}{Number(a.disposal_amount) > 0 ? ` · ${rp(a.disposal_amount)}` : ''}</span>}
-            </div>
-            <div style={{ textAlign: 'right', flex: 'none' }}><b style={{ whiteSpace: 'nowrap' }}>{rp(a.status === 'aktif' ? a.book_value : a.disposal_amount || 0)}</b><div className="small muted">{a.status === 'aktif' ? 'nilai buku' : Number(a.gain) >= 0 ? `untung ${rp(a.gain)}` : `rugi ${rp(-a.gain)}`}</div></div>
-          </button>
-        ))}</div></section>}
+        {shown.length === 0 ? <Empty title="Tidak ada" /> : <DataTable rows={shown} caption="Daftar aset" onRow={setOpen} rowLabel={(a) => a.name}
+          columns={[
+            { key: 'name', label: 'Aset', sort: (a) => a.name.toLowerCase(), render: (a) => <><b>{a.name}</b>{a.category && <div className="small muted">{a.category}</div>}</> },
+            { key: 'start', label: 'Mulai dipakai', sort: (a) => a.start_date, render: (a) => tgl(a.start_date) },
+            { key: 'cost', label: 'Harga perolehan', align: 'right', hide: 'tablet', sort: (a) => Number(a.cost), render: (a) => rp(a.cost) },
+            { key: 'dep', label: f === 'aktif' ? 'Penyusutan' : 'Dilepas', render: (a) => (a.status === 'aktif' ? (a.life_months == null ? <span className="muted">{umurTeks(a.life_months)}</span> : <span className="small">{a.months_left > 0 ? <>{rp(a.monthly)}/bulan · sisa {a.months_left} bulan</> : <span className="muted">sudah habis disusutkan</span>}</span>) : <span className="small">{LEPAS[a.disposal_kind]} {tgl(a.disposed_date)}{Number(a.disposal_amount) > 0 ? ` · ${rp(a.disposal_amount)}` : ''}</span>) },
+            { key: 'val', label: f === 'aktif' ? 'Nilai buku' : 'Untung/rugi', align: 'right', sort: (a) => Number(a.status === 'aktif' ? a.book_value : a.gain), render: (a) => (a.status === 'aktif' ? <b>{rp(a.book_value)}</b> : <span>{Number(a.gain) >= 0 ? `untung ${rp(a.gain)}` : `rugi ${rp(-a.gain)}`}</span>) },
+          ]}
+          card={(a) => <>
+            <div className="dt-row"><b>{a.name}</b><b style={{ whiteSpace: 'nowrap' }}>{rp(a.status === 'aktif' ? a.book_value : a.disposal_amount || 0)}</b></div>
+            <span className="small muted">{a.category ? `${a.category} · ` : ''}{tgl(a.start_date)} · {rp(a.cost)} · {umurTeks(a.life_months)}</span>
+            {a.status === 'aktif' ? (a.life_months != null && <span className="small">{a.months_left > 0 ? <>susut {rp(a.monthly)}/bulan · sisa {a.months_left} bulan</> : <span className="muted">sudah habis disusutkan</span>}</span>)
+              : <span className="small">{LEPAS[a.disposal_kind]} {tgl(a.disposed_date)}{Number(a.disposal_amount) > 0 ? ` · ${rp(a.disposal_amount)}` : ''}</span>}
+            <span className="small muted">{a.status === 'aktif' ? 'nilai buku' : Number(a.gain) >= 0 ? `untung ${rp(a.gain)}` : `rugi ${rp(-a.gain)}`}</span>
+          </>} />}
       </>}
       <span className="small muted">Penyusutan dicatat tiap akhir bulan yang sudah lewat dan tampil di Pembukuan (Beban penyusutan) serta Analisis bisnis. Saldo kas tidak berubah karena uangnya sudah keluar saat membeli.</span>
       {form && <AssetForm kosId={kosId} init={form} onClose={() => setForm(null)} onDone={() => { setForm(null); setOpen(null); load(); }} />}

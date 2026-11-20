@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
 import { multiLoc } from '@/lib/business';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
@@ -77,13 +77,19 @@ export default function Belanja() {
       ) : d.purchases.length === 0 ? (
         <Empty title="Belum ada belanja" text="Catat setiap belanja ke supplier: stok bertambah otomatis dan harga modal ikut diperbarui." />
       ) : (
-        <section className="panel"><div className="list">{d.purchases.map((b) => (
-          <button className="li click" key={b.id} onClick={() => setOpen(b)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' }}>
-            <div className="main"><b>{sup.get(b.contact_id) || 'Tanpa supplier'}{ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ marginLeft: 6 }}>{ST[b.status][0]}</span>}</b>
-              <span className="small muted">{tgl(b.purchase_date)} · {b.number} · {BUY[b.pay_method]}{b.status === 'dipesan' && b.expected_date ? ` · datang ${tgl(b.expected_date)}` : ''}{multiLoc(kos) && locName(b.branch_id) ? ` · ${locName(b.branch_id)}` : ''}{retOf(b.id) > 0 ? ` · diretur ${rp(retOf(b.id))}` : ''}</span></div>
-            <b style={{ textDecoration: b.status === 'batal' ? 'line-through' : 'none' }}>{rp(b.status === 'dipesan' ? b.order_total : b.total)}</b>
-          </button>
-        ))}</div></section>
+        <DataTable rows={d.purchases} caption="Daftar belanja" onRow={setOpen} rowLabel={(b) => `${b.number} ${sup.get(b.contact_id) || 'Tanpa supplier'}`} pageSize={50}
+          columns={[
+            { key: 'date', label: 'Tanggal', sort: (b) => b.purchase_date, render: (b) => tgl(b.purchase_date) },
+            { key: 'no', label: 'Nomor', sort: (b) => b.number, render: (b) => <span style={{ whiteSpace: 'nowrap' }}>{b.number}</span> },
+            { key: 'sup', label: 'Supplier', sort: (b) => (sup.get(b.contact_id) || '').toLowerCase(), render: (b) => <b>{sup.get(b.contact_id) || 'Tanpa supplier'}</b> },
+            { key: 'pay', label: 'Bayar', hide: 'tablet', render: (b) => <span className="small">{BUY[b.pay_method]}{b.status === 'dipesan' && b.expected_date ? ` · datang ${tgl(b.expected_date)}` : ''}{multiLoc(kos) && locName(b.branch_id) ? ` · ${locName(b.branch_id)}` : ''}{retOf(b.id) > 0 ? ` · diretur ${rp(retOf(b.id))}` : ''}</span> },
+            { key: 'st', label: 'Status', render: (b) => (ST[b.status] ? <span className={'chip ' + ST[b.status][1]}>{ST[b.status][0]}</span> : <span className="chip good">Diterima</span>) },
+            { key: 'tot', label: 'Total', align: 'right', sort: (b) => Number(b.status === 'dipesan' ? b.order_total : b.total), render: (b) => <b style={{ textDecoration: b.status === 'batal' ? 'line-through' : 'none' }}>{rp(b.status === 'dipesan' ? b.order_total : b.total)}</b> },
+          ]}
+          card={(b) => <>
+            <div className="dt-row"><b>{sup.get(b.contact_id) || 'Tanpa supplier'}{ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ marginLeft: 6 }}>{ST[b.status][0]}</span>}</b><b style={{ textDecoration: b.status === 'batal' ? 'line-through' : 'none' }}>{rp(b.status === 'dipesan' ? b.order_total : b.total)}</b></div>
+            <span className="small muted">{tgl(b.purchase_date)} · {b.number} · {BUY[b.pay_method]}{b.status === 'dipesan' && b.expected_date ? ` · datang ${tgl(b.expected_date)}` : ''}{multiLoc(kos) && locName(b.branch_id) ? ` · ${locName(b.branch_id)}` : ''}{retOf(b.id) > 0 ? ` · diretur ${rp(retOf(b.id))}` : ''}</span>
+          </>} />
       )}
       </>}
       {saran && <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={(init) => { setSaran(false); setForm({ init }); }} />}

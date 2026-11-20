@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
@@ -27,6 +27,7 @@ const OTHER = {
 export default function Kas() {
   const { kos, kosId, ver } = useKos();
   const [tab, setTab] = useState('kas');
+  const [q, setQ] = useState('');
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sheet, setSheet] = useState(null);
@@ -89,36 +90,57 @@ export default function Kas() {
         <div className="row"><button className="primary" onClick={() => setSheet({ t: 'exp' })}>+ Biaya</button><button onClick={() => setSheet({ t: 'cash' })}>+ Uang masuk/keluar lain</button></div>
         <p className="small muted" style={{ margin: 0 }}>Saldo dihitung dari {kustom ? <>uang masuk catatan (diatur di <Link href="/builder?langkah=data">Business Builder › Uang masuk</Link>)</> : jasa ? 'pembayaran pesanan' : 'penjualan tunai/transfer'}, {kustom ? '' : 'belanja, '}biaya, {kustom ? '' : 'pelunasan, '}dan catatan di bawah.{jasa && !kustom && <> Sisa bayar pelanggan ada di <Link href="/pesanan">Pesanan</Link>.</>} Mulai pakai? Catat <b>Setor modal</b> sebesar uang di laci sekarang.</p>
         {feed.length === 0 ? <Empty title="Belum ada catatan kas" /> : (
-          <section className="panel"><div className="list">{feed.map((f) => (
-            <div className="li" key={f.t + f.id}>
-              <div className="main"><b className="small">{f.label}</b><span className="small muted">{tgl(f.date)} · {f.acc}{f.note ? ` · ${f.note}` : ''}</span></div>
-              <div className="row" style={{ flexWrap: 'nowrap' }}>
-                <b className="small" style={{ color: f.amt < 0 ? 'var(--bad)' : f.amt > 0 ? 'var(--good)' : 'inherit' }}>{f.amt === 0 ? rp(f.raw) : (f.amt > 0 ? '+' : '−') + rp(Math.abs(f.amt))}</b>
-                {f.t === 'exp' && <button className="sm ghost" aria-label="Foto nota" onClick={() => setSheet({ t: 'att', f })}>📎</button>}
-                <button className="sm ghost" aria-label="Hapus atau batalkan" onClick={() => setSheet({ t: 'del', f })}>✕</button>
-              </div>
-            </div>
-          ))}</div></section>
+          <>{(() => {
+            const w = q.trim().toLowerCase();
+            const rows = feed.filter((f) => !w || `${f.label} ${f.acc} ${f.note || ''}`.toLowerCase().includes(w));
+            const amt = (f) => <b className="small" style={{ color: f.amt < 0 ? 'var(--bad)' : f.amt > 0 ? 'var(--good)' : 'inherit', whiteSpace: 'nowrap' }}>{f.amt === 0 ? rp(f.raw) : (f.amt > 0 ? '+' : '−') + rp(Math.abs(f.amt))}</b>;
+            const acts = (f) => <div className="row" style={{ flexWrap: 'nowrap', gap: 4 }}>
+              {f.t === 'exp' && <button className="sm ghost" aria-label="Foto nota" onClick={() => setSheet({ t: 'att', f })}>📎</button>}
+              <button className="sm ghost" aria-label="Hapus atau batalkan" onClick={() => setSheet({ t: 'del', f })}>✕</button>
+            </div>;
+            return <>
+              <FilterToolbar q={q} onQ={setQ} placeholder="Cari jenis, akun, atau keterangan" />
+              {rows.length === 0 ? <Empty title="Tidak ada yang cocok" /> : <DataTable rows={rows} rowKey={(f) => f.t + f.id} caption="Catatan kas & bank" pageSize={50}
+                columns={[
+                  { key: 'date', label: 'Tanggal', sort: (f) => f.date, render: (f) => tgl(f.date) },
+                  { key: 'label', label: 'Jenis', sort: (f) => f.label, render: (f) => <b className="small">{f.label}</b> },
+                  { key: 'acc', label: 'Akun', render: (f) => <span className="small">{f.acc}</span> },
+                  { key: 'note', label: 'Keterangan', hide: 'tablet', render: (f) => <span className="small muted">{f.note || '—'}</span> },
+                  { key: 'amt', label: 'Jumlah', align: 'right', sort: (f) => f.amt, render: amt },
+                  { key: 'act', label: <span className="vh">Tindakan</span>, render: acts },
+                ]}
+                card={(f) => <>
+                  <div className="dt-row"><b className="small">{f.label}</b>{amt(f)}</div>
+                  <div className="dt-row"><span className="small muted">{tgl(f.date)} · {f.acc}{f.note ? ` · ${f.note}` : ''}</span>{acts(f)}</div>
+                </>} />}
+            </>;
+          })()}</>
         )}
       </>}
 
       {tab !== 'kas' && (() => {
         const list = tab === 'kasbon' ? led.kasbon : led.utang;
         return list.length === 0 ? <Empty title={tab === 'kasbon' ? 'Tidak ada kasbon' : 'Tidak ada utang ke supplier'} text={tab === 'kasbon' ? 'Kasbon muncul saat penjualan di Kasir dibayar dengan Kasbon.' : 'Utang muncul saat belanja dibayar dengan Utang ke supplier.'} /> : (
-          <section className="panel"><div className="list">{list.map((x) => {
-            const late = x.due && x.due < today();
-            return (
-              <div className="li" key={x.id} style={{ alignItems: 'flex-start' }}>
-                <div className="main"><b>{x.name}</b>
-                  <span className="small muted">sejak {tgl(x.since)}{x.due ? ` · janji bayar ${tgl(x.due)}` : ''}{late && <span className="chip bad" style={{ marginLeft: 6 }}>Lewat</span>}</span>
-                  <b style={{ color: 'var(--bad)' }}>{rp(x.sisa)}</b></div>
-                <div className="stack" style={{ gap: 6 }}>
-                  <button className="sm primary" onClick={() => setSheet({ t: 'pay', c: x, kind: tab })}>{tab === 'kasbon' ? 'Terima bayar' : 'Bayar'}</button>
-                  {tab === 'kasbon' && x.phone && <a href={waLink(x.phone, `Halo ${x.name}, ini pengingat dari ${kos.name}. Sisa kasbon Anda ${rp(x.sisa)}. Terima kasih.`)} target="_blank" rel="noreferrer"><button className="sm" style={{ width: '100%' }}>Ingatkan WA</button></a>}
-                </div>
-              </div>
-            );
-          })}</div></section>
+          (() => {
+            const late = (x) => x.due && x.due < today();
+            const acts = (x) => <div className="row" style={{ gap: 6 }}>
+              <button className="sm primary" onClick={() => setSheet({ t: 'pay', c: x, kind: tab })}>{tab === 'kasbon' ? 'Terima bayar' : 'Bayar'}</button>
+              {tab === 'kasbon' && x.phone && <a href={waLink(x.phone, `Halo ${x.name}, ini pengingat dari ${kos.name}. Sisa kasbon Anda ${rp(x.sisa)}. Terima kasih.`)} target="_blank" rel="noreferrer"><button className="sm">Ingatkan WA</button></a>}
+            </div>;
+            return <DataTable rows={list} caption={tab === 'kasbon' ? 'Kasbon pelanggan' : 'Utang supplier'} pageSize={50}
+              columns={[
+                { key: 'name', label: tab === 'kasbon' ? 'Pelanggan' : 'Supplier', sort: (x) => x.name.toLowerCase(), render: (x) => <b>{x.name}</b> },
+                { key: 'since', label: 'Sejak', sort: (x) => x.since || '', render: (x) => tgl(x.since) },
+                { key: 'due', label: 'Janji bayar', sort: (x) => x.due || '', render: (x) => (x.due ? <>{tgl(x.due)}{late(x) && <span className="chip bad" style={{ marginLeft: 6 }}>Lewat</span>}</> : <span className="muted">—</span>) },
+                { key: 'sisa', label: 'Sisa', align: 'right', sort: (x) => Number(x.sisa), render: (x) => <b style={{ color: 'var(--bad)' }}>{rp(x.sisa)}</b> },
+                { key: 'act', label: <span className="vh">Tindakan</span>, render: acts },
+              ]}
+              card={(x) => <>
+                <div className="dt-row"><b>{x.name}</b><b style={{ color: 'var(--bad)' }}>{rp(x.sisa)}</b></div>
+                <span className="small muted">sejak {tgl(x.since)}{x.due ? ` · janji bayar ${tgl(x.due)}` : ''}{late(x) && <span className="chip bad" style={{ marginLeft: 6 }}>Lewat</span>}</span>
+                {acts(x)}
+              </>} />;
+          })()
         );
       })()}
 

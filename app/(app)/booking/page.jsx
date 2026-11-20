@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, tgl, today, parseRp, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
@@ -36,6 +36,16 @@ export default function Booking() {
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
   const list = d.bookings.filter((b) => b.status === f).sort((a, b) => (f === 'aktif' ? a.check_in.localeCompare(b.check_in) : (b.closed_at || '').localeCompare(a.closed_at || '')));
   const cur = open && d.bookings.find((b) => b.id === open);
+  const chips = (b) => {
+    const late = b.status === 'aktif' && days(b.check_in) < 0;
+    const exp = b.status === 'aktif' && b.expires_on && b.expires_on < today();
+    return <>
+      {b.status === 'aktif' && <span className={'chip ' + (late ? 'bad' : days(b.check_in) <= 3 ? 'gold' : 'info')}>{late ? 'Terlewat' : days(b.check_in) <= 3 ? 'Segera masuk' : 'Menunggu'}</span>}
+      {exp && <span className="chip bad">Lewat batas</span>}
+      {b.status === 'selesai' && <span className="chip good">Sudah masuk</span>}
+      {b.status === 'batal' && <span className="chip void">{b.forfeit_amount > 0 ? 'Batal · DP hangus' : 'Batal'}</span>}
+    </>;
+  };
   const dpHeld = d.bookings.filter((b) => b.status === 'aktif').reduce((s, b) => s + b.dp_amount, 0);
 
   return (
@@ -44,23 +54,20 @@ export default function Booking() {
       <div className="seg">{[['aktif', `Aktif (${d.bookings.filter((b) => b.status === 'aktif').length})`], ['selesai', 'Sudah masuk'], ['batal', 'Batal']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
       {f === 'aktif' && dpHeld > 0 && <span className="small muted">Uang tanda jadi yang dipegang: <b>{rp(dpHeld)}</b> (bukan pendapatan sampai penghuni masuk atau DP hangus).</span>}
       {list.length === 0 ? <Empty title={f === 'aktif' ? 'Belum ada booking aktif' : 'Tidak ada data'} text="Catat calon penghuni yang sudah pasti mau masuk agar kamarnya tidak diisi orang lain." /> : (
-        <section className="panel"><div className="list">{list.map((b) => {
-          const late = b.status === 'aktif' && days(b.check_in) < 0;
-          const exp = b.status === 'aktif' && b.expires_on && b.expires_on < today();
-          return (
-            <button key={b.id} className="li click" onClick={() => setOpen(b.id)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
-              <div className="main"><b className="small">{b.name} · Kamar {d.roomCode(b.room_id)}</b>
-                <span className="small muted">{b.number} · masuk {tgl(b.check_in)}{b.status === 'aktif' ? ` (${when(b.check_in)})` : ''}</span>
-                <span className="small muted">{rp(b.rent)}/bulan{b.dp_amount > 0 ? ` · DP ${rp(b.dp_amount)}` : ' · tanpa DP'}{b.status === 'batal' ? ` · ${b.close_reason}` : ''}</span></div>
-              <div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
-                {b.status === 'aktif' && <span className={'chip ' + (late ? 'bad' : days(b.check_in) <= 3 ? 'gold' : 'info')}>{late ? 'Terlewat' : days(b.check_in) <= 3 ? 'Segera masuk' : 'Menunggu'}</span>}
-                {exp && <span className="chip bad">Lewat batas</span>}
-                {b.status === 'selesai' && <span className="chip good">Sudah masuk</span>}
-                {b.status === 'batal' && <span className="chip void">{b.forfeit_amount > 0 ? 'Batal · DP hangus' : 'Batal'}</span>}
-              </div>
-            </button>
-          );
-        })}</div></section>
+        <DataTable rows={list} caption="Daftar booking" onRow={(b) => setOpen(b.id)} rowLabel={(b) => `${b.name} kamar ${d.roomCode(b.room_id)}`}
+          columns={[
+            { key: 'name', label: 'Calon penghuni', sort: (b) => b.name.toLowerCase(), render: (b) => <><b>{b.name}</b><div className="small muted">{b.number}</div></> },
+            { key: 'room', label: 'Kamar', sort: (b) => d.roomCode(b.room_id), render: (b) => d.roomCode(b.room_id) },
+            { key: 'in', label: 'Masuk', sort: (b) => b.check_in, render: (b) => <>{tgl(b.check_in)}{b.status === 'aktif' && <div className="small muted">{when(b.check_in)}</div>}</> },
+            { key: 'rent', label: 'Sewa/bulan', align: 'right', hide: 'tablet', sort: (b) => b.rent, render: (b) => rp(b.rent) },
+            { key: 'dp', label: 'DP', align: 'right', sort: (b) => b.dp_amount, render: (b) => (b.dp_amount > 0 ? rp(b.dp_amount) : <span className="muted">tanpa DP</span>) },
+            { key: 'st', label: 'Status', render: (b) => chips(b) },
+          ]}
+          card={(b) => <>
+            <div className="dt-row"><b className="small">{b.name} · Kamar {d.roomCode(b.room_id)}</b><span className="row" style={{ gap: 4 }}>{chips(b)}</span></div>
+            <span className="small muted">{b.number} · masuk {tgl(b.check_in)}{b.status === 'aktif' ? ` (${when(b.check_in)})` : ''}</span>
+            <span className="small muted">{rp(b.rent)}/bulan{b.dp_amount > 0 ? ` · DP ${rp(b.dp_amount)}` : ' · tanpa DP'}{b.status === 'batal' ? ` · ${b.close_reason}` : ''}</span>
+          </>} />
       )}
       {neu && <BookingForm d={d} kosId={kosId} init={neu} onClose={() => setNeu(null)} onSaved={() => setNeu(null)} />}
       {cur && <Detail d={d} kos={kos} b={cur} onClose={() => setOpen(null)} />}
