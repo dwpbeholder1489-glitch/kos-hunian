@@ -2,7 +2,7 @@
 import PageHelp from '@/components/PageHelp';
 import Link from 'next/link';
 import { useData } from '@/lib/useData';
-import { Tile, Loading, Empty, InvChip } from '@/components/ui';
+import { Loading, Empty, InvChip } from '@/components/ui';
 import Checklist from '@/components/Checklist';
 import { useKos } from '@/components/KosProvider';
 import { RecHint } from '@/components/Rekomendasi';
@@ -12,7 +12,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { moduleOn, tabsFor } from '@/lib/business';
 import { PageHeader } from '@/components/Page';
-import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity } from '@/components/Dashboard';
+import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity, useDashPrefs, KpiGrid, Pulse } from '@/components/Dashboard';
+import { KPIS, periodRange, baselineRange, pulseLine } from '@/lib/dashboards';
 import { CompareBars } from '@/components/Charts';
 import { quickActions } from '@/lib/menu';
 import { addMonthsYm, BLN } from '@/lib/format';
@@ -22,6 +23,7 @@ export default function Beranda() {
   const { kos, kosId, ver } = useKos();
   const [tix, setTix] = useState(null); // keluhan belum selesai
   const act = useActivity(kosId, ver);
+  const prefs = useDashPrefs('kos', 'bulan');
   useEffect(() => {
     if (!kosId || !moduleOn(kos, 'p_perbaikan')) return;
     supabase.from('maint_tickets').select('id,priority,source,status').eq('kos_id', kosId).in('status', ['baru', 'dikerjakan', 'menunggu']).then(({ data }) => setTix(data || null));
@@ -78,16 +80,36 @@ export default function Beranda() {
     upcoming.length > 0 && { tone: 'info', text: `${upcoming.length} tagihan jatuh tempo dalam 7 hari`, href: '/tagihan' },
   ].filter(Boolean);
 
+  // Periode terpilih: pembayaran terverifikasi (sumber sama dengan kotak Terkumpul & Laporan)
+  const per = periodRange(prefs.period), base = baselineRange(prefs.period);
+  const inR = (x, r) => x >= r.from && x <= r.to;
+  const verified = d.payments.filter((p) => p.status === 'terverifikasi');
+  const paidP = verified.filter((p) => inR(String(p.paid_at).slice(0, 10), per));
+  const paidB = verified.filter((p) => inR(String(p.paid_at).slice(0, 10), base));
+  const sumA = (a) => a.reduce((s2, p) => s2 + p.amount, 0);
+  const activeBk = (d.bookings || []).filter((b) => b.status === 'aktif');
+  const kosong = d.rooms.filter((r) => r.status === 'tersedia').length;
+  const kpiItems = [
+    { id: 'kas', label: 'Kas bersih bulan ini', value: rp(cashIn + entIn + depInCash + bkIn - cashOut - entOut - depOut - bkOut), tone: 'hero', sub: `Masuk ${rp(cashIn + entIn + depInCash + bkIn)} · keluar ${rp(cashOut + entOut + depOut + bkOut)}${depInCash || depOut || bkIn || bkOut ? ' (termasuk deposit/DP)' : ''}` },
+    { id: 'hunian', label: 'Hunian', value: `${occ}%`, sub: `${filled} dari ${rentable.length} kamar terisi` },
+    { id: 'total_kamar', label: 'Total kamar', value: String(d.rooms.length), sub: `${filled} terisi · ${kosong} kosong` },
+    { id: 'kosong', label: 'Kamar kosong', value: String(kosong), sub: 'siap disewa', tone: kosong > 0 && occ < 70 ? 'gold' : '' },
+    { id: 'penghuni', label: 'Penghuni aktif', value: String(d.activeByOcc.size), sub: `${d.rooms.length} kamar terdaftar` },
+    moduleOn(kos, 'p_booking') && { id: 'booking', label: 'Booking aktif', value: String(activeBk.length), sub: `${checkins.length} masuk ≤ 7 hari` },
+    { id: 'tagihan', label: 'Tagihan bulan ini', value: rp(billedMonth), sub: `Terkumpul ${rp(collected)}` },
+    { id: 'terkumpul', label: `Pembayaran diterima ${per.label}`, value: rp(sumA(paidP)), sub: `${paidP.length} pembayaran terverifikasi` },
+    { id: 'jatuh_tempo', label: 'Jatuh tempo 7 hari', value: rp(upcoming.reduce((s2, i) => s2 + i.outstanding, 0)), sub: `${upcoming.length} tagihan` },
+    { id: 'tunggakan', label: 'Tunggakan', value: rp(arrears), tone: arrears > 0 ? 'bad' : '', sub: `${overdue.length} tagihan lewat jatuh tempo` },
+  ];
+  const pulse = [
+    pulseLine(`Pembayaran diterima ${per.label}`, sumA(paidP), sumA(paidB) / 30, per.days, rp),
+    rentable.length > 0 && { tone: occ >= 90 ? 'good' : occ < 70 ? 'warn' : 'info', text: `Hunian ${occ}% (${filled}/${rentable.length} kamar)${occ < 70 ? ' — pertimbangkan promosi atau halaman bisnis untuk calon penghuni' : ''}`, href: occ < 70 ? '/kamar' : undefined },
+    billedMonth > 0 && { tone: collected >= billedMonth ? 'good' : arrears > 0 ? 'warn' : 'info', text: `Terkumpul ${Math.round((collected / billedMonth) * 100)}% dari tagihan ${bulan(ym)}` },
+  ];
+
   const widgets = [
-    { id: 'kpi', title: 'Angka utama', size: 'full', node: (
-      <div className="grid">
-        <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn + depInCash + bkIn - cashOut - entOut - depOut - bkOut)} sub={`Masuk ${rp(cashIn + entIn + depInCash + bkIn)} · keluar ${rp(cashOut + entOut + depOut + bkOut)}${depInCash || depOut || bkIn || bkOut ? ' (termasuk deposit/DP)' : ''}`} />
-        <Tile label="Hunian" value={`${occ}%`} sub={`${filled} dari ${rentable.length} kamar terisi`} />
-        <Tile label="Penghuni aktif" value={String(d.activeByOcc.size)} sub={`${d.rooms.length} kamar terdaftar`} />
-        <Tile label="Tagihan bulan ini" value={rp(billedMonth)} sub={`Terkumpul ${rp(collected)}`} />
-        <Tile tone={arrears > 0 ? 'bad' : ''} label="Tunggakan" value={rp(arrears)} sub={`${overdue.length} tagihan lewat jatuh tempo`} />
-      </div>
-    ) },
+    { id: 'denyut', title: 'Denyut bisnis', size: 'full', node: pulse.some(Boolean) && <Pulse items={pulse} /> },
+    { id: 'kpi', title: 'Angka utama', size: 'full', node: <KpiGrid items={kpiItems} prefs={prefs} /> },
     { id: 'tren', title: 'Tagihan vs terkumpul', size: 'wide', node: (
       <Widget title="Tagihan vs terkumpul · 6 bulan" action={has('/laporan') && <Link href="/laporan">Laporan</Link>}>
         <CompareBars data={trend} a="Tagihan terbit" b="Terkumpul" title="Tagihan dan pembayaran 6 bulan terakhir" />
@@ -149,9 +171,9 @@ export default function Beranda() {
   ];
 
   return (
-    <Dashboard id="kos" kosId={kosId} widgets={widgets} header={(atur) => <>
+    <Dashboard id="kos" kosId={kosId} widgets={widgets} prefs={prefs} kpis={KPIS.kos.map(([id, label]) => ({ id, label }))} period header={(atur, periode) => <>
       <Checklist d={d} kosId={kosId} />
-      <PageHeader title={`Ringkasan ${bulan(ym)}`} help={<PageHelp page="beranda" />} desc={`${kos.name} · kas, hunian, tagihan, dan tindak lanjut`} actions={atur} />
+      <PageHeader title={`Ringkasan ${bulan(ym)}`} help={<PageHelp page="beranda" />} desc={`${kos.name} · kas, hunian, tagihan, dan tindak lanjut`} actions={<>{periode}{atur}</>} />
       <CrmHint />
       <RecHint />
     </>} />

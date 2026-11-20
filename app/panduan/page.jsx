@@ -817,6 +817,13 @@ const PARTS = [
       <><b>Dashboard</b>: centang bagian yang tampil di Beranda dan atur urutannya. Bisa juga langsung dari Beranda › <b>Atur dashboard</b>. Pengaturan pemilik berlaku untuk semua pengguna bisnis ini (tiap bagian tetap mengikuti izin orangnya).</>,
       <>Salah atur? Tekan <b>Kembalikan rekomendasi PRASARA</b>, atau buka tab <b>Perkembangan › Riwayat konfigurasi</b> lalu <b>Pulihkan</b> pada perubahan mana pun — tampilan kembali ke keadaan sebelum perubahan itu (tercatat sebagai versi baru). Profil bisnis juga bisa dipulihkan dengan cara yang sama.</>,
     ], <>Menu yang disembunyikan tetap bisa dibuka lewat <b>Semua modul</b> & pencarian; akses dan data tidak berubah. Tombol (+) tidak bisa dihilangkan.</>, null, null],
+    ['Dashboard adaptif: periode, angka utama, denyut & sinyal bisnis', 'Beranda (Dashboard)', [
+      <>Di atas dashboard pilih periode <b>Hari ini</b>, <b>7 hari</b>, atau <b>Bulan ini</b> — angka penjualan/pendapatan, transaksi, laba, margin, ketepatan waktu, food cost, dan pembayaran diterima ikut berganti. Angkanya dari sumber yang sama dengan menu Laporan.</>,
+      <><b>Denyut bisnis</b> membandingkan periode itu dengan rata-rata 30 hari sebelumnya (selisih di bawah 15% = normal), mis. "Penjualan hari ini Rp3.250.000 — 20% di atas rata-rata". Toko juga membandingkan margin, jasa membandingkan ketepatan waktu, kos menampilkan hunian & persentase tagihan terkumpul.</>,
+      <><b>Angka utama</b> dipilih PRASARA dari profil bisnis: toko sembako (kasbon) mendapat <b>Piutang pelanggan</b> & <b>Harga modal berubah</b>, toko fashion (varian) mendapat <b>Barang tidak bergerak</b>, grosir mendapat <b>Piutang lewat tempo</b>, kuliner mendapat <b>Food cost</b>, kos mendapat <b>Kamar kosong</b> & <b>Booking aktif</b>, kontraktor mendapat <b>Progres rata-rata</b> & <b>Realisasi vs RAB</b>.</>,
+      <>Ubah lewat <b>Atur dashboard</b>: centang/urutkan bagian, centang/urutkan <b>Angka utama</b>, dan pilih <b>Periode bawaan</b>. Bisa juga di Pusat Pengalaman › Dashboard. <b>Perlu perhatian</b> kini juga memberi sinyal: piutang lewat tempo, harga modal naik, barang tidak terjual ≥ 90 hari, food cost di atas 40%, bahan menipis, ketepatan waktu di bawah 80%.</>,
+      <>Kontraktor & proyek (bisnis baru): selain Proyek & Klien kini ada jenis data <b>RAB</b>, <b>Material</b>, dan <b>Tenaga kerja</b>. Dashboard menghitung <b>Realisasi vs RAB</b> = total material + upah tenaga kerja dibanding total RAB semua proyek; rincian per proyek ada di Laporan (RAB per proyek, Material per proyek, Upah per proyek).</>,
+    ], <>Bila satu bagian gagal dimuat, bagian lain tetap tampil dengan tombol <b>Coba lagi</b>. Angka yang butuh izin keuangan tidak tampil untuk karyawan tanpa izin itu. Bisnis kontraktor lama bisa menambah RAB/Material/Tenaga kerja sendiri di Business Builder.</>, null, null],
   ]],
 ];
 
@@ -885,7 +892,7 @@ export default function Panduan() {
           <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
-          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–112</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman: profil bisnis, fitur, rekomendasi, atur & pulihkan tampilan</span></div>
+          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–113</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman: profil bisnis, fitur, rekomendasi, atur & pulihkan tampilan</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

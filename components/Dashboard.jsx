@@ -4,17 +4,18 @@
 // Widget bisa disembunyikan & diurutkan ("Atur dashboard"). Pemilik/pengelola: disimpan di server untuk seluruh bisnis
 // (experience_configs.dash — berversi & bisa dipulihkan di Pusat Pengalaman). Karyawan lain: hanya untuk perangkatnya.
 // Menyembunyikan widget TIDAK menghapus data sumbernya. Widget yang gagal memuat tidak menggagalkan widget lain.
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import NavIcon from '@/components/NavIcon';
-import { Sheet } from '@/components/ui';
+import { Sheet, Tile } from '@/components/ui';
 import { rp } from '@/lib/format';
 import { quickFor } from '@/lib/quick';
 import { useKos } from '@/components/KosProvider';
 import { canArea } from '@/lib/business';
 import { errMsg } from '@/lib/format';
 import { toast } from '@/components/ui';
+import { PERIODS, defaultKpis } from '@/lib/dashboards';
 
 const KEY = (kosId, id) => `prasara-dash-${id}-${kosId}`;
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
@@ -73,28 +74,90 @@ export function ActivityList({ rows }) {
   );
 }
 
-// widgets: [{ id, title (nama di Atur dashboard), size: 'full'|'wide'|'normal', node }] — node null/false = tidak ditampilkan (tidak relevan / tidak ada data / tidak ada izin)
-export default function Dashboard({ id, kosId, header, widgets }) {
-  const { kos, loadKos } = useKos();
+// Preferensi dashboard: pengaturan bisnis (server, pemilik/pengelola) → pilihan perangkat (karyawan) → rekomendasi PRASARA.
+// pref = { hidden[], order[], kpis[], period }. period aktif = pilihan sesaat di layar (tidak disimpan) atau periode bawaan.
+export function useDashPrefs(id, fallbackPeriod = 'hari') {
+  const { kos, kosId, loadKos } = useKos();
   const k = KEY(kosId, id);
   const owner = canArea(kos, 'settings');
   const server = kos?.exp?.dash?.[id] || null;
-  const [pref, setPref] = useState({ hidden: [], order: [] });
-  const [edit, setEdit] = useState(false);
-  // urutan sumber: pengaturan bisnis (server) → pilihan perangkat (karyawan) → bawaan PRASARA
-  useEffect(() => { setPref((!owner && read(k)) || server || read(k) || { hidden: [], order: [] }); }, [k, owner, JSON.stringify(server)]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [pref, setPref] = useState(() => server || { hidden: [], order: [] });
+  const [period, setPeriod] = useState(null);
+  useEffect(() => { setPref((!owner && read(k)) || server || read(k) || { hidden: [], order: [] }); setPeriod(null); }, [k, owner, JSON.stringify(server)]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = (p) => {
-    setPref(p);
-    if (!owner) { try { localStorage.setItem(k, JSON.stringify(p)); } catch {} return; }
-    const all = { ...(kos?.exp?.dash || {}), [id]: p };
-    if (!p.hidden.length && !p.order.length) delete all[id];
+    const clean = { hidden: p.hidden || [], order: p.order || [], ...(p.kpis ? { kpis: p.kpis } : {}), ...(p.period ? { period: p.period } : {}) };
+    setPref(clean);
+    if (!owner) { try { localStorage.setItem(k, JSON.stringify(clean)); } catch {} return; }
+    const all = { ...(kos?.exp?.dash || {}), [id]: clean };
+    if (!clean.hidden.length && !clean.order.length && !clean.kpis && !clean.period) delete all[id];
     supabase.rpc('experience_save', { p_kos: kosId, p_part: 'dash', p_value: all, p_reason: 'Atur dashboard' })
       .then(({ error }) => { if (error) toast(errMsg(error)); else { try { localStorage.removeItem(k); } catch {} loadKos(); } });
   };
+  return { id, pref, save, owner, period: period || pref.period || fallbackPeriod, setPeriod, kpiDefaults: defaultKpis(kos, id) };
+}
+
+// Pemilih periode (Hari ini / 7 hari / Bulan ini) — hanya mengubah tampilan sesaat
+export function PeriodPicker({ prefs }) {
+  return (
+    <div className="seg dash-period" role="group" aria-label="Periode angka">
+      {PERIODS.map(([k, l]) => <button key={k} type="button" className={prefs.period === k ? 'on' : ''} aria-pressed={prefs.period === k} onClick={() => prefs.setPeriod(k)}>{l}</button>)}
+    </div>
+  );
+}
+
+// Angka utama (KPI) yang bisa dipilih & diurutkan. items: [{ id, label, value, sub, tone }] — item null = tidak tersedia (izin/data/relevansi).
+export function KpiGrid({ items, prefs }) {
+  const avail = items.filter(Boolean);
+  const want = prefs?.pref?.kpis?.length ? prefs.pref.kpis : prefs?.kpiDefaults?.length ? prefs.kpiDefaults : avail.map((x) => x.id);
+  let shown = want.map((id) => avail.find((x) => x.id === id)).filter(Boolean);
+  if (!shown.length) shown = avail.filter((x) => (prefs?.kpiDefaults || []).includes(x.id)); // pilihan pemilik tidak tersedia untuk peran ini
+  if (!shown.length) shown = avail.slice(0, 4);
+  if (!shown.length) return <p className="small muted" style={{ margin: 0 }}>Belum ada angka yang bisa ditampilkan untuk peran Anda.</p>;
+  return <div className="grid">{shown.map((x) => <Tile key={x.id} label={x.label} value={x.value} sub={x.sub} tone={x.tone} />)}</div>;
+}
+
+// Denyut bisnis: 1–4 kalimat perbandingan dengan kondisi normal (aturan tertulis, dari data yang sama dengan laporan)
+export function Pulse({ items }) {
+  const list = items.filter(Boolean);
+  if (!list.length) return null;
+  return (
+    <section className="panel wg pulse">
+      <div className="wg-h"><h3>Denyut bisnis</h3></div>
+      <ul className="alerts">{list.map((a, i) => {
+        const body = <><span className={'alerts-dot ' + (a.tone || 'info')} aria-hidden="true" /><span className="alerts-t">{a.text}</span>{a.href && <span aria-hidden="true" className="muted">›</span>}</>;
+        return <li key={i}>{a.href ? <Link href={a.href}>{body}</Link> : <div>{body}</div>}</li>;
+      })}</ul>
+    </section>
+  );
+}
+
+// Kegagalan satu widget tidak menggagalkan dashboard (§11.3 / §27)
+class WidgetBoundary extends Component {
+  constructor(p) { super(p); this.state = { err: false }; }
+  static getDerivedStateFromError() { return { err: true }; }
+  componentDidCatch(e) { try { console.error('Widget gagal', this.props.name, e); } catch {} }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <section className="panel wg"><div className="wg-h"><h3>{this.props.name}</h3></div>
+        <p className="small muted" style={{ margin: 0 }}>Bagian ini gagal dimuat. Bagian lain tetap bisa dipakai.</p>
+        <button className="sm ghost" onClick={() => this.setState({ err: false })}>Coba lagi</button></section>
+    );
+  }
+}
+
+// widgets: [{ id, title (nama di Atur dashboard), size: 'full'|'wide'|'normal', node }] — node null/false = tidak ditampilkan (tidak relevan / tidak ada data / tidak ada izin)
+// kpis: katalog angka utama [{ id, label }] untuk "Atur dashboard" (opsional). header(atur, periode)
+export default function Dashboard({ id, kosId, header, widgets, prefs: given, kpis, period: withPeriod }) {
+  const own = useDashPrefs(id);
+  const prefs = given || own;
+  const { pref, save, owner } = prefs;
+  const [edit, setEdit] = useState(false);
+  const order = pref.order || [], hidden = pref.hidden || [];
   const avail = widgets.filter((w) => w.node);
-  const rank = (w) => { const i = pref.order.indexOf(w.id); return i < 0 ? 1000 + widgets.indexOf(w) : i; };
+  const rank = (w) => { const i = order.indexOf(w.id); return i < 0 ? 1000 + widgets.indexOf(w) : i; };
   const sorted = [...avail].sort((a, b) => rank(a) - rank(b));
-  const shown = sorted.filter((w) => !pref.hidden.includes(w.id));
+  const shown = sorted.filter((w) => !hidden.includes(w.id));
   const move = (wid, dir) => {
     const ids = sorted.map((w) => w.id);
     const i = ids.indexOf(wid), j = i + dir;
@@ -102,22 +165,42 @@ export default function Dashboard({ id, kosId, header, widgets }) {
     [ids[i], ids[j]] = [ids[j], ids[i]];
     save({ ...pref, order: ids });
   };
-  const toggle = (wid) => save({ ...pref, hidden: pref.hidden.includes(wid) ? pref.hidden.filter((x) => x !== wid) : [...pref.hidden, wid] });
+  const toggle = (wid) => save({ ...pref, hidden: hidden.includes(wid) ? hidden.filter((x) => x !== wid) : [...hidden, wid] });
+  // KPI: daftar pilihan saat ini (pilihan pemilik atau rekomendasi), bisa dicentang & diurutkan
+  const kOn = pref.kpis?.length ? pref.kpis : prefs.kpiDefaults || [];
+  const kList = kpis ? [...kOn.map((x) => kpis.find((c) => c.id === x)).filter(Boolean), ...kpis.filter((c) => !kOn.includes(c.id))] : [];
+  const kToggle = (kid) => save({ ...pref, kpis: kOn.includes(kid) ? kOn.filter((x) => x !== kid) : [...kOn, kid].slice(0, 16) });
+  const kMove = (kid, dir) => { const a = [...kOn]; const i = a.indexOf(kid), j = i + dir; if (i < 0 || j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; save({ ...pref, kpis: a }); };
   return (
     <div className="stack">
-      {header?.(<button className="sm ghost" onClick={() => setEdit(true)}><NavIcon name="/konfigurasi" size={18} />Atur dashboard</button>)}
-      <div className="dash">{shown.map((w) => <div key={w.id} className={'dash-' + (w.size || 'normal')}>{w.node}</div>)}</div>
+      {header?.(<button className="sm ghost" onClick={() => setEdit(true)}><NavIcon name="/konfigurasi" size={18} />Atur dashboard</button>, withPeriod ? <PeriodPicker prefs={prefs} /> : null)}
+      <div className="dash">{shown.map((w) => <div key={w.id} className={'dash-' + (w.size || 'normal')}><WidgetBoundary name={w.title}>{w.node}</WidgetBoundary></div>)}</div>
       {shown.length < avail.length && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setEdit(true)}>{avail.length - shown.length} bagian disembunyikan · tampilkan</button>}
       {edit && (
         <Sheet title="Atur dashboard" onClose={() => setEdit(false)}>
-          <span className="small muted">Pilih bagian yang ditampilkan dan urutannya. Pilihan ini hanya untuk perangkat ini dan bisnis ini; data tidak berubah.</span>
+          <span className="small muted">{owner ? 'Berlaku untuk semua pengguna bisnis ini (bagian & angka tetap mengikuti izin masing-masing). Riwayat & pemulihan ada di Pusat Pengalaman.' : 'Pilihan ini hanya untuk perangkat Anda.'} Data tidak berubah.</span>
+          <span className="label">Bagian dashboard</span>
           <ul className="dash-set">{sorted.map((w, i) => (
             <li key={w.id}>
-              <label><input type="checkbox" checked={!pref.hidden.includes(w.id)} onChange={() => toggle(w.id)} />{w.title}</label>
+              <label><input type="checkbox" checked={!hidden.includes(w.id)} onChange={() => toggle(w.id)} />{w.title}</label>
               <button className="sm ghost" onClick={() => move(w.id, -1)} disabled={i === 0} aria-label={`Naikkan ${w.title}`}>↑</button>
               <button className="sm ghost" onClick={() => move(w.id, 1)} disabled={i === sorted.length - 1} aria-label={`Turunkan ${w.title}`}>↓</button>
             </li>
           ))}</ul>
+          {kList.length > 0 && <>
+            <span className="label">Angka utama {pref.kpis?.length ? '' : '(rekomendasi PRASARA dari profil bisnis)'}</span>
+            <ul className="dash-set">{kList.map((c) => { const i = kOn.indexOf(c.id); return (
+              <li key={c.id}>
+                <label><input type="checkbox" checked={i >= 0} onChange={() => kToggle(c.id)} />{c.label}</label>
+                <button className="sm ghost" onClick={() => kMove(c.id, -1)} disabled={i <= 0} aria-label={`Naikkan ${c.label}`}>↑</button>
+                <button className="sm ghost" onClick={() => kMove(c.id, 1)} disabled={i < 0 || i === kOn.length - 1} aria-label={`Turunkan ${c.label}`}>↓</button>
+              </li>
+            ); })}</ul>
+          </>}
+          {withPeriod && <>
+            <span className="label">Periode bawaan saat dashboard dibuka</span>
+            <div className="seg">{PERIODS.map(([k, l]) => <button key={k} type="button" className={(pref.period || '') === k ? 'on' : ''} onClick={() => save({ ...pref, period: k })}>{l}</button>)}</div>
+          </>}
           <div className="row"><button className="primary" onClick={() => setEdit(false)}>Selesai</button><button className="ghost" onClick={() => save({ hidden: [], order: [] })}>Kembalikan rekomendasi PRASARA</button></div>
         </Sheet>
       )}

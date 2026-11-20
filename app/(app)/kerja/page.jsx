@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { Tile, Loading } from '@/components/ui';
+import { Loading } from '@/components/ui';
 import { angka, rp, errMsg, tgl, today } from '@/lib/format';
 import { canArea, tabsFor } from '@/lib/business';
 import { PageHeader } from '@/components/Page';
-import Dashboard, { Widget, QuickActions, ActivityList, useActivity } from '@/components/Dashboard';
+import Dashboard, { Widget, QuickActions, ActivityList, useActivity, useDashPrefs, KpiGrid } from '@/components/Dashboard';
 import { quickActions } from '@/lib/menu';
 import { useBuilder, statusesOf, statusById, umur } from '@/lib/builder';
 
@@ -44,6 +44,7 @@ export default function Kerja() {
   const [home, setHome] = useState(null);
   const [e2, setE2] = useState(null);
   const feed = useActivity(kosId, ver);
+  const prefs = useDashPrefs('kerja');
   useEffect(() => {
     supabase.rpc('bb_dashboard', { p_kos: kosId }).then(({ data, error }) => (error ? setE2(errMsg(error)) : setD(data)));
     supabase.rpc('bb_home', { p_kos: kosId }).then(({ data, error }) => setHome(error ? { layout: false } : data || { layout: false }));
@@ -70,6 +71,22 @@ export default function Kerja() {
   const empty = objects.every((o) => n(o.id) === 0);
   const create = lay?.create?.length ? lay.create : objects.slice(0, 1).map((o) => ({ key: o.key, name: o.name, icon: o.icon }));
 
+  // Angka utama dari tata letak jenis usaha (bb_home) — id stabil dari judul angka, bisa dipilih & diurutkan pemilik
+  const kid = (l) => 'k_' + String(l).toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 40);
+  const kpiItems = [
+    ...(lay ? lay.kpis.map((k) => ({ id: kid(k.label), label: k.label,
+      value: (k.money ? rp(k.value) : angka(k.value)) + (k.suffix || ''),
+      // rasio (mis. Realisasi vs RAB): nilai realisasi, dibanding total & persentase
+      sub: k.total != null ? `dari ${k.money ? rp(k.total) : angka(k.total)}${k.pct != null ? ` · ${String(k.pct).replace('.', ',')}%` : ''}${k.sub ? ` · ${k.sub}` : ''}` : k.sub || undefined,
+      tone: k.pct != null && Number(k.pct) > 100 ? 'bad' : Number(k.value) > 0 && ['bad', 'gold'].includes(k.tone) ? k.tone : undefined }))
+      : [{ id: 'belum_selesai', label: 'Belum selesai', value: angka(open), sub: 'catatan dengan status belum akhir' }, { id: 'hari_ini', label: 'Dicatat hari ini', value: angka(d.today) }]),
+    (!lay || d.overdue.length > 0) && { id: 'lewat', label: 'Lewat batas waktu', value: angka(d.overdue.length), tone: d.overdue.length ? 'bad' : undefined, sub: 'sesuai batas per status' },
+    d.mine.length > 0 && { id: 'tugas', label: 'Tugas saya', value: angka(d.mine.length), sub: 'ditugaskan ke Anda' },
+    d.money && { id: 'uang', label: 'Uang masuk bulan ini', value: rp(d.money.bulan_ini), sub: `hari ini ${rp(d.money.hari_ini)}` },
+  ];
+  const kpiCat = kpiItems.filter(Boolean).map((x) => ({ id: x.id, label: x.label }));
+  prefs.kpiDefaults = kpiCat.map((x) => x.id); // rekomendasi = semua angka dari tata letak jenis usaha
+
   const widgets = [
     { id: 'mulai', title: 'Mulai di sini', size: 'full', node: !draft && empty && create.length > 0 && (
       <Widget title="Tampilan bisnis Anda sudah siap">
@@ -78,17 +95,7 @@ export default function Kerja() {
         {canArea(kos, 'settings') && <span className="small muted">Perlu kolom atau status lain? Ubah kapan saja di <Link href="/builder">Business Builder</Link> — tidak wajib.</span>}
       </Widget>
     ) },
-    { id: 'kpi', title: 'Angka utama', size: 'full', node: (
-      <div className="grid">
-        {lay ? lay.kpis.map((k) => <Tile key={k.label} label={k.label} value={k.money ? rp(k.value) : angka(k.value)} sub={k.sub || undefined} tone={Number(k.value) > 0 && ['bad', 'gold'].includes(k.tone) ? k.tone : undefined} />) : <>
-          <Tile label="Belum selesai" value={angka(open)} sub="catatan dengan status belum akhir" />
-          <Tile label="Dicatat hari ini" value={angka(d.today)} />
-        </>}
-        {(!lay || d.overdue.length > 0) && <Tile label="Lewat batas waktu" value={angka(d.overdue.length)} tone={d.overdue.length ? 'bad' : undefined} sub="sesuai batas per status" />}
-        {d.mine.length > 0 && <Tile label="Tugas saya" value={angka(d.mine.length)} sub="ditugaskan ke Anda" />}
-        {d.money && <Tile label="Uang masuk bulan ini" value={rp(d.money.bulan_ini)} sub={`hari ini ${rp(d.money.hari_ini)}`} />}
-      </div>
-    ) },
+    { id: 'kpi', title: 'Angka utama', size: 'full', node: <KpiGrid items={kpiItems} prefs={prefs} /> },
     ...(lay ? lay.lists.map((l, i) => ({ id: 'list-' + i, title: l.title, size: i === 0 ? 'wide' : 'normal', node: (
       <Widget title={`${l.title}${l.total > l.rows.length ? ` (${l.total})` : ''}`} action={<Link href={href(l.object)}>Lihat semua</Link>}>
         {l.rows.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Tidak ada.</p> : (
@@ -128,7 +135,7 @@ export default function Kerja() {
     { id: 'catatan', title: 'Catatan notifikasi', size: 'full', node: <span className="small muted">Pengingat saat ini tampil di Dashboard ini (Lewat batas waktu, Tugas saya, daftar terdekat) dan Ringkasan pemilik. Email/WhatsApp otomatis untuk bisnis ini belum tersedia.</span> },
   ];
   return (
-    <Dashboard id="kerja" kosId={kosId} widgets={widgets} header={(atur) => <>
+    <Dashboard id="kerja" kosId={kosId} widgets={widgets} prefs={prefs} kpis={kpiCat} header={(atur) => <>
       <PageHeader title="Dashboard" help={<PageHelp page="kerja" />} desc={cfg.ws?.main_process ? `Alur utama: ${cfg.ws.main_process}` : 'Ringkasan catatan, tugas, dan batas waktu'}
         actions={<>{atur}{!draft && create.slice(0, 1).map((c) => <Link key={c.key} href={`${href(c.key)}?baru=1`}><button className="primary">+ {c.name}</button></Link>)}</>} />
       {draft && <div className="notice">Bisnis ini belum diaktifkan. {canArea(kos, 'settings') ? <>Tampilannya sudah disiapkan sesuai jenis usaha — buka <Link href="/konfirmasi">Pusat Konfirmasi</Link> lalu tekan <b>Aktifkan</b>. Mengubah isi di <Link href="/builder">Business Builder</Link> tidak wajib.</> : 'Minta pemilik mengaktifkan bisnis di Pusat Konfirmasi.'}</div>}

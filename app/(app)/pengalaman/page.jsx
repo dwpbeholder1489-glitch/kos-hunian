@@ -15,7 +15,7 @@ import { errMsg, tgl } from '@/lib/format';
 import { loadVocab, STAGES, STAGE_ORDER, RELEVANCE, RECO_STATUS, EVENTS, HISTORY_ACTION, PART_NAME } from '@/lib/dna';
 import { sectionsFor, groupIcon, mainTabOf, fourthTab } from '@/lib/menu';
 import { quickCatalog, quickFor } from '@/lib/quick';
-import { DASHBOARDS, dashOf } from '@/lib/dashboards';
+import { DASHBOARDS, dashOf, KPIS, defaultKpis, PERIODS } from '@/lib/dashboards';
 import { tabsFor, homeOf, canArea } from '@/lib/business';
 
 const TABS = [['profil', 'Profil bisnis'], ['fitur', 'Fitur saya'], ['rekomendasi', 'Rekomendasi'], ['navigasi', 'Navigasi'], ['aksi', 'Aksi cepat'], ['dashboard', 'Dashboard'], ['evolusi', 'Perkembangan']];
@@ -316,20 +316,36 @@ function Dash({ kos, kosId, onSaved }) {
   const ids = def.widgets.map(([w]) => w);
   const [order, setOrder] = useState(() => [...ids].sort((a, b) => { const i = cfg.order.indexOf(a), j = cfg.order.indexOf(b); return (i < 0 ? 1000 + ids.indexOf(a) : i) - (j < 0 ? 1000 + ids.indexOf(b) : j); }));
   const [hidden, setHidden] = useState(cfg.hidden || []);
+  const cat = KPIS[id] || [];
+  const [kpis, setKpis] = useState(cfg.kpis?.length ? cfg.kpis : defaultKpis(kos, id));
+  const [period, setPeriod] = useState(cfg.period || '');
+  const kList = [...kpis.map((x) => cat.find(([c]) => c === x)).filter(Boolean), ...cat.filter(([c]) => !kpis.includes(c))];
   const save = async () => {
-    const all = { ...(kos.exp?.dash || {}), [id]: { hidden, order } };
+    const def = defaultKpis(kos, id);
+    const all = { ...(kos.exp?.dash || {}), [id]: { hidden, order, ...(cat.length && JSON.stringify(kpis) !== JSON.stringify(def) ? { kpis } : {}), ...(period ? { period } : {}) } };
     if (await run(() => supabase.rpc('experience_save', { p_kos: kosId, p_part: 'dash', p_value: all, p_reason: 'Atur dashboard' }), 'Dashboard disimpan', errMsg)) onSaved();
   };
-  const reset = async () => { if (confirm('Kembalikan dashboard ke rekomendasi PRASARA?') && await run(() => supabase.rpc('experience_reset', { p_kos: kosId, p_part: 'dash' }), 'Dashboard kembali ke rekomendasi', errMsg)) { setOrder(ids); setHidden([]); onSaved(); } };
+  const reset = async () => { if (confirm('Kembalikan dashboard ke rekomendasi PRASARA?') && await run(() => supabase.rpc('experience_reset', { p_kos: kosId, p_part: 'dash' }), 'Dashboard kembali ke rekomendasi', errMsg)) { setOrder(ids); setHidden([]); setKpis(defaultKpis(kos, id)); setPeriod(''); onSaved(); } };
   const title = (w) => def.widgets.find(([x]) => x === w)?.[1] || w;
   return (
     <div className="stack">
-      <span className="small muted">{def.name}. Bagian yang tidak relevan, belum ada datanya, atau tidak diizinkan untuk seseorang tetap tidak tampil walau dicentang. Menyembunyikan bagian tidak menghapus data.</span>
+      <span className="small muted">{def.name}.{id === 'kerja' ? ' Angka utama bisnis ini diatur dari Beranda › Atur dashboard.' : ''} Bagian yang tidak relevan, belum ada datanya, atau tidak diizinkan untuk seseorang tetap tidak tampil walau dicentang. Menyembunyikan bagian tidak menghapus data.</span>
       <section className="panel"><ul className="bec-list">{order.map((w, i) => (
         <li key={w} className="bec-row"><label className="bec-ck grow"><input type="checkbox" checked={!hidden.includes(w)} onChange={() => setHidden(hidden.includes(w) ? hidden.filter((x) => x !== w) : [...hidden, w])} />{title(w)}</label>
           <Up label={`Naikkan ${title(w)}`} disabled={i === 0} onClick={() => setOrder(move(order, i, -1))} />
           <Down label={`Turunkan ${title(w)}`} disabled={i === order.length - 1} onClick={() => setOrder(move(order, i, 1))} /></li>
       ))}</ul></section>
+      {cat.length > 0 && <section className="panel">
+        <h3>Angka utama</h3>
+        <span className="small muted">Bawaan dipilih PRASARA dari profil bisnis Anda. Angka yang butuh izin keuangan tidak tampil untuk karyawan tanpa izin itu.</span>
+        <ul className="bec-list">{kList.map(([k, l, hint]) => { const i = kpis.indexOf(k); return (
+          <li key={k} className="bec-row"><label className="bec-ck grow"><input type="checkbox" checked={i >= 0} onChange={() => setKpis(i >= 0 ? kpis.filter((x) => x !== k) : [...kpis, k].slice(0, 16))} />{l}{hint ? <small className="muted"> · {hint}</small> : null}</label>
+            <Up label={`Naikkan ${l}`} disabled={i <= 0} onClick={() => setKpis(move(kpis, i, -1))} />
+            <Down label={`Turunkan ${l}`} disabled={i < 0 || i === kpis.length - 1} onClick={() => setKpis(move(kpis, i, 1))} /></li>
+        ); })}</ul>
+        <span className="label">Periode bawaan</span>
+        <div className="seg"><button type="button" className={!period ? 'on' : ''} onClick={() => setPeriod('')}>Rekomendasi</button>{PERIODS.map(([k, l]) => <button key={k} type="button" className={period === k ? 'on' : ''} onClick={() => setPeriod(k)}>{l}</button>)}</div>
+      </section>}
       <div className="row bec-actions"><button className="primary" onClick={save}>Simpan dashboard</button><button className="ghost" onClick={reset}>Kembalikan rekomendasi PRASARA</button><Link href={homeOf(kos)} className="sm">Lihat Beranda</Link></div>
     </div>
   );

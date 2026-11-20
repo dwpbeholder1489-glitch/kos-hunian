@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { Tile, Loading } from '@/components/ui';
+import { Loading } from '@/components/ui';
 import { rp, angka, today, errMsg } from '@/lib/format';
 import { RecHint } from '@/components/Rekomendasi';
 import CrmHint from '@/components/CrmHint';
 import { sisa, late, jakartaDate, hari, stageLabel, STATUS, waitPickup, onTheWay, terms } from '@/lib/jasa';
 import { moduleOn, canArea, tabsFor } from '@/lib/business';
 import { PageHeader } from '@/components/Page';
-import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity } from '@/components/Dashboard';
+import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity, useDashPrefs, KpiGrid, Pulse } from '@/components/Dashboard';
+import { KPIS, periodRange, baselineRange, pulseLine } from '@/lib/dashboards';
+import { isLow } from '@/lib/retail';
 import { DayColumns, BarList } from '@/components/Charts';
 import { quickActions } from '@/lib/menu';
 import { tgl, bulan, thisMonth } from '@/lib/format';
@@ -26,6 +28,22 @@ export default function JasaHome() {
   const [rv, setRv] = useState(null); // kuliner: reservasi hari ini & permintaan
   const [rm, setRm] = useState(null); // laporan bulan berjalan (tren & layanan teratas)
   const feed = useActivity(kosId, ver);
+  const prefs = useDashPrefs('jasa');
+  const per = periodRange(prefs.period), base = baselineRange(prefs.period);
+  const [pr, setPr] = useState(null); // { r, b, fc } laporan periode, 30 hari sebelumnya, food cost (kuliner)
+  const [bahan, setBahan] = useState(null);
+  useEffect(() => {
+    const kul = terms(kos).kul;
+    Promise.all([
+      supabase.rpc('svc_report', { p_kos: kosId, p_from: per.from, p_to: per.to }),
+      supabase.rpc('svc_report', { p_kos: kosId, p_from: base.from, p_to: base.to }),
+      kul && canArea(kos, 'finance') && moduleOn(kos, 'j_resep') ? supabase.rpc('food_cost_report', { p_kos: kosId, p_from: per.from, p_to: per.to }) : Promise.resolve({ data: null }),
+    ]).then(([a, b, f]) => setPr({ r: a.error ? null : a.data, b: b.error ? null : b.data, fc: f?.error ? null : f?.data || null }));
+  }, [kosId, ver, prefs.period]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!canArea(kos, 'stock') || !moduleOn(kos, 'j_bahan')) return;
+    supabase.from('products').select('id,name,stock,min_stock,base_unit,active').eq('kos_id', kosId).eq('active', true).then(({ data, error }) => setBahan(error ? null : (data || []).filter(isLow)));
+  }, [kosId, ver]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (terms(kos).kul && canArea(kos, 'sell')) {
       const d0 = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) + 'T00:00:00+07:00');
@@ -78,7 +96,39 @@ export default function JasaHome() {
     dueToday.length > 0 && { tone: 'warn', text: `${angka(dueToday.length)} pesanan harus selesai hari ini`, href: '/pesanan' },
     d.money && s && Number(s.tertunda) > 0 && { tone: 'warn', text: `${angka(s.tertunda_n)} pesanan belum lunas · ${rp(s.tertunda)}`, href: '/pesanan' },
   ].filter(Boolean);
+  // Angka periode terpilih (svc_report — sama dengan Laporan jasa)
+  const R = pr?.r, Bq = pr?.b, fc = pr?.fc;
+  const N = (x) => Number(x) || 0;
+  const tepat = R && N(R.selesai) > 0 ? Math.round((N(R.tepat_waktu) / N(R.selesai)) * 100) : null;
+  const tepatB = Bq && N(Bq.selesai) > 0 ? Math.round((N(Bq.tepat_waktu) / N(Bq.selesai)) * 100) : null;
+  const fcPct = fc && N(fc.revenue) > 0 ? Math.round((N(fc.cost) / N(fc.revenue)) * 1000) / 10 : null;
+  const pl = per.label;
+  const kpiItems = [
+    R ? { id: 'masuk', label: `Pesanan masuk ${pl}`, value: angka(R.masuk), sub: `${angka(R.selesai)} diserahkan` } : { id: 'masuk', label: 'Pesanan baru hari ini', value: angka(s?.baru_hari_ini ?? 0), sub: `${angka(s?.selesai_hari_ini ?? 0)} selesai hari ini` },
+    R && { id: 'selesai', label: `Diserahkan ${pl}`, value: angka(R.selesai) },
+    tepat != null && { id: 'tepat', label: `Tepat waktu ${pl}`, value: `${tepat}%`, sub: tepatB != null ? `30 hari sebelumnya ${tepatB}%` : 'siap sebelum janji', tone: tepat < 80 ? 'bad' : '' },
+    T.kul && { id: 'dapur', label: 'Di dapur', value: angka(act.filter((o) => ['diterima', 'proses'].includes(o.status)).length), sub: 'belum siap' },
+    !T.kul && { id: 'proses', label: 'Sedang diproses', value: angka(act.filter((o) => o.status === 'proses').length), sub: `${angka(act.filter((o) => o.status === 'diterima' && !waitPickup(o)).length)} belum diproses` },
+    { id: 'siap', label: T.kul ? 'Siap disajikan / diambil' : 'Siap diambil', value: angka(s?.siap_diambil ?? ready.length) },
+    jp && { id: 'jemput', label: 'Menunggu penjemputan', value: angka(s?.menunggu_jemput ?? jemput.length), tone: jemput.length ? 'gold' : undefined },
+    logi && { id: 'antar', label: 'Dalam pengantaran', value: angka(s?.dalam_pengantaran ?? 0), sub: `${angka(s?.siap_diantar ?? 0)} siap diantar` },
+    { id: 'terlambat', label: 'Terlambat', value: angka(lateL.length), tone: lateL.length ? 'bad' : undefined, sub: 'lewat janji selesai' },
+    d.money && (R ? { id: 'pendapatan', label: `Pendapatan ${pl}`, value: rp(R.pendapatan), sub: 'dari pesanan diserahkan' } : s && { id: 'pendapatan', label: 'Pendapatan', value: rp(s.pendapatan_hari_ini), sub: `bulan ini ${rp(s.pendapatan_bulan_ini)}` }),
+    d.money && (R || r) && { id: 'uang_masuk', label: `Uang masuk ${R ? pl : 'hari ini'}`, value: rp((R || r).uang_masuk), sub: 'termasuk DP' },
+    d.money && s && { id: 'tertunda', label: 'Belum lunas', value: rp(s.tertunda), sub: `${angka(s.tertunda_n)} pesanan`, tone: Number(s.tertunda) > 0 ? 'bad' : undefined },
+    fcPct != null && { id: 'food_cost', label: `Food cost ${pl}`, value: `${String(fcPct).replace('.', ',')}%`, sub: `bahan ${rp(fc.cost)} dari ${rp(fc.revenue)}`, tone: fcPct > 40 ? 'bad' : fcPct > 35 ? 'gold' : '' },
+  ];
+  const pulse = d.money && R && Bq ? [
+    pulseLine(`Pendapatan ${pl}`, N(R.pendapatan), N(Bq.pendapatan) / 30, per.days, rp),
+    pulseLine(`Pesanan masuk ${pl}`, N(R.masuk), N(Bq.masuk) / 30, per.days, angka),
+    tepat != null && tepatB != null && { tone: tepat < tepatB - 5 ? 'warn' : tepat > tepatB + 5 ? 'good' : 'info', text: `Ketepatan waktu ${pl} ${tepat}% (30 hari sebelumnya ${tepatB}%)` },
+  ] : [];
+  if (fcPct != null && fcPct > 40) alerts.push({ tone: 'warn', text: `Food cost ${pl} ${String(fcPct).replace('.', ',')}% — di atas 40%, periksa harga menu & takaran resep`, href: '/resep' });
+  if (bahan && bahan.length) alerts.push({ tone: 'bad', text: `${angka(bahan.length)} ${T.kul ? 'bahan baku' : 'bahan'} di bawah stok minimum`, href: '/barang' });
+  if (tepat != null && tepat < 80) alerts.push({ tone: 'warn', text: `Hanya ${tepat}% pesanan ${pl} siap tepat waktu`, href: '/laporan-jasa' });
+
   const widgets = [
+    { id: 'denyut', title: 'Denyut bisnis', size: 'full', node: pulse.some(Boolean) && <Pulse items={pulse} /> },
     { id: 'mulai', title: 'Mulai di sini', size: 'full', node: s && !s.any && (<>
       <section className="panel">
         <h3>Belum ada pesanan</h3>
@@ -96,19 +146,7 @@ export default function JasaHome() {
         <b>Reservasi hari ini: {rv.filter((x) => jakartaDate(x.starts_at) === t && x.status !== 'permintaan').length}</b>{rv.filter((x) => jakartaDate(x.starts_at) === t && x.status !== 'permintaan').slice(0, 3).map((x) => ` · ${new Date(x.starts_at).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' })} ${x.name} (${x.party})`).join('')}
         {rv.some((x) => x.status === 'permintaan') && <><br />{rv.filter((x) => x.status === 'permintaan').length} permintaan reservasi menunggu konfirmasi</>} →</Link>
     </>) },
-    { id: 'kpi', title: 'Angka utama', size: 'full', node: (<>
-      <div className="grid">
-        <Tile label="Pesanan baru hari ini" value={angka(s?.baru_hari_ini ?? 0)} sub={`${angka(s?.selesai_hari_ini ?? 0)} selesai hari ini`} />
-        {jp && <Tile label="Menunggu penjemputan" value={angka(s?.menunggu_jemput ?? jemput.length)} tone={jemput.length ? 'gold' : undefined} />}
-        {T.kul && <Tile label="Di dapur" value={angka(act.filter((o) => ['diterima', 'proses'].includes(o.status)).length)} sub="belum siap" />}
-        <Tile label={T.kul ? 'Siap disajikan / diambil' : 'Siap diambil'} value={angka(s?.siap_diambil ?? 0)} />
-        {logi && <Tile label="Dalam pengantaran" value={angka(s?.dalam_pengantaran ?? 0)} sub={`${angka(s?.siap_diantar ?? 0)} siap diantar`} />}
-        <Tile label="Terlambat" value={angka(lateL.length)} tone={lateL.length ? 'bad' : undefined} sub="lewat janji selesai" />
-        {d.money && s && <Tile label="Pendapatan" value={rp(s.pendapatan_hari_ini)} sub={`bulan ini ${rp(s.pendapatan_bulan_ini)} · dari pesanan diserahkan`} />}
-        {d.money && r && <Tile label="Uang masuk hari ini" value={rp(r.uang_masuk)} sub="termasuk DP" />}
-        {d.money && s && <Tile label="Pembayaran tertunda" value={rp(s.tertunda)} sub={`${angka(s.tertunda_n)} pesanan belum lunas`} tone={Number(s.tertunda) > 0 ? 'bad' : undefined} />}
-      </div>
-    </>) },
+    { id: 'kpi', title: 'Angka utama', size: 'full', node: <KpiGrid items={kpiItems} prefs={prefs} /> },
     { id: 'tren', title: 'Tren pendapatan', size: 'wide', node: days && (
       <Widget title={`Pendapatan ${bulan(ym)}`} action={has('/laporan-jasa') && <Link href="/laporan-jasa">Laporan lengkap</Link>}>
         <div className="row" style={{ gap: 10, alignItems: 'baseline' }}><b style={{ fontSize: 22 }}>{rp(rm.pendapatan)}</b><span className="small muted">dari {angka(rm.selesai)} pesanan diserahkan sampai hari ini</span></div>
@@ -134,6 +172,20 @@ export default function JasaHome() {
     { id: 'layanan', title: T.kul ? 'Menu terlaris' : 'Layanan teratas', size: 'normal', node: d.money && rm && (rm.layanan || []).length > 0 && (
       <Widget title={T.kul ? 'Menu terlaris bulan ini' : 'Layanan teratas bulan ini'}><BarList limit={5} items={rm.layanan.map((x) => ({ label: x.name, sub: `${angka(x.pesanan)} pesanan`, value: Number(x.pendapatan) }))} /></Widget>
     ) },
+    { id: 'foodcost', title: 'Food cost per menu', size: 'normal', node: fc && (fc.menus || []).some((m) => m.pct != null) && (
+      <Widget title={`Food cost per menu · ${pl}`} action={<Link href="/resep">Resep</Link>}>
+        <ul className="alerts">{fc.menus.filter((m) => m.pct != null).sort((a, b) => N(b.pct) - N(a.pct)).slice(0, 6).map((m) => (
+          <li key={m.name}><div><span className="alerts-t small">{m.name}<span className="muted"> · {angka(m.qty)} terjual · margin {rp(m.margin)}</span></span><b className="small" style={{ whiteSpace: 'nowrap', color: N(m.pct) > 40 ? 'var(--bad)' : undefined }}>{String(m.pct).replace('.', ',')}%</b></div></li>
+        ))}</ul>
+        {N(fc.revenue_no_recipe) > 0 && <span className="small muted">Penjualan {rp(fc.revenue_no_recipe)} dari menu tanpa resep belum dihitung.</span>}
+      </Widget>
+    ) },
+    { id: 'bahan', title: 'Bahan menipis', size: 'normal', node: bahan && bahan.length > 0 && (
+      <Widget title={T.kul ? 'Bahan baku menipis' : 'Bahan menipis'} action={<Link href="/barang">Stok</Link>}>
+        <ul className="alerts">{bahan.slice(0, 6).map((p) => <li key={p.id}><div><span className="alerts-t small">{p.name}</span><span className="small" style={{ whiteSpace: 'nowrap', color: 'var(--bad)' }}>{angka(p.stock)} / min {angka(p.min_stock)} {p.base_unit}</span></div></li>)}</ul>
+        {has('/belanja') && <Link href="/belanja?baru=1" className="small">Belanja bahan →</Link>}
+      </Widget>
+    ) },
     { id: 'terlambat', title: 'Terlambat', size: 'normal', node: lateL.length > 0 && <List title="Terlambat" rows={lateL} tone="bad" /> },
     { id: 'hariini', title: 'Harus selesai hari ini', size: 'normal', node: dueToday.length > 0 && <List title="Harus selesai hari ini" rows={dueToday} /> },
     { id: 'jemput', title: 'Perlu dijemput', size: 'normal', node: jp && jemput.length > 0 && <List title="Perlu dijemput" rows={jemput} /> },
@@ -145,9 +197,9 @@ export default function JasaHome() {
   ];
 
   return (
-    <Dashboard id="jasa" kosId={kosId} widgets={widgets} header={(atur) => <>
+    <Dashboard id="jasa" kosId={kosId} widgets={widgets} prefs={prefs} kpis={KPIS.jasa.map(([id, label]) => ({ id, label }))} period={d.money} header={(atur, periode) => <>
       <PageHeader title="Dashboard" help={<PageHelp page="jasa" />} desc={`${T.kul ? 'Ringkasan dapur & pesanan' : 'Ringkasan pesanan'} ${kos.name} · ${tgl(t)}`}
-        actions={<>{atur}{d.money && <Link href="/pesanan?baru=1"><button className="primary">+ Pesanan baru</button></Link>}</>} />
+        actions={<>{periode}{atur}{d.money && <Link href="/pesanan?baru=1"><button className="primary">+ Pesanan baru</button></Link>}</>} />
       <CrmHint />
       <RecHint />
     </>} />

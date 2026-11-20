@@ -27,6 +27,7 @@ const OTHER = {
 export default function Kas() {
   const { kos, kosId, ver } = useKos();
   const [tab, setTab] = useState('kas');
+  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['kas', 'kasbon', 'utang'].includes(t)) setTab(t); } catch {} }, []); // tautan dari dashboard
   const [q, setQ] = useState('');
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);

@@ -1503,3 +1503,8 @@ li.void .dt-card{opacity:.7}
 .bec-row .bec-star.on{color:#B45309}
 .bec-list a.sm,.bec-actions a.sm{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:var(--radius-md);text-decoration:none;color:var(--fg);font-size:13px;font-weight:600;background:var(--surface)}
 .bec-bnav{font-size:11px}
+/* Dashboard adaptif (Fase 3): pemilih periode & denyut bisnis */
+.dash-period{flex-wrap:nowrap}
+.dash-period button{min-height:34px;padding:4px 10px;font-size:13px;white-space:nowrap}
+.pulse{border-left:3px solid var(--gold)}
+.pulse .alerts-t{font-size:14px}

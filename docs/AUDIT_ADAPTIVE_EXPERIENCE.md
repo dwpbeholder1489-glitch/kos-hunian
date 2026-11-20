@@ -140,3 +140,17 @@ Aturan yang dijaga: tidak menghapus fitur, tidak mengubah logika transaksi/keuan
 | Panduan (Langkah 109–112, `lib/guide.js`) | Selesai | |
 
 Belum (fase berikutnya): KPI pilihan & periode bawaan dashboard, widget khusus subkategori (ukuran/warna fashion, garansi elektronik), workflow registry & alur bersyarat, ringkasan multi-bisnis lanjutan, integration registry, analitik pemakaian fitur di server, UI Super Admin untuk mengubah DNA bawaan kategori (RPC `admin_biz_category_dna` sudah ada). Hospitality memakai mesin Properti (tarif harian & housekeeping belum).
+
+## 15. Hasil Fase 3 — Adaptive Dashboard (21 Nov 2026)
+
+| Bagian | Status | Bukti |
+|---|---|---|
+| Periode Hari ini / 7 hari / Bulan ini + periode bawaan per dashboard | Verified | uji B `adaptive_dashboard.sql`; render |
+| Angka utama (KPI) dari katalog, rekomendasi dari Business DNA, dipilih & diurutkan pemilik (server, berversi) | Verified | uji B; render Atur dashboard |
+| Denyut bisnis (dibanding rata-rata 30 hari, aturan ±15%) toko/jasa/kuliner/kos | Verified (render) | |
+| Sinyal bisnis baru: piutang lewat tempo, harga modal naik (`cost_changes`), barang tidak bergerak, food cost > 40%, bahan menipis, ketepatan waktu < 80% | Verified | uji A, C |
+| Widget per karakter: toko (piutang pelanggan, harga modal berubah, barang tidak bergerak), kuliner (food cost per menu, bahan menipis), kos (kamar kosong, booking aktif, jatuh tempo, pembayaran per periode) | Verified (render) | |
+| Konstruksi: RAB, Material, Tenaga kerja; Progres rata-rata & Realisasi vs RAB (`bb_home` avg/ratio) | Verified | uji D (70%, Rp215 jt / Rp320 jt = 67,2%) + uji G template konsisten |
+| Kegagalan satu widget tidak menggagalkan dashboard | Verified (kode) | `WidgetBoundary` |
+
+Belum / jujur: nomor seri & garansi elektronik (belum ada data di mesin Retail), kinerja shift kuliner (kuliner tidak memakai shift kasir), stok per ukuran/warna sebagai widget khusus (varian sudah ada di Barang; widget menyusul), Realisasi vs RAB per proyek di dashboard (tersedia sebagai laporan per proyek).
