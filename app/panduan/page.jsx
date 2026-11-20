@@ -18,7 +18,7 @@ const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</spa
 
 // Menu toko (Retail & Grosir)
 const MENUS_TOKO = [
-  ['Toko', 'Ringkasan hari ini: penjualan, laba kotor, stok menipis'],
+  ['Dashboard toko', 'Penjualan & laba hari ini, bulan ini vs bulan lalu, tren harian, barang terlaris, transaksi terakhir, perlu perhatian, stok menipis'],
   ['Kasir', 'Jual eceran/grosir, tombol barang cepat, scan barcode, struk'],
   ['Penjualan & Shift kasir', 'Riwayat transaksi, retur, batal; buka/tutup laci'],
   ['Belanja', 'Pesan ke supplier, terima barang, retur ke supplier, utang supplier'],
@@ -155,6 +155,8 @@ const PARTS = [
       <>Kotak <b>🔧 keluhan</b> muncul bila ada keluhan/perbaikan yang belum selesai.</>,
       <><b>Hunian</b> = kamar terisi dibanding kamar yang bisa disewakan.</>,
       <><b>Tunggakan</b> dan daftar <b>penghuni menunggak</b> untuk ditindaklanjuti.</>,
+      <>Grafik <b>Tagihan vs terkumpul</b> 6 bulan, <b>Perlu perhatian</b>, <b>Jatuh tempo 7 hari</b>, <b>Status kamar</b>, <b>Aktivitas terbaru</b>, dan <b>Aksi cepat</b>. Di laptop bagian-bagian ini tersusun dalam beberapa kolom; di HP satu kolom.</>,
+      <>Tekan <b>Atur dashboard</b> untuk menyembunyikan bagian yang tidak dipakai atau mengubah urutannya (centang / ↑ ↓). Pilihan disimpan di perangkat itu saja; <b>Kembalikan bawaan</b> mengembalikan susunan awal. Dashboard Toko, Jasa/Kuliner, dan bisnis kustom memakai cara yang sama.</>,
     ], 'Kas bersih bukan laba. Untuk laba yang benar, lihat Laporan.', null, <ScrDashboard />],
     ['Laporan bulanan', 'Laporan', [
       <>Pilih bulan dengan tombol <b>‹ ›</b>.</>,
@@ -274,6 +276,7 @@ const PARTS = [
       <><b>Laba rugi</b>: penjualan − modal barang terjual = laba kotor, lalu dikurangi biaya operasional dan selisih stok = <b>laba bersih</b>. Prive dan belanja barang tidak mengurangi laba.</>,
       <><b>Produk</b>: pilih <b>Terlaris</b> atau <b>Paling untung</b>. Bagian <b>Tidak laku</b> menunjukkan barang berstok yang tidak terjual bulan itu.</>,
       <>Paket Dasar ke atas: <b>Unduh Excel</b> dan <b>Cetak / PDF</b>.</>,
+      <><b>Dashboard toko</b> (Beranda) meringkas angka yang sama setiap hari: penjualan & laba kotor hari ini, penjualan bulan ini dibanding bulan lalu penuh, grafik penjualan harian, barang terlaris, transaksi terakhir, <b>Perlu perhatian</b> (stok di bawah minimum, barang tanpa harga modal, belanja menunggu diterima), dan <b>Aksi cepat</b>. Grafik & barang terlaris hanya tampil untuk pemilik/pengelola keuangan. <b>Atur dashboard</b> menyembunyikan atau mengurutkan bagian (disimpan di perangkat itu).</>,
       <>Bila PPN aktif: bagian <b>PPN keluaran</b> menunjukkan penjualan kena PPN (DPP), PPN dari penjualan, PPN retur, dan <b>PPN keluaran bersih</b> bulan itu. Penjualan & laba di laporan sudah <b>tanpa PPN</b> (PPN bukan pendapatan toko).</>,
     ], <>Kalau muncul peringatan harga modal kosong, isi modalnya di Barang & stok — tanpa modal, laba barang itu terlihat terlalu tinggi.</>, null, null],
   ]],

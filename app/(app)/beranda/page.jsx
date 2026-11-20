@@ -10,12 +10,18 @@ import CrmHint from '@/components/CrmHint';
 import { rp, tgl, today, thisMonth, bulan, invTitle } from '@/lib/format';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { moduleOn } from '@/lib/business';
+import { moduleOn, tabsFor } from '@/lib/business';
+import { PageHeader } from '@/components/Page';
+import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity } from '@/components/Dashboard';
+import { CompareBars } from '@/components/Charts';
+import { quickActions } from '@/lib/menu';
+import { addMonthsYm, BLN } from '@/lib/format';
 
 export default function Beranda() {
   const d = useData();
   const { kos, kosId, ver } = useKos();
   const [tix, setTix] = useState(null); // keluhan belum selesai
+  const act = useActivity(kosId, ver);
   useEffect(() => {
     if (!kosId || !moduleOn(kos, 'p_perbaikan')) return;
     supabase.from('maint_tickets').select('id,priority,source,status').eq('kos_id', kosId).in('status', ['baru', 'dikerjakan', 'menunggu']).then(({ data }) => setTix(data || null));
@@ -55,35 +61,45 @@ export default function Beranda() {
     return <Empty title="Belum ada kamar" text="Tambahkan kamar dulu supaya bisa mencatat penghuni dan tagihan."><Link href="/kamar"><button className="primary">Ke halaman Kamar</button></Link></Empty>;
   }
 
-  return (
-    <div className="stack">
-      <Checklist d={d} kosId={kosId} />
-      <div className="row"><h2>Ringkasan {bulan(ym)}</h2><PageHelp page="beranda" /></div>
-      <CrmHint />
-      <RecHint />
+  // tren 6 bulan: tagihan terbit (jatuh tempo di bulan itu) vs pembayaran terverifikasi di bulan itu — sumber sama dengan kotak Tagihan bulan ini
+  const trend = Array.from({ length: 6 }, (_, i) => {
+    const m = addMonthsYm(ym, i - 5);
+    return { key: m, label: bulan(m), short: BLN[Number(m.slice(5, 7)) - 1], a: live.filter((x) => x.due_date.startsWith(m)).reduce((s2, x) => s2 + x.amount, 0), b: d.payments.filter((p) => p.status === 'terverifikasi' && p.paid_at.startsWith(m)).reduce((s2, p) => s2 + p.amount, 0) };
+  });
+  const roomSt = [['terisi', 'Terisi'], ['tersedia', 'Kosong (siap disewa)'], ['perbaikan', 'Perbaikan'], ['tidak_disewakan', 'Tidak disewakan']].map(([k, l]) => [l, d.rooms.filter((r) => r.status === k).length, k]).filter(([, n]) => n > 0);
+  const has = (h) => tabsFor(kos).some(([x]) => x === h);
+  const highTix = (tix || []).some((x) => x.priority === 'tinggi');
+  const newTix = (tix || []).filter((x) => x.status === 'baru' && x.source === 'penghuni').length;
+  const alerts = [
+    overdue.length > 0 && { tone: 'bad', text: `${overdue.length} tagihan lewat jatuh tempo · ${rp(arrears)}`, href: '/tagihan' },
+    pending.length > 0 && { tone: 'info', text: `${pending.length} pembayaran menunggu verifikasi`, href: '/pembayaran' },
+    tix && tix.length > 0 && { tone: highTix ? 'bad' : 'warn', text: `${tix.length} keluhan/perbaikan belum selesai${newTix ? ` · ${newTix} baru dari penghuni` : ''}`, href: '/perbaikan' },
+    checkins.some((b) => b.check_in < t) && { tone: 'warn', text: 'Ada booking yang tanggal masuknya terlewat', href: '/booking' },
+    upcoming.length > 0 && { tone: 'info', text: `${upcoming.length} tagihan jatuh tempo dalam 7 hari`, href: '/tagihan' },
+  ].filter(Boolean);
+
+  const widgets = [
+    { id: 'kpi', title: 'Angka utama', size: 'full', node: (
       <div className="grid">
         <Tile tone="hero" label="Kas bersih bulan ini" value={rp(cashIn + entIn + depInCash + bkIn - cashOut - entOut - depOut - bkOut)} sub={`Masuk ${rp(cashIn + entIn + depInCash + bkIn)} · keluar ${rp(cashOut + entOut + depOut + bkOut)}${depInCash || depOut || bkIn || bkOut ? ' (termasuk deposit/DP)' : ''}`} />
         <Tile label="Hunian" value={`${occ}%`} sub={`${filled} dari ${rentable.length} kamar terisi`} />
+        <Tile label="Penghuni aktif" value={String(d.activeByOcc.size)} sub={`${d.rooms.length} kamar terdaftar`} />
         <Tile label="Tagihan bulan ini" value={rp(billedMonth)} sub={`Terkumpul ${rp(collected)}`} />
         <Tile tone={arrears > 0 ? 'bad' : ''} label="Tunggakan" value={rp(arrears)} sub={`${overdue.length} tagihan lewat jatuh tempo`} />
       </div>
-
-      {tix && tix.length > 0 && (
-        <Link href="/perbaikan" className={'notice ' + (tix.some((x) => x.priority === 'tinggi') ? 'bad' : 'info')} style={{ textDecoration: 'none' }}>
-          🔧 {tix.length} keluhan/perbaikan belum selesai{tix.filter((x) => x.status === 'baru' && x.source === 'penghuni').length ? ` · ${tix.filter((x) => x.status === 'baru' && x.source === 'penghuni').length} baru dari penghuni` : ''} →
-        </Link>
-      )}
-      {pending.length > 0 && (
-        <Link href="/pembayaran" className="notice info" style={{ textDecoration: 'none' }}>
-          {pending.length} pembayaran menunggu verifikasi →
-        </Link>
-      )}
-
-      <section className="panel">
-        <div className="row between"><h3>Penghuni menunggak</h3><Link href="/tagihan" className="small">Semua tagihan</Link></div>
+    ) },
+    { id: 'tren', title: 'Tagihan vs terkumpul', size: 'wide', node: (
+      <Widget title="Tagihan vs terkumpul · 6 bulan" action={has('/laporan') && <Link href="/laporan">Laporan</Link>}>
+        <CompareBars data={trend} a="Tagihan terbit" b="Terkumpul" title="Tagihan dan pembayaran 6 bulan terakhir" />
+        <span className="small muted">Terkumpul = pembayaran terverifikasi pada bulan itu (termasuk yang dibayar dari deposit).</span>
+      </Widget>
+    ) },
+    { id: 'perhatian', title: 'Perlu perhatian', size: 'normal', node: <Widget title="Perlu perhatian"><Alerts items={alerts} /></Widget> },
+    { id: 'menunggak', title: 'Penghuni menunggak', size: 'normal', node: (
+      <Widget title="Penghuni menunggak" action={<Link href="/tagihan">Semua tagihan</Link>}>
         {debtors.length === 0 ? <p className="muted small" style={{ margin: 0 }}>Tidak ada tunggakan. Mantap.</p> : (
           <div className="list">
-            {debtors.map(([oid, amt]) => {
+            {debtors.slice(0, 8).map(([oid, amt]) => {
               const l = d.activeByOcc.get(oid);
               return (
                 <div className="li" key={oid}>
@@ -92,24 +108,13 @@ export default function Beranda() {
                 </div>
               );
             })}
+            {debtors.length > 8 && <Link href="/tagihan" className="small">+{debtors.length - 8} penghuni lagi →</Link>}
           </div>
         )}
-      </section>
-
-      {checkins.length > 0 && (
-        <section className="panel">
-          <h3>Booking: jadwal masuk</h3>
-          <div className="list">{checkins.map((b) => (
-            <Link key={b.id} href="/booking" className="li" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div className="main"><b>{b.name} · {d.roomCode(b.room_id)}</b><span className="small muted">masuk {tgl(b.check_in)}{b.dp_amount > 0 ? ` · DP ${rp(b.dp_amount)}` : ''}</span></div>
-              <span className={'chip ' + (b.check_in < today() ? 'bad' : 'gold')}>{b.check_in < today() ? 'Terlewat' : b.check_in === today() ? 'Hari ini' : 'Segera'}</span>
-            </Link>
-          ))}</div>
-        </section>
-      )}
-
-      <section className="panel">
-        <h3>Jatuh tempo 7 hari ke depan</h3>
+      </Widget>
+    ) },
+    { id: 'jatuhtempo', title: 'Jatuh tempo 7 hari', size: 'normal', node: (
+      <Widget title="Jatuh tempo 7 hari ke depan">
         {upcoming.length === 0 ? <p className="muted small" style={{ margin: 0 }}>Tidak ada.</p> : (
           <div className="list">
             {upcoming.map((i) => (
@@ -120,7 +125,35 @@ export default function Beranda() {
             ))}
           </div>
         )}
-      </section>
-    </div>
+      </Widget>
+    ) },
+    { id: 'booking', title: 'Booking: jadwal masuk', size: 'normal', node: checkins.length > 0 && (
+      <Widget title="Booking: jadwal masuk" action={<Link href="/booking">Booking</Link>}>
+        <div className="list">{checkins.map((b) => (
+          <Link key={b.id} href="/booking" className="li" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="main"><b>{b.name} · {d.roomCode(b.room_id)}</b><span className="small muted">masuk {tgl(b.check_in)}{b.dp_amount > 0 ? ` · DP ${rp(b.dp_amount)}` : ''}</span></div>
+            <span className={'chip ' + (b.check_in < today() ? 'bad' : 'gold')}>{b.check_in < today() ? 'Terlewat' : b.check_in === today() ? 'Hari ini' : 'Segera'}</span>
+          </Link>
+        ))}</div>
+      </Widget>
+    ) },
+    { id: 'kamar', title: 'Status kamar', size: 'normal', node: (
+      <Widget title="Status kamar" action={has('/kamar') && <Link href="/kamar">Peta kamar</Link>}>
+        <div className="list">{roomSt.map(([l, n, k]) => <div className="li" key={k}><span className="small"><span className={'dot ' + k} style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 8 }} />{l}</span><b className="small">{n}</b></div>)}</div>
+      </Widget>
+    ) },
+    { id: 'aktivitas', title: 'Aktivitas terbaru', size: 'normal', node: act !== null && (
+      <Widget title="Aktivitas terbaru" action={has('/aktivitas') && <Link href="/aktivitas">Riwayat</Link>}>{act === undefined ? <Loading rows={3} /> : <ActivityList rows={act} />}</Widget>
+    ) },
+    { id: 'aksi', title: 'Aksi cepat', size: 'normal', node: quickActions(kos).length > 0 && <Widget title="Aksi cepat"><QuickActions kos={kos} /></Widget> },
+  ];
+
+  return (
+    <Dashboard id="kos" kosId={kosId} widgets={widgets} header={(atur) => <>
+      <Checklist d={d} kosId={kosId} />
+      <PageHeader title={`Ringkasan ${bulan(ym)}`} help={<PageHelp page="beranda" />} desc={`${kos.name} · kas, hunian, tagihan, dan tindak lanjut`} actions={atur} />
+      <CrmHint />
+      <RecHint />
+    </>} />
   );
 }
