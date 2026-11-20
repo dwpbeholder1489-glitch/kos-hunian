@@ -61,6 +61,7 @@ const MENUS = [
   ['Persetujuan', 'Permintaan tindakan berisiko dari karyawan & otomatisasi; aturan & tingkat persetujuan'],
   ['Otomatisasi', 'Pekerjaan rutin setiap pagi: stok menipis, kasbon, tagihan telat, ringkasan bulanan/mingguan, penjualan turun, anggaran'],
   ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
+  ['Pusat Pengalaman', 'Profil bisnis (Business DNA), fitur & rekomendasi beralasan, atur menu, tombol (+) & dashboard, tahap bisnis, pulihkan pengaturan'],
   ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, rekonsiliasi bank & anggaran (Paket Bisnis)'],
   ['Analisis bisnis', 'Bulan ini vs lalu; tren 12 bulan (Paket Bisnis); perbandingan cabang & tahun lalu (Paket Pro)'],
   ['Riwayat aktivitas', 'Siapa melakukan apa & kapan: penjualan, pembatalan, stok, pembayaran, tagihan, pesanan'],
@@ -73,7 +74,7 @@ const PARTS = [
       <>Buka <b>{SITE_HOST}</b>, tekan <b>Mulai Sekarang</b>. Isi <b>nama lengkap</b>, <b>email aktif</b>, <b>nomor WhatsApp</b>, dan <b>kata sandi</b> (minimal 8 karakter, berisi huruf dan angka — tombol <b>Lihat</b> menampilkan ketikan Anda), ulangi kata sandi, centang persetujuan Syarat & Privasi, lalu <b>Buat akun</b>.</>,
       <>Buka email dari PRASARA dan ketuk <b>tautan verifikasi</b>. Belum masuk? Di layar <b>Cek email Anda</b> tekan <b>Kirim ulang email verifikasi</b> (bisa setelah 60 detik). Akun belum aktif sebelum diverifikasi.</>,
       <>Setelah verifikasi muncul sambutan <b>Selamat datang di PRASARA</b> → <b>Daftarkan Bisnis Saya</b>. Di <b>Apa jenis bisnis yang Anda miliki atau kelola?</b> pilih satu atau lebih kategori (mis. Properti & Hunian, Retail, Laundry), lalu <b>Lanjut</b>.</>,
-      <>Untuk tiap bisnis, formulir dibagi <b>4 bagian pendek</b>: <b>Identitas</b> (nama, jenis usaha, deskripsi), <b>Operasional</b> (alamat, nomor kontak, jam buka, status bisnis), <b>Pengelolaan</b> (nama pemilik, peran Anda, dikelola sendiri atau bersama tim), dan <b>Kebutuhan</b> (apa saja yang ingin dikelola + pertanyaan singkat, mis. kos: jumlah kamar). Tiap isian diberi tanda <b>Wajib</b>, <b>Opsional</b>, atau <b>Bisa nanti</b>. Isian tersimpan otomatis di akun Anda (di server), jadi bisa dilanjutkan dari HP atau laptop mana pun — bila terputus, buka lagi dan lanjutkan.</>,
+      <>Untuk tiap bisnis, formulir dibagi <b>5 bagian pendek</b>: <b>Identitas</b> (nama, jenis usaha, deskripsi), <b>Operasional</b> (alamat, nomor kontak, jam buka, status bisnis), <b>Pengelolaan</b> (nama pemilik, peran Anda, dikelola sendiri atau bersama tim), <b>Kebutuhan</b> (apa saja yang ingin dikelola + pertanyaan singkat, mis. kos: jumlah kamar), dan <b>Karakter bisnis</b> (model bisnis, sumber pendapatan, karakter operasional, kanal, skala — sudah terisi dari jenis usaha, tinggal disesuaikan; menentukan menu, dashboard & tombol (+), lihat Langkah 110). Tiap isian diberi tanda <b>Wajib</b>, <b>Opsional</b>, atau <b>Bisa nanti</b>. Isian tersimpan otomatis di akun Anda (di server), jadi bisa dilanjutkan dari HP atau laptop mana pun — bila terputus, buka lagi dan lanjutkan.</>,
       <>Di <b>Ringkasan</b> periksa semua isian (tekan <b>Ubah</b> di baris yang ingin diperbaiki), lalu <b>Buat draf bisnis</b>. Tiap bisnis dibuat terpisah sebagai <b>draf</b> — lanjutkan di <b>Pusat Konfirmasi</b> (Langkah 64) untuk melengkapi & mengaktifkannya. Alamat, kontak, dan jam buka yang sudah diisi tidak perlu diketik ulang.</>,
       <>Setelah bisnis aktif, Beranda menampilkan <b>Persiapan bisnis</b>: lengkapi profil, periksa modul, masukkan barang/layanan/kamar, atur cara pembayaran, tambah karyawan (opsional), dan catat transaksi pertama. Tekan <b>Kerjakan</b> untuk langsung ke halamannya, <b>Nanti</b> untuk melewati dulu, atau <b>Sembunyikan daftar ini</b>. Daftar yang sama selalu ada di Pusat Konfirmasi.</>,
     ], <>Karyawan tidak membuat bisnis baru: pilih <b>Saya karyawan…</b> dan minta pemilik mengundang email Anda di menu Karyawan. Tidak menerima email verifikasi? Periksa folder Spam atau Promosi, lalu kirim ulang. <b>Lupa kata sandi?</b> Di halaman Masuk tekan <b>Lupa kata sandi?</b>, isi email, buka tautan yang dikirim, lalu buat kata sandi baru. Nama & nomor WhatsApp bisa diubah di <b>Akun › Profil Anda</b>.</>, null, <ScrSignup />],
@@ -227,7 +228,7 @@ const PARTS = [
       <>Di <b>Pengaturan email</b>, pilih yang ingin diterima: daftar tagih setiap pagi, <b>ringkasan mingguan</b> (Senin), dan <b>ringkasan bulanan</b> (tanggal 1).</>,
       <>Tekan <b>Kirim contoh ringkasan</b> untuk melihat isinya di email Anda.</>,
     ], <>Ringkasan bulanan menyala otomatis, ringkasan mingguan mati sampai Anda menyalakannya. Semua angka berasal dari data yang Anda catat — sama dengan menu Laporan.</>, null, null],
-    ['Banyak bisnis & Ringkasan pemilik', 'Operasional › Ringkasan pemilik', [
+    ['Banyak bisnis & Ringkasan pemilik', 'Menu ☰ › Ringkasan pemilik', [
       <>Tekan <b>+ Tambah bisnis</b> (atau ketuk nama bisnis di kiri atas › Tambah bisnis), pilih jenisnya, isi nama, tinjau modul, lalu <b>Setujui & buat bisnis</b>.</>,
       <>Jika punya lebih dari satu bisnis, aplikasi dibuka di <b>Ringkasan pemilik</b>: hal yang <b>perlu perhatian</b> dari semua bisnis, lalu angka tiap bisnis (pendapatan, biaya, laba, tunggakan/kasbon, utang, kas).</>,
       <>Ketuk angka mana pun untuk membuka <b>sumbernya</b> di bisnis itu (mis. Laporan atau Kas) dan melihat transaksinya. Ganti bulan dengan tombol ‹ ›.</>,
@@ -312,14 +313,14 @@ const PARTS = [
       <>Tekan <b>+</b> pada barang untuk jumlah label, lalu <b>Cetak</b> (printer biasa atau simpan PDF). Tempel di rak atau kemasan ulang.</>,
       <>Di Kasir, scan label itu dengan <b>📷 Pindai</b> atau scanner Bluetooth — barang langsung masuk keranjang.</>,
     ], <>Pertama kali memakai kamera, izinkan akses kamera untuk situs PRASARA. Coba scan satu label dulu sebelum mencetak banyak.</>, null, null],
-    ['Pusat konfigurasi', 'Operasional › Konfigurasi (pemilik & pengelola)', [
+    ['Pusat konfigurasi', 'Menu ☰ › Konfigurasi (pemilik & pengelola)', [
       <>Tab <b>Modul</b>: cari modul atau saring per jenis (Inti bisnis, Khusus industri, Operasional, Analisis, Otomatisasi, Portal, Administrasi). Statusnya: <b>Aktif</b>, <b>Tersedia</b>, <b>Disarankan</b> (dari jawaban profil usaha Anda — alasannya tertulis), <b>Perlu paket lebih tinggi</b>, atau <b>Dalam rencana</b> (belum bisa dipakai). Ketuk modul untuk melihat fungsi, menu, data, modul yang dibutuhkan, paket, dan tombol menuju pengaturannya.</>,
       <>Tekan <b>Aktifkan</b> atau <b>Nonaktifkan</b> (wajib alasan). Sebelum menonaktifkan, kotak <b>Dampak bila dinonaktifkan</b> menunjukkan menu yang disembunyikan, data yang tetap tersimpan, dan modul lain yang bergantung (harus dinonaktifkan dulu). Modul nonaktif: menunya hilang dan pemakaiannya ditolak server, tetapi <b>data lama tidak dihapus</b>.</>,
       <>Pengelola hanya bisa <b>meminta</b>; pemilik menyetujui di tab <b>Persetujuan</b>.</>,
       <>Tab <b>Profil</b>: kelompok bisnis, karakteristik usaha, dan <b>badan usaha</b> (perorangan, CV, PT…). Tab <b>Cabang & gudang</b>: daftar lokasi (khusus pemilik). Jumlah cabang mengikuti paket (Gratis/Dasar 1, Bisnis 3, Pro 10; lokasi utama ikut dihitung, gudang tidak). Bila penuh, muncul penawaran naik paket; setelah upgrade, formulir cabang baru langsung terbuka.</>,
       <>Tab <b>Riwayat</b>: semua perubahan — siapa, kapan, alasan, dan tingkat risikonya.</>,
     ], <>Modul inti (mis. Kasir, Barang, Tagihan) selalu aktif. Modul yang masih punya transaksi terbuka (shift belum ditutup, pesanan belum diterima) tidak bisa dinonaktifkan sebelum diselesaikan. Cabang & gudang saat ini dicatat sebagai struktur; stok per cabang segera hadir.</>, null, null],
-    ['Persetujuan', 'Operasional › Persetujuan', [
+    ['Persetujuan', 'Menu ☰ › Persetujuan', [
       <>Tindakan berisiko oleh karyawan — mis. <b>membatalkan penjualan</b>, <b>membatalkan belanja</b>, <b>membatalkan pelunasan</b>, <b>menghapus kontak</b>, <b>mengubah modul</b> — tidak langsung jalan. Karyawan menekan tombolnya, menulis alasan, lalu permintaan masuk ke sini.</>,
       <>Kasir bisa <b>meminta pembatalan</b> atau <b>meminta retur</b> untuk penjualannya sendiri dari menu Penjualan.</>,
       <>Pemilik membuka permintaan: terlihat <b>nomor</b>, siapa yang meminta, alasan, <b>data terdampak</b>, dan <b>estimasi nilai</b>. Tekan <b>Setujui & jalankan</b> atau <b>Tolak</b>.</>,
@@ -328,7 +329,7 @@ const PARTS = [
       <><b>Persetujuan bertingkat</b> (Paket Pro): di tab Aturan, pilih <b>2 tingkat (penyetuju lalu pemilik)</b> untuk sebuah tindakan dan, bila perlu, isi <b>Tingkat 2 mulai nominal</b> (mis. 500.000; kosong = selalu). Penyetuju tingkat 1 ditunjuk di menu Karyawan › Atur akses.</>,
       <>Penyetuju membuka permintaan karyawan lain di modulnya dan menekan <b>Setujui tingkat 1</b> (diteruskan ke pemilik) atau <b>Setujui & jalankan</b> bila cukup 1 tingkat. Setiap keputusan tercatat di <b>Riwayat keputusan</b>.</>,
     ], <>Pemilik selalu bisa langsung menjalankan tindakan tanpa persetujuan, di tingkat mana pun. Aturan bawaan: pembatalan penjualan/belanja/pelunasan, hapus kontak, dan ubah modul wajib disetujui; retur dan penyesuaian stok tidak. Peminta tidak bisa menyetujui permintaannya sendiri, dan perubahan modul selalu diputuskan pemilik.</>, null, <ScrPersetujuanTingkat />],
-    ['Otomatisasi', 'Operasional › Otomatisasi (pemilik)', [
+    ['Otomatisasi', 'Menu ☰ › Otomatisasi (pemilik)', [
       <>Pilih resep, baca <b>pemicu → syarat → tindakan</b>-nya, lalu tekan <b>Nyalakan</b>. Semua resep berjalan setiap pagi pukul 07.00.</>,
       <>Toko: <b>stok menipis → draf pesanan</b> ke supplier terakhir (menunggu persetujuan Anda), <b>kasbon jatuh tempo</b>, <b>utang supplier jatuh tempo</b>, <b>shift lupa ditutup</b>. Kos: <b>pembayaran menunggu diperiksa</b>, <b>tagihan telat</b>. Semua: <b>ringkasan awal bulan</b>.</>,
       <>Hasilnya muncul di <b>Pemberitahuan</b> (dan email untuk resep tertentu). Tekan <b>Jalankan sekarang</b> untuk mencoba.</>,
@@ -336,7 +337,7 @@ const PARTS = [
       <>Menyalakan resep tersedia mulai <b>Paket Bisnis</b> (bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa). Mematikan selalu bisa. Bila paket turun, resep yang menyala tidak dijalankan lagi sampai paket naik.</>,
       <>Jasa: <b>pesanan lewat janji selesai</b>. Resep bertanda <b>Pro</b> (Paket Pro): <b>penjualan turun</b> (7 hari terakhir dibanding 7 hari sebelumnya, paling banyak sekali seminggu), <b>biaya mendekati anggaran</b> (dari menu Anggaran), <b>sewa segera berakhir</b> (kos), dan <b>ringkasan mingguan</b> setiap Senin. Di Paket Pro Anda juga bisa memilih <b>hari jalan</b> (Sen–Min) tiap resep; kosong = setiap hari.</>,
     ], <>Otomatisasi tidak pernah mengubah data sendiri: tindakan yang mengubah data (mis. membuat pesanan) masuk ke Persetujuan. Paling banyak sekali sehari, tidak membuat pesanan ganda, dan dijeda otomatis setelah 3 kali gagal. WhatsApp otomatis belum tersedia — pesan WA disiapkan untuk dikirim dengan satu ketukan.</>, null, null],
-    ['Pembukuan', 'Operasional › Pembukuan (pemilik & pengelola)', [
+    ['Pembukuan', 'Menu ☰ › Pembukuan (pemilik & pengelola)', [
       <>Tidak perlu mencatat dua kali: setiap penjualan, retur, belanja, kas, kasbon/utang, perubahan stok, pengeluaran, dan pembayaran sewa yang terverifikasi otomatis menjadi <b>jurnal</b> (debit & kredit seimbang). Jurnal diposting saat halaman dibuka dan setiap pagi.</>,
       <>Tab <b>Laporan</b>: <b>Laba rugi</b> (pendapatan, HPP, beban) untuk bulan terpilih atau sejak awal tahun, dan <b>Neraca</b> (aset = kewajiban + ekuitas) per akhir bulan. Kotak di atasnya menunjukkan cakupan, waktu dibuat, basis pencatatan, dan status <b>Lengkap/Belum lengkap</b> beserta sebabnya.</>,
       <>Toko: <b>Cek kecocokan</b> membandingkan saldo buku dengan menu Kas, kasbon, utang, dan nilai stok. Selisih ditampilkan, tidak diubah diam-diam.</>,
@@ -350,7 +351,7 @@ const PARTS = [
       <>Bulan baru: tekan <b>Salin anggaran</b> bulan lalu, atau <b>Pakai Rp …</b> untuk memakai realisasi bulan lalu sebagai anggaran. Kosongkan isian untuk menghapus. Di paket lain menu ini tetap menampilkan pengeluaran per kategori.</>,
     ], <>Jurnal tidak bisa dihapus atau diubah. Bila penjualan/belanja dibatalkan atau diubah, sistem membuat <b>jurnal pembalikan/koreksi</b>; untuk bulan yang sudah ditutup, koreksinya dicatat di bulan berjalan. Kos dicatat saat uang diterima (basis kas), toko saat transaksi terjadi — gabungan berbeda basis hanya indikasi, bukan konsolidasi resmi. Pajak & penyusutan otomatis belum tersedia.</>, null, <><ScrRekonBank /><ScrAnggaran /></>],
     ['Stok per lokasi & mutasi', 'Konfigurasi › Cabang & gudang, lalu menu Mutasi stok (toko)', [
-      <>Pemilik membuka <b>Operasional › Mutasi stok</b> › <b>+ Tambah gudang / cabang</b> (atau Konfigurasi › Cabang & gudang › + Tambah). Lokasi yang sudah ada otomatis bernama <b>Lokasi utama</b> (boleh diganti namanya) dan semua stok lama ada di sana.</>,
+      <>Pemilik membuka <b>Menu ☰ › Mutasi stok</b> › <b>+ Tambah gudang / cabang</b> (atau Konfigurasi › Cabang & gudang › + Tambah). Lokasi yang sudah ada otomatis bernama <b>Lokasi utama</b> (boleh diganti namanya) dan semua stok lama ada di sana.</>,
       <>Begitu ada lebih dari satu lokasi, muncul kotak <b>📍 Lokasi kerja</b> di Kasir, Barang & stok, dan Belanja. Pilih lokasi tempat Anda bekerja: penjualan, belanja, hitung ulang stok, dan barang rusak tercatat di lokasi itu.</>,
       <>Barang & stok menampilkan stok <b>di sini</b> dan <b>total</b>; tombol <b>Stok</b> menunjukkan rincian per lokasi.</>,
       <>Memindahkan barang (mis. gudang → toko): buka <b>Mutasi stok</b>, pilih <b>Dari</b> dan <b>Ke</b>, cari barang, isi jumlah, lalu <b>Pindahkan</b>. Riwayat mutasi mencatat nomor, asal–tujuan, waktu, dan siapa.</>,
@@ -371,13 +372,13 @@ const PARTS = [
       <>Ketik nama bisnis persis sama, tulis alasan, lalu tekan <b>Tutup bisnis</b>.</>,
       <>Bisnis yang ditutup menampilkan pita merah di semua halaman. Pemilik bisa menekan <b>Buka kembali</b> kapan saja (alasan wajib).</>,
     ], <>Menutup bisnis tidak menghapus data apa pun: transaksi, laporan, dan pembukuan tetap bisa dilihat dan diunduh. Selama ditutup, semua orang (termasuk pemilik) tidak bisa mencatat apa pun, otomatisasi dimatikan, dan email harian/ringkasan untuk bisnis itu berhenti. Foto bukti transfer tidak ikut dalam file Excel/PDF.</>, null, null],
-    ['Prospek & tindak lanjut', 'Operasional › Prospek & tindak lanjut (toko) / Calon penghuni (kos)', [
+    ['Prospek & tindak lanjut', 'Menu ☰ › Prospek & tindak lanjut (toko) / Calon penghuni (kos)', [
       <>Ada yang bertanya atau tertarik? Tekan <b>+ Prospek baru</b>: isi nama, No. HP, kebutuhan (mis. "ambil beras 5 karung/minggu" atau "kamar mandi dalam"), dari mana tahunya, dan perkiraan nilai bila ada.</>,
       <>Ikuti tahapannya: <b>Baru → Dihubungi → Penawaran → Jadi</b> atau <b>Tidak jadi</b> (alasan wajib). Prospek toko yang <b>Jadi</b> otomatis masuk daftar pelanggan — dicocokkan lewat No. HP, bukan nama.</>,
       <>Di setiap prospek: tulis <b>catatan</b> (WA, telepon, kunjungan, keluhan) dan <b>jadwalkan tindak lanjut</b> (Besok / 3 hari / 1 minggu). Pelanggan lama juga bisa diberi catatan & tindak lanjut dari menu Pelanggan & supplier.</>,
       <>Tab <b>Tindak lanjut</b> berisi semua jadwal; yang jatuh hari ini atau terlewat berwarna merah dan muncul sebagai kotak <b>📞</b> di dashboard. Tekan <b>Kirim WA</b> lalu <b>Selesai</b>.</>,
     ], <>Angka "Jadi (90 hari)" = prospek jadi ÷ (jadi + tidak jadi) yang ditutup 90 hari terakhir. Catatan tidak bisa dihapus agar riwayat utuh. Simpan seperlunya saja (nama, No. HP, kebutuhan); jangan mencatat data pribadi sensitif. Kasir dan penjaga juga bisa memakai menu ini.</>, null, null],
-    ['Halaman bisnis untuk pelanggan', 'Operasional › Halaman bisnis (pemilik)', [
+    ['Halaman bisnis untuk pelanggan', 'Menu ☰ › Halaman bisnis (pemilik)', [
       <><b>Portal bisnis tersedia di Paket Pro</b> (sesuai paket harga): menerbitkan halaman, katalog, formulir permintaan, pendaftaran penghuni & pesanan online, QR per meja, dan reservasi online. Bisnis yang dibuat sebelum 14 Nov 2026 tetap bisa. Di paket lain isi halaman tetap bisa disiapkan dan <b>Simpan saja</b>; tombol <b>Lihat Paket Pro</b> menampilkan penawarannya. Bila paket turun, halaman disembunyikan otomatis keesokan harinya — isinya tidak hilang.</>,
       <>Unggah <b>Logo</b> (gambar persegi; dikecilkan otomatis). Isi <b>alamat halaman</b> (mis. toko-subur), kalimat singkat, tentang, alamat, jam buka, dan No. WhatsApp untuk pelanggan.</>,
       <>Pilih yang ditampilkan: toko — <b>barang cepat (★)</b> atau <b>semua barang aktif</b>; kos — <b>kamar yang tersedia</b>. Centang <b>Tampilkan harga jual</b> bila ingin harganya terlihat.</>,
@@ -391,7 +392,7 @@ const PARTS = [
     ], <>Yang TIDAK pernah tampil: harga modal, laba, stok persis (hanya Tersedia/Habis), data pelanggan, dan catatan staf. Permintaan bukan penjualan final dan tidak mengubah stok, kas, atau jurnal. Spam dibatasi otomatis (terlalu cepat/terlalu sering dari satu perangkat ditolak). Tekan <b>Sembunyikan halaman</b> kapan saja; bisnis yang ditutup otomatis tidak tampil. Tanpa Konfirmasi Anda, tidak ada booking/pesanan/penjualan yang dibuat. Pembayaran online belum tersedia.</>, null, null],
   ]],
   ['G', 'Jasa & Laundry', [
-    ['Buat bisnis laundry, atur layanan & tahap', 'Ketuk nama bisnis › + Tambah bisnis › Laundry & Jasa Rumah Tangga; lalu Operasional › Layanan & tahap', [
+    ['Buat bisnis laundry, atur layanan & tahap', 'Ketuk nama bisnis › + Tambah bisnis › Laundry & Jasa Rumah Tangga; lalu Menu ☰ › Layanan & tahap', [
       <>Pilih kategori <b>Laundry & Jasa Rumah Tangga</b> (subkategori Laundry), pilih layanan yang Anda sediakan, jam operasional, dan antar jemput. Lengkapi <b>harga & estimasi</b> tiap layanan dan wilayah/biaya/jadwal antar jemput di <b>Pusat Konfirmasi</b> (Langkah 64), lalu aktifkan.</>,
       <>Buka <b>Layanan & tahap</b>. Ketuk layanan untuk mengubah <b>harga per kg/pcs</b>, <b>minimal</b> (mis. 3 kg — 2 kg tetap dihitung 3 kg), <b>lama pengerjaan</b> (jam), <b>deskripsi</b>, <b>persyaratan</b> (mis. pakaian luntur dipisah), info tambahan, dan <b>Tersedia / Tidak tersedia sementara</b>. <b>+ Layanan</b> untuk menambah.</>,
       <>Di <b>Tahap proses</b>, ganti nama, urutkan dengan ↑ ↓, nonaktifkan, atau <b>+ Tahap</b>, lalu <b>Simpan tahap</b>.</>,
@@ -419,7 +420,7 @@ const PARTS = [
       <>Setelah beres: <b>Selesaikan</b> keluhan, tulis penyelesaian dan ganti rugi bila ada. Ganti rugi uang catat di <b>Kas › + Biaya</b> (kategori Ganti rugi pelanggan).</>,
       <><b>Batalkan pesanan</b> atau membatalkan catatan pembayaran (✕ di daftar pembayaran): alasan wajib dan, untuk karyawan, perlu <b>persetujuan</b> pemilik. Uang yang sudah dibayar dikembalikan lewat <b>Pengembalian uang</b>.</>,
     ], <>Pesanan yang sudah diserahkan tidak bisa dibatalkan. Bisnis tidak bisa ditutup selama masih ada pesanan belum selesai atau pesanan batal yang uangnya belum dikembalikan.</>, 'warn', null],
-    ['Bahan, kas & laporan jasa', 'Operasional › Bahan & stok · Kas · Laporan', [
+    ['Bahan, kas & laporan jasa', 'Menu ☰ › Bahan & stok · Kas · Laporan', [
       <><b>Bahan & stok</b>: daftar deterjen, pewangi, plastik, dll. Beli lewat <b>Belanja</b>; saat dipakai tekan <b>Stok</b> › <b>Pemakaian bahan</b> agar biaya bahan masuk laporan.</>,
       <><b>Kas</b>: saldo kas/bank (termasuk pembayaran pesanan), <b>+ Biaya</b> (listrik, gaji, gas), dan utang supplier. Sisa bayar pelanggan ada di Pesanan.</>,
       <><b>Laporan</b>: pendapatan per bulan, laba perkiraan (pendapatan − bahan − biaya), uang masuk, belum lunas, uang muka, per layanan, pelanggan teratas, ketepatan waktu, dan keluhan. <b>Unduh Excel</b> (Dasar ke atas).</>,
@@ -432,19 +433,19 @@ const PARTS = [
       <>Saat penghuni keluar: <b>Kembalikan</b> (sebagian atau semua), <b>Potong (kerusakan dll.)</b> dengan alasan, atau lunasi tunggakan lewat <b>Tagihan › Catat pembayaran › Metode: Dipotong dari deposit</b>.</>,
       <>Salah catat? Tekan <b>✕</b> di riwayat deposit dan tulis alasannya.</>,
     ], <>Deposit <b>bukan pendapatan</b>: dicatat sebagai titipan (utang ke penghuni) di Pembukuan. Potongan untuk kerusakan menjadi pendapatan lain; potongan untuk tunggakan menjadi pembayaran sewa tanpa uang masuk baru. Mengembalikan, memotong, dan membatalkan hanya bisa oleh pemilik/pengelola; penjaga bisa mencatat deposit diterima.</>, 'warn', <ScrDeposit />],
-    ['Keluhan & perbaikan', 'Operasional › Keluhan & perbaikan (atau Kamar › Catat keluhan)', [
+    ['Keluhan & perbaikan', 'Menu ☰ › Keluhan & perbaikan (atau Kamar › Catat keluhan)', [
       <>Tekan <b>+ Catat keluhan</b>: pilih kamar (atau area umum), jenis (listrik, air, bangunan, …), tulis masalahnya, prioritas, dan siapa yang menangani.</>,
       <>Kamar kosong yang rusak bisa <b>ditutup sementara</b> (status Perbaikan) agar tidak terisi; otomatis kembali Tersedia saat selesai.</>,
       <>Ikuti statusnya: <b>Mulai dikerjakan</b>, <b>Menunggu…</b> (bahan/tukang), lalu <b>Selesai</b> dengan apa yang dikerjakan dan biayanya — centang <b>Catat biaya di Pengeluaran</b> agar masuk laporan.</>,
       <>Penghuni (portal Pro) bisa melapor sendiri dari tab <b>Lapor kerusakan</b> dan melihat statusnya. Kabari penghuni dengan tombol <b>WA penghuni</b>.</>,
     ], <>Semua perubahan tercatat di <b>Riwayat</b> (siapa & kapan). Laporan dari portal dibatasi (maks 3 yang belum selesai per penghuni) agar tidak disalahgunakan. Penjaga bisa menutup keluhan, tetapi biaya hanya dicatat ke Pengeluaran oleh pemilik/pengelola.</>, null, <ScrPerbaikan />],
-    ['Meteran listrik & air', 'Operasional › Meteran listrik/air', [
+    ['Meteran listrik & air', 'Menu ☰ › Meteran listrik/air', [
       <>Pertama kali: tekan <b>+ Listrik (kWh)</b> atau <b>+ Air (m³)</b>, isi tarif per satuan dan tagihan minimal (bila ada).</>,
       <>Bulan pertama: isi angka meter tiap kamar sebagai <b>angka awal</b> (belum ditagih).</>,
       <>Bulan berikutnya: isi angka sekarang. Pemakaian dan tagihan tampil langsung (angka sekarang − bulan lalu × tarif). Isi jatuh tempo, lalu <b>Simpan & buat tagihan</b>.</>,
       <>Tagihan masuk ke <b>Tagihan</b> sebagai tagihan tambahan dan ikut pengingat WhatsApp/portal. Salah angka? Tekan <b>Batalkan</b> di kamar itu (tagihannya ikut batal bila belum dibayar), lalu isi ulang.</>,
     ], <>Kamar kosong tetap dicatat angkanya tetapi tidak ditagih. Angka lebih kecil dari bulan lalu ditolak — bila meteran diganti, centang <b>Meteran baru</b>. Listrik token/prabayar tidak perlu dicatat di sini.</>, null, <ScrMeteran />],
-    ['Booking kamar', 'Operasional › Booking kamar (atau Kamar › Booking kamar ini, Prospek › Buat booking)', [
+    ['Booking kamar', 'Menu ☰ › Booking kamar (atau Kamar › Booking kamar ini, Prospek › Buat booking)', [
       <>Tekan <b>+ Booking</b>: pilih kamar, isi nama & WhatsApp calon penghuni, <b>tanggal masuk</b>, sewa yang disepakati, lama sewa, dan batas konfirmasi (opsional).</>,
       <>Ada uang tanda jadi? Isi <b>DP</b> dan pilih masuk ke kas atau bank. Kirim <b>WA konfirmasi</b> ke calon penghuni.</>,
       <>Kamar yang dibooking ditandai <b>Dibooking</b> di Kamar, tidak bisa diisi orang lain, dan tidak tampil sebagai kamar kosong di halaman bisnis/portal. Kamar yang masih terisi boleh dibooking untuk tanggal setelah rencana selesai sewa penghuninya (isi di <b>Penghuni › ketuk nama › Rencana selesai › ubah</b>).</>,
@@ -490,7 +491,7 @@ const PARTS = [
       <>Catat biaya (gaji, sewa, bahan) di <b>Kas & biaya › + Biaya</b>; modal awal di <b>+ Uang masuk/keluar lain › Setor modal</b>.</>,
       <>Dashboard menampilkan <b>Uang masuk hari ini</b> (untuk pemilik/pengelola).</>,
     ], <>Bila catatan dipindah keluar dari status uang masuk (mis. dibatalkan) atau diarsipkan, uangnya tidak dihitung lagi. Template Bengkel & Salon sudah terisi (Biaya jasa saat Diambil, Harga saat Selesai). Petugas proses tidak melihat angka keuangan.</>, 'warn', null],
-    ['Isian tambahan di menu bawaan', 'Operasional › Konfigurasi › Isian tambahan', [
+    ['Isian tambahan di menu bawaan', 'Menu ☰ › Konfigurasi › Isian tambahan', [
       <>Untuk kos (Penghuni), toko & laundry (Barang/bahan, Pelanggan & supplier) dan laundry (Pesanan jasa): tekan <b>+ Isian</b>, isi nama (mis. Asal kampus, Merek, Ukuran), tipe, pilihan, wajib, dan batas angka.</>,
       <>Isian muncul di bagian <b>Isian tambahan</b> pada detail data (Penghuni › ketuk nama, Barang › ketuk barang, Pesanan › ketuk pesanan, Kontak). Tekan <b>Ubah</b> untuk mengisi.</>,
       <>Isian ikut terunduh di <b>Unduh semua data</b> (lembar Isian tambahan).</>,
@@ -513,7 +514,7 @@ const PARTS = [
     ], <>Selama draf, transaksi (pesanan, penjualan, tagihan) ditolak server. Harga, kapasitas, dan jumlah karyawan tidak pernah diisi otomatis. Yang tidak disetujui tidak diaktifkan. Setelah aktif, bagian yang Anda setujui di sini langsung diterapkan; semua keputusan tercatat di Konfigurasi › Riwayat. Belum siap? <b>Tunda setup</b> atau <b>Tolak draf</b> (datanya tetap tersimpan).</>, 'warn', <ScrKonfirmasi />],
   ]],
   ['L', 'Laundry lanjutan: antar jemput', [
-    ['Antar jemput: wilayah, jadwal & status', 'Operasional › Antar jemput', [
+    ['Antar jemput: wilayah, jadwal & status', 'Menu ☰ › Antar jemput', [
       <>Pemilik: buka tab <b>Wilayah & jadwal</b>. <b>+ Wilayah</b> untuk tiap kecamatan/perumahan yang dilayani beserta biayanya; <b>+ Jam</b> untuk pilihan jam (Jemput / Antar / keduanya) dan kapasitas per hari bila perlu. Isian dari Pusat Konfirmasi sudah terbawa.</>,
       <>Tab <b>Jemput</b>: daftar cucian yang harus dijemput, dikelompokkan <b>Terlewat / Hari ini / Besok / Belum dijadwalkan</b>. Ketuk <b>Peta</b> untuk membuka alamat, <b>WA</b> untuk mengabari pelanggan, <b>Jadwal</b> untuk mengatur tanggal & jam, lalu <b>Sudah dijemput</b>.</>,
       <>Tab <b>Antar</b>: pesanan siap yang harus diantar. Tekan <b>Berangkat antar</b> (status jadi <b>Dalam pengantaran</b>), lalu <b>Sudah diterima pelanggan</b> — pesanan selesai.</>,
@@ -541,7 +542,7 @@ const PARTS = [
       <><b>Dashboard</b> per jenis usaha, mis. Event: acara bulan ini, nilai kontrak, penawaran berjalan, acara 7 hari ke depan, tugas terlambat, daftar <b>Acara terdekat</b> & <b>Tugas persiapan</b>; Klinik: kunjungan hari ini, menunggu dilayani, jadwal hari ini; Bengkel: antre, dikerjakan, menunggu spare part, siap diambil. Semua dari catatan Anda sendiri.</>,
       <>Ingin menambah kolom atau mengganti status? Sesuaikan kapan saja di <b>Business Builder</b> (Langkah 55–62). Pilih <b>Organisasi & Lainnya › Usaha lain</b>? Buka Business Builder › <b>Mulai dari template siap pakai</b> dan pilih jenis usaha yang paling mirip. Template bisa diganti selama belum ada catatan.</>,
     ], <>Template hanya titik awal — semua bisa diubah, tidak ada data atau harga yang diisi otomatis. Fitur khusus per jenis (mis. jadwal kelas otomatis, rekam medis, pelacakan resi) belum ada; yang tersedia adalah pencatatan, alur status, peran, dan laporan dari Business Builder.</>, 'warn', null],
-    ['Kuliner: meja, tagihan per meja & reservasi', 'Operasional › Meja & reservasi', [
+    ['Kuliner: meja, tagihan per meja & reservasi', 'Menu ☰ › Meja & reservasi', [
       <>Tab <b>Meja</b>: semua meja tampil dengan status — <b>Kosong</b>, <b>Terisi</b>, <b>Siap saji</b>, <b>QR baru</b>, <b>Belum lunas</b>, atau <b>Dipesan 19.00</b> (reservasi). Ketuk meja untuk melihat pesanannya dan <b>+ Pesanan untuk Meja N</b> (meja langsung terpilih).</>,
       <>Menagih: <b>Bayar semua</b> (satu kali bayar untuk semua pesanan meja); <b>Bagi rata</b> — isi jumlah orang, tekan <b>Catat bayar 1 orang</b> untuk tiap orang (orang terakhir membayar sisanya); atau <b>Per item</b> — centang yang dimakan satu orang, lalu bayar, ulangi untuk orang berikutnya. Pilih cara bayar (tunai/transfer/QRIS) tiap kali.</>,
       <>Setelah tamu selesai: <b>Tutup meja</b> — semua pesanan meja yang sudah Siap diserahkan (pendapatan tercatat) dan meja kembali Kosong.</>,
@@ -558,7 +559,7 @@ const PARTS = [
     ], <>Kamar hanya bisa dipilih bila masih kosong di tanggal itu; nomor kontak darurat harus nomor orang lain. Bukti transfer bukan bukti sah sampai Anda cek mutasi — pembayaran hanya tercatat bila Anda mengisinya saat konfirmasi. Konfirmasi hanya bisa sekali (tidak ada penghuni/tagihan dobel). Foto bukti hanya bisa dibuka pemilik & bagian sewa.</>, 'warn', null],
   ]],
   ['O', 'Foto & media', [
-    ['Foto kamar, barang, layanan, cover & galeri', 'Operasional › Foto & media · Kamar/Barang/Layanan › + Foto · Halaman bisnis', [
+    ['Foto kamar, barang, layanan, cover & galeri', 'Menu ☰ › Foto & media · Kamar/Barang/Layanan › + Foto · Halaman bisnis', [
       <>Tempelkan foto langsung di datanya: <b>Kamar</b> › ketuk kamar › <b>+ Foto</b>; <b>Barang</b> › ubah barang › <b>+ Foto</b>; <b>Layanan/Menu</b> › ketuk layanan › <b>+ Foto</b>; <b>Halaman bisnis</b> › <b>Cover</b> (1 foto lebar) dan <b>Galeri</b> (maks 12).</>,
       <><b>+ Foto</b> › <b>Unggah foto baru</b> (📷 Kamera atau 🖼 Galeri, bisa beberapa sekaligus) atau <b>Pilih dari pustaka media</b> (foto yang sudah ada, tanpa unggah ulang). Sebelum menyimpan: pilih rasio (Asli, 1:1, 4:3, 3:4, 16:9), <b>↻ Putar</b>, dan geser posisi agar bagian penting tidak terpotong. Tekan <b>Simpan</b>; bila gagal, tekan Simpan lagi untuk mencoba ulang.</>,
       <>Foto pertama = <b>foto utama</b>: tampil kecil di daftar <b>Kamar</b>, <b>Barang</b>, tombol cepat & hasil cari <b>Kasir</b>, daftar <b>Layanan/Menu</b>, dan tombol pilihan saat <b>terima pesanan</b> — memudahkan mencari dengan cepat. Ketuk foto: <b>Jadikan utama</b>, <b>Ganti foto ini</b> (hanya di tempat ini), atau <b>Lepas</b> (file tetap di pustaka).</>,
@@ -612,7 +613,7 @@ const PARTS = [
     ], <>Atur <b>Waktu tunggu dari supplier</b> per barang di Barang › Ubah (kosong = 3 hari) dan <b>stok minimum</b> agar saran pas. Barang tanpa penjualan dan tanpa stok minimum tidak disarankan.</>, null, null],
   ]],
   ['T', 'SDM: absensi, jadwal shift & gaji', [
-    ['Data karyawan & jadwal shift', 'Operasional › SDM & gaji › Karyawan · Jadwal', [
+    ['Data karyawan & jadwal shift', 'Menu ☰ › SDM & gaji › Karyawan · Jadwal', [
       <>Buka <b>SDM & gaji › Karyawan › + Tambah karyawan</b>. Isi nama, jabatan, No. HP, dan <b>sistem gaji</b>: <b>Bulanan</b> (gaji pokok per bulan), <b>Harian</b> (per hari hadir), atau <b>Per jam</b>. Tambahkan tunjangan tetap, upah lembur per jam, jam kerja per hari, tanggal mulai kerja, dan rekening gaji.</>,
       <>Karyawan yang tidak memakai aplikasi (gudang, kebersihan) tetap dicatat di sini. Yang punya akun (undang dulu di menu <b>Karyawan</b>) bisa ditautkan lewat <b>Akun aplikasi</b> agar bisa absen sendiri dari HP.</>,
       <>Tab <b>Jadwal</b> › <b>Atur jadwal</b>: pilih Pagi / Siang / Malam / Libur (jam bisa diubah), centang beberapa karyawan dan beberapa tanggal sekaligus, lalu Simpan. Ketuk satu hari untuk mengubah jadwal satu orang.</>,
@@ -793,6 +794,30 @@ const PARTS = [
       <>Setiap perubahan <b>batas kredit, tempo, daftar harga, tipe, dan sales</b> tercatat sebelum → sesudah di bagian <b>Riwayat syarat</b> (layar pelanggan) dan Konfigurasi › Riwayat — hanya terlihat oleh pemilik/pengelola.</>,
     ], <>Sales harus anggota tim bisnis ini. Laporan kinerja per sales menyusul bersama indikator grosir.</>, null, null],
   ]],
+  ['AD', 'Tampilan adaptif & Pusat Pengalaman', [
+    ['Menu yang menyesuaikan bisnis & tombol (+)', 'Menu bawah · menu samping (☰ / laptop)', [
+      <>Menu bawah di HP selalu: <b>Beranda</b> · <b>menu utama bisnis Anda</b> · <b>(+)</b> · <b>Laporan</b> · <b>Akun</b>. Menu utama mengikuti jenis bisnis: toko = <b>Transaksi</b>, kos = <b>Kamar</b>, laundry & kuliner = <b>Pesanan</b>, bisnis kustom = jenis data utama (mis. <b>Proyek</b>).</>,
+      <>Tombol <b>(+)</b> di tengah <b>selalu ada</b> di semua bisnis. Ketuk untuk aksi cepat, mis. toko: Penjualan baru, Pesanan grosir, Tambah produk, Pembelian, Catat pengeluaran/pemasukan, Tambah pelanggan; kos: Tambah kamar, Tambah penghuni, Booking, Buat tagihan, Catat pembayaran.</>,
+      <>Isi (+) mengikuti <b>halaman yang sedang dibuka</b> (di Barang, Tambah produk naik ke atas), <b>peran</b> Anda, dan <b>modul yang aktif</b>. Aksi yang paling sering Anda pakai pindah ke atas. Di laptop, tombol yang sama ada di kanan atas: <b>+ Aksi cepat</b>.</>,
+      <>Menu samping (☰ di HP, kiri di laptop) dikelompokkan sesuai bisnis: toko — Penjualan, Pembelian, Persediaan, Pelanggan, Keuangan, Laporan; kos — Kamar, Penghuni, Booking, Perawatan lalu <b>Manajemen</b> (Tagihan, Pembayaran, Pengeluaran); kuliner — Pesanan, Menu, lalu <b>Operasional</b> (Bahan baku, Resep & food cost, Supplier, Karyawan & shift). Semua menu tetap bisa dicari di <b>Semua modul</b>.</>,
+    ], <>Bisnis yang masih draf: tombol (+) tetap ada dan menjelaskan bahwa aksi cepat siap setelah bisnis diaktifkan di Pusat Konfirmasi.</>, null, null],
+    ['Profil bisnis (Business DNA) & fitur saya', 'Pengaturan bisnis › Pusat Pengalaman', [
+      <>Tab <b>Profil bisnis</b>: centang <b>model bisnis</b> (boleh lebih dari satu, mis. Eceran + Grosir), <b>sumber pendapatan</b>, <b>karakter operasional</b> (mis. Mengelola stok, Memakai bahan baku, Pelanggan bisa bayar belakangan, Menerima booking), <b>kanal penjualan</b>, <b>skala</b>, jumlah karyawan/outlet, dan bila ada <b>aktivitas bisnis kedua</b>. Tekan <b>Simpan profil</b>.</>,
+      <>Profil awal sudah terisi dari jenis usaha yang dipilih saat mendaftar (bagian <b>Karakter bisnis</b>). Setiap simpan tercatat sebagai versi baru.</>,
+      <>Tab <b>Fitur saya</b>: semua fitur dikelompokkan <b>Aktif</b>, <b>Direkomendasikan</b>, <b>Tersedia</b>, <b>Tidak aktif</b>, <b>Terkunci paket</b>, <b>Dalam rencana</b>, lengkap dengan <b>skor relevansi 0–100</b> dan alasannya. Tekan <b>Aktifkan</b>, atau <b>Nonaktifkan</b> (lihat dampaknya dulu, isi alasan).</>,
+    ], <>Menyimpan profil TIDAK mengaktifkan atau mematikan fitur apa pun. Skor = 20% kategori + 25% karakter operasional + 20% model bisnis + 10% skala + 10% keputusan Anda + 15% alur kerja. Menonaktifkan fitur tidak menghapus data; fitur berbayar tetap butuh paket.</>, 'warn', null],
+    ['Rekomendasi & perkembangan bisnis', 'Pusat Pengalaman › Rekomendasi · Perkembangan', [
+      <>Tab <b>Rekomendasi</b>: tiap saran menulis <b>alasan</b> (mis. "Bisnis Anda punya karyawan", "Cabang/outlet aktif Anda sekarang lebih dari satu") dan <b>manfaatnya</b>. Pilih <b>Terima & aktifkan</b>, <b>Tunda 7 hari</b>, atau <b>Tolak</b>.</>,
+      <>Saran yang ditolak <b>tidak muncul lagi</b> selama alasannya sama; muncul lagi hanya bila kondisi bisnis berubah (mis. barang aktif sudah 100 jenis). Saran dievaluasi ulang setiap pagi dan saat profil, cabang, karyawan, atau paket berubah.</>,
+      <>Tab <b>Perkembangan</b>: tahap bisnis (Persiapan → Awal operasional → Bertumbuh → Mapan → Ekspansi → Multi-cabang → Operasi lanjutan) dihitung dari data nyata — jumlah karyawan, outlet, barang, transaksi 30 hari, pelanggan, supplier, umur bisnis.</>,
+    ], <>Menerima saran untuk fitur berbayar tanpa paket yang sesuai: saran tercatat "Diterima" tetapi fitur belum aktif sampai paket dinaikkan. Tidak ada yang diaktifkan diam-diam.</>, null, null],
+    ['Atur menu, aksi cepat & dashboard — dan memulihkannya', 'Pusat Pengalaman › Navigasi · Aksi cepat · Dashboard', [
+      <><b>Navigasi</b>: pilih <b>menu utama</b> di menu bawah (posisi ke-2), ubah <b>urutan kelompok</b> (↑ ↓), hapus centang <b>Tampil</b> untuk menyembunyikan menu yang jarang dipakai, centang <b>Pintasan</b> (maks. 8) agar tampil paling atas di menu samping. Tekan <b>Simpan navigasi</b>.</>,
+      <><b>Aksi cepat</b>: urutkan isi tombol (+), beri <b>★ favorit</b> (maks. 6, selalu paling atas), <b>Sembunyikan</b>, atau <b>Tampilkan</b> aksi opsional (mis. Buat promo, Terima barang titipan, jenis data Builder lain).</>,
+      <><b>Dashboard</b>: centang bagian yang tampil di Beranda dan atur urutannya. Bisa juga langsung dari Beranda › <b>Atur dashboard</b>. Pengaturan pemilik berlaku untuk semua pengguna bisnis ini (tiap bagian tetap mengikuti izin orangnya).</>,
+      <>Salah atur? Tekan <b>Kembalikan rekomendasi PRASARA</b>, atau buka tab <b>Perkembangan › Riwayat konfigurasi</b> lalu <b>Pulihkan</b> pada perubahan mana pun — tampilan kembali ke keadaan sebelum perubahan itu (tercatat sebagai versi baru). Profil bisnis juga bisa dipulihkan dengan cara yang sama.</>,
+    ], <>Menu yang disembunyikan tetap bisa dibuka lewat <b>Semua modul</b> & pencarian; akses dan data tidak berubah. Tombol (+) tidak bisa dihilangkan.</>, null, null],
+  ]],
 ];
 
 const RULES = [
@@ -814,12 +839,12 @@ export default function Panduan() {
 
         <h2 style={{ color: 'var(--brand-2)' }}>Cara berpindah menu</h2>
         <ul style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <li>Di HP, menu bawah berisi <b>Beranda</b>, <b>Operasional</b> (semua modul bisnis, dikelompokkan: Operasional, Transaksi, Pelanggan, Inventaris, Keuangan, Laporan, Pengaturan), tombol <b>+</b> (aksi cepat, mis. catat pembayaran atau pesanan baru), <b>Laporan</b>, dan <b>Akun</b>.</li>
-          <li>Tombol <b>☰</b> di kanan atas membuka menu samping berisi semua kelompok menu; ikon <b>🔍</b> mencari menu. Pilihan <b>Tampilan</b> (Terang / Gelap / Ikuti HP — bawaannya Terang) dan Keluar ada di <b>Akun</b>.</li>
+          <li>Di HP, menu bawah berisi <b>Beranda</b>, <b>menu utama bisnis Anda</b> (toko: Transaksi, kos: Kamar, laundry/kuliner: Pesanan, bisnis kustom: jenis data utama), tombol <b>(+)</b> di tengah yang <b>selalu ada</b> (aksi cepat sesuai bisnis & halaman), <b>Laporan</b>, dan <b>Akun</b> (Langkah 109).</li>
+          <li>Tombol <b>☰</b> di kanan atas membuka menu samping berisi kelompok menu sesuai jenis bisnis (dan <b>Semua modul</b>); ikon <b>🔍</b> mencari menu. Pilihan <b>Tampilan</b> (Terang / Gelap / Ikuti HP — bawaannya Terang) dan Keluar ada di <b>Akun</b>.</li>
           <li>Ikon <b>Bagikan</b> (panah ke atas) di pojok kanan atas: tautan & <b>QR code</b> halaman bisnis, siap dikirim atau dicetak, dari menu mana pun.</li>
           <li>Di <b>tablet</b> (lebar layar 768 px ke atas), menu tampil sebagai <b>deretan ikon di kiri</b>. Ketuk ikon kelompok untuk membuka daftar menunya, atau ketuk <b>☰</b> di kiri atas untuk menu lengkap dengan nama.</li>
-          <li>Di <b>laptop & komputer</b>, menu ada di <b>sidebar kiri</b> dengan tiga bagian: <b>Workspace</b> (Beranda, Operasional, Pelanggan, Keuangan, Laporan), <b>Modul bisnis</b> (Transaksi, Inventaris), dan <b>Sistem</b> (Pengaturan Bisnis). Klik nama kelompok untuk membuka submenu. Tombol <b>‹</b> di samping logo (atau <b>☰</b>) menciutkan sidebar menjadi ikon saja; pilihan ini diingat di perangkat itu. Saat diciutkan, arahkan kursor ke ikon untuk melihat namanya.</li>
-          <li>Bagian atas laptop/tablet berisi <b>kotak cari menu</b> (tekan <b>Ctrl K</b> atau <b>/</b> untuk langsung mengetik), tombol <b>+ Aksi cepat</b>, <b>Bantuan</b>, <b>Notifikasi</b>, <b>Bagikan</b>, dan <b>profil</b> (Akun & tampilan, Ganti bisnis, Panduan, Keluar). Di atas judul tiap halaman ada <b>jejak lokasi</b>, mis. Beranda / Transaksi / Penjualan.</li>
+          <li>Di <b>laptop & komputer</b>, menu ada di <b>sidebar kiri</b> dengan bagian sesuai jenis bisnis, mis. toko: <b>Workspace</b> (Penjualan, Pembelian, Persediaan, Pelanggan, Keuangan, Laporan) dan <b>Sistem</b>; kos: <b>Workspace</b> (Kamar, Penghuni, Booking, Perawatan), <b>Manajemen</b> (Tagihan, Pembayaran, Pengeluaran, Keuangan, Laporan), <b>Sistem</b>. Pintasan pilihan pemilik tampil paling atas. Klik nama kelompok untuk membuka submenu. Tombol <b>‹</b> di samping logo (atau <b>☰</b>) menciutkan sidebar menjadi ikon saja; pilihan ini diingat di perangkat itu. Saat diciutkan, arahkan kursor ke ikon untuk melihat namanya.</li>
+          <li>Bagian atas laptop/tablet berisi <b>kotak cari menu</b> (tekan <b>Ctrl K</b> atau <b>/</b> untuk langsung mengetik), tombol <b>+ Aksi cepat</b>, <b>Bantuan</b>, <b>Notifikasi</b>, <b>Bagikan</b>, dan <b>profil</b> (Akun & tampilan, Ganti bisnis, Panduan, Keluar). Di atas judul tiap halaman ada <b>jejak lokasi</b>, mis. Beranda / Penjualan / Riwayat.</li>
           <li>Isi menu di semua perangkat sama: hanya modul yang sesuai jenis bisnis, paket, modul aktif, dan peran Anda.</li>
           <li>Daftar data (mis. <b>Penjualan</b>, <b>Barang & stok</b>, <b>Pelanggan & supplier</b>, <b>Tagihan</b>, <b>Pembayaran</b>, <b>Penghuni</b>, <b>Pesanan</b>, <b>Pengeluaran</b>, <b>Karyawan</b>, <b>Kas & kasbon</b>, <b>Belanja</b>, <b>Aset tetap</b>, <b>Booking kamar</b>, <b>Pesanan grosir</b>, <b>Prospek</b>, <b>Keluhan & perbaikan</b>, <b>Promo</b>, dan catatan bisnis jenis lain) tampil sebagai <b>tabel</b> di laptop — klik judul kolom (mis. Total, Waktu, Stok) untuk mengurutkan, klik sekali lagi untuk membalik urutan. Di HP, data yang sama tampil sebagai <b>kartu</b>. Bila datanya banyak, gunakan tombol <b>‹ ›</b> di bawah daftar untuk pindah halaman (di laptop jumlah per halaman bisa dipilih).</li>
           <li><b>Ketuk nama bisnis di kiri atas</b> untuk pindah bisnis atau menambah bisnis baru.</li>
@@ -860,6 +885,7 @@ export default function Panduan() {
           <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
+          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–112</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman: profil bisnis, fitur, rekomendasi, atur & pulihkan tampilan</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

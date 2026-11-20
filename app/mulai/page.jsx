@@ -11,12 +11,16 @@ import { Field } from '@/components/ui';
 import { errMsg } from '@/lib/format';
 import { waOk, waNorm } from '@/lib/akun';
 import LegacyMulai from './Legacy';
+import DnaForm from '@/components/DnaForm';
+import { loadVocab, labelOf } from '@/lib/dna';
 
 const STAGES = [['berjalan', 'Sudah berjalan'], ['baru', 'Baru akan dibangun'], ['dikembangkan', 'Sedang dikembangkan']];
 const RELATIONS = [['pemilik', 'Pemilik'], ['pengelola', 'Pengelola'], ['perwakilan', 'Perwakilan perusahaan'], ['baru', 'Ingin membuat bisnis baru']];
 const MANAGED = [['sendiri', 'Saya kelola sendiri'], ['tim', 'Bersama tim / karyawan']];
 const NEEDS = [['penjualan', 'Penjualan & transaksi'], ['pembelian', 'Pembelian & pemasok'], ['stok', 'Stok & inventaris'], ['keuangan', 'Keuangan & laporan'], ['pelanggan', 'Pengelolaan pelanggan'], ['karyawan', 'Karyawan'], ['cabang', 'Cabang bisnis']];
-const SUBS = ['Identitas', 'Operasional', 'Pengelolaan', 'Kebutuhan'];
+const SUBS = ['Identitas', 'Operasional', 'Pengelolaan', 'Kebutuhan', 'Karakter bisnis'];
+const LAST = SUBS.length - 1;
+const uni = (...a) => [...new Set(a.flat().filter(Boolean))].sort();
 const Tag = ({ t }) => <span className={'tag3' + (t === 'Wajib' ? ' req' : '')}>{t}</span>;
 const L = (label, t) => <>{label}<Tag t={t} /></>;
 const DRAFT_KEY = (uid) => `prasara-mulai-${uid}`;
@@ -55,6 +59,8 @@ export default function Mulai() {
   const [sub, setSub] = useState(0);           // bagian formulir per bisnis: 0 identitas, 1 operasional, 2 pengelolaan, 3 kebutuhan
   const [restored, setRestored] = useState(false);
   const [ready, setReady] = useState(false);
+  const [vocab, setVocab] = useState(null);
+  useEffect(() => { loadVocab().then(setVocab, () => setVocab({})); }, []);
   const uid = session?.user?.id;
 
   // Progres disimpan di server (akun Anda: bisa dilanjutkan dari perangkat lain). Salinan di perangkat hanya cadangan.
@@ -101,6 +107,16 @@ export default function Mulai() {
     const engine = s?.engine || c?.engine; const tpl = tpls[s?.template || (s?.engine && s.engine !== c?.engine ? null : c?.template)] || tpls[c?.template];
     return { c, s, engine, tpl, note: s?.note || c?.note };
   };
+  // Business DNA awal dari kategori + subkategori + isian sebelumnya (pemilik bisa mengubahnya di bagian Karakter bisnis)
+  const dnaDefault = (code) => {
+    const { c, s: sc } = resolve(code); const b = biz[code] || {};
+    const needs = Array.isArray(b.needs) ? b.needs : [];
+    const caps = uni(c?.default_caps || [], sc?.default_caps || [], needs.includes('stok') ? ['uses_inventory'] : [], needs.includes('pembelian') ? ['uses_suppliers'] : [],
+      needs.includes('cabang') && Number(b.branches || 0) > 0 ? ['uses_multi_outlet'] : [], b.answers?.delivery === true ? ['uses_delivery'] : []);
+    return { identity: { secondary_category: null, ownership: null, custom_label: '' }, models: uni(c?.supported_models || [], sc?.supported_models || [], ['Grosir', 'Eceran & grosir'].includes(b.answers?.sales_mode) ? ['wholesale'] : []),
+      revenue: uni(c?.default_revenue || []), caps, scale: (b.managed || 'sendiri') === 'tim' || needs.includes('karyawan') ? 'kecil' : 'mikro',
+      indicators: { employees: null, outlets: 1 + (needs.includes('cabang') ? Number(b.branches || 0) : 0), tx_month: null, omzet: null }, channels: uni(c?.default_channels || [], sc?.default_channels || []) };
+  };
   const setB = (code, k, v) => setBiz((x) => ({ ...x, [code]: { ...(x[code] || {}), [k]: v } }));
   const setA = (code, k, v) => setBiz((x) => ({ ...x, [code]: { ...(x[code] || {}), answers: { ...(x[code]?.answers || {}), [k]: v } } }));
   const subsOf = (code) => subs.filter((s) => s.category_code === code);
@@ -112,8 +128,8 @@ export default function Mulai() {
 
   const Steps = () => (
     <div className="stack" style={{ gap: 6 }}>
-      <span className="small muted">{step >= 1 && step <= n ? `${n > 1 ? `Bisnis ${step} dari ${n} · ` : ''}Bagian ${sub + 1} dari 4: ${SUBS[sub]}` : `Langkah ${Math.min(step + 1, n + 2)} dari ${n + 2}`}</span>
-      <div className="progress" aria-hidden="true"><i style={{ width: `${Math.round((100 * (step === 0 ? 1 : step > n ? n * 4 + 2 : (step - 1) * 4 + sub + 2)) / (n * 4 + 2))}%` }} /></div>
+      <span className="small muted">{step >= 1 && step <= n ? `${n > 1 ? `Bisnis ${step} dari ${n} · ` : ''}Bagian ${sub + 1} dari ${SUBS.length}: ${SUBS[sub]}` : `Langkah ${Math.min(step + 1, n + 2)} dari ${n + 2}`}</span>
+      <div className="progress" aria-hidden="true"><i style={{ width: `${Math.round((100 * (step === 0 ? 1 : step > n ? n * SUBS.length + 2 : (step - 1) * SUBS.length + sub + 2)) / (n * SUBS.length + 2))}%` }} /></div>
       {step >= 1 && <span className="small muted">Tersimpan otomatis di akun Anda — bisa dilanjutkan nanti dari perangkat mana pun.</span>}
     </div>
   );
@@ -191,15 +207,18 @@ export default function Mulai() {
         if (subsOf(code).length && !b.subcategory) return 'Pilih subkategori.';
       }
       if (sub === 1 && String(phone).trim() && !waOk(phone)) return 'Nomor kontak bisnis belum benar. Contoh: 081234567890. Boleh dikosongkan dulu.';
+      if (sub === LAST && b.dna && !b.dna.models?.length) return 'Pilih minimal satu model bisnis.';
+      if (sub === LAST && b.dna && !b.dna.revenue?.length) return 'Pilih minimal satu sumber pendapatan.';
       return null;
     };
     const next = () => {
       const e = check(); if (e) return setErr(e);
       setErr(null);
-      if (sub < 3) return setSub(sub + 1);
+      if (sub === LAST - 1 && !b.dna) setB(code, 'dna', dnaDefault(code));
+      if (sub < LAST) return setSub(sub + 1);
       setSub(0); setStep(step + 1);
     };
-    const back = () => { setErr(null); if (sub > 0) return setSub(sub - 1); if (step > 1) { setSub(3); return setStep(step - 1); } setStep(0); };
+    const back = () => { setErr(null); if (sub > 0) return setSub(sub - 1); if (step > 1) { setSub(LAST); return setStep(step - 1); } setStep(0); };
     return (
       <div className="auth" style={{ maxWidth: 560 }}>
         <Steps />
@@ -243,8 +262,13 @@ export default function Mulai() {
           {tpl?.engine === 'jasa' && <span className="small muted">Harga dan estimasi waktu <b>tidak</b> diisi otomatis — Anda mengisinya di Pusat Konfirmasi.</span>}
         </>}
 
+        {sub === LAST && <>
+          <p className="muted" style={{ margin: 0 }}><b>Seperti apa bisnis Anda berjalan?</b> PRASARA memakai jawaban ini untuk menyusun menu, dashboard, dan tombol (+) yang sesuai. Sudah diisi dari jenis usaha Anda — sesuaikan saja. Bisa diubah kapan saja di <b>Pusat Pengalaman</b>.</p>
+          {vocab ? <DnaForm value={b.dna || dnaDefault(code)} onChange={(v) => setB(code, 'dna', v)} vocab={vocab} primary={code} only={['models', 'revenue', 'caps', 'channels', 'scale']} disabled={locked} /> : <p className="small muted">Memuat pilihan…</p>}
+        </>}
+
         {err && <div className="notice bad">{err}</div>}
-        <button className="cta" onClick={next}>{sub < 3 ? 'Lanjut' : step < n ? 'Lanjut ke bisnis berikutnya' : 'Lihat ringkasan'}</button>
+        <button className="cta" onClick={next}>{sub < LAST ? 'Lanjut' : step < n ? 'Lanjut ke bisnis berikutnya' : 'Lihat ringkasan'}</button>
         <button type="button" className="ghost" onClick={back}>← Kembali</button>
       </div>
     );
@@ -264,7 +288,12 @@ export default function Mulai() {
       const { data, error } = await supabase.rpc('setup_create', { p: { category: code, subcategory: b.subcategory || null, name: (b.name || '').trim(), location: b.location || '', stage: b.stage || 'berjalan', relation: b.relation || 'pemilik',
         branches: needs.includes('cabang') ? Number(b.branches || 0) : 0, answers: ans, description: (b.description || '').trim(), phone: ph && waOk(ph) ? waNorm(ph) : '', hours: (b.hours || '').trim(),
         owner_name: String(b.owner_name ?? meta.name ?? '').trim(), managed: b.managed || 'sendiri', needs } });
-      if (error) bad[code] = errMsg(error); else made[code] = data;
+      if (error) bad[code] = errMsg(error);
+      else {
+        made[code] = data;
+        // Business DNA dari pendaftaran (berversi). Gagal = tidak menghalangi: pemilik bisa mengisinya di Pusat Pengalaman.
+        await supabase.rpc('dna_save', { p_kos: data, p_dna: b.dna || dnaDefault(code), p_reason: 'Pendaftaran bisnis', p_source: 'onboarding' }).then(() => {}, () => {});
+      }
     }
     setDone(made); setErrs(bad); setBusy(false);
     if (Object.keys(bad).length) return setErr('Sebagian bisnis belum berhasil dibuat. Periksa pesan di bawah, perbaiki, lalu tekan lagi.');
@@ -298,6 +327,7 @@ export default function Mulai() {
             <Row k="Pemilik" v={String(b.owner_name ?? meta.name ?? '').trim()} sb={2} />
             <Row k="Peran Anda" v={`${RELATIONS.find(([k]) => k === (b.relation || 'pemilik'))[1]} · ${MANAGED.find(([k]) => k === (b.managed || 'sendiri'))[1].toLowerCase()}`} sb={2} />
             <Row k="Kebutuhan" v={needs.map((k) => NEEDS.find(([x]) => x === k)?.[1]).filter(Boolean).join(', ')} sb={3} />
+            <Row k="Karakter bisnis" v={b.dna ? `${b.dna.models.map((x) => labelOf(vocab, 'model', x)).join(', ')} · ${b.dna.caps.length} karakter operasional` : ''} sb={LAST} />
             <span className="small" style={{ marginTop: 6 }}>Disiapkan: {tpl?.name || '—'} — modul yang disarankan, {tpl?.code === 'kuliner' ? 'tahap dapur (Dimasak → Siap saji), jumlah meja; menu & harga Anda isi sendiri' : tpl?.engine === 'jasa' ? 'layanan yang Anda pilih (tanpa harga), tahap proses' : tpl?.engine === 'properti' ? 'kamar (harga sewa Anda isi)' : tpl?.engine === 'retail' ? 'cara jual & gudang (barang Anda isi setelah aktif)' : tpl?.code === 'kosong' ? 'pilih template siap pakai atau susun sendiri di Business Builder' : `tampilan siap pakai${tpl?.spec?.builder_spec?.main_process ? ` (${tpl.spec.builder_spec.main_process})` : ''} — langsung bisa dipakai setelah diaktifkan`}, daftar informasi yang perlu dilengkapi{tpl?.spec?.portal ? ', draf halaman bisnis' : ''}.</span>
             {note && <span className="small muted">{note}</span>}
             {errs[code] && <div className="notice bad">{errs[code]}</div>}
@@ -307,7 +337,7 @@ export default function Mulai() {
       <p className="small muted" style={{ margin: 0 }}>Yang belum diisi bisa dilengkapi nanti di Pusat Konfirmasi atau Pengaturan. Isian di atas tidak perlu diketik ulang.</p>
       {err && <div className="notice bad">{err}</div>}
       <button className="cta" disabled={busy} onClick={create}>{busy ? 'Menyiapkan draf…' : `Buat ${n} draf bisnis`}</button>
-      <button type="button" className="ghost" disabled={busy} onClick={() => { setSub(3); setStep(n); }}>← Kembali</button>
+      <button type="button" className="ghost" disabled={busy} onClick={() => { setSub(LAST); setStep(n); }}>← Kembali</button>
     </div>
   );
 }

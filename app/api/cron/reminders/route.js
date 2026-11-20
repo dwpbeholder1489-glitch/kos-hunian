@@ -22,6 +22,9 @@ export async function GET(req) {
   // Portal bisnis (Pro): sembunyikan halaman bisnis yang tidak berhak lagi (turun paket); isi halaman tidak dihapus
   let portal = { ok: true, skipped: 'belum dikonfigurasi' };
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('portal_unpublish_lapsed'); portal = r.error ? { ok: false, error: r.error.message } : { ok: true, disembunyikan: r.data }; } } catch (e) { portal = { ok: false, error: e.message }; }
+  // Adaptive Experience: evaluasi ulang rekomendasi fitur dari profil & data terbaru (tidak mengaktifkan apa pun)
+  let pengalaman = { ok: true, skipped: 'belum dikonfigurasi' };
+  try { const sb = adminDb(); if (sb) { const r = await sb.rpc('experience_tick'); pengalaman = r.error ? { ok: false, error: r.error.message } : { ok: true, ...r.data }; } } catch (e) { pengalaman = { ok: false, error: e.message }; }
   // Lampiran: hapus file yang sudah dihapus pengguna / unggahan yang tidak selesai dari penyimpanan
   let lampiran = { ok: true, skipped: 'belum dikonfigurasi' };
   try {
@@ -45,7 +48,7 @@ export async function GET(req) {
       media = { ok: true, dibersihkan: paths.length };
     }
   } catch (e) { media = { ok: false, error: e.message }; }
-  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, lampiran, media };
+  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && pengalaman.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, pengalaman, lampiran, media };
   console.log('[cron daily]', JSON.stringify(res));
   try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });

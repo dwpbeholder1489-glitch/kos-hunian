@@ -1,14 +1,20 @@
 'use client';
 // Arsitektur dashboard bersama (Unified Design System §13): satu kerangka untuk semua jenis bisnis.
 // Setiap jenis bisnis hanya menentukan DAFTAR WIDGET-nya; semua angka berasal dari data & aturan yang sudah ada.
-// Widget bisa disembunyikan & diurutkan ("Atur dashboard"); pilihan disimpan per perangkat & per bisnis.
+// Widget bisa disembunyikan & diurutkan ("Atur dashboard"). Pemilik/pengelola: disimpan di server untuk seluruh bisnis
+// (experience_configs.dash — berversi & bisa dipulihkan di Pusat Pengalaman). Karyawan lain: hanya untuk perangkatnya.
+// Menyembunyikan widget TIDAK menghapus data sumbernya. Widget yang gagal memuat tidak menggagalkan widget lain.
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import NavIcon from '@/components/NavIcon';
 import { Sheet } from '@/components/ui';
 import { rp } from '@/lib/format';
-import { quickActions } from '@/lib/menu';
+import { quickFor } from '@/lib/quick';
+import { useKos } from '@/components/KosProvider';
+import { canArea } from '@/lib/business';
+import { errMsg } from '@/lib/format';
+import { toast } from '@/components/ui';
 
 const KEY = (kosId, id) => `prasara-dash-${id}-${kosId}`;
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
@@ -37,9 +43,9 @@ export function Alerts({ items }) {
 
 // Aksi cepat (sama dengan tombol + di HP; hanya menu yang boleh dibuka peran ini)
 export function QuickActions({ kos }) {
-  const q = quickActions(kos);
+  const q = quickFor(kos);
   if (!q.length) return null;
-  return <div className="qa">{q.map(([href, label, base]) => <Link key={href} href={href}><NavIcon name={base} size={20} />{label}</Link>)}</div>;
+  return <div className="qa">{q.map((a) => <Link key={a.id} href={a.href}><NavIcon name={a.base} size={20} />{a.label}</Link>)}</div>;
 }
 
 const jam = (ts) => new Date(ts).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
@@ -69,11 +75,22 @@ export function ActivityList({ rows }) {
 
 // widgets: [{ id, title (nama di Atur dashboard), size: 'full'|'wide'|'normal', node }] — node null/false = tidak ditampilkan (tidak relevan / tidak ada data / tidak ada izin)
 export default function Dashboard({ id, kosId, header, widgets }) {
+  const { kos, loadKos } = useKos();
   const k = KEY(kosId, id);
+  const owner = canArea(kos, 'settings');
+  const server = kos?.exp?.dash?.[id] || null;
   const [pref, setPref] = useState({ hidden: [], order: [] });
   const [edit, setEdit] = useState(false);
-  useEffect(() => { setPref(read(k) || { hidden: [], order: [] }); }, [k]);
-  const save = (p) => { setPref(p); try { localStorage.setItem(k, JSON.stringify(p)); } catch {} };
+  // urutan sumber: pengaturan bisnis (server) → pilihan perangkat (karyawan) → bawaan PRASARA
+  useEffect(() => { setPref((!owner && read(k)) || server || read(k) || { hidden: [], order: [] }); }, [k, owner, JSON.stringify(server)]); // eslint-disable-line react-hooks/exhaustive-deps
+  const save = (p) => {
+    setPref(p);
+    if (!owner) { try { localStorage.setItem(k, JSON.stringify(p)); } catch {} return; }
+    const all = { ...(kos?.exp?.dash || {}), [id]: p };
+    if (!p.hidden.length && !p.order.length) delete all[id];
+    supabase.rpc('experience_save', { p_kos: kosId, p_part: 'dash', p_value: all, p_reason: 'Atur dashboard' })
+      .then(({ error }) => { if (error) toast(errMsg(error)); else { try { localStorage.removeItem(k); } catch {} loadKos(); } });
+  };
   const avail = widgets.filter((w) => w.node);
   const rank = (w) => { const i = pref.order.indexOf(w.id); return i < 0 ? 1000 + widgets.indexOf(w) : i; };
   const sorted = [...avail].sort((a, b) => rank(a) - rank(b));
@@ -101,7 +118,7 @@ export default function Dashboard({ id, kosId, header, widgets }) {
               <button className="sm ghost" onClick={() => move(w.id, 1)} disabled={i === sorted.length - 1} aria-label={`Turunkan ${w.title}`}>↓</button>
             </li>
           ))}</ul>
-          <div className="row"><button className="primary" onClick={() => setEdit(false)}>Selesai</button><button className="ghost" onClick={() => save({ hidden: [], order: [] })}>Kembalikan bawaan</button></div>
+          <div className="row"><button className="primary" onClick={() => setEdit(false)}>Selesai</button><button className="ghost" onClick={() => save({ hidden: [], order: [] })}>Kembalikan rekomendasi PRASARA</button></div>
         </Sheet>
       )}
     </div>

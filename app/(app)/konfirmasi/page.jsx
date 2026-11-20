@@ -15,6 +15,7 @@ import { rp, angka, errMsg } from '@/lib/format';
 import { waktu } from '@/lib/jasa';
 import { isiNum } from '@/lib/units';
 import { SETUP_STATUS, homeOf } from '@/lib/business';
+import { workspacePreview } from '@/lib/menu';
 
 const ST = SETUP_STATUS;
 const ITEM_ST = { ...ST, draft: ['Disiapkan sistem', 'void'], active: ['Aktif', 'good'] };
@@ -238,6 +239,8 @@ export default function Konfirmasi() {
         );
       })}
 
+      {!active && kos && <WorkspacePreview kos={kos} items={items} />}
+
       {active && <Persiapan kos={{ id: b.id }} always />}
 
       {d.after?.length > 0 && <section className="panel"><h3>Setelah aktif</h3>
@@ -268,5 +271,24 @@ export default function Konfirmasi() {
         </Sheet>
       )}
     </div>
+  );
+}
+
+// Pratinjau workspace (Adaptive Business Experience §22): menu, menu bawah, dan isi tombol (+) yang akan didapat
+// setelah aktif — dihitung dari jenis bisnis, Business DNA, dan modul yang SUDAH disetujui. Tidak mengubah apa pun.
+function WorkspacePreview({ kos, items }) {
+  const ok = (code) => { const it = items.find((x) => x.code === 'modul_' + code); return !it || ['approved', 'active'].includes(it.status); };
+  const pseudo = { ...kos, setup_status: 'active', my_role: 'pemilik', modules: Array.isArray(kos.modules) ? kos.modules.filter(ok) : kos.modules };
+  const p = workspacePreview(pseudo);
+  return (
+    <section className="panel">
+      <h3>Pratinjau workspace</h3>
+      <span className="small muted">Beginilah tampilan bisnis ini setelah aktif, mengikuti jenis usaha, karakter bisnis, dan modul yang Anda setujui. Bisa diatur ulang kapan saja di Pusat Pengalaman.</span>
+      <div className="bec-bnav" aria-label="Menu bawah">{p.bottom.map((x, i) => <span key={i} className={x === '+' ? 'fab' : ''}>{x}</span>)}</div>
+      <div className="wsprev">
+        {p.sections.map(([title, gs]) => <div key={title}><span className="label">{title}</span><ul>{gs.map((g) => <li key={g}>{g}</li>)}</ul></div>)}
+        <div><span className="label">Tombol (+) aksi cepat</span><ul>{p.quick.length ? p.quick.map((q) => <li key={q}>{q}</li>) : <li>Muncul setelah menu terkait disetujui</li>}</ul></div>
+      </div>
+    </section>
   );
 }

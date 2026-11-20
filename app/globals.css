@@ -1432,3 +1432,74 @@ li.void .dt-card{opacity:.7}
 .pos-cart h3{font-size:16px}
 .pos-cart .cta{position:sticky;bottom:0;box-shadow:0 -8px 16px var(--surface)}
 @media (min-width:1536px){.pos{grid-template-columns:minmax(0,1fr) 440px}}
+
+/* ===================== ADAPTIVE BUSINESS EXPERIENCE (Tahap 1) ===================== */
+/* Menu samping HP: judul bagian (Workspace / Manajemen / Sistem / Pintasan) */
+.drawer-sh{display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 14px 4px}
+/* Panel tombol (+) */
+.qp-list a{position:relative}
+.qp-list a.qp-ctx{border-color:var(--gold);background:var(--gold-soft)}
+.qp-t{overflow-wrap:anywhere}
+.qp-star{position:absolute;top:6px;right:8px;color:var(--att,#b45309);font-size:12px;line-height:1}
+.dd-menu .qp-star{position:static;margin-left:auto}
+.qp-set{display:block;text-align:center;margin-top:10px;padding:8px;color:var(--gold-fg,var(--gold));font-weight:600}
+.dd-menu .qp-set{text-align:left;margin-top:4px;border-top:1px solid var(--line);border-radius:0;padding-top:10px}
+.qp-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:16px 8px;max-width:340px;margin:0 auto;color:var(--fg)}
+.qp-empty svg{color:var(--muted)}
+.qp-empty a.sm{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius-md);text-decoration:none;color:var(--fg);font-weight:600}
+.dd-menu .qp-empty{min-width:260px}
+/* Business DNA */
+.dna-chips{display:flex;flex-wrap:wrap;gap:6px}
+.dna-chips button{min-height:38px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font:inherit;font-size:13px;font-weight:500;text-align:left;cursor:pointer;max-width:100%;white-space:normal}
+.dna-chips button.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-fg,var(--fg));font-weight:600}
+.dna-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.dna-form .seg{max-width:100%}
+/* Pusat Pengalaman */
+.bec-sum{gap:12px}
+.bec-sum-h{display:flex;align-items:center;gap:12px;min-width:0}
+.bec-sum-h .t{display:flex;flex-direction:column;min-width:0}
+.bec-sum-h .t b,.bec-sum-h .t small{overflow-wrap:anywhere}
+.bec-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.bec-kpi>div,.bec-sig>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--sunk)}
+.bec-kpi b{font-size:18px}
+.bec-tabs{overflow-x:auto;flex-wrap:nowrap;max-width:100%;-webkit-overflow-scrolling:touch}
+.bec-tabs button{white-space:nowrap;flex:none}
+.bec-actions{gap:8px}
+.bec-gh{width:100%;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;min-height:40px;text-align:left}
+.bec-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.bec-list>li{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line);min-width:0}
+.bec-list>li:first-child{border-top:0}
+.bec-list>li.bec-row{flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px 8px}
+.bec-row .t{flex:1 1 140px;min-width:0;overflow-wrap:anywhere}
+.bec-row svg{color:var(--muted);flex:none}
+.bec-li-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;min-width:0}
+.bec-li-h>b,.bec-li-h>span:first-child{overflow-wrap:anywhere;min-width:0}
+.bec-ck{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;min-height:40px;cursor:pointer}
+.bec-ck.grow{flex:1 1 160px}
+.bec-star{color:var(--muted)}
+.bec-star.on{color:var(--att,#b45309)}
+.bec-reco{gap:8px}
+.bec-flow{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0;counter-reset:f}
+.bec-flow li{counter-increment:f;font-size:13px;font-weight:500;padding:6px 10px;border-radius:999px;background:var(--sunk);border:1px solid var(--line)}
+.bec-flow li::before{content:counter(f) ". ";color:var(--muted)}
+.bec-stage{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.bec-stage li{font-size:12.5px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.bec-stage li.done{color:var(--fg);background:var(--sunk)}
+.bec-stage li.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-fg,var(--fg));font-weight:600}
+.bec-sig{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.bec-bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;align-items:center;text-align:center;font-size:12px;font-weight:600;padding:8px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface)}
+.bec-bnav span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bec-bnav .fab{position:static;justify-self:center;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--gold);color:#fff;font-size:20px}
+/* Pratinjau workspace (Pusat Konfirmasi) */
+.wsprev{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.wsprev ul{margin:4px 0 0;padding-left:18px;font-size:13px}
+.bec-kpi{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.bec-kpi>div{padding:8px 10px}
+.bec-kpi .label{font-size:11px}
+.bec-kpi b{font-size:16px;overflow-wrap:anywhere}
+@media (max-width:359px){.bec-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:768px){.bec-kpi b{font-size:20px}}
+.bec-row .bec-star{color:var(--muted-2,#87948E);font-size:16px}
+.bec-row .bec-star.on{color:#B45309}
+.bec-list a.sm,.bec-actions a.sm{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:var(--radius-md);text-decoration:none;color:var(--fg);font-size:13px;font-weight:600;background:var(--surface)}
+.bec-bnav{font-size:11px}

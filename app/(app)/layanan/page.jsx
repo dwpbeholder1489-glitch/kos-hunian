@@ -14,6 +14,7 @@ import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 const UNITS = ['kg', 'pcs', 'pasang', 'meter', 'm²', 'set', 'paket', 'pesanan', 'jam'];
 const UNITS_K = ['porsi', 'pcs', 'gelas', 'cup', 'botol', 'bungkus', 'box', 'paket', 'kg', 'loyang'];
 import { canArea } from '@/lib/business';
+import { useBaru } from '@/lib/useBaru';
 import Link from 'next/link';
 
 // Katalog layanan (harga, minimal, lama pengerjaan) & tahap proses yang bisa diatur — dasar "Configure Many"
@@ -23,6 +24,7 @@ export default function Layanan() {
   const [svc, setSvc] = useState(null);
   const [st, setSt] = useState(null);
   const [edit, setEdit] = useState(null);
+  useBaru(() => { if (can) setEdit({}); }); // tombol (+) › Tambah layanan / menu
   const [busy, setBusy] = useState(false);
   const thumbs = useThumbs(kosId, 'service', `${ver}:${edit ? 1 : 0}`);
   const load = async () => {

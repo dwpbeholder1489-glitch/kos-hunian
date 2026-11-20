@@ -1,0 +1,142 @@
+# Audit & Rencana — Adaptive Business Experience v3.0
+
+Tanggal: 21 Nov 2026 · Dasar: dokumen "PRASARA Adaptive Business Experience & Universal Business Operating System v3.0" + gambar acuan "Adaptive Business Experience v2.0".
+Kode yang diaudit: repo `kos-hunian` commit `cbf872e` (105 migrasi, 45 file uji SQL). Semua migrasi terpasang bersih di PostgreSQL 16 lokal (mock `auth`/`extensions`).
+
+Status jujur: **Verified** = ada kode + uji; **Partial** = sebagian; **UI only** = tampilan tanpa server; **Belum** = tidak ada.
+
+## 1. Existing Architecture Report
+
+| Lapisan | Kondisi sekarang |
+|---|---|
+| Framework | Next.js 15 App Router + React 19, CSS global, Supabase (Postgres + RLS + RPC `security definer`), Vercel. Tanpa state manager: `KosProvider` (context) memuat semua bisnis anggota + modul aktif + lokasi + akses. |
+| Multi-tenant | `kos` = bisnis (tenant). Semua tabel ber-`kos_id`, RLS `member_can(kos,'area')`, RPC `member_in(area,kos)`. Bisnis ditutup/draf dijaga trigger `zz_kos_open_guard`. Uji isolasi `supabase/tests/isolasi.sql`. **Verified** |
+| Mesin bisnis (engine) | 4 mesin: `properti` (kos/sewa), `retail` (toko/grosir), `jasa` (laundry, jasa umum, **kuliner** = jasa + `template_code='kuliner'`), `kustom` (Business Builder: jenis data/alur/laporan + tata letak siap pakai per template). |
+| Klasifikasi | `biz_categories` (15) → `biz_subcategories` (55) → `biz_templates` (19) → engine. Kode stabil, nama bisa diubah, Super Admin mengelola di /admin/kategori. **Partial** (spesifikasi: ≥20 kategori, model/pendapatan/kapabilitas bawaan, versi). |
+| Profil bisnis | `kos.setup_meta` (status usaha, hubungan, cabang, jawaban template), `kos.profile` (jam, cara bayar, pajak, dll.), `PROFILE_Q` + `recommend()` di `lib/modules.js` (pertanyaan ya/tidak → modul). **Partial**: belum ada Business DNA 6 dimensi tersimpan & berversi. |
+| Katalog fitur | `modules` (Module Registry V2: jenis, kategori, `impl_status`, `entitlement`, dependensi wajib/opsional, area izin, paths) + `business_modules` (aktif per bisnis) + `module_catalog` / `module_set` / `module_impact` / `config_requests` / `config_history`. **Verified** — dipakai ulang sebagai Feature Catalog. Belum: metadata relevansi (model, kapabilitas, kategori), skor, aturan relevansi, siklus rekomendasi. |
+| Entitlement | `plan_has` / `my_entitlements` / `legacy_features`; `module_set` menolak modul berbayar tanpa paket. **Verified** |
+| Peristiwa | `domain_events` (outbox, trigger `dom_*`), `activity_feed`, `config_history` (sebelum/sesudah, pelaku, alasan). **Verified** — dipakai untuk audit & versi konfigurasi. |
+| Keuangan | Jurnal double-entry otomatis (`acct_sync`), PPN, rekonsiliasi bank, arus kas, aset & penyusutan. **Verified** (di luar cakupan perubahan tahap ini; tidak disentuh). |
+
+## 2. Existing Feature Inventory (ringkas)
+
+- Properti: kamar, penghuni, sewa, tagihan otomatis, pembayaran, deposit, booking, perbaikan, meteran, portal penghuni, pendaftaran online, pindah kamar.
+- Retail: kasir (eceran/grosir, bayar campuran, PPN, promo, harga bertingkat, daftar harga, harga outlet), stok multi-satuan & multi-lokasi, batch/kedaluwarsa, mutasi/kiriman, tahanan stok, belanja & faktur supplier, konsinyasi, grosir B2B (penawaran → surat jalan → faktur, batas kredit), shift, tutup harian, komisi, kesehatan stok.
+- Jasa/Laundry/Kuliner: layanan & tahap, pesanan, antar-jemput, dapur, meja & reservasi, QR meja, resep & food cost, portal pemesanan.
+- Kustom: Business Builder + 12 template siap pakai (event, proyek, pendidikan, rental, travel, produksi, tani, klinik, anggota, kirim, bengkel, salon) dengan dashboard `bb_home`.
+- Umum: karyawan & peran, akses per modul, persetujuan bertingkat, otomatisasi, SDM & gaji, anggaran, analisis bisnis, pembukuan, halaman bisnis & QR, media, lampiran, CRM prospek, langganan & pembayaran Lynk.
+
+## 3. Existing Navigation Structure
+
+| Lebar | Struktur |
+|---|---|
+| HP <768 | Header (bisnis, cari, lonceng, bagikan, ☰) + menu bawah **[Beranda][Operasional][+][Laporan][Akun]** + Drawer ☰ (7 kelompok generik). |
+| Tablet 768–1023 | Icon rail + topbar. |
+| Desktop ≥1024 | Sidebar 252px (Workspace / Modul bisnis / Sistem) + topbar dengan "+ Aksi cepat". |
+
+Sumber menu: `BUSINESS_TYPES[engine].tabs` → `tabsFor(kos)` (tersaring peran, modul aktif, jenis bisnis) → `groupsFor(kos)` (7 kelompok SAMA untuk semua bisnis: Operasional, Transaksi, Pelanggan, Inventaris, Keuangan, Laporan, Pengaturan).
+
+**Temuan:**
+- N-01 Kelompok sidebar identik untuk semua jenis bisnis (spesifikasi §12 meminta struktur per bisnis: retail Penjualan/Pembelian/Persediaan…, kos Kamar/Penghuni/Booking + Manajemen…).
+- N-02 Slot ke-2 menu bawah = "Operasional" (daftar modul), bukan menu utama kontekstual (§13.1, gambar: Transaksi/Pesanan/Kamar/Proyek).
+- N-03 **Tombol (+) tidak permanen**: dirender hanya bila `quickActions(kos).length > 0` → hilang untuk bisnis draf / peran tanpa aksi. Melanggar keputusan permanen §13.
+- N-04 Aksi cepat = daftar statis per engine di `lib/menu.js`; tidak mengikuti Business DNA, tidak bisa diatur pemilik, tidak ada prioritas konteks halaman, tidak ada empty state.
+- N-05 Pemilik tidak bisa mengatur urutan/menyembunyikan menu atau membuat pintasan.
+- N-06 Beberapa aksi `?baru=` hanya membuka halaman tanpa formulir (`/kamar`, `/layanan`, `/kas?baru=masuk`).
+
+## 4. Existing Dashboard Structure
+
+`components/Dashboard.jsx` = satu kerangka, widget per halaman: `kos` (9 widget), `toko` (9), `jasa` (12), `kerja` (8). Data nyata dari RPC laporan. "Atur dashboard" (sembunyi/urutan) **disimpan di localStorage per perangkat** → tidak mengikuti pemilik di perangkat lain, tidak berversi, tidak bisa dipulihkan (§11.3, §18). Partial failure: widget yang gagal `node` falsy → tidak merusak dashboard lain. **Partial**
+
+## 5. Existing Database Schema (yang relevan)
+
+`kos` (business_type, category_code, subcategory_code, template_code, setup_status, setup_meta, profile), `biz_categories/subcategories/templates`, `modules`, `business_modules`, `config_requests`, `config_history`, `setup_items`, `bb_workspace` (layout), `domain_events`, `kos_members`, `staff`, `branches`, `plan_activations`.
+
+## 6. Existing Business Logic Inventory (adaptif)
+
+- Rekomendasi modul saat setup: template `spec.modules` + `recommend()` (jawaban ya/tidak). Tidak ada skor, tidak ada siklus terima/tolak/tunda di luar setup, tidak dievaluasi ulang saat bisnis berubah.
+- Siklus hidup bisnis: tidak ada (selain masa coba & growth offer untuk paket).
+- Event: `domain_events` lengkap untuk transaksi; belum ada evaluasi relevansi saat cabang/karyawan/paket berubah.
+
+## 7. Existing Security Assessment
+
+- Kuat: RLS + RPC `security definer` dengan `member_in`, entitlement di server (`plan_has`), modul nonaktif ditolak server (`module_on` di RPC & `pathModuleOff` di UI), audit `config_history`, guard bisnis ditutup/draf.
+- Risiko untuk fitur baru: konfigurasi tampilan dari klien harus divalidasi server (bentuk & panjang), tidak boleh membuka akses (menu/aksi tetap disaring `tabsFor` + izin server). Rekomendasi tidak boleh mengaktifkan modul berbayar tanpa paket → aktivasi tetap lewat `module_set`.
+
+## 8. Gap Analysis
+
+| Spesifikasi | Status awal | Rencana |
+|---|---|---|
+| §5 Klasifikasi ≥20 kategori + registry (versi, model, kapabilitas bawaan) | 15 kategori, tanpa metadata DNA | +6 kategori (Hospitality, E-commerce, Teknologi, Media, Keuangan, Rental), subkategori sesuai daftar, kolom `version/supported_models/default_*` |
+| §6 Business DNA 6 dimensi | Belum | `business_profiles` (dna jsonb + versi) + kosakata `biz_vocab` + `dna_default/dna_clean/dna_get/dna_save` |
+| §7 Business process recognition | Tahap jasa & alur Builder saja | Peta proses per engine ditampilkan di Pusat Pengalaman (fase 4: workflow registry) |
+| §8 Feature relevance (metadata, 5 kelas, skor berbobot, rule registry) | Belum | Kolom relevansi di `modules`, tabel `relevance_rules`, `feature_relevance(kos)` |
+| §9 Decision engine (urutan security → … → default) | Sebagian tersebar | `feature_relevance` + `module_set` (security/izin/paket/dependensi) + konfigurasi pemilik |
+| §11 Dashboard adaptif + personalisasi | Adaptif per engine; personalisasi lokal | Simpan di server (`experience_configs.dash`), berversi, pulihkan |
+| §12 Sidebar dinamis per bisnis + kendali pemilik | Kelompok generik | Profil navigasi per bisnis (retail, kos, kuliner, laundry/jasa, kustom) + sembunyikan/urutkan/pintasan |
+| §13 (+) permanen + panel kontekstual | Bersyarat, statis | (+) selalu ada; registry aksi cepat + DNA + izin + konteks halaman + pengaturan pemilik + empty state |
+| §14 Siklus rekomendasi | Belum | `feature_recommendations` (recommended/accepted/rejected/deferred/activated/dismissed/expired) |
+| §15 Business Experience Center | Belum | Halaman `/pengalaman` (Profil, Fitur, Dashboard, Navigasi, Aksi cepat, Rekomendasi, Evolusi) |
+| §18 Versi & pemulihan konfigurasi | `config_history` saja | `experience_configs.version` + pulihkan dari riwayat |
+| §19 Multi-bisnis | Sudah (Bisnis Anda, Ringkasan pemilik) | Dipertahankan |
+| §20–21 Lifecycle & event | Belum | `biz_signals`, tahap kematangan, evaluasi saat profil/cabang/karyawan/paket berubah (trigger aman) + harian |
+| §22 Onboarding adaptif | 4 bagian + Pusat Konfirmasi | + bagian "Karakter operasional" (DNA) + pratinjau workspace |
+| §23 Keuangan | Verified | Tidak diubah |
+| §24 Integration registry | `pay_providers` saja | Fase 6 |
+| §28 Experience performance | Belum | Fase 7 (urutan aksi cepat memakai frekuensi pemakaian per perangkat sebagai langkah awal) |
+
+## 9. Reusable Components Inventory
+
+`Dashboard`/`Widget`/`Alerts`/`ActivityList`, `PageHeader`/`DataTable`/`FilterToolbar`, `Sheet` (bottom sheet HP), `NavIcon`, `AppShell` (Sidebar/Topbar/Crumbs/Dropdown), `useBaru`, `module_set`/`module_impact`/`config_log`, `tabsFor`/`canArea`/`pathModuleOff`.
+
+## 10. Proposed Architecture (dipetakan ke 6 lapisan spesifikasi)
+
+1. Klasifikasi: `biz_categories/subcategories/templates` (+ metadata) — tetap satu sumber.
+2. Pemahaman bisnis: `business_profiles.dna` (6 dimensi) + `biz_vocab` + `biz_signals` (indikator nyata).
+3. Decision engine: `feature_relevance` (skor + kelas + alasan) → `feature_recommendations` → `module_set` (satu-satunya pintu aktivasi: izin, paket, dependensi).
+4. Shared engines: 4 mesin yang ada (tidak diduplikasi).
+5. Adaptive experience: `lib/menu.js` profil navigasi + `lib/quick.js` registry aksi cepat + `experience_configs` (nav/quick/dash) + Dashboard.
+6. UI: AppShell (HP/tablet/desktop) dengan (+) permanen.
+
+Konfigurasi = data (tabel/registry), bukan `if` tersebar di komponen: profil navigasi & registry aksi cepat masing-masing satu file.
+
+## 11. Files and Components to Modify
+
+DB: migrasi baru `20261121100000_adaptive_foundation.sql`, uji `supabase/tests/adaptive_experience.sql`.
+Frontend: `lib/menu.js` (profil navigasi, main tab, konfigurasi pemilik), `lib/quick.js` (baru), `lib/dna.js` (baru), `components/KosProvider.jsx` (muat DNA + konfigurasi), `app/(app)/layout.jsx` (menu bawah + (+) permanen + panel), `components/AppShell.jsx`, `components/Dashboard.jsx` (preferensi server), `app/(app)/pengalaman/page.jsx` (baru), `app/mulai/page.jsx` (bagian DNA), `app/(app)/konfirmasi/page.jsx` (pratinjau workspace), halaman yang perlu `?baru=` (`kamar`, `layanan`, `kas`), `lib/business.js` (rute & area baru), panduan (`app/panduan/page.jsx`, `lib/guide.js`).
+
+## 12. Database Migration Plan
+
+Satu migrasi aditif (tanpa mengubah/menghapus kolom lama): kolom baru di `biz_categories`/`biz_subcategories`/`modules`; tabel baru `biz_vocab`, `business_profiles`, `relevance_rules`, `feature_recommendations`, `experience_configs` (semua ber-`kos_id` diberi `zz_kos_open_guard`, tanpa policy tulis — hanya RPC). Bisnis lama: DNA = bawaan dari kategori (tidak disimpan sampai pemilik mengubah), konfigurasi tampilan kosong = rekomendasi PRASARA (tampilan lama tidak rusak). Trigger evaluasi dibungkus `exception when others` agar tidak pernah menggagalkan transaksi utama.
+
+## 13. Implementation Roadmap
+
+| Tahap | Isi | Status |
+|---|---|---|
+| Fase 0 | Audit ini | Selesai 21 Nov |
+| Tahap 1 (Fase 1+2) | Klasifikasi 20+, Business DNA, katalog & aturan relevansi, rekomendasi, lifecycle dasar; navigasi per bisnis, (+) permanen, registry aksi cepat, konfigurasi pemilik berversi, Business Experience Center, onboarding DNA, preferensi dashboard di server | Selesai 21 Nov (lihat §14) |
+| Fase 3 | Dashboard: KPI pilihan, periode bawaan, widget per subkategori (fashion: ukuran/warna; elektronik: garansi), Business Pulse/Signals | Berikutnya |
+| Fase 4 | Workflow registry, alur bersyarat, persetujuan per alur | |
+| Fase 5 | Ringkasan multi-bisnis lanjutan (konsolidasi berbatas izin) | |
+| Fase 6 | Integration registry & webhook umum | |
+| Fase 7 | Experience performance (pemakaian fitur, aksi cepat, rekomendasi) di server | |
+
+Aturan yang dijaga: tidak menghapus fitur, tidak mengubah logika transaksi/keuangan, tidak mengaktifkan modul berbayar otomatis, tanpa AI generatif (aturan + skor tertulis), tanpa data contoh di aplikasi.
+
+## 14. Hasil Tahap 1 (21 Nov 2026)
+
+| Bagian | Status | Bukti |
+|---|---|---|
+| Klasifikasi 21 kategori + ±200 subkategori + DNA bawaan & versi | Verified | uji B (`adaptive_experience.sql`) |
+| Business DNA 6 dimensi, validasi server, versi & pulihkan | Verified | uji E, M |
+| Feature relevance (skor berbobot, 5 kelas + dalam rencana) & rule registry (28 aturan) | Verified | uji A, C, D |
+| Rekomendasi: alasan, terima/tolak/tunda, tidak berulang, tidak mengaktifkan fitur berbayar | Verified | uji F, J |
+| Lifecycle: sinyal nyata, tahap, evaluasi saat cabang/karyawan/paket berubah, harian | Verified | uji I; cron `experience_tick` |
+| Konfigurasi navigasi/aksi cepat/dashboard berversi + pulihkan + reset | Verified | uji M |
+| Isolasi tenant tabel baru | Verified | `isolasi.sql` 199/199 lulus |
+| Profil navigasi 5 jenis (retail, kos, kuliner, jasa, kustom), menu utama kontekstual, (+) permanen, registry aksi cepat (DNA, izin, modul, konteks halaman, favorit, frekuensi) | Verified (logika) | uji Node `lib/menu.js`/`lib/quick.js`: 5 bisnis → sidebar, menu bawah & (+) berbeda; kasir hanya aksi penjualan; modul nonaktif → aksi hilang |
+| Pusat Pengalaman, langkah DNA di /mulai, pratinjau workspace, dashboard di server | Verified (render) | Render komponen asli di Chrome 375/390/820/1280/1440 tanpa overflow |
+| Panduan (Langkah 109–112, `lib/guide.js`) | Selesai | |
+
+Belum (fase berikutnya): KPI pilihan & periode bawaan dashboard, widget khusus subkategori (ukuran/warna fashion, garansi elektronik), workflow registry & alur bersyarat, ringkasan multi-bisnis lanjutan, integration registry, analitik pemakaian fitur di server, UI Super Admin untuk mengubah DNA bawaan kategori (RPC `admin_biz_category_dna` sudah ada). Hospitality memakai mesin Properti (tarif harian & housekeeping belum).

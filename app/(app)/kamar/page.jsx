@@ -12,12 +12,14 @@ import { rp, tgl, angka, parseRp, ROOM_ST, errMsg } from '@/lib/format';
 import Link from 'next/link';
 import { moduleOn, canArea } from '@/lib/business';
 import EntityPhotos from '@/components/media/EntityPhotos';
+import { useBaru } from '@/lib/useBaru';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 
 export default function Kamar() {
   const d = useData();
   const [filter, setFilter] = useState('');
   const [sheet, setSheet] = useState(null);
+  useBaru(() => setSheet({ t: 'edit', room: null })); // tombol (+) › Tambah kamar
   const { kosId, ver } = useKos();
   const thumbs = useThumbs(kosId, 'room', `${ver}:${sheet ? 1 : 0}`);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;

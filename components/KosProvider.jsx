@@ -35,14 +35,15 @@ export default function KosProvider({ children }) {
     let data = null, error = null;
     for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
     if (error) { setList([]); return []; }
-    let mods = null, locs = {}, acc = {};
+    let mods = null, locs = {}, acc = {}, exp = {};
     const [roles, ents] = await Promise.all([
       supabase.rpc('my_roles').then((r) => r.data || {}, () => ({})),
       supabase.rpc('my_entitlements').then((r) => r.data || {}, () => ({})), // paket, fitur & batas dari database
       supabase.rpc('my_modules').then((r) => (r.error ? null : r.data || {}), () => null), // modul aktif per bisnis
       supabase.rpc('my_locations').then((r) => r.data || {}, () => ({})), // lokasi (cabang/gudang) & lokasi kerja saya
       supabase.rpc('my_access').then((r) => r.data || {}, () => ({})), // akses per modul (Bisnis/Pro) & penyetuju tingkat 1 (Pro)
-    ]).then(([a, b, c, d, e]) => { mods = c; locs = d; acc = e; return [a, b]; });
+      supabase.rpc('my_experience').then((r) => r.data || {}, () => ({})), // Business DNA + pengaturan menu/aksi cepat/dashboard pemilik
+    ]).then(([a, b, c, d, e, f]) => { mods = c; locs = d; acc = e; exp = f; return [a, b]; });
     // Bisnis kustom: jenis data aktif jadi menu sendiri (mis. Acara, Klien) + tombol "buat" dari tata letak template
     const kustom = data.filter((k) => k.business_type === 'kustom').map((k) => k.id);
     const bb = {};
@@ -57,7 +58,8 @@ export default function KosProvider({ children }) {
       }
     }
     data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null, locs: locs[k.id] || null,
-      my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver), bb: bb[k.id] || null }));
+      my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver), bb: bb[k.id] || null,
+      dna: exp[k.id]?.dna || null, dna_stored: Boolean(exp[k.id]?.dna_stored), exp: exp[k.id]?.cfg || { nav: {}, quick: {}, dash: {}, version: 0 } }));
     setList(data);
     let saved = null;
     try { saved = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch {}

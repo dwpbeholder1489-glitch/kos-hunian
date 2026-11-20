@@ -31,7 +31,7 @@ export default function Kas() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sheet, setSheet] = useState(null);
-  useBaru(() => setSheet({ t: 'exp' }));
+  useBaru((v) => setSheet(v === 'masuk' ? { t: 'cash', kind: 'pendapatan_lain' } : { t: 'exp' })); // (+) › Catat pemasukan / pengeluaran
   const load = async () => {
     const multi = multiLoc(kos);
     const [l, e, c, p, cat, loc] = await Promise.all([
@@ -145,7 +145,7 @@ export default function Kas() {
       })()}
 
       {sheet?.t === 'exp' && <ExpenseForm kosId={kosId} cats={d.cats} onClose={() => setSheet(null)} onSaved={done} />}
-      {sheet?.t === 'cash' && <CashForm kosId={kosId} onClose={() => setSheet(null)} onSaved={done} />}
+      {sheet?.t === 'cash' && <CashForm kosId={kosId} initial={sheet.kind} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'pay' && <PayForm kosId={kosId} c={sheet.c} kind={sheet.kind} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'move' && <MoveCash kosId={kosId} locs={d.loc.filter((b) => b.active)} cur={kos.locs?.current} onClose={() => setSheet(null)} onSaved={done} />}
       {sheet?.t === 'att' && <Sheet title={`${sheet.f.label} · ${tgl(sheet.f.date)}`} onClose={() => setSheet(null)}>
@@ -190,8 +190,8 @@ function ExpenseForm({ kosId, cats, onClose, onSaved }) {
   );
 }
 
-function CashForm({ kosId, onClose, onSaved }) {
-  const [kind, setKind] = useState('setoran_modal');
+function CashForm({ kosId, onClose, onSaved, initial }) {
+  const [kind, setKind] = useState(initial && OTHER[initial] ? initial : 'setoran_modal');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
   const [acc, setAcc] = useState('kas');

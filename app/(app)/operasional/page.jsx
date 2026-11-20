@@ -1,5 +1,5 @@
 'use client';
-// Modul Bisnis: semua menu yang boleh dibuka, dikelompokkan (Operasional, Transaksi, Pelanggan, Inventaris, Keuangan, Laporan, Pengaturan).
+// Modul Bisnis: semua menu yang boleh dibuka, dikelompokkan sesuai profil navigasi jenis bisnis (lib/menu.js).
 // Isi sudah tersaring per jenis bisnis, peran, dan modul aktif (lib/menu.js → tabsFor).
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -7,7 +7,7 @@ import { useKos } from '@/components/KosProvider';
 import NavIcon from '@/components/NavIcon';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
-import { groupsFor, subOf, GROUP_ICON } from '@/lib/menu';
+import { groupsFor, subOf, groupIcon } from '@/lib/menu';
 
 export default function Operasional() {
   const { kos } = useKos();
@@ -16,7 +16,7 @@ export default function Operasional() {
   const ref = useRef(null);
   useEffect(() => { try { if (new URLSearchParams(window.location.search).get('cari')) ref.current?.focus(); } catch {} }, []);
   if (!kos) return null;
-  const groups = groupsFor(kos);
+  const groups = groupsFor(kos, { all: true }); // termasuk menu yang disembunyikan pemilik (akses tidak ditutup)
   const term = q.trim().toLowerCase();
   const hits = term ? groups.flatMap(([, g, , items]) => items.map((x) => [...x, g])).filter(([h, l, g]) => `${l} ${subOf(h)} ${g}`.toLowerCase().includes(term)) : [];
   return (
@@ -32,7 +32,7 @@ export default function Operasional() {
         <div className="modlist">{groups.map(([k, name, desc, items]) => (
           <div key={k} className={'modgroup' + (open === k ? ' open' : '')}>
             <button className="modrow" aria-expanded={open === k} onClick={() => setOpen(open === k ? null : k)}>
-              <span className="modic"><NavIcon name={GROUP_ICON[k]} /></span><span className="t"><b>{name}</b><small>{desc}</small></span><Chev down={open === k} />
+              <span className="modic"><NavIcon name={groupIcon(k)} /></span><span className="t"><b>{name}</b><small>{desc}</small></span><Chev down={open === k} />
             </button>
             {open === k && <div className="modsub">{items.map(([h, l]) => (
               <Link key={h} href={h}><NavIcon name={h} size={20} /><span className="t"><b>{l}</b>{subOf(h) && <small>{subOf(h)}</small>}</span><Chev /></Link>
