@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader, DataTable } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg } from '@/lib/format';
 import { PAY, jam, qtyNum, uid, payLabel } from '@/lib/retail';
@@ -41,8 +42,8 @@ export default function Penjualan() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Penjualan</h2><PageHelp page="penjualan" /></div><Link href="/kasir"><button className="primary">+ Transaksi</button></Link></div>
-      <div className="row" style={{ flexWrap: 'nowrap' }}>
+      <PageHeader title="Penjualan" help={<PageHelp page="penjualan" />} desc="Riwayat transaksi per hari — ketuk transaksi untuk detail, struk, retur, atau pembatalan." actions={<Link href="/kasir"><button className="primary">+ Transaksi</button></Link>} />
+      <div className="daynav">
         <button className="sm" onClick={() => setDay(shift(day, -1))} aria-label="Hari sebelumnya">‹</button>
         <b style={{ flex: 1, textAlign: 'center' }}>{day === today() ? 'Hari ini, ' : ''}{tgl(day)}</b>
         <button className="sm" onClick={() => setDay(shift(day, 1))} disabled={day >= today()} aria-label="Hari berikutnya">›</button>
@@ -54,13 +55,21 @@ export default function Penjualan() {
           <Tile label="Kasbon" value={rp(kasbon)} sub="belum diterima" />
         </div>
         {rows.length === 0 ? <Empty title="Belum ada penjualan" text="Transaksi dari menu Kasir muncul di sini." /> : (
-          <section className="panel"><div className="list">{rows.map((s) => (
-            <button className="li click" key={s.id} onClick={() => setOpen(s)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' }}>
-              <div className="main"><b>{s.number}{s.status === 'batal' && <span className="chip void" style={{ marginLeft: 6 }}>Batal</span>}</b>
-                <span className="small muted">{jam(s.sold_at)} · {payLabel(s)}{s.contact_id ? ` · ${contacts.get(s.contact_id) || ''}` : ''}{fin && s.cashier ? ` · ${s.cashier.split('@')[0]}` : ''}</span></div>
-              <b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b>
-            </button>
-          ))}</div></section>
+          <DataTable rows={rows} caption={`Penjualan ${tgl(day)}`} onRow={setOpen} rowLabel={(s) => `${s.number}, ${rp(s.total)}`} rowClass={(s) => (s.status === 'batal' ? 'void' : undefined)}
+            initialSort={{ key: 'jam', dir: -1 }}
+            columns={[
+              { key: 'number', label: 'No. transaksi', sort: (s) => s.number, render: (s) => <b>{s.number}</b> },
+              { key: 'jam', label: 'Waktu', sort: (s) => s.sold_at, render: (s) => jam(s.sold_at) },
+              { key: 'bayar', label: 'Pembayaran', render: (s) => payLabel(s) },
+              { key: 'pelanggan', label: 'Pelanggan', hide: 'tablet', sort: (s) => contacts.get(s.contact_id) || '', render: (s) => (s.contact_id ? contacts.get(s.contact_id) || '—' : '—') },
+              ...(fin ? [{ key: 'kasir', label: 'Kasir', hide: 'tablet', render: (s) => (s.cashier ? s.cashier.split('@')[0] : '—') }] : []),
+              { key: 'status', label: 'Status', render: (s) => (s.status === 'batal' ? <span className="chip void">Batal</span> : <span className="chip good">Selesai</span>) },
+              { key: 'total', label: 'Total', align: 'right', sort: (s) => Number(s.total), render: (s) => <b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b> },
+            ]}
+            card={(s) => <>
+              <div className="dt-row"><b>{s.number}{s.status === 'batal' && <span className="chip void" style={{ marginLeft: 6 }}>Batal</span>}</b><b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b></div>
+              <span className="small muted">{jam(s.sold_at)} · {payLabel(s)}{s.contact_id ? ` · ${contacts.get(s.contact_id) || ''}` : ''}{fin && s.cashier ? ` · ${s.cashier.split('@')[0]}` : ''}</span>
+            </>} />
         )}
       </>}
       {open && <Detail fin={fin} onReturned={load} s={open} contact={contacts.get(open.contact_id)} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}

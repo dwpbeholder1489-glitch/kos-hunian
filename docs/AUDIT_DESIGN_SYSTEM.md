@@ -68,7 +68,7 @@ Menu sudah **adaptif**: `tabsFor(kos)` + `groupsFor(kos)` (lib/business.js, lib/
 | Tahap | Isi | Status |
 |---|---|---|
 | A (Fase 1–3) | Audit ini; token baru + tema terang bawaan (gelap tetap bisa dipilih); Inter; tombol/input/kartu/chip/tabel/fokus; **AppShell baru**: sidebar desktop ≥1024 (lebar/ciut, disimpan per perangkat, kelompok WORKSPACE · MODUL BISNIS · SISTEM dari `groupsFor`), icon rail + drawer 768–1023, topbar (breadcrumb, cari, aksi cepat, notifikasi, bantuan, bagikan, profil); HP tidak diubah strukturnya | Dikerjakan 20 Nov |
-| B (Fase 4) | Komponen bersama: `PageHeader`, `DataTable` responsif (tabel desktop → kartu HP), `FilterToolbar`, `Pagination`, skeleton | Berikutnya |
+| B (Fase 4) | Komponen bersama: `PageHeader`, `DataTable` responsif (tabel desktop → kartu HP), `FilterToolbar`, `Pagination`, skeleton (`components/Page.jsx`); dipasang di Penjualan, Pelanggan & supplier, Barang & stok | Dikerjakan 20 Nov |
 | C (Fase 5) | Dashboard adaptif per jenis bisnis (KPI, grafik, aktivitas, peringatan) memakai sumber data yang ada | |
 | D (Fase 6) | Penyelarasan modul sesuai prioritas: Dashboard → Operasional → Penjualan/POS → Produk & Inventori → Pelanggan → Keuangan → Laporan → Karyawan → Pengaturan → lainnya | |
 | E (Fase 7–8) | Uji 375/390/430/768/820/1024/1280/1440/1920, portrait/landscape, regresi | Tiap tahap + akhir |

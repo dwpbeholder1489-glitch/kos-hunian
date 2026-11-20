@@ -46,8 +46,14 @@ export function Empty({ title, text, children, art }) {
   return <div className="empty">{art !== false && <EmptyArt kind={art} title={title} />}<h3>{title}</h3>{text && <p className="muted" style={{ margin: 0 }}>{text}</p>}{children}</div>;
 }
 
-export function Loading() {
-  return <p className="muted">Memuat…</p>;
+// Memuat: kerangka abu-abu (skeleton) agar tata letak tidak meloncat; teks tetap terbaca pembaca layar.
+export function Loading({ rows = 3 }) {
+  return (
+    <div className="skel" role="status" aria-live="polite">
+      <span className="vh">Memuat…</span>
+      {Array.from({ length: rows }, (_, i) => <span key={i} className="skel-bar" style={{ width: `${[92, 76, 84, 64][i % 4]}%` }} aria-hidden="true" />)}
+    </div>
+  );
 }
 
 export function InvChip({ inv }) {

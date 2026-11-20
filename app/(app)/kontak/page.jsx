@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import CrmTimeline from '@/components/CrmTimeline';
 import { rp, tgl, errMsg, waLink, angka, parseRp, today } from '@/lib/format';
@@ -38,17 +39,23 @@ export default function Kontak() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Pelanggan & supplier</h2><PageHelp page="kontak" /></div><button className="primary" onClick={() => setOpen({ kind: tab })}>+ Tambah</button></div>
+      <PageHeader title="Pelanggan & supplier" help={<PageHelp page="kontak" />} desc="Data kontak, sisa kasbon/utang, dan riwayat transaksi." actions={<button className="primary" onClick={() => setOpen({ kind: tab })}>+ Tambah</button>} />
       {fin && <div className="seg">{['pelanggan', 'supplier'].map((k) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{KIND[k]} ({rows.filter((c) => c.kind === k && !c.archived_at).length})</button>)}</div>}
       {(archivedN > 0 || arsip) && <button className="sm ghost" onClick={() => setArsip(!arsip)}>{arsip ? '← Kembali ke daftar aktif' : `Lihat arsip (${archivedN})`}</button>}
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama atau nomor" aria-label="Cari kontak" />
+      <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama atau nomor" />
       {shown.length === 0 && arsip ? <Empty title="Arsip kosong" /> : shown.length === 0 ? <Empty title={`Belum ada ${KIND[tab].toLowerCase()}`} text={tab === 'pelanggan' ? 'Pelanggan juga bisa ditambahkan dari Kasir saat memilih Kasbon.' : 'Supplier juga bisa ditambahkan dari Belanja.'} /> : (
-        <section className="panel"><div className="list">{shown.map((c) => (
-          <button key={c.id} className="li click" onClick={() => setOpen(c)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' }}>
-            <div className="main"><b>{c.name}{c.tipe && <span className="chip" style={{ marginLeft: 6 }}>{TIPE[c.tipe]}</span>}</b><span className="small muted">{c.phone || 'tanpa nomor'} · {c.trx} transaksi{c.last_at ? ` · terakhir ${tgl(String(c.last_at).slice(0, 10))}` : ''}</span></div>
-            {c.balance != null && Number(c.balance) > 0 && <span className="chip bad">{tab === 'pelanggan' ? 'Kasbon' : 'Utang'} {rp(c.balance)}</span>}
-          </button>
-        ))}</div></section>
+        <DataTable rows={shown} caption={KIND[tab]} onRow={setOpen} rowLabel={(c) => c.name} initialSort={null}
+          columns={[
+            { key: 'name', label: 'Nama', sort: (c) => c.name.toLowerCase(), render: (c) => <><b>{c.name}</b>{c.tipe && <span className="chip" style={{ marginLeft: 6 }}>{TIPE[c.tipe]}</span>}</> },
+            { key: 'phone', label: 'Nomor HP', render: (c) => c.phone || <span className="muted">—</span> },
+            { key: 'trx', label: 'Transaksi', align: 'right', sort: (c) => Number(c.trx) || 0, render: (c) => angka(c.trx || 0) },
+            { key: 'last', label: 'Terakhir', hide: 'tablet', sort: (c) => c.last_at || '', render: (c) => (c.last_at ? tgl(String(c.last_at).slice(0, 10)) : '—') },
+            ...(rows.some((c) => c.balance != null) ? [{ key: 'bal', label: tab === 'pelanggan' ? 'Sisa kasbon' : 'Sisa utang', align: 'right', sort: (c) => Number(c.balance) || 0, render: (c) => (Number(c.balance) > 0 ? <span className="chip bad">{rp(c.balance)}</span> : <span className="muted">—</span>) }] : []),
+          ]}
+          card={(c) => <>
+            <div className="dt-row"><b>{c.name}{c.tipe && <span className="chip" style={{ marginLeft: 6 }}>{TIPE[c.tipe]}</span>}</b>{c.balance != null && Number(c.balance) > 0 && <span className="chip bad">{tab === 'pelanggan' ? 'Kasbon' : 'Utang'} {rp(c.balance)}</span>}</div>
+            <span className="small muted">{c.phone || 'tanpa nomor'} · {c.trx} transaksi{c.last_at ? ` · terakhir ${tgl(String(c.last_at).slice(0, 10))}` : ''}</span>
+          </>} />
       )}
       {open && <Detail c={open} fin={fin} kosId={kosId} kos={kos} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} onReload={load} />}
     </div>

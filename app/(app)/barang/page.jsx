@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
 import EntityPhotos from '@/components/media/EntityPhotos';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
@@ -77,9 +78,30 @@ export default function Barang() {
     && (!term || term.split(/\s+/).every((w) => p.name.toLowerCase().includes(w)) || (p.sku || '').toLowerCase() === term
       || d.units.some((u) => u.product_id === p.id && (u.barcode || '').toLowerCase() === term)));
 
+  // Satu sumber isi baris barang: dipakai kartu HP dan kolom tabel laptop (Unified Design System §11)
+  const info = (p, us, tbl) => (<>
+                <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}</b>
+                {(p.sku || p.category_id || p.variant_group_id) && <span className="small muted">{[p.variant_group_id && 'Varian', p.category_id && catName(p.category_id), p.sku && `Kode ${p.sku}`].filter(Boolean).join(' · ')}</span>}
+                {!tbl && <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>}
+                {availLine(d.avail, p, multi ? kos.locs?.current : null)}
+                {us.some((u, k) => k > 0 && unitProblem(u, p.base_unit)) && <span className="small" style={{ color: 'var(--bad)' }}>Periksa satuan: {us.filter((u, k) => k > 0 && unitProblem(u, p.base_unit)).map((u) => unitProblem(u, p.base_unit)).join(' ')} Buka Ubah untuk memperbaiki.</span>}
+                {!bahan && d.breaks.some((x) => x.product_id === p.id) && <span className="small" style={{ color: 'var(--good)' }}>Beli banyak: {d.breaks.filter((x) => x.product_id === p.id).sort((a, b) => Number(a.min_qty) - Number(b.min_qty)).slice(0, 3).map((x) => `≥${angka(x.min_qty)} ${x.unit} ${rp(x.price)}${x.tier !== 'semua' ? ` (${x.tier === 'grosir' ? 'grosir' : 'ecer'})` : ''}`).join(' · ')}</span>}
+                <span className="small muted">{us.map((u) => bahan ? `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''}` : `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
+  </>);
+  const acts = (p) => (<div className="row" style={{ flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
+                {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
+                  onClick={async () => { if (await run(() => supabase.rpc('product_set_favorite', { p_product: p.id, p_on: !p.favorite }), p.favorite ? 'Dihapus dari tombol cepat' : 'Jadi tombol cepat di Kasir', errMsg)) reload(); }}
+                  style={{ fontSize: 18, color: p.favorite ? 'var(--att)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}
+                {!bahan && kos?.profile?.tax?.aktif && <button className="sm ghost" aria-pressed={!!p.tax_exempt} title="Tandai barang yang tidak dikenai PPN"
+                  onClick={async () => { if (await run(() => supabase.rpc('product_set_tax', { p_product: p.id, p_exempt: !p.tax_exempt }), p.tax_exempt ? 'Barang dikenai PPN lagi' : 'Barang ditandai bebas PPN', errMsg)) reload(); }}>{p.tax_exempt ? 'Bebas PPN' : 'Kena PPN'}</button>}
+                <button className="sm" onClick={() => setAdj(p)}>Stok</button>
+                <button className="sm ghost" onClick={() => setEdit(p)}>Ubah</button>
+  </div>);
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>{bahan ? 'Bahan & stok' : 'Barang & stok'}</h2><PageHelp page={bahan ? 'bahan' : 'barang'} /></div><div className="row">{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}{!bahan && <button className="sm" onClick={() => setVariant('new')}>+ Varian</button>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></div></div>
+      <PageHeader title={bahan ? 'Bahan & stok' : 'Barang & stok'} help={<PageHelp page={bahan ? 'bahan' : 'barang'} />}
+        desc={bahan ? 'Bahan operasional, stok, dan biaya pemakaian.' : 'Kelola barang, satuan & harga, persediaan, dan pergerakan stok.'}
+        actions={<>{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}{!bahan && <button className="sm" onClick={() => setVariant('new')}>+ Varian</button>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></>} />
       <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
       <div className="grid">
         <Tile label={bahan ? 'Bahan aktif' : 'Barang aktif'} value={angka(active.length)} />
@@ -87,7 +109,7 @@ export default function Barang() {
         <Tile label="Stok menipis" value={angka(low.length)} tone={low.length ? 'bad' : ''} sub="di bawah batas minimum" />
       </div>
       {d.products.length > 0 && <>
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kode, atau barcode" aria-label="Cari barang" />
+        <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama, kode, atau barcode" />
         <div className="seg">
           {[['aktif', `Aktif (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['kesehatan', 'Kesehatan stok'], ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
         </div>
@@ -98,32 +120,17 @@ export default function Barang() {
           <button className="primary" onClick={() => setEdit('new')}>+ Tambah barang pertama</button>
         </Empty>
       ) : shown.length === 0 ? <Empty title="Tidak ada yang cocok" /> : (
-        <section className="panel"><div className="list">{shown.map((p) => {
-          const us = unitsOf(p, d.units);
-          return (
-            <div className="li" key={p.id} style={{ alignItems: 'flex-start', flexWrap: 'wrap', rowGap: 6 }}>
-              <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: '1 1 220px', minWidth: 0 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={48} />}
-              <div className="main">
-                <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}</b>
-                {(p.sku || p.category_id || p.variant_group_id) && <span className="small muted">{[p.variant_group_id && 'Varian', p.category_id && catName(p.category_id), p.sku && `Kode ${p.sku}`].filter(Boolean).join(' · ')}</span>}
-                <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>
-                {availLine(d.avail, p, multi ? kos.locs?.current : null)}
-                {us.some((u, k) => k > 0 && unitProblem(u, p.base_unit)) && <span className="small" style={{ color: 'var(--bad)' }}>Periksa satuan: {us.filter((u, k) => k > 0 && unitProblem(u, p.base_unit)).map((u) => unitProblem(u, p.base_unit)).join(' ')} Buka Ubah untuk memperbaiki.</span>}
-                {!bahan && d.breaks.some((x) => x.product_id === p.id) && <span className="small" style={{ color: 'var(--good)' }}>Beli banyak: {d.breaks.filter((x) => x.product_id === p.id).sort((a, b) => Number(a.min_qty) - Number(b.min_qty)).slice(0, 3).map((x) => `≥${angka(x.min_qty)} ${x.unit} ${rp(x.price)}${x.tier !== 'semua' ? ` (${x.tier === 'grosir' ? 'grosir' : 'ecer'})` : ''}`).join(' · ')}</span>}
-                <span className="small muted">{us.map((u) => bahan ? `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''}` : `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
-              </div></div>
-              <div className="row" style={{ flexWrap: 'nowrap', marginLeft: 'auto' }}>
-                {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
-                  onClick={async () => { if (await run(() => supabase.rpc('product_set_favorite', { p_product: p.id, p_on: !p.favorite }), p.favorite ? 'Dihapus dari tombol cepat' : 'Jadi tombol cepat di Kasir', errMsg)) reload(); }}
-                  style={{ fontSize: 18, color: p.favorite ? 'var(--att)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}
-                {!bahan && kos?.profile?.tax?.aktif && <button className="sm ghost" aria-pressed={!!p.tax_exempt} title="Tandai barang yang tidak dikenai PPN"
-                  onClick={async () => { if (await run(() => supabase.rpc('product_set_tax', { p_product: p.id, p_exempt: !p.tax_exempt }), p.tax_exempt ? 'Barang dikenai PPN lagi' : 'Barang ditandai bebas PPN', errMsg)) reload(); }}>{p.tax_exempt ? 'Bebas PPN' : 'Kena PPN'}</button>}
-                <button className="sm" onClick={() => setAdj(p)}>Stok</button>
-                <button className="sm ghost" onClick={() => setEdit(p)}>Ubah</button>
-              </div>
-            </div>
-          );
-        })}</div></section>
+        <DataTable rows={shown} caption={bahan ? 'Daftar bahan' : 'Daftar barang'} pageSize={50}
+          columns={[
+            { key: 'name', label: bahan ? 'Bahan' : 'Barang', sort: (p) => p.name.toLowerCase(), render: (p) => <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', minWidth: 220 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={40} />}<div className="main" style={{ minWidth: 0 }}>{info(p, unitsOf(p, d.units), true)}</div></div> },
+            { key: 'stock', label: 'Stok', align: 'right', sort: (p) => Number(p.stock) || 0, render: (p) => <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}><b style={{ color: isLow(p) ? 'var(--bad)' : undefined }}>{stockText(multi ? here(p) : p.stock, unitsOf(p, d.units), p.base_unit)}</b>{multi && <span className="small muted">total {stockText(p.stock, unitsOf(p, d.units), p.base_unit)}</span>}</div> },
+            { key: 'cost', label: 'Modal', align: 'right', hide: 'tablet', sort: (p) => Number(p.cost) || 0, render: (p) => (p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>) },
+            { key: 'act', label: <span className="vh">Aksi</span>, align: 'right', render: (p) => acts(p) },
+          ]}
+          card={(p) => <div className="row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', rowGap: 8 }}>
+            <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: '1 1 220px', minWidth: 0 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={48} />}<div className="main" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>{info(p, unitsOf(p, d.units))}</div></div>
+            <div style={{ marginLeft: 'auto' }}>{acts(p)}</div>
+          </div>} />
       )}
       {catSheet && <CategorySheet kosId={kosId} cats={d.cats} products={d.products} onClose={() => setCatSheet(false)} onChanged={reload} />}
       {variant && <VariantForm kosId={kosId} cats={d.cats} group={variant === 'new' ? null : variant} onClose={() => setVariant(null)} onSaved={(r) => { setVariant(null); toast(`${r.made.length} varian ${r.name} tersimpan`); reload(); }} />}
