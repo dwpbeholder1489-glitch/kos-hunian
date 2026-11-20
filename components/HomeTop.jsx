@@ -26,7 +26,8 @@ export default function HomeTop({ kos }) {
   const { user } = useKos();
   const tabs = tabsFor(kos);
   const home = homeOf(kos);
-  const want = PICK[isKuliner(kos) ? 'kuliner' : kos.business_type] || PICK.properti;
+  const want = kos.business_type === 'kustom' && kos.bb?.active ? [...kos.bb.menu.map(([k]) => `/catatan/${k}`), ...PICK.kustom.filter((h) => h !== '/catatan')] // menu jenis usaha (mis. Acara, Klien) di depan
+    : PICK[isKuliner(kos) ? 'kuliner' : kos.business_type] || PICK.properti;
   const items = want.map((h) => tabs.find(([x]) => x === h)).filter(Boolean);
   const extra = tabs.filter(([h]) => h !== home && !want.includes(h) && h !== '/konfirmasi');
   const grid = [...items, ...extra].slice(0, 7);

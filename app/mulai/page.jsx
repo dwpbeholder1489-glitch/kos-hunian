@@ -20,7 +20,7 @@ const SUBS = ['Identitas', 'Operasional', 'Pengelolaan', 'Kebutuhan'];
 const Tag = ({ t }) => <span className={'tag3' + (t === 'Wajib' ? ' req' : '')}>{t}</span>;
 const L = (label, t) => <>{label}<Tag t={t} /></>;
 const DRAFT_KEY = (uid) => `prasara-mulai-${uid}`;
-const ENGINE_NOTE = { properti: 'Kamar, penghuni, tagihan, pembayaran, perbaikan', retail: 'Kasir, stok, belanja ke supplier, kas, laporan', jasa: 'Layanan, pesanan, tahap proses, pembayaran, antar jemput', kustom: 'Business Builder: data, formulir, alur status, laporan' };
+const ENGINE_NOTE = { properti: 'Kamar, penghuni, tagihan, pembayaran, perbaikan', retail: 'Kasir, stok, belanja ke supplier, kas, laporan', jasa: 'Layanan, pesanan, tahap proses, pembayaran, antar jemput', kustom: 'Tampilan siap pakai sesuai jenis usaha: menu, formulir, alur status, laporan, dashboard' };
 
 function Question({ q, value, onChange }) {
   if (q.type === 'multi') {
@@ -298,7 +298,7 @@ export default function Mulai() {
             <Row k="Pemilik" v={String(b.owner_name ?? meta.name ?? '').trim()} sb={2} />
             <Row k="Peran Anda" v={`${RELATIONS.find(([k]) => k === (b.relation || 'pemilik'))[1]} · ${MANAGED.find(([k]) => k === (b.managed || 'sendiri'))[1].toLowerCase()}`} sb={2} />
             <Row k="Kebutuhan" v={needs.map((k) => NEEDS.find(([x]) => x === k)?.[1]).filter(Boolean).join(', ')} sb={3} />
-            <span className="small" style={{ marginTop: 6 }}>Disiapkan: {tpl?.name || '—'} — modul yang disarankan, {tpl?.code === 'kuliner' ? 'tahap dapur (Dimasak → Siap saji), jumlah meja; menu & harga Anda isi sendiri' : tpl?.engine === 'jasa' ? 'layanan yang Anda pilih (tanpa harga), tahap proses' : tpl?.engine === 'properti' ? 'kamar (harga sewa Anda isi)' : tpl?.engine === 'retail' ? 'cara jual & gudang (barang Anda isi setelah aktif)' : 'data & alur di Business Builder'}, daftar informasi yang perlu dilengkapi{tpl?.spec?.portal ? ', draf halaman bisnis' : ''}.</span>
+            <span className="small" style={{ marginTop: 6 }}>Disiapkan: {tpl?.name || '—'} — modul yang disarankan, {tpl?.code === 'kuliner' ? 'tahap dapur (Dimasak → Siap saji), jumlah meja; menu & harga Anda isi sendiri' : tpl?.engine === 'jasa' ? 'layanan yang Anda pilih (tanpa harga), tahap proses' : tpl?.engine === 'properti' ? 'kamar (harga sewa Anda isi)' : tpl?.engine === 'retail' ? 'cara jual & gudang (barang Anda isi setelah aktif)' : tpl?.code === 'kosong' ? 'pilih template siap pakai atau susun sendiri di Business Builder' : `tampilan siap pakai${tpl?.spec?.builder_spec?.main_process ? ` (${tpl.spec.builder_spec.main_process})` : ''} — langsung bisa dipakai setelah diaktifkan`}, daftar informasi yang perlu dilengkapi{tpl?.spec?.portal ? ', draf halaman bisnis' : ''}.</span>
             {note && <span className="small muted">{note}</span>}
             {errs[code] && <div className="notice bad">{errs[code]}</div>}
           </div>

@@ -185,13 +185,13 @@ export default function Konfirmasi() {
       <div className="li" style={{ display: 'block' }}>
         <div className="row between" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
           <span className="small" style={{ minWidth: 0 }}><b>{it.label}</b>{it.must === 'approve' && <span className="muted"> · wajib</span>}{it.kind === 'modul' && it.value?.recommended && <span style={{ color: 'var(--good)' }}> · disarankan</span>}<br />
-            <span className={it.complete ? '' : 'muted'} style={{ overflowWrap: 'anywhere' }}>{it.input === 'pending' ? it.help : it.input === 'logo' ? (it.complete ? 'Logo sudah diunggah' : it.help) : it.input === 'builder' ? (it.complete ? 'Business Builder sudah divalidasi & aktif' : 'Selesaikan di Business Builder › Validasi & aktifkan') : it.kind === 'modul' || it.kind === 'portal' ? it.help : show(it)}</span></span>
+            <span className={it.complete ? '' : 'muted'} style={{ overflowWrap: 'anywhere' }}>{it.input === 'pending' ? it.help : it.input === 'logo' ? (it.complete ? 'Logo sudah diunggah' : it.help) : it.input === 'builder' ? (it.complete ? 'Sudah disiapkan sesuai jenis usaha: menu, formulir, status, laporan, dan dashboard. Tidak wajib diubah.' : 'Belum ada jenis data. Buka Business Builder dan pilih template siap pakai.') : it.kind === 'modul' || it.kind === 'portal' ? it.help : show(it)}</span></span>
           <span className={'chip ' + tone} style={{ flex: 'none' }}>{label}</span>
         </div>
         {it.note && <span className="small muted">Catatan: {it.note}</span>}
         <div className="row" style={{ marginTop: 6, gap: 6 }}>
           {editable && <button className="sm" onClick={() => setEdit(it)}>{it.complete ? 'Ubah' : 'Lengkapi'}</button>}
-          {it.input === 'builder' && <Link href="/builder"><button className="sm">Buka Business Builder</button></Link>}
+          {it.input === 'builder' && <Link href="/builder"><button className="sm">{it.complete ? 'Lihat / sesuaikan (opsional)' : 'Buka Business Builder'}</button></Link>}
           {it.input === 'logo' && <LogoUpload onChanged={load} />}
           {owner && it.input !== 'builder' && it.input !== 'pending' && !['approved', 'active'].includes(it.status) && <button className="sm primary" disabled={!it.complete} onClick={() => act(it, null, 'setujui')}>Setujui</button>}
           {owner && it.must !== 'approve' && it.input !== 'pending' && !['rejected', 'paused'].includes(it.status) && <>
@@ -261,7 +261,7 @@ export default function Konfirmasi() {
             <span className="small muted">Belum disetujui, ditunda, atau ditolak. Bisa disetujui nanti dari halaman ini.</span>
             <div className="list">{willOff.map((x) => <div className="li" key={x.code}><span className="small">{x.label}</span><span className={'chip ' + (ITEM_ST[x.status]?.[1] || 'void')}>{ITEM_ST[x.status]?.[0]}</span></div>)}</div></>}
           {blockers.length > 0 ? <div className="notice bad">Belum bisa diaktifkan. Selesaikan dulu: {blockers.map((x) => x.label).join(', ')}{b.type === 'jasa' && !items.some((x) => x.input === 'service' && ['approved', 'active'].includes(x.status)) ? ', minimal satu layanan disetujui' : ''}.</div>
-            : !d.can_activate ? <div className="notice">Belum bisa diaktifkan: {b.type === 'jasa' ? 'setujui minimal satu layanan dengan harga.' : b.type === 'kustom' ? 'selesaikan Validasi & aktifkan di Business Builder.' : 'periksa bagian wajib.'}</div>
+            : !d.can_activate ? <div className="notice">Belum bisa diaktifkan: {b.type === 'jasa' ? 'setujui minimal satu layanan dengan harga.' : b.type === 'kustom' ? 'buka Business Builder dan pilih template siap pakai (atau susun minimal satu jenis data).' : 'periksa bagian wajib.'}</div>
             : <span className="small muted">Setelah aktif, menu operasional terbuka. Halaman bisnis tetap draf sampai Anda menerbitkannya sendiri.</span>}
           <button className="cta" disabled={!d.can_activate || busy} onClick={activate}>{busy ? 'Mengaktifkan…' : `Aktifkan ${b.name}`}</button>
         </Sheet>

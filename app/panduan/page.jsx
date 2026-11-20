@@ -455,7 +455,7 @@ const PARTS = [
   ['I', 'Business Builder (bisnis kustom)', [
     ['Buat bisnis kustom', 'Ketuk nama bisnis › + Tambah bisnis › Bisnis lain (Business Builder)', [
       <>Pilih <b>Template Bengkel motor</b>, <b>Template Salon & barbershop</b>, atau <b>Bangun sendiri</b>.</>,
-      <>Isi nama usaha, lalu <b>Setujui & buat bisnis</b>. Bisnis dibuat sebagai <b>draf</b> dan Anda langsung masuk ke <b>Business Builder</b>.</>,
+      <>Isi nama usaha, lalu <b>Setujui & buat bisnis</b>. Bisnis dibuat sebagai <b>draf</b>; bila memakai template, tampilannya sudah siap dan cukup diaktifkan di <b>Pusat Konfirmasi</b> — Business Builder hanya untuk menyesuaikan.</>,
       <>Langkah <b>1. Profil</b>: isi deskripsi, model pendapatan (dari mana uang masuk), proses utama, dan lokasi.</>,
     ], <>Semua isi template bisa diubah. Selama draf, tim belum bisa mencatat.</>, null, <ScrBuilder />],
     ['Data & formulir (custom field)', 'Business Builder › 2. Data & formulir', [
@@ -476,7 +476,7 @@ const PARTS = [
     ['Validasi & aktifkan', 'Business Builder › 5. Validasi & aktifkan', [
       <>Lihat <b>Pratinjau workspace</b>: jenis data, field, status, aturan, laporan, peran, dan menu.</>,
       <>Perbaiki semua yang bertanda <b>Wajib</b> (tombol <b>Perbaiki</b> membawa ke langkahnya); <b>Saran</b> boleh diabaikan.</>,
-      <>Pemilik menekan <b>Aktifkan bisnis</b>. Konfigurasi tetap bisa diubah setelah aktif.</>,
+      <>Pemilik menekan <b>Aktifkan bisnis</b>. Konfigurasi tetap bisa diubah setelah aktif. Bisnis dari template juga otomatis aktif saat diaktifkan dari <b>Pusat Konfirmasi</b> (validasi yang sama tetap dijalankan).</>,
     ], <>Batas Business Builder: tidak bisa mengubah struktur inti, kode, keamanan, atau data bisnis lain. Kebutuhan di luar itu = pengembangan khusus.</>, null, null],
     ['Catatan harian & dashboard', 'Catatan · Dashboard', [
       <>Buka <b>Catatan</b>, pilih jenis data, tekan <b>+ [nama jenis]</b>, isi formulir, pilih <b>Penanggung jawab</b> bila perlu.</>,
@@ -536,8 +536,10 @@ const PARTS = [
     ], <>Harga dihitung server dari daftar menu; kasir tidak bisa mengubah harga satuan (potongan lewat diskon yang tercatat). Pendapatan diakui saat pesanan diserahkan. Petugas dapur (peran Petugas proses) hanya melihat pesanan & tahap, tidak melihat uang. Bahan baku dicatat di <b>Bahan & stok</b>. Nomor meja dari QR dicek server (meja yang tidak ada ditolak); pesanan QR tetap menunggu konfirmasi kasir agar tidak ada pesanan iseng, dan tidak dikirim lewat email. Tagihan per meja, split bill &amp; reservasi: Langkah 69. <b>Dalam rencana</b>: pembayaran online dari meja, cetak ke printer dapur. Bukan sistem POS restoran besar — cocok untuk warung, kafe kecil, dan katering.</>, 'warn', <ScrDapur />],
     ['Jenis usaha lain: template siap pakai', '/mulai › pilih kategori', [
       <>Pendidikan/kursus, event & sewa perlengkapan, konstruksi/proyek, rental kendaraan/alat, travel, produksi/UMKM, pertanian/peternakan, klinik/praktik, komunitas/koperasi, dan ekspedisi kini disiapkan dengan <b>template Business Builder</b> sesuai jenisnya (mis. Rental: Penyewa, Sewa dengan harga & status Dipesan → Berjalan → Kembali; Kursus: Siswa, Kelas, Pembayaran).</>,
-      <>Setelah daftar, buka <b>Pusat Konfirmasi</b> untuk melengkapi profil, lalu <b>Business Builder</b> untuk menyesuaikan field, status, dan peran (Langkah 55–62). Aktifkan.</>,
-      <>Catat kegiatan sehari-hari di <b>Catatan</b>, uang masuk lewat field uang pada catatan, dan lihat <b>Laporan</b>.</>,
+      <><b>Langsung siap pakai</b>: setelah daftar, cukup buka <b>Pusat Konfirmasi</b>, lengkapi alamat & WhatsApp bisnis, lalu tekan <b>Aktifkan</b>. Bagian <b>Tampilan & alur kerja siap pakai</b> sudah otomatis disetujui — Anda <b>tidak wajib</b> membuka Business Builder.</>,
+      <>Menu langsung memakai nama sesuai usaha, mis. Event: <b>Acara</b>, <b>Klien</b>, <b>Tugas persiapan</b>, <b>Vendor</b>; Klinik: <b>Kunjungan</b>, <b>Pasien</b>; Bengkel: <b>Servis</b>, <b>Kendaraan</b>, <b>Pelanggan</b>. Tombol <b>+</b> (HP) atau <b>+ Aksi cepat</b> (laptop) berisi "Acara baru", "Klien baru", dst.</>,
+      <><b>Dashboard</b> per jenis usaha, mis. Event: acara bulan ini, nilai kontrak, penawaran berjalan, acara 7 hari ke depan, tugas terlambat, daftar <b>Acara terdekat</b> & <b>Tugas persiapan</b>; Klinik: kunjungan hari ini, menunggu dilayani, jadwal hari ini; Bengkel: antre, dikerjakan, menunggu spare part, siap diambil. Semua dari catatan Anda sendiri.</>,
+      <>Ingin menambah kolom atau mengganti status? Sesuaikan kapan saja di <b>Business Builder</b> (Langkah 55–62). Pilih <b>Organisasi & Lainnya › Usaha lain</b>? Buka Business Builder › <b>Mulai dari template siap pakai</b> dan pilih jenis usaha yang paling mirip. Template bisa diganti selama belum ada catatan.</>,
     ], <>Template hanya titik awal — semua bisa diubah, tidak ada data atau harga yang diisi otomatis. Fitur khusus per jenis (mis. jadwal kelas otomatis, rekam medis, pelacakan resi) belum ada; yang tersedia adalah pencatatan, alur status, peran, dan laporan dari Business Builder.</>, 'warn', null],
     ['Kuliner: meja, tagihan per meja & reservasi', 'Operasional › Meja & reservasi', [
       <>Tab <b>Meja</b>: semua meja tampil dengan status — <b>Kosong</b>, <b>Terisi</b>, <b>Siap saji</b>, <b>QR baru</b>, <b>Belum lunas</b>, atau <b>Dipesan 19.00</b> (reservasi). Ketuk meja untuk melihat pesanannya dan <b>+ Pesanan untuk Meja N</b> (meja langsung terpilih).</>,

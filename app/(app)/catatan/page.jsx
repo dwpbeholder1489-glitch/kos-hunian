@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -16,6 +17,9 @@ import { useBuilder, fieldsOf, statusesOf, statusById, show, initialData, outDat
 export default function Catatan() {
   const { kos, kosId, ver, bump } = useKos();
   const { cfg, err } = useBuilder(kosId, ver);
+  const params = useParams();
+  const router = useRouter();
+  const jenis = params?.jenis ? decodeURIComponent(params.jenis) : null; // /catatan/<jenis> = menu per jenis data (mis. Acara, Klien)
   const [obj, setObj] = useState(null);
   const [rows, setRows] = useState(null);
   const [refs, setRefs] = useState(new Map()); // id → judul (semua jenis data yang dirujuk)
@@ -28,10 +32,13 @@ export default function Catatan() {
   const objects = cfg ? cfg.objects.filter((o) => o.active) : [];
   useEffect(() => {
     if (!cfg || obj) return;
-    let want = null; try { want = new URLSearchParams(window.location.search).get('jenis'); } catch {}
+    let want = jenis; try { want = want || new URLSearchParams(window.location.search).get('jenis'); } catch {}
     setObj((objects.find((o) => o.key === want) || objects.find((o) => o.workflow) || objects[0])?.id || null);
-    try { const id = new URLSearchParams(window.location.search).get('buka'); if (id) setOpen(id); } catch {}
+    try { const sp = new URLSearchParams(window.location.search); const id = sp.get('buka'); if (id) setOpen(id); if (sp.get('baru')) setForm({}); } catch {}
   }, [cfg]);
+  // pindah menu (Acara → Klien) di sidebar/menu bawah = ganti jenis data yang dibuka
+  useEffect(() => { if (!cfg || !jenis) return; const o2 = objects.find((o) => o.key === jenis); if (o2 && o2.id !== obj) { setObj(o2.id); setQ(''); } }, [jenis, cfg]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pick = (o2) => (jenis ? router.push(`/catatan/${o2.key}`) : setObj(o2.id));
   const loadRows = () => obj && supabase.rpc('bb_list', { p_kos: kosId, p_object: obj, p_archived: archived }).then(({ data, error }) => (error ? toast(errMsg(error)) : setRows(data || [])));
   const loadRefs = async () => {
     if (!cfg) return;
@@ -46,7 +53,7 @@ export default function Catatan() {
   if (!cfg) return <Loading />;
   if (cfg.ws?.status !== 'aktif') return (
     <div className="stack"><h2>Catatan</h2>
-      <div className="notice">Bisnis ini masih <b>draf</b>. {canArea(kos, 'settings') ? <>Selesaikan <Link href="/builder">Business Builder</Link> lalu tekan <b>Validasi & aktifkan</b>.</> : 'Minta pemilik menyelesaikan Business Builder.'}</div></div>);
+      <div className="notice">Bisnis ini belum diaktifkan. {canArea(kos, 'settings') ? <>Tampilannya sudah disiapkan sesuai jenis usaha — buka <Link href="/konfirmasi">Pusat Konfirmasi</Link> lalu tekan <b>Aktifkan</b>. Mengubah isi di <Link href="/builder">Business Builder</Link> tidak wajib.</> : 'Minta pemilik mengaktifkan bisnis di Pusat Konfirmasi.'}</div></div>);
   const o = cfg.objects.find((x) => x.id === obj);
   if (!o) return <Empty title="Belum ada jenis data" text="Tambahkan di Business Builder." />;
   const fields = fieldsOf(cfg, o.id);
@@ -67,7 +74,7 @@ export default function Catatan() {
   return (
     <div className="stack">
       <div className="row between"><div className="row"><h2>{o.icon} {o.name}</h2><PageHelp page="catatan" /></div>{!archived && <button className="primary" onClick={() => setForm({})}>+ {o.name}</button>}</div>
-      {objects.length > 1 && <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{objects.map((x) => <button key={x.id} className={x.id === obj ? 'on' : ''} onClick={() => setObj(x.id)} style={{ whiteSpace: 'nowrap' }}>{x.icon} {x.name}</button>)}</div>}
+      {objects.length > 1 && <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{objects.map((x) => <button key={x.id} className={x.id === obj ? 'on' : ''} onClick={() => pick(x)} style={{ whiteSpace: 'nowrap' }}>{x.icon} {x.name}</button>)}</div>}
       {o.workflow && !archived && rows && <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
         {[['aktif', `Belum selesai (${rows.filter((r) => !statusById(cfg, r.status_id)?.is_final).length})`], ...sts.map((s) => [s.id, `${s.label} (${cnt(s.id)})`]), ['semua', 'Semua']].map(([k, l]) => <button key={k} className={st === k ? 'on' : ''} onClick={() => setSt(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}
       </div>}

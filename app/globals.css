@@ -1415,3 +1415,11 @@ li.void .dt-card{opacity:.7}
 .dash .tile .s .up{color:var(--good);font-weight:600}.dash .tile .s .down{color:var(--bad);font-weight:600}
 /* sapaan Beranda: pintasan operasional cukup di HP & tablet (laptop sudah punya sidebar + Aksi cepat) */
 @media (min-width:1024px){.hometop .hometop-h,.hometop .opsgrid{display:none}.hometop{margin-bottom:4px}}
+
+/* Template siap pakai bisnis kustom (Business Builder) */
+.tplgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.tplcard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);min-width:0}
+.tplcard b{font-size:14.5px}
+.tplcard .small{overflow-wrap:anywhere}
+.tplcard button{margin-top:auto}
+.tplcard.on{border-color:var(--gold);background:var(--gold-soft)}

@@ -43,8 +43,21 @@ export default function KosProvider({ children }) {
       supabase.rpc('my_locations').then((r) => r.data || {}, () => ({})), // lokasi (cabang/gudang) & lokasi kerja saya
       supabase.rpc('my_access').then((r) => r.data || {}, () => ({})), // akses per modul (Bisnis/Pro) & penyetuju tingkat 1 (Pro)
     ]).then(([a, b, c, d, e]) => { mods = c; locs = d; acc = e; return [a, b]; });
+    // Bisnis kustom: jenis data aktif jadi menu sendiri (mis. Acara, Klien) + tombol "buat" dari tata letak template
+    const kustom = data.filter((k) => k.business_type === 'kustom').map((k) => k.id);
+    const bb = {};
+    if (kustom.length) {
+      const [ob, ws] = await Promise.all([
+        supabase.from('bb_objects').select('kos_id,key,name,icon,workflow,sort').in('kos_id', kustom).eq('active', true).order('sort').then((r) => r.data || [], () => []),
+        supabase.from('bb_workspace').select('kos_id,status,layout').in('kos_id', kustom).then((r) => r.data || [], () => []),
+      ]);
+      for (const id of kustom) {
+        const w = ws.find((x) => x.kos_id === id);
+        bb[id] = { menu: ob.filter((o) => o.kos_id === id).sort((a, b) => Number(b.workflow) - Number(a.workflow) || a.sort - b.sort).map((o) => [o.key, o.name, o.icon]), create: w?.layout?.create || [], active: w?.status === 'aktif' };
+      }
+    }
     data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null, locs: locs[k.id] || null,
-      my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver) }));
+      my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver), bb: bb[k.id] || null }));
     setList(data);
     let saved = null;
     try { saved = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch {}

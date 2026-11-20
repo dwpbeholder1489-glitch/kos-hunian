@@ -13,18 +13,19 @@ const STEPS = [['profil', '1. Profil'], ['data', '2. Data & formulir'], ['alur',
 
 // Business Builder: susun sendiri jenis data, field, status & alur, peran, laporan → validasi → aktifkan
 export default function Builder() {
-  const { kos, kosId, ver, bump } = useKos();
+  const { kos, kosId, ver, bump, loadKos } = useKos();
   const { cfg, err, reload } = useBuilder(kosId, ver);
   const [step, setStep] = useState('profil');
   useEffect(() => { try { const s = new URLSearchParams(window.location.search).get('langkah'); if (STEPS.some(([k]) => k === s)) setStep(s); } catch {} }, []);
   if (err) return <div className="notice bad">{/bb_/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!cfg) return <Loading />;
-  const done = () => { reload(); bump(); };
+  const done = () => { reload(); bump(); loadKos(); }; // loadKos: nama menu (jenis data) ikut diperbarui
   return (
     <div className="stack">
       <div className="row between"><div className="row"><h2>Business Builder</h2><PageHelp page="builder" /></div>
         <span className={'chip ' + (cfg.ws?.status === 'aktif' ? 'good' : 'gold')}>{cfg.ws?.status === 'aktif' ? 'Aktif' : 'Draf'}</span></div>
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{STEPS.map(([k, l]) => <button key={k} className={step === k ? 'on' : ''} onClick={() => setStep(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
+      <Templates kos={kos} cfg={cfg} onDone={done} />
       {cfg.ws?.status === 'aktif' && <span className="small muted">Bisnis sudah aktif. Perubahan langsung berlaku; catatan lama tetap aman (field yang dinonaktifkan tidak menghapus isinya).</span>}
       {step === 'profil' && <Profil kos={kos} cfg={cfg} onSaved={done} />}
       {step === 'data' && <DataStep kosId={kosId} cfg={cfg} onSaved={done} />}
@@ -39,6 +40,53 @@ export default function Builder() {
   );
 }
 
+// Template siap pakai: bisnis "Usaha lain" (atau yang belum punya catatan) bisa langsung memakai tampilan jenis usaha lain
+function Templates({ kos, cfg, onDone }) {
+  const [list, setList] = useState(null);
+  const [records, setRecords] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(null);
+  const owner = canArea(kos, 'team');
+  useEffect(() => {
+    supabase.rpc('bb_templates').then(({ data }) => setList(data || []));
+    supabase.rpc('bb_dashboard', { p_kos: kos.id }).then(({ data }) => setRecords(data ? (data.counts || []).reduce((a, c) => a + Number(c.n), 0) : null));
+  }, [kos.id]);
+  if (!list) return null;
+  const cur = cfg.ws?.template || 'kosong';
+  const name = list.find((t) => t.code === cur)?.name;
+  const canSwitch = owner && records === 0;
+  const use = async (t) => {
+    if (!window.confirm(`Pakai template "${t.name}"?\n\nJenis data, formulir, status, laporan, dan dashboard diganti dengan versi ${t.name}. Belum ada catatan, jadi tidak ada data yang hilang.`)) return;
+    setBusy(t.code);
+    const ok = await run(() => supabase.rpc('bb_use_template', { p_kos: kos.id, p_code: t.code }), `Template ${t.name} dipasang — tampilan siap dipakai`, errMsg);
+    setBusy(null);
+    if (ok) { setOpen(false); onDone(); }
+  };
+  const grid = (
+    <div className="tplgrid">{list.map((t) => (
+      <div key={t.code} className={'tplcard' + (t.code === cur ? ' on' : '')}>
+        <b>{t.name}</b><span className="small muted">{t.description}</span>
+        {t.code === cur ? <span className="chip good">Dipakai sekarang</span> : <button className="sm" disabled={!canSwitch || busy} onClick={() => use(t)}>{busy === t.code ? 'Memasang…' : 'Pakai template ini'}</button>}
+      </div>
+    ))}</div>
+  );
+  if (cur === 'kosong') return (
+    <section className="panel">
+      <h3>Mulai dari template siap pakai</h3>
+      <span className="small muted">Tidak perlu menyusun dari nol. Pilih jenis usaha yang paling mirip — menu, formulir, status, laporan, dan dashboard langsung siap, lalu sesuaikan seperlunya.</span>
+      {!owner ? <span className="small muted">Hanya pemilik yang bisa memilih template.</span> : records > 0 && <div className="notice">Sudah ada catatan, jadi template tidak bisa diganti. Sesuaikan lewat langkah di bawah.</div>}
+      {grid}
+    </section>
+  );
+  return (
+    <section className="panel">
+      <span className="small">Tampilan bisnis ini <b>sudah siap pakai</b> dari template <b>{name || cur}</b>. Anda <b>tidak wajib</b> mengubah apa pun di sini — langkah di bawah hanya untuk menyesuaikan (menambah kolom, mengganti status, dll.).</span>
+      {canSwitch && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setOpen(!open)}>{open ? 'Tutup daftar template' : 'Ganti ke template jenis usaha lain'}</button>}
+      {open && grid}
+    </section>
+  );
+}
+
 function Profil({ kos, cfg, onSaved }) {
   const w = cfg.ws || {};
   const [f, setF] = useState({ name: kos.name, description: w.description || '', revenue_model: w.revenue_model || '', main_process: w.main_process || '', locations: w.locations || '' });
@@ -46,7 +94,7 @@ function Profil({ kos, cfg, onSaved }) {
   const save = async () => { setBusy(true); const ok = await run(() => supabase.rpc('bb_workspace_save', { p_kos: kos.id, p: f }), 'Profil disimpan', errMsg); setBusy(false); if (ok) onSaved(); };
   return (
     <section className="panel">
-      <span className="small muted">Template: <b>{{ bengkel: 'Bengkel motor', salon: 'Salon & barbershop', kosong: 'Bangun sendiri' }[w.template] || w.template}</b> (versi {w.template_version}). Semua isi template bisa diubah.</span>
+      <span className="small muted">Template: <b>{{ bengkel: 'Bengkel motor', salon: 'Salon & barbershop', kosong: 'Bangun sendiri', bb_event: 'Event & wedding organizer', bb_pendidikan: 'Bimbel & kursus', bb_proyek: 'Kontraktor & proyek', bb_rental: 'Rental kendaraan / alat', bb_travel: 'Agen travel & wisata', bb_produksi: 'Produksi pesanan', bb_tani: 'Pertanian & peternakan', bb_klinik: 'Klinik & praktik', bb_anggota: 'Komunitas & koperasi', bb_kirim: 'Ekspedisi & kurir' }[w.template] || w.template}</b> (versi {w.template_version}). Semua isi template bisa diubah.</span>
       <Field label="Nama bisnis"><input value={f.name} maxLength={80} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
       <Field label="Deskripsi singkat"><input value={f.description} maxLength={500} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="mis. Bengkel motor 3 mekanik" /></Field>
       <Field label="Model pendapatan" hint="Dari mana uang masuk"><input value={f.revenue_model} maxLength={200} onChange={(e) => setF({ ...f, revenue_model: e.target.value })} placeholder="mis. jasa servis + jual spare part" /></Field>
