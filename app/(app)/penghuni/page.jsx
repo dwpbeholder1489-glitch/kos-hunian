@@ -6,7 +6,7 @@ import IsianTambahan from '@/components/IsianTambahan';
 import Lampiran from '@/components/Lampiran';
 import { moduleOn } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -34,25 +34,23 @@ export default function Penghuni() {
   return (
     <div className="stack">
       <PageHeader title="Penghuni" help={<PageHelp page="penghuni" />} actions={<><button className="primary" onClick={() => setSheet({ t: 'edit', occ: null })}>+ Penghuni</button></>} />
-      <div className="row">
-        <div className="seg">
-          {[['aktif', 'Aktif'], ['keluar', 'Tidak aktif'], ['semua', 'Semua']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
-        </div>
-        <input style={{ flex: '1 1 180px' }} placeholder="Cari nama / nomor" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="seg">
+        {[['aktif', 'Aktif'], ['keluar', 'Tidak aktif'], ['semua', 'Semua']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
       </div>
-      {list.length === 0 ? <Empty title="Belum ada penghuni" text="Tambahkan penghuni, atau isi kamar dari halaman Kamar." /> : (
-        <section className="panel"><div className="list">
-          {list.map((o) => {
-            const l = d.activeByOcc.get(o.id);
-            const debt = d.outByOcc.get(o.id) || 0;
-            return (
-              <div className="li click" key={o.id} onClick={() => setSheet({ t: 'detail', id: o.id })}>
-                <div className="main"><b>{o.name}</b><span className="small muted">{l ? `Kamar ${d.roomCode(l.room_id)} · sejak ${tgl(l.start_date)}` : 'Tidak menyewa'}</span></div>
-                {debt > 0 ? <span className="num" style={{ color: 'var(--bad)' }}>{rp(debt)}</span> : <span className="chip good">Lunas</span>}
-              </div>
-            );
-          })}
-        </div></section>
+      <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama / nomor" />
+      {list.length === 0 ? <Empty title={q ? 'Tidak ada yang cocok' : 'Belum ada penghuni'} text={q ? 'Ubah kata pencarian.' : 'Tambahkan penghuni, atau isi kamar dari halaman Kamar.'} /> : (
+        <DataTable rows={list} caption="Daftar penghuni" onRow={(o) => setSheet({ t: 'detail', id: o.id })} rowLabel={(o) => o.name}
+          columns={[
+            { key: 'name', label: 'Nama', sort: (o) => o.name.toLowerCase(), render: (o) => <b>{o.name}</b> },
+            { key: 'phone', label: 'No. HP', hide: 'tablet', render: (o) => o.phone || <span className="muted">—</span> },
+            { key: 'room', label: 'Kamar', sort: (o) => { const l = d.activeByOcc.get(o.id); return l ? d.roomCode(l.room_id) : null; }, render: (o) => { const l = d.activeByOcc.get(o.id); return l ? d.roomCode(l.room_id) : <span className="muted">Tidak menyewa</span>; } },
+            { key: 'since', label: 'Sejak', sort: (o) => d.activeByOcc.get(o.id)?.start_date || null, render: (o) => { const l = d.activeByOcc.get(o.id); return l ? tgl(l.start_date) : '—'; } },
+            { key: 'debt', label: 'Tunggakan', align: 'right', sort: (o) => d.outByOcc.get(o.id) || 0, render: (o) => { const debt = d.outByOcc.get(o.id) || 0; return debt > 0 ? <span className="num" style={{ color: 'var(--bad)' }}>{rp(debt)}</span> : <span className="chip good">Lunas</span>; } },
+          ]}
+          card={(o) => { const l = d.activeByOcc.get(o.id); const debt = d.outByOcc.get(o.id) || 0; return <>
+            <div className="dt-row"><b>{o.name}</b>{debt > 0 ? <span className="num" style={{ color: 'var(--bad)' }}>{rp(debt)}</span> : <span className="chip good">Lunas</span>}</div>
+            <span className="small muted">{l ? `Kamar ${d.roomCode(l.room_id)} · sejak ${tgl(l.start_date)}` : 'Tidak menyewa'}</span>
+          </>; }} />
       )}
       {sheet?.t === 'detail' && <OccDetail d={d} occ={d.occById.get(sheet.id)} go={setSheet} onClose={close} />}
       {sheet?.t === 'edit' && <OccEdit d={d} occ={sheet.occ} onClose={close} />}

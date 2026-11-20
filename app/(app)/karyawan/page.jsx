@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import { Field, Loading, Sheet, toast } from '@/components/ui';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { GrowthSheet } from '@/components/GrowthOffer';
@@ -99,29 +99,40 @@ export default function Karyawan() {
 
       <section className="panel">
         <h3>Daftar karyawan</h3>
-        {staff.length === 0 ? <span className="small muted">Belum ada karyawan.</span> : <div className="list">{staff.map((m) => (
-          <div className="li" key={m.user_id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
-            <div className="row between"><b className="small" style={{ wordBreak: 'break-all' }}>{m.email}</b>{m.active ? <span className="chip good">Aktif</span> : <span className="chip">Nonaktif</span>}</div>
-            {(m.areas || Object.keys(m.perms || {}).length > 0 || m.can_approve) && <div className="row small">
+        {staff.length === 0 ? <span className="small muted">Belum ada karyawan.</span> : (() => {
+          const chipsOf = (m) => {(m.areas || Object.keys(m.perms || {}).length > 0 || m.can_approve) && <div className="row small">
               {m.areas && <span className="chip">{d.fitur?.modul ? 'Modul: ' : 'Modul (tidak berlaku di paket ini): '}{m.areas.map((a) => AREA_NAMES[a]?.[0] || a).join(', ')}</span>}
               {Object.keys(m.perms || {}).length > 0 && <span className="chip">{Object.keys(m.perms).length} izin khusus{d.fitur?.granular ? '' : ' (tidak berlaku)'}</span>}
               {m.can_approve && <span className="chip good">Penyetuju tingkat 1{d.fitur?.bertingkat ? '' : ' (tidak berlaku)'}</span>}
-            </div>}
-            <div className="row">
-              <select value={m.role} disabled={busy} onChange={(e) => call('team_update', { p_kos: kosId, p_user: m.user_id, p_role: e.target.value, p_active: m.active }, 'Peran diubah')} aria-label={`Peran ${m.email}`} style={{ flex: 1 }}>
+            </div>};
+          const roleSel = (m) => <select value={m.role} disabled={busy} onChange={(e) => call('team_update', { p_kos: kosId, p_user: m.user_id, p_role: e.target.value, p_active: m.active }, 'Peran diubah')} aria-label={`Peran ${m.email}`} style={{ flex: 1 }}>
                 {d.roles.map((r) => <option key={r} value={r}>{ROLES[r]?.name || r}</option>)}
-              </select>
+              </select>;
+          const locSel = (m) => <select value={mloc[m.user_id] || ''} disabled={busy} onChange={(e) => call('member_location_set', { p_kos: kosId, p_user: m.user_id, p_branch: e.target.value || null }, e.target.value ? 'Lokasi kerja ditetapkan' : 'Karyawan bebas memilih lokasi')} aria-label={`Lokasi kerja ${m.email}`} style={{ flex: 1 }}>
+                <option value="">Bebas memilih</option>
+                {kos.locs.list.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>;
+          const acts = (m) => <div className="row" style={{ gap: 6 }}>
               <button className="sm" disabled={busy} onClick={() => call('team_update', { p_kos: kosId, p_user: m.user_id, p_role: m.role, p_active: !m.active }, m.active ? 'Dinonaktifkan' : 'Diaktifkan lagi')}>{m.active ? 'Nonaktifkan' : 'Aktifkan'}</button>
               <button className="sm" disabled={busy} onClick={() => setAkses(m)}>Atur akses</button>
               <button className="sm ghost danger" disabled={busy} onClick={() => call('team_remove', { p_kos: kosId, p_user: m.user_id }, 'Email dihapus dari daftar', `Hapus ${m.email} dari ${kos.name}?\nAksesnya langsung tertutup. Riwayat transaksinya tetap tersimpan.`)}>Hapus</button>
-            </div>
-            {multi && <label className="row small" style={{ flexWrap: 'nowrap' }}><span style={{ whiteSpace: 'nowrap' }}>📍 Lokasi kerja</span>
-              <select value={mloc[m.user_id] || ''} disabled={busy} onChange={(e) => call('member_location_set', { p_kos: kosId, p_user: m.user_id, p_branch: e.target.value || null }, e.target.value ? 'Lokasi kerja ditetapkan' : 'Karyawan bebas memilih lokasi')} aria-label={`Lokasi kerja ${m.email}`} style={{ flex: 1 }}>
-                <option value="">Bebas memilih</option>
-                {kos.locs.list.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select></label>}
-          </div>
-        ))}</div>}
+          </div>;
+          return <DataTable rows={staff} rowKey={(m) => m.user_id} caption="Daftar karyawan" pageSize={50}
+            columns={[
+              { key: 'email', label: 'Karyawan', sort: (m) => m.email, render: (m) => <div className="stack" style={{ gap: 4 }}><b className="small" style={{ wordBreak: 'break-all' }}>{m.email}</b>{chipsOf(m)}</div> },
+              { key: 'role', label: 'Peran', sort: (m) => ROLES[m.role]?.name || m.role, render: roleSel },
+              ...(multi ? [{ key: 'loc', label: 'Lokasi kerja', hide: 'tablet', render: locSel }] : []),
+              { key: 'st', label: 'Status', sort: (m) => (m.active ? 0 : 1), render: (m) => (m.active ? <span className="chip good">Aktif</span> : <span className="chip">Nonaktif</span>) },
+              { key: 'act', label: 'Tindakan', render: acts },
+            ]}
+            card={(m) => <>
+              <div className="dt-row"><b className="small" style={{ wordBreak: 'break-all' }}>{m.email}</b>{m.active ? <span className="chip good">Aktif</span> : <span className="chip">Nonaktif</span>}</div>
+              {chipsOf(m)}
+              <div className="row">{roleSel(m)}</div>
+              {acts(m)}
+              {multi && <label className="row small" style={{ flexWrap: 'nowrap' }}><span style={{ whiteSpace: 'nowrap' }}>📍 Lokasi kerja</span>{locSel(m)}</label>}
+            </>} />;
+        })()}
         {multi && <span className="small muted">Lokasi kerja yang ditetapkan tidak bisa diganti sendiri oleh karyawan: penjualan, belanja, dan perubahan stoknya selalu tercatat di lokasi itu.</span>}
         {inactive > 0 && <button className="ghost" disabled={busy} onClick={() => call('team_cleanup', { p_kos: kosId }, 'Daftar dibersihkan', `Hapus ${inactive} email nonaktif/kedaluwarsa sekaligus?`)}>Bersihkan {inactive} email nonaktif / kedaluwarsa</button>}
       </section>

@@ -8,7 +8,7 @@ import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp, waLink } from '@/lib/format';
 import { withApproval } from '@/lib/approval';
@@ -53,22 +53,30 @@ export default function Pesanan() {
     return okF && (!term || [o.number, o.customer_name, o.customer_phone].some((x) => (x || '').toLowerCase().includes(term)));
   });
   const cur = open && d.orders.find((o) => o.id === open);
+  // Keterangan jemput/antar/meja/ulang — sama untuk tabel laptop & kartu HP
+  const extraText = (o) => `${o.pickup ? ` · jemput${o.pickup_date && waitPickup(o) ? ` ${tgl2(o.pickup_date)}${o.pickup_slot ? ' ' + o.pickup_slot : ''}` : ''}` : ''}${o.deliver ? ' · 🛵 antar' : ''}${dineText(o) ? ` · ${dineText(o)}` : ''}${o.rework_of ? ` · ${T.rework.toLowerCase()} ${o.rework_of}` : ''}`;
 
   return (
     <div className="stack">
       <PageHeader title="Pesanan" help={<PageHelp page="pesanan" />} actions={<>{money && <button className="primary" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</>} />
       {req.length > 0 && money && f !== 'permintaan' && <div className="notice"><b>{req.length} pesanan dari halaman bisnis</b> menunggu konfirmasi. <button className="sm" onClick={() => setF('permintaan')}>Lihat</button></div>}
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor, nama, atau No. HP" aria-label="Cari pesanan" />
+      <FilterToolbar q={q} onQ={setQ} placeholder="Cari nomor, nama, atau No. HP" />
       {shown.length === 0 ? <Empty title="Tidak ada pesanan di sini" text={money ? (T.kul ? 'Tekan + Pesanan baru saat pelanggan memesan.' : 'Tekan + Pesanan baru saat pelanggan menyerahkan cucian.') : 'Pesanan yang perlu dikerjakan akan muncul di sini.'} /> : (
-        <section className="panel"><div className="list">{shown.map((o) => (
-          <button key={o.id} className="li click" onClick={() => setOpen(o.id)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', alignItems: 'flex-start' }}>
-            <div className="main"><b className="small">{o.customer_name}</b>
-              <span className="small muted"><span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> · {linesText(o.lines)}{o.pickup ? ` · jemput${o.pickup_date && waitPickup(o) ? ` ${tgl2(o.pickup_date)}${o.pickup_slot ? ' ' + o.pickup_slot : ''}` : ''}` : ''}{o.deliver ? ' · 🛵 antar' : ''}{dineText(o) ? ` · ${dineText(o)}` : ''}{o.rework_of ? ` · ${T.rework.toLowerCase()} ${o.rework_of}` : ''}</span>
-              <span className="small" style={{ color: late(o) ? 'var(--bad)' : 'var(--muted)' }}>{['selesai', 'batal'].includes(o.status) ? waktu(o.completed_at || o.received_at) : `Janji ${hari(o.due_at)}${late(o) ? ' · terlambat' : ''}`}{money && o.total != null && sisa(o) > 0 && o.status !== 'batal' ? ` · sisa ${rp(sisa(o))}` : ''}{o.open_complaints > 0 ? ' · ⚠ keluhan' : ''}</span></div>
-            <span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o, true)}</span>
-          </button>
-        ))}</div></section>
+        <DataTable rows={shown} caption="Daftar pesanan" onRow={(o) => setOpen(o.id)} rowLabel={(o) => `${o.number} ${o.customer_name}`} pageSize={50}
+          columns={[
+            { key: 'no', label: 'Nomor', sort: (o) => o.number, render: (o) => <span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> },
+            { key: 'cust', label: 'Pelanggan', sort: (o) => (o.customer_name || '').toLowerCase(), render: (o) => <b>{o.customer_name}</b> },
+            { key: 'isi', label: T.kul ? 'Menu' : 'Layanan', hide: 'tablet', render: (o) => <span className="small">{linesText(o.lines)}{extraText(o)}</span> },
+            { key: 'due', label: 'Janji / selesai', sort: (o) => (['selesai', 'batal'].includes(o.status) ? o.completed_at || o.received_at : o.due_at) || '', render: (o) => <span className="small" style={{ color: late(o) ? 'var(--bad)' : undefined }}>{['selesai', 'batal'].includes(o.status) ? waktu(o.completed_at || o.received_at) : `${hari(o.due_at)}${late(o) ? ' · terlambat' : ''}`}{o.open_complaints > 0 ? ' · ⚠ keluhan' : ''}</span> },
+            ...(money ? [{ key: 'sisa', label: 'Sisa', align: 'right', sort: (o) => (o.status !== 'batal' && o.total != null ? sisa(o) : 0), render: (o) => (o.total != null && sisa(o) > 0 && o.status !== 'batal' ? rp(sisa(o)) : <span className="muted">—</span>) }] : []),
+            { key: 'st', label: 'Status', render: (o) => <span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o, true)}</span> },
+          ]}
+          card={(o) => <>
+            <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b className="small">{o.customer_name}</b>
+              <span className="small muted"><span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> · {linesText(o.lines)}{extraText(o)}</span>
+              <span className="small" style={{ color: late(o) ? 'var(--bad)' : 'var(--muted)' }}>{['selesai', 'batal'].includes(o.status) ? waktu(o.completed_at || o.received_at) : `Janji ${hari(o.due_at)}${late(o) ? ' · terlambat' : ''}`}{money && o.total != null && sisa(o) > 0 && o.status !== 'batal' ? ` · sisa ${rp(sisa(o))}` : ''}{o.open_complaints > 0 ? ' · ⚠ keluhan' : ''}</span></div><span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o, true)}</span></div>
+          </>} />
       )}
       {neu && <NewOrder kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />}
       {cur && <Detail o={cur} d={d} kos={kos} onClose={() => setOpen(null)} onChanged={load} />}

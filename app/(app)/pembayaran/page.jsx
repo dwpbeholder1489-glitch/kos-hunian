@@ -1,6 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable } from '@/components/Page';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -30,6 +30,7 @@ export default function Pembayaran() {
     setProof({ image: data?.image || null });
   };
 
+  const who = (p) => { const i = d.invById.get(p.invoice_id); return i ? `${d.occName(i.occupant_id)} · ${d.roomCode(i.room_id)}` : '—'; };
   const Row = ({ p, actions }) => {
     const i = d.invById.get(p.invoice_id);
     return (
@@ -64,7 +65,22 @@ export default function Pembayaran() {
         </div>
         <div className="row between"><span className="label">Total diterima</span><b>{rp(total)}</b></div>
         {month.length === 0 ? <Empty title="Belum ada pembayaran" text="Tidak ada pembayaran tercatat di bulan ini." /> : (
-          <div className="list">{month.map((p) => <Row key={p.id} p={p} actions={p.status === 'terverifikasi' ? <button className="sm ghost" onClick={() => setStatus(p, 'dibatalkan', 'Pembayaran dibatalkan')}>Batalkan</button> : null} />)}</div>
+          <DataTable rows={month} caption={`Pembayaran ${bulan(ym)}`}
+            columns={[
+              { key: 'date', label: 'Tanggal', sort: (p) => p.paid_at, render: (p) => tgl(p.paid_at) },
+              { key: 'who', label: 'Penghuni · kamar', sort: (p) => who(p), render: (p) => <><b>{who(p)}</b>{p.source === 'penghuni' && <span className="chip info" style={{ marginLeft: 6 }}>Dikirim penghuni</span>}</> },
+              { key: 'inv', label: 'Tagihan', hide: 'tablet', render: (p) => { const i = d.invById.get(p.invoice_id); return i ? invTitle(i) : '—'; } },
+              { key: 'm', label: 'Cara', render: (p) => <>{METHOD[p.method]}{p.ref ? <span className="small muted"> · {p.ref}</span> : null}</> },
+              { key: 'amt', label: 'Jumlah', align: 'right', sort: (p) => p.amount, render: (p) => rp(p.amount) },
+              { key: 'st', label: 'Status', render: (p) => <PayChip status={p.status} /> },
+              { key: 'act', label: <span className="vh">Tindakan</span>, render: (p) => (p.status === 'terverifikasi' ? <button className="sm ghost" onClick={() => setStatus(p, 'dibatalkan', 'Pembayaran dibatalkan')}>Batalkan</button> : null) },
+            ]}
+            card={(p) => { const i = d.invById.get(p.invoice_id); return <>
+              <div className="dt-row"><b>{who(p)}</b><span className="num">{rp(p.amount)}</span></div>
+              <div className="dt-row"><span className="small muted">{i ? invTitle(i) : ''} · {tgl(p.paid_at)} · {METHOD[p.method]}{p.ref ? ' · ' + p.ref : ''}</span><PayChip status={p.status} /></div>
+              {p.source === 'penghuni' && <span className="small"><span className="chip info">Dikirim penghuni</span>{p.notes ? ` "${p.notes}"` : ''}</span>}
+              {p.status === 'terverifikasi' && <div className="row"><button className="sm ghost" onClick={() => setStatus(p, 'dibatalkan', 'Pembayaran dibatalkan')}>Batalkan</button></div>}
+            </>; }} />
         )}
       </section>
       {proof && (

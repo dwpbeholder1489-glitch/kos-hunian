@@ -1,6 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -18,14 +18,16 @@ const FILTERS = [['terbuka', 'Belum lunas'], ['menunggak', 'Menunggak'], ['lunas
 export default function Tagihan() {
   const d = useData();
   const [f, setF] = useState('terbuka');
+  const [q, setQ] = useState('');
   const [sheet, setSheet] = useState(null);
   useBaru(() => setSheet({ t: 'extra' }));
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
-  const list = d.invoices.filter((i) =>
+  const w = q.trim().toLowerCase();
+  const list = d.invoices.filter((i) => (!w || `${d.occName(i.occupant_id)} ${d.roomCode(i.room_id)} ${invTitle(i)}`.toLowerCase().includes(w)) && (
     f === 'terbuka' ? i.status !== 'batal' && i.outstanding > 0 :
     f === 'menunggak' ? i.overdue :
-    f === 'lunas' ? i.pay_state === 'lunas' : true)
+    f === 'lunas' ? i.pay_state === 'lunas' : true))
     .sort((a, b) => f === 'lunas' || f === 'semua' ? b.due_date.localeCompare(a.due_date) : a.due_date.localeCompare(b.due_date));
   const total = list.reduce((s, i) => s + (f === 'lunas' || f === 'semua' ? i.amount : i.outstanding), 0);
   const close = () => setSheet(null);
@@ -34,17 +36,24 @@ export default function Tagihan() {
     <div className="stack">
       <PageHeader title="Tagihan" help={<PageHelp page="tagihan" />} actions={<><button className="primary" onClick={() => setSheet({ t: 'extra' })}>+ Tagihan tambahan</button></>} desc={<>Tagihan sewa bulanan dibuat otomatis 7 hari sebelum jatuh tempo.</>} />
       <div className="seg">{FILTERS.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
-      {list.length === 0 ? <Empty title="Tidak ada tagihan" text={f === 'menunggak' ? 'Tidak ada yang menunggak.' : 'Belum ada tagihan di kategori ini.'} /> : (
-        <section className="panel">
-          <div className="row between"><span className="label">{list.length} tagihan</span><b>{rp(total)}</b></div>
-          <div className="list">{list.map((i) => (
-            <div className="li click" key={i.id} onClick={() => setSheet({ t: 'detail', id: i.id })}>
-              <div className="main"><b>{d.occName(i.occupant_id)} · {d.roomCode(i.room_id)}</b><span className="small muted">{invTitle(i)} · jatuh tempo {tgl(i.due_date)}</span></div>
-              <div style={{ textAlign: 'right' }}><div className="num">{rp(i.outstanding > 0 ? i.outstanding : i.amount)}</div><InvChip inv={i} /></div>
-            </div>
-          ))}</div>
-        </section>
-      )}
+      <FilterToolbar q={q} onQ={setQ} placeholder="Cari penghuni, kamar, atau bulan" />
+      {list.length === 0 ? <Empty title="Tidak ada tagihan" text={w ? 'Tidak ada tagihan yang cocok dengan pencarian.' : f === 'menunggak' ? 'Tidak ada yang menunggak.' : 'Belum ada tagihan di kategori ini.'} /> : (<>
+        <div className="row between"><span className="label">{list.length} tagihan · {f === 'lunas' || f === 'semua' ? 'nilai tagihan' : 'sisa belum dibayar'}</span><b>{rp(total)}</b></div>
+        <DataTable rows={list} caption="Daftar tagihan" onRow={(i) => setSheet({ t: 'detail', id: i.id })} rowLabel={(i) => `${d.occName(i.occupant_id)} ${invTitle(i)}`}
+          columns={[
+            { key: 'who', label: 'Penghuni', sort: (i) => d.occName(i.occupant_id).toLowerCase(), render: (i) => <b>{d.occName(i.occupant_id)}</b> },
+            { key: 'room', label: 'Kamar', sort: (i) => d.roomCode(i.room_id), render: (i) => d.roomCode(i.room_id) },
+            { key: 'what', label: 'Tagihan', hide: 'tablet', render: (i) => invTitle(i) },
+            { key: 'due', label: 'Jatuh tempo', sort: (i) => i.due_date, render: (i) => tgl(i.due_date) },
+            { key: 'amt', label: 'Jumlah', align: 'right', hide: 'tablet', sort: (i) => i.amount, render: (i) => rp(i.amount) },
+            { key: 'out', label: 'Sisa', align: 'right', sort: (i) => i.outstanding, render: (i) => (i.outstanding > 0 ? <b>{rp(i.outstanding)}</b> : <span className="muted">—</span>) },
+            { key: 'st', label: 'Status', render: (i) => <InvChip inv={i} /> },
+          ]}
+          card={(i) => <>
+            <div className="dt-row"><b>{d.occName(i.occupant_id)} · {d.roomCode(i.room_id)}</b><span className="num">{rp(i.outstanding > 0 ? i.outstanding : i.amount)}</span></div>
+            <div className="dt-row"><span className="small muted">{invTitle(i)} · jatuh tempo {tgl(i.due_date)}</span><InvChip inv={i} /></div>
+          </>} />
+      </>)}
       {sheet?.t === 'detail' && <InvDetail d={d} inv={d.invById.get(sheet.id)} go={setSheet} onClose={close} />}
       {sheet?.t === 'pay' && <PaySheet d={d} inv={d.invById.get(sheet.id)} onClose={close} />}
       {sheet?.t === 'extra' && <ExtraSheet d={d} onClose={close} />}

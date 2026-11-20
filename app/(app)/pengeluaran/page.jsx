@@ -1,6 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { Fragment, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -15,6 +15,8 @@ export default function Pengeluaran() {
   const [ym, setYm] = useState(thisMonth());
   const [tab, setTab] = useState('biaya');
   const [sheet, setSheet] = useState(null);
+  const [q, setQ] = useState('');
+  const [catF, setCatF] = useState('');
   useBaru(() => setSheet({ t: 'exp', x: null }));
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
@@ -24,6 +26,11 @@ export default function Pengeluaran() {
   for (const x of list) { const k = d.catById.get(x.category_id)?.name || 'Tanpa kategori'; byCat.set(k, (byCat.get(k) || 0) + x.amount); }
   const ent = d.entries.filter((x) => x.date.startsWith(ym));
   const sumKind = (k) => ent.filter((x) => x.kind === k).reduce((s, x) => s + x.amount, 0);
+  const w = q.trim().toLowerCase();
+  const catName = (x) => d.catById.get(x.category_id)?.name || 'Tanpa kategori';
+  const shownExp = list.filter((x) => (!catF || (x.category_id || '') === catF) && (!w || `${x.description || ''} ${catName(x)}`.toLowerCase().includes(w)));
+  const shownEnt = ent.filter((x) => !w || `${x.description || ''} ${ENTRY[x.kind][0]}`.toLowerCase().includes(w));
+  const usedCats = d.categories.filter((c) => list.some((x) => x.category_id === c.id));
   const add = () => setSheet(tab === 'biaya' ? { t: 'exp', x: null } : { t: 'ent', x: null });
 
   return (
@@ -49,25 +56,38 @@ export default function Pengeluaran() {
         )}
       </section>
 
-      {tab === 'biaya' && (list.length === 0 ? <Empty title="Belum ada biaya" text="Catat listrik, air, internet, perbaikan, gaji pengelola/penjaga, dan biaya kos lainnya supaya laba akurat." /> : (
-        <section className="panel"><div className="list">{list.map((x) => (
-          <div className="li click" key={x.id} onClick={() => setSheet({ t: 'exp', x })}>
-            <div className="main"><b>{x.description || d.catById.get(x.category_id)?.name || 'Pengeluaran'}</b><span className="small muted">{tgl(x.date)} · {d.catById.get(x.category_id)?.name || '—'}</span></div>
-            <span className="num">{rp(x.amount)}</span>
-          </div>
-        ))}</div></section>
+      {(tab === 'biaya' ? list.length : ent.length) > 0 && <FilterToolbar q={q} onQ={setQ} placeholder="Cari keterangan atau kategori" active={catF ? 1 : 0}
+        filters={tab === 'biaya' && usedCats.length > 1 ? <label className="field"><span className="label">Kategori</span><select value={catF} onChange={(e) => setCatF(e.target.value)}><option value="">Semua kategori</option>{usedCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label> : null} />}
+
+      {tab === 'biaya' && (list.length === 0 ? <Empty title="Belum ada biaya" text="Catat listrik, air, internet, perbaikan, gaji pengelola/penjaga, dan biaya kos lainnya supaya laba akurat." /> : shownExp.length === 0 ? <Empty title="Tidak ada yang cocok" text="Ubah pencarian atau filter kategori." /> : (
+        <DataTable rows={shownExp} caption={`Biaya ${bulan(ym)}`} onRow={(x) => setSheet({ t: 'exp', x })} rowLabel={(x) => `${x.description || catName(x)} ${rp(x.amount)}`}
+          columns={[
+            { key: 'date', label: 'Tanggal', sort: (x) => x.date, render: (x) => tgl(x.date) },
+            { key: 'desc', label: 'Keterangan', sort: (x) => (x.description || catName(x)).toLowerCase(), render: (x) => <b>{x.description || catName(x)}</b> },
+            { key: 'cat', label: 'Kategori', sort: (x) => catName(x), render: (x) => catName(x) },
+            { key: 'amt', label: 'Jumlah', align: 'right', sort: (x) => x.amount, render: (x) => rp(x.amount) },
+          ]}
+          card={(x) => <>
+            <div className="dt-row"><b>{x.description || catName(x)}</b><span className="num">{rp(x.amount)}</span></div>
+            <span className="small muted">{tgl(x.date)} · {catName(x)}</span>
+          </>} />
       ))}
 
       {tab === 'lain' && (
         <>
           <p className="small muted" style={{ margin: 0 }}>Uang kos yang dipakai pemilik untuk keperluan pribadi <b>bukan biaya kos</b>, jadi tidak mengurangi laba — tetapi mengurangi uang kas. Catat di sini agar saldo kas tetap cocok.</p>
-          {ent.length === 0 ? <Empty title="Belum ada transaksi" text="Contoh: ambil Rp500.000 untuk belanja rumah, setor modal untuk renovasi, atau pendapatan parkir." /> : (
-            <section className="panel"><div className="list">{ent.map((x) => (
-              <div className="li click" key={x.id} onClick={() => setSheet({ t: 'ent', x })}>
-                <div className="main"><b>{x.description || ENTRY[x.kind][0]}</b><span className="small muted">{tgl(x.date)} · {ENTRY[x.kind][0]}</span></div>
-                <span className="num" style={{ color: ENTRY[x.kind][2] === 'out' ? 'var(--bad)' : 'var(--good)' }}>{ENTRY[x.kind][2] === 'out' ? '−' : '+'}{rp(x.amount)}</span>
-              </div>
-            ))}</div></section>
+          {ent.length === 0 ? <Empty title="Belum ada transaksi" text="Contoh: ambil Rp500.000 untuk belanja rumah, setor modal untuk renovasi, atau pendapatan parkir." /> : shownEnt.length === 0 ? <Empty title="Tidak ada yang cocok" /> : (
+            <DataTable rows={shownEnt} caption={`Transaksi lain ${bulan(ym)}`} onRow={(x) => setSheet({ t: 'ent', x })} rowLabel={(x) => `${x.description || ENTRY[x.kind][0]} ${rp(x.amount)}`}
+              columns={[
+                { key: 'date', label: 'Tanggal', sort: (x) => x.date, render: (x) => tgl(x.date) },
+                { key: 'desc', label: 'Keterangan', render: (x) => <b>{x.description || ENTRY[x.kind][0]}</b> },
+                { key: 'kind', label: 'Jenis', sort: (x) => ENTRY[x.kind][0], render: (x) => ENTRY[x.kind][0] },
+                { key: 'amt', label: 'Jumlah', align: 'right', sort: (x) => (ENTRY[x.kind][2] === 'out' ? -x.amount : x.amount), render: (x) => <span style={{ color: ENTRY[x.kind][2] === 'out' ? 'var(--bad)' : 'var(--good)' }}>{ENTRY[x.kind][2] === 'out' ? '−' : '+'}{rp(x.amount)}</span> },
+              ]}
+              card={(x) => <>
+                <div className="dt-row"><b>{x.description || ENTRY[x.kind][0]}</b><span className="num" style={{ color: ENTRY[x.kind][2] === 'out' ? 'var(--bad)' : 'var(--good)' }}>{ENTRY[x.kind][2] === 'out' ? '−' : '+'}{rp(x.amount)}</span></div>
+                <span className="small muted">{tgl(x.date)} · {ENTRY[x.kind][0]}</span>
+              </>} />
           )}
         </>
       )}
