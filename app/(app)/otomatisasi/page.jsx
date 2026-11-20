@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Field, Loading, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, angka, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -55,8 +56,7 @@ export default function Otomatisasi() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Otomatisasi</h2><PageHelp page="otomatisasi" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Pekerjaan rutin yang dijalankan sistem setiap pagi pukul 07.00. Otomatisasi hanya membaca data dan membuat pemberitahuan; tindakan yang mengubah data masuk ke <Link href="/persetujuan">Persetujuan</Link> dulu.</p>
+      <PageHeader title="Otomatisasi" help={<PageHelp page="otomatisasi" />} desc={<>Pekerjaan rutin yang dijalankan sistem setiap pagi pukul 07.00. Otomatisasi hanya membaca data dan membuat pemberitahuan; tindakan yang mengubah data masuk ke <Link href="/persetujuan">Persetujuan</Link> dulu.</>} />
 
       <section className="panel">
         <div className="row between"><h3>Pemberitahuan{unread ? ` (${unread} baru)` : ''}</h3>{unread > 0 && <button className="sm ghost" onClick={markRead}>Tandai dibaca</button>}</div>

@@ -1,5 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -45,8 +46,7 @@ export default function Pembayaran() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Pembayaran</h2><PageHelp page="pembayaran" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Catat pembayaran dari halaman Tagihan. Di sini Anda memeriksa dan memverifikasinya.</p>
+      <PageHeader title="Pembayaran" help={<PageHelp page="pembayaran" />} desc={<>Catat pembayaran dari halaman Tagihan. Di sini Anda memeriksa dan memverifikasinya.</>} />
       {pending.length > 0 && (
         <section className="panel"><h3>Menunggu verifikasi</h3>
           <div className="list">{pending.map((p) => <Row key={p.id} p={p} actions={<>

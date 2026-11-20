@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Loading, Empty, run } from '@/components/ui';
 import { rp, errMsg } from '@/lib/format';
 import { unitsOf } from '@/lib/retail';
@@ -44,8 +45,7 @@ export default function Label() {
     <div className="stack">
       <div className="noprint stack">
         <Link href="/barang" className="small">← Barang & stok</Link>
-        <div className="row"><h2>Cetak label barcode</h2><PageHelp page="label" /></div>
-        <p className="small muted" style={{ margin: 0 }}>Untuk barang tanpa barcode pabrik: label memakai <b>kode barang</b>. Tempel di rak atau kemasan ulang, lalu scan di Kasir seperti barang biasa.</p>
+        <PageHeader title="Cetak label barcode" help={<PageHelp page="label" />} desc={<>Untuk barang tanpa barcode pabrik: label memakai <b>kode barang</b>. Tempel di rak atau kemasan ulang, lalu scan di Kasir seperti barang biasa.</>} />
         {noCode.length > 0 && <div className="notice">{noCode.length} barang belum punya kode.<br /><button className="sm primary" style={{ marginTop: 6 }} onClick={auto}>Buat kode otomatis (B0001, B0002, …)</button></div>}
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari barang" aria-label="Cari barang" />
         <section className="panel"><div className="list">{shown.map((r) => (

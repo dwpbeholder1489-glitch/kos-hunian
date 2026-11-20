@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Loading, Empty } from '@/components/ui';
 import { rp, tgl, errMsg, today } from '@/lib/format';
 
@@ -39,8 +40,7 @@ export default function Aktivitas() {
   (rows || []).forEach((e) => { const d = hari(e.at); const g = byDay[byDay.length - 1]; if (g && g.d === d) g.list.push(e); else byDay.push({ d, list: [e] }); });
   return (
     <div className="stack">
-      <div className="row"><h2>Riwayat aktivitas</h2><PageHelp page="aktivitas" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Siapa melakukan apa dan kapan — dicatat otomatis oleh sistem saat transaksi terjadi, tidak bisa diubah. Anda hanya melihat aktivitas di bagian yang boleh Anda buka.</p>
+      <PageHeader title="Riwayat aktivitas" help={<PageHelp page="aktivitas" />} desc={<>Siapa melakukan apa dan kapan — dicatat otomatis oleh sistem saat transaksi terjadi, tidak bisa diubah. Anda hanya melihat aktivitas di bagian yang boleh Anda buka.</>} />
       <div className="seg" style={{ overflowX: 'auto' }}>{AREA.map(([k, l]) => <button key={k} className={area === k ? 'on' : ''} onClick={() => setArea(k)}>{l}</button>)}</div>
       <div className="row" style={{ gap: 6 }}><label className="small" style={{ flex: 1 }}>Tanggal <input type="date" value={dari} max={today()} onChange={(e) => setDari(e.target.value)} /></label>
         {dari && <button className="sm ghost" onClick={() => setDari('')}>Semua tanggal</button>}</div>

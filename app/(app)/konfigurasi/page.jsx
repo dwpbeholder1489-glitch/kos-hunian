@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import Rekomendasi from '@/components/Rekomendasi';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { tgl, errMsg } from '@/lib/format';
@@ -53,7 +54,7 @@ export default function Konfigurasi() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Pusat konfigurasi</h2><PageHelp page="konfigurasi" /></div>
+      <PageHeader title="Pusat konfigurasi" help={<PageHelp page="konfigurasi" />} />
       {kos?.category_code && <Link href="/konfirmasi" className="small">Konfigurasi awal (layanan, info bisnis, modul yang disetujui) ada di Pusat Konfirmasi →</Link>}
       <p className="small muted" style={{ margin: 0 }}>Atur profil, modul, dan struktur {kos.name}. Perubahan penting dicatat dan {owner ? 'langsung diterapkan setelah Anda konfirmasi' : 'menunggu persetujuan pemilik'}.</p>
       <div className="seg" style={{ overflowX: 'auto' }}>

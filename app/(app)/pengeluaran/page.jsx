@@ -1,5 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { Fragment, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -27,7 +28,7 @@ export default function Pengeluaran() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Pengeluaran</h2><PageHelp page="pengeluaran" /></div><button className="primary" onClick={add}>+ Catat</button></div>
+      <PageHeader title="Pengeluaran" help={<PageHelp page="pengeluaran" />} actions={<><button className="primary" onClick={add}>+ Catat</button></>} />
       <div className="seg">
         <button className={tab === 'biaya' ? 'on' : ''} onClick={() => setTab('biaya')}>Biaya kos</button>
         <button className={tab === 'lain' ? 'on' : ''} onClick={() => setTab('lain')}>Diambil pemilik & lainnya</button>

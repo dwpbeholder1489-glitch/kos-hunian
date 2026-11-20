@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
 import { multiLoc } from '@/lib/business';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
@@ -59,7 +60,7 @@ export default function Belanja() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Belanja</h2><PageHelp page="belanja" /></div><div className="row"><button className="sm" onClick={() => setSaran(true)} disabled={!d.products.length}>Saran belanja</button><button className="primary" onClick={() => setForm(true)} disabled={!d.products.length}>+ Belanja</button></div></div>
+      <PageHeader title="Belanja" help={<PageHelp page="belanja" />} actions={<><div className="row"><button className="sm" onClick={() => setSaran(true)} disabled={!d.products.length}>Saran belanja</button><button className="primary" onClick={() => setForm(true)} disabled={!d.products.length}>+ Belanja</button></div></>} />
       <div className="seg" style={{ overflowX: 'auto' }}>{TABS.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)} aria-pressed={tab === k} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       {tab === 'permintaan' && <Permintaan kosId={kosId} d={d} onOrder={(init) => setForm({ init })} />}
       {tab === 'faktur' && <Faktur kosId={kosId} />}

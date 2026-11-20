@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import Lampiran from '@/components/Lampiran';
 import { rp, parseRp, errMsg, waLink } from '@/lib/format';
@@ -47,7 +48,7 @@ export default function Perbaikan() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Keluhan & perbaikan</h2><PageHelp page="perbaikan" /></div><button className="primary" onClick={() => setNeu({})}>+ Catat keluhan</button></div>
+      <PageHeader title="Keluhan & perbaikan" help={<PageHelp page="perbaikan" />} actions={<><button className="primary" onClick={() => setNeu({})}>+ Catat keluhan</button></>} />
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor, keluhan, atau kamar" aria-label="Cari keluhan" />
       {shown.length === 0 ? <Empty title={f === 'terbuka' ? 'Tidak ada keluhan terbuka' : 'Tidak ada data'} text="Catat kerusakan atau keluhan penghuni agar tidak terlupa dan biaya perbaikannya tercatat." /> : (

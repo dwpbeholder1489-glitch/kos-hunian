@@ -1,5 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -78,7 +79,7 @@ export default function Langganan() {
 
   if (p.owner) return (
     <div className="stack">
-      <div className="row"><h2>Langganan</h2><PageHelp page="langganan" /></div>
+      <PageHeader title="Langganan" help={<PageHelp page="langganan" />} />
       <section className="panel">
         <span className="label">Paket saat ini</span>
         <b style={{ fontSize: 20 }}>Pro · Pemilik aplikasi 👑</b>
@@ -131,7 +132,7 @@ export default function Langganan() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Langganan</h2><PageHelp page="langganan" /></div>
+      <PageHeader title="Langganan" help={<PageHelp page="langganan" />} />
 
       <section className="panel">
         <span className="label">Paket saat ini</span>

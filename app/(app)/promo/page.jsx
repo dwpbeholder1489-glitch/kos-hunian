@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
@@ -44,7 +45,7 @@ export default function Promo() {
   const jalan = d.promos.filter((p) => p.state === 'berjalan').length;
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Promo & bundling</h2><PageHelp page="promo" /></div><button className="primary" onClick={() => setForm({})}>+ Promo</button></div>
+      <PageHeader title="Promo & bundling" help={<PageHelp page="promo" />} actions={<><button className="primary" onClick={() => setForm({})}>+ Promo</button></>} />
       <div className="grid">
         <Tile label="Promo berjalan" value={angka(jalan)} sub={`${d.promos.length} promo tersimpan`} tone={jalan ? 'good' : ''} />
         <Tile label="Potongan promo bulan ini" value={rp(d.month_given)} sub={`${angka(d.month_sales)} transaksi`} />

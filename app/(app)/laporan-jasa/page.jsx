@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Loading, Tile } from '@/components/ui';
 import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from '@/lib/format';
 import { DayColumns, BarList } from '@/components/Charts';
@@ -30,7 +31,7 @@ export default function LaporanJasa() {
   ]), `Laporan ${kos.name} ${ym}.xlsx`);
   return (
     <div className="stack">
-      <div className="row"><h2>Laporan</h2><PageHelp page="laporan-jasa" /></div>
+      <PageHeader title="Laporan" help={<PageHelp page="laporan-jasa" />} />
       <div className="row">
         <button className="sm ghost" onClick={() => setYm(addMonthsYm(ym, -1))}>‹</button><b>{bulan(ym)}</b>
         <button className="sm ghost" disabled={ym >= thisMonth()} onClick={() => setYm(addMonthsYm(ym, 1))}>›</button>

@@ -1,5 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -31,8 +32,7 @@ export default function Tagihan() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Tagihan</h2><PageHelp page="tagihan" /></div><button className="primary" onClick={() => setSheet({ t: 'extra' })}>+ Tagihan tambahan</button></div>
-      <p className="small muted" style={{ margin: 0 }}>Tagihan sewa bulanan dibuat otomatis 7 hari sebelum jatuh tempo.</p>
+      <PageHeader title="Tagihan" help={<PageHelp page="tagihan" />} actions={<><button className="primary" onClick={() => setSheet({ t: 'extra' })}>+ Tagihan tambahan</button></>} desc={<>Tagihan sewa bulanan dibuat otomatis 7 hari sebelum jatuh tempo.</>} />
       <div className="seg">{FILTERS.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
       {list.length === 0 ? <Empty title="Tidak ada tagihan" text={f === 'menunggak' ? 'Tidak ada yang menunggak.' : 'Belum ada tagihan di kategori ini.'} /> : (
         <section className="panel">

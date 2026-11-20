@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Loading, Tile } from '@/components/ui';
 import { rp, bulan, today, errMsg, tgl } from '@/lib/format';
 import { typeOf, homeOf, ROLES, isDraft, SETUP_STATUS } from '@/lib/business';
@@ -60,7 +61,7 @@ export default function Bisnis() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Ringkasan pemilik</h2><PageHelp page="bisnis" /></div><Link href="/mulai"><button className="primary">+ Tambah bisnis</button></Link></div>
+      <PageHeader title="Ringkasan pemilik" help={<PageHelp page="bisnis" />} actions={<><Link href="/mulai"><button className="primary">+ Tambah bisnis</button></Link></>} />
       <div className="row between">
         <div className="row" style={{ flexWrap: 'nowrap' }}>
           <button className="sm" onClick={() => setYm(shift(ym, -1))} aria-label="Bulan sebelumnya">‹</button>

@@ -1,5 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useEffect, useRef, useState } from 'react';
 import { TPL, MAX_TPL, fill } from '@/lib/templates';
 import { compressImage } from '@/lib/image';
@@ -67,7 +68,7 @@ export default function Pengaturan() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Pengaturan</h2><PageHelp page="pengaturan" /></div>
+      <PageHeader title="Pengaturan" help={<PageHelp page="pengaturan" />} />
       <section className="panel"><h3>Profil {noun}</h3>
         <Field label={`Nama ${noun}`}><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} /></Field>
         <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} disabled={!canEdit} /></Field>

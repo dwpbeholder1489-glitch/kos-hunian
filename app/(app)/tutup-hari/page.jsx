@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Field, Loading, Empty, Tile, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { jam } from '@/lib/retail';
@@ -50,7 +51,7 @@ export default function TutupHari() {
   };
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Tutup harian</h2><PageHelp page="tutup-hari" /></div></div>
+      <PageHeader title="Tutup harian" help={<PageHelp page="tutup-hari" />} />
       <div className="row" style={{ flexWrap: 'nowrap', alignItems: 'flex-end' }}>
         <Field label={locName ? `Tanggal · ${locName}` : 'Tanggal'}><input type="date" max={today()} value={day} onChange={(e) => e.target.value && setDay(e.target.value)} /></Field>
       </div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
@@ -47,7 +48,7 @@ export default function Meja() {
   const req = rs.filter((r) => r.status === 'permintaan');
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Meja & reservasi</h2><PageHelp page="meja" /></div></div>
+      <PageHeader title="Meja & reservasi" help={<PageHelp page="meja" />} />
       <div className="seg"><button className={tab === 'meja' ? 'on' : ''} onClick={() => setTab('meja')}>Meja</button><button className={tab === 'reservasi' ? 'on' : ''} onClick={() => setTab('reservasi')}>Reservasi{req.length ? ` (${req.length} baru)` : ''}</button></div>
       {tab === 'meja' && (tables === 0
         ? <Empty title="Jumlah meja belum diisi" text="Isi jumlah meja di menu Menu & tahap › Meja."><Link href="/layanan"><button className="primary">Isi jumlah meja</button></Link></Empty>

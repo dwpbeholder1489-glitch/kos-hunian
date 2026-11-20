@@ -8,6 +8,7 @@ import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp, waLink } from '@/lib/format';
 import { withApproval } from '@/lib/approval';
@@ -55,7 +56,7 @@ export default function Pesanan() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Pesanan</h2><PageHelp page="pesanan" /></div>{money && <button className="primary" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</div>
+      <PageHeader title="Pesanan" help={<PageHelp page="pesanan" />} actions={<>{money && <button className="primary" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</>} />
       {req.length > 0 && money && f !== 'permintaan' && <div className="notice"><b>{req.length} pesanan dari halaman bisnis</b> menunggu konfirmasi. <button className="sm" onClick={() => setF('permintaan')}>Lihat</button></div>}
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor, nama, atau No. HP" aria-label="Cari pesanan" />

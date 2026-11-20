@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -25,7 +26,7 @@ export default function SDM() {
   const [tab, setTab] = useState('hari');
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>SDM & gaji</h2><PageHelp page="sdm" /></div></div>
+      <PageHeader title="SDM & gaji" help={<PageHelp page="sdm" />} />
       <AbsenSaya kosId={kosId} ver={ver} admin={admin} />
       {admin && <>
         <div className="seg">{[['hari', 'Absensi'], ['jadwal', 'Jadwal'], ['karyawan', 'Karyawan'], ['gaji', 'Gaji']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>

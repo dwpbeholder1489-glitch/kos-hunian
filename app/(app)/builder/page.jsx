@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, run, toast } from '@/components/ui';
 import { errMsg } from '@/lib/format';
 import { canArea, tabsFor, ROLES } from '@/lib/business';
@@ -22,8 +23,7 @@ export default function Builder() {
   const done = () => { reload(); bump(); loadKos(); }; // loadKos: nama menu (jenis data) ikut diperbarui
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Business Builder</h2><PageHelp page="builder" /></div>
-        <span className={'chip ' + (cfg.ws?.status === 'aktif' ? 'good' : 'gold')}>{cfg.ws?.status === 'aktif' ? 'Aktif' : 'Draf'}</span></div>
+      <PageHeader title="Business Builder" help={<PageHelp page="builder" />} actions={<><span className={'chip ' + (cfg.ws?.status === 'aktif' ? 'good' : 'gold')}>{cfg.ws?.status === 'aktif' ? 'Aktif' : 'Draf'}</span></>} />
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{STEPS.map(([k, l]) => <button key={k} className={step === k ? 'on' : ''} onClick={() => setStep(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       <Templates kos={kos} cfg={cfg} onDone={done} />
       {cfg.ws?.status === 'aktif' && <span className="small muted">Bisnis sudah aktif. Perubahan langsung berlaku; catatan lama tetap aman (field yang dinonaktifkan tidak menghapus isinya).</span>}

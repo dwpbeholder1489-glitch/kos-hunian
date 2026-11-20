@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, run, toast } from '@/components/ui';
 import { rp, angka, today, thisMonth, bulan, addMonthsYm, parseRp, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -85,7 +86,7 @@ export default function Meteran() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Meteran listrik & air</h2><PageHelp page="meteran" /></div>{canSet && types.length > 0 && <button className="sm" onClick={() => setEdit({})}>+ Jenis meteran</button>}</div>
+      <PageHeader title="Meteran listrik & air" help={<PageHelp page="meteran" />} actions={<>{canSet && types.length > 0 && <button className="sm" onClick={() => setEdit({})}>+ Jenis meteran</button>}</>} />
       {types.length === 0 ? (
         <section className="panel">
           <b>Atur dulu tarifnya</b>

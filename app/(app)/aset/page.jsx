@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
@@ -32,7 +33,7 @@ export default function Aset() {
   const nLepas = d.assets.filter((a) => a.status === 'dilepas').length;
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Aset tetap</h2><PageHelp page="aset" /></div><button className="primary" onClick={() => setForm({})}>+ Tambah aset</button></div>
+      <PageHeader title="Aset tetap" help={<PageHelp page="aset" />} actions={<><button className="primary" onClick={() => setForm({})}>+ Tambah aset</button></>} />
       <div className="grid">
         <Tile label="Nilai buku sekarang" value={rp(d.total_book)} sub={`harga perolehan ${rp(d.total_cost)}`} />
         <Tile label="Sudah disusutkan" value={rp(d.total_accumulated)} sub="akumulasi penyusutan" />

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, today, tgl, bulan, errMsg } from '@/lib/format';
 import { hasFeature } from '@/lib/plan';
@@ -65,7 +66,7 @@ export default function LaporanKustom() {
     rows: res.rows.map((x) => [label(x.key), Number(x.n), Number(x.value)]) }]), `${kos.name} - ${rp0.name}.xlsx`);
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Laporan</h2><PageHelp page="laporan-kustom" /></div>{canArea(kos, 'settings') && <Link href="/builder?langkah=laporan" className="small">Atur laporan</Link>}</div>
+      <PageHeader title="Laporan" help={<PageHelp page="laporan-kustom" />} actions={<>{canArea(kos, 'settings') && <Link href="/builder?langkah=laporan" className="small">Atur laporan</Link>}</>} />
       <select value={rid || ''} onChange={(e) => setRid(e.target.value)} aria-label="Pilih laporan">{cfg.reports.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{PERIODS.map(([k, l]) => <button key={k} className={per === k ? 'on' : ''} onClick={() => setPer(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       {per === 'custom' && <div className="row"><input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} aria-label="Dari" /><input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} aria-label="Sampai" /></div>}

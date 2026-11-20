@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -40,8 +41,7 @@ export default function Pembukuan() {
   const period = ytd ? `Jan–${bulan(ym)}` : bulan(ym);
   return (
     <div className="stack">
-      <div className="row"><h2>Pembukuan</h2><PageHelp page="pembukuan" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Jurnal dibuat otomatis dari transaksi yang sudah Anda catat (penjualan, belanja, kas, pembayaran, stok). Transaksi yang dibatalkan atau diubah tidak dihapus dari jurnal — sistem membuat jurnal pembalikan.</p>
+      <PageHeader title="Pembukuan" help={<PageHelp page="pembukuan" />} desc={<>Jurnal dibuat otomatis dari transaksi yang sudah Anda catat (penjualan, belanja, kas, pembayaran, stok). Transaksi yang dibatalkan atau diubah tidak dihapus dari jurnal — sistem membuat jurnal pembalikan.</>} />
       <div className="row">
         <button className="sm ghost" onClick={() => setYm(addMonthsYm(ym, -1))}>‹</button>
         <b>{period}</b>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Field, Loading, Sheet, toast } from '@/components/ui';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { GrowthSheet } from '@/components/GrowthOffer';
@@ -69,8 +70,7 @@ export default function Karyawan() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Karyawan</h2><PageHelp page="karyawan" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Karyawan masuk dengan email & kata sandinya sendiri dan hanya melihat menu sesuai perannya. Terpakai {d.used} dari {d.limit >= 1000 ? 'tanpa batas' : `${d.limit} (paket ini)`}.</p>
+      <PageHeader title="Karyawan" help={<PageHelp page="karyawan" />} desc={<>Karyawan masuk dengan email & kata sandinya sendiri dan hanya melihat menu sesuai perannya. Terpakai {d.used} dari {d.limit >= 1000 ? 'tanpa batas' : `${d.limit} (paket ini)`}.</>} />
 
       <form className="panel" onSubmit={invite}>
         <h3>Undang karyawan</h3>

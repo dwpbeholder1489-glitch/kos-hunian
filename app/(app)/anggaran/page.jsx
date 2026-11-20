@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { Loading, Tile, toast } from '@/components/ui';
 import { rp, errMsg, bulan, thisMonth, addMonthsYm, parseRp } from '@/lib/format';
@@ -56,8 +57,7 @@ export default function Anggaran() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Anggaran</h2><PageHelp page="anggaran" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Tetapkan batas biaya per kategori setiap bulan, lalu bandingkan dengan pengeluaran yang benar-benar tercatat. Realisasi dihitung otomatis dari pengeluaran.</p>
+      <PageHeader title="Anggaran" help={<PageHelp page="anggaran" />} desc={<>Tetapkan batas biaya per kategori setiap bulan, lalu bandingkan dengan pengeluaran yang benar-benar tercatat. Realisasi dihitung otomatis dari pengeluaran.</>} />
       <div className="row between">
         <button className="sm ghost" onClick={() => setYm(addMonthsYm(ym, -1))} aria-label="Bulan sebelumnya">‹</button>
         <b>{bulan(ym)}</b>

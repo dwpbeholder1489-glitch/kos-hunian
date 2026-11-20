@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Field, Loading, Empty, Tile, Sheet, run, toast } from '@/components/ui';
 import { rp, angka, errMsg, today } from '@/lib/format';
 
@@ -46,7 +47,7 @@ export default function Komisi() {
   };
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Komisi kasir</h2><PageHelp page="komisi" /></div></div>
+      <PageHeader title="Komisi kasir" help={<PageHelp page="komisi" />} />
       <Field label="Bulan"><input type="month" value={month} max={bulanIni()} onChange={(e) => e.target.value && setMonth(e.target.value)} /></Field>
 
       <section className="panel">

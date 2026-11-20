@@ -247,7 +247,7 @@ const PARTS = [
     ['Jualan di kasir', 'Menu Kasir', [
       <>Buka <b>Kasir</b>. Pilih <b>Eceran</b> atau <b>Grosir</b> di kanan atas — harga mengikuti pilihan ini.</>,
       <>Cari barang, lalu ketuk tombol satuannya (mis. <b>pcs · Rp 3.500</b> atau <b>dus · Rp 125.000</b>). Ketuk lagi untuk menambah jumlah.</>,
-      <>Ketuk bar <b>Keranjang</b> di bawah. Ubah jumlah atau harga bila perlu, isi diskon, lalu pilih <b>Tunai</b> (isi uang diterima → kembalian), <b>Transfer / QRIS</b>, atau <b>Kasbon</b> (pilih/isi nama pelanggan).</>,
+      <>Ketuk bar <b>Keranjang</b> di bawah (di laptop/komputer lebar, keranjang & pembayaran sudah terbuka di sisi kanan, berdampingan dengan daftar barang). Ubah jumlah atau harga bila perlu, isi diskon, lalu pilih <b>Tunai</b> (isi uang diterima → kembalian), <b>Transfer / QRIS</b>, atau <b>Kasbon</b> (pilih/isi nama pelanggan).</>,
       <>Pembeli bayar dengan beberapa cara? Pilih <b>Campuran</b> lalu isi bagian <b>Tunai</b>, <b>Transfer / QRIS</b>, dan/atau <b>Kasbon</b> (tombol <b>Sisa</b> mengisi kekurangannya). Baris <b>Terbagi</b> harus sama dengan total. Bila ada bagian kasbon, pilih pelanggannya. Kas, bank, kasbon, shift, dan laporan otomatis dibagi sesuai rincian.</>,
       <>Toko PKP: setelah <b>Pajak (PPN)</b> diaktifkan di Pengaturan, layar bayar menampilkan <b>Termasuk PPN</b> dan struk mencetak bagian PPN-nya. Harga jual tetap harga yang Anda isi (sudah termasuk PPN).</>,
       <>Tekan <b>Simpan</b>. Stok berkurang otomatis. Tekan <b>Lihat / kirim struk</b> untuk mencetak atau mengirim struk lewat WhatsApp.</>,

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
@@ -76,7 +77,7 @@ export default function Notifikasi() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Notifikasi</h2><PageHelp page="notifikasi" /></div>
+      <PageHeader title="Notifikasi" help={<PageHelp page="notifikasi" />} />
       <section className="panel">
         <h3>Perlu perhatian</h3>
         {list.length === 0 ? (

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useKos } from '@/components/KosProvider';
 import NavIcon from '@/components/NavIcon';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { groupsFor, subOf, GROUP_ICON } from '@/lib/menu';
 
 export default function Operasional() {
@@ -20,7 +21,7 @@ export default function Operasional() {
   const hits = term ? groups.flatMap(([, g, , items]) => items.map((x) => [...x, g])).filter(([h, l, g]) => `${l} ${subOf(h)} ${g}`.toLowerCase().includes(term)) : [];
   return (
     <div className="stack">
-      <div className="row"><h2>Modul Bisnis</h2><PageHelp page="operasional" /></div>
+      <PageHeader title="Modul Bisnis" help={<PageHelp page="operasional" />} />
       <label className="searchbox"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         <input ref={ref} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari modul atau fitur…" aria-label="Cari modul atau fitur" /></label>
       {term ? (

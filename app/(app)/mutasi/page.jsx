@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Field, Loading, Empty, Sheet, run, toast } from '@/components/ui';
 import { angka, tgl, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
@@ -43,7 +44,7 @@ export default function Mutasi() {
   useEffect(() => { setFrom(kos?.locs?.current || ''); }, [kos?.locs?.current]);
   if (!multiLoc(kos)) return (
     <div className="stack">
-      <div className="row"><h2>Mutasi stok</h2><PageHelp page="mutasi" /></div>
+      <PageHeader title="Mutasi stok" help={<PageHelp page="mutasi" />} />
       <Empty title="Baru ada satu lokasi" text="Mutasi stok untuk memindahkan barang antar lokasi, mis. dari gudang ke toko. Tambahkan dulu gudang atau cabang Anda; setelah itu menu ini, pilihan 📍 Lokasi kerja, dan stok per lokasi langsung aktif.">
         <Link href="/konfigurasi?tab=cabang"><button className="primary">+ Tambah gudang / cabang</button></Link>
       </Empty>
@@ -72,8 +73,7 @@ export default function Mutasi() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Mutasi stok</h2><PageHelp page="mutasi" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Pindahkan barang antar lokasi (mis. dari gudang ke toko). Stok asal berkurang, stok tujuan bertambah, total stok dan nilai modal tidak berubah.</p>
+      <PageHeader title="Mutasi stok" help={<PageHelp page="mutasi" />} desc={<>Pindahkan barang antar lokasi (mis. dari gudang ke toko). Stok asal berkurang, stok tujuan bertambah, total stok dan nilai modal tidak berubah.</>} />
       {d.hist.some((h) => h.status === 'dikirim') && <section className="panel">
         <h3>Dalam perjalanan</h3>
         <div className="list">{d.hist.filter((h) => h.status === 'dikirim').map((h) => (

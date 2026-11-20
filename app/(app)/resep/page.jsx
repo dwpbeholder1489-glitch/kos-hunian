@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, today, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -35,7 +36,7 @@ export default function Resep() {
   const short = withR.filter((r) => r.active && r.short);
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>{T.kul ? 'Resep & food cost' : 'Bahan per layanan'}</h2><PageHelp page="resep" /></div></div>
+      <PageHeader title={T.kul ? 'Resep & food cost' : 'Bahan per layanan'} help={<PageHelp page="resep" />} />
       {fin && <div className="seg">{[['resep', T.kul ? 'Resep' : 'Bahan'], ['laporan', 'Laporan biaya bahan']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>}
       {tab === 'laporan' && fin ? <Laporan kosId={kosId} T={T} /> : <>
         <div className="grid">

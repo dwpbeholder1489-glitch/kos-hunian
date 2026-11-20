@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { errMsg } from '@/lib/format';
 import { mediaUrl, CATEGORIES, deleteMedia } from '@/lib/media';
@@ -38,7 +39,7 @@ export default function Media() {
   const unused = (d.items || []).filter((m) => !m.uses.length).length;
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Pustaka media</h2><PageHelp page="media" /></div><button className="primary" onClick={() => setUp(cats[0])}>+ Foto</button></div>
+      <PageHeader title="Pustaka media" help={<PageHelp page="media" />} actions={<><button className="primary" onClick={() => setUp(cats[0])}>+ Foto</button></>} />
       <section className="panel" style={{ gap: 6 }}>
         <div className="row between"><span className="small">Penyimpanan foto & lampiran</span><span className="small"><b>{mb(d.used)}</b>{lim ? ` dari ${mb(lim)}` : ''}</span></div>
         {lim && <div className="bar"><span style={{ width: `${pct}%`, background: pct > 90 ? 'var(--bad)' : undefined }} /></div>}

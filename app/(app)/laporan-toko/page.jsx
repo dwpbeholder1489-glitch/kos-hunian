@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import Locked from '@/components/Locked';
 import { Loading, Empty, Tile } from '@/components/ui';
 import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg, today as todayStr } from '@/lib/format';
@@ -95,8 +96,7 @@ export default function LaporanToko() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Laporan toko</h2><PageHelp page="laporan-toko" /></div>
-        <div className="row noprint">{canExport ? <><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('laporan_toko', exportCsv)}>Unduh Excel</button><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('cetak_pdf', () => window.print())}>Cetak / PDF</button></> : null}</div></div>
+      <PageHeader title="Laporan toko" help={<PageHelp page="laporan-toko" />} actions={<><div className="row noprint">{canExport ? <><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('laporan_toko', exportCsv)}>Unduh Excel</button><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('cetak_pdf', () => window.print())}>Cetak / PDF</button></> : null}</div></>} />
       {canExport && (ek.habis ? <span className="small noprint" style={{ color: 'var(--bad)' }}>{ek.q?.message}</span> : ek.info && <span className="small muted noprint">{ek.info}</span>)}
       {nav}
       {!canExport && <Locked need="dasar" title="Unduh Excel & cetak PDF" text="Ekspor laporan toko tersedia mulai Paket Dasar." />}

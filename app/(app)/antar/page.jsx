@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, today, errMsg, parseRp, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -81,7 +82,7 @@ export default function Antar() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>{kul ? 'Pengantaran' : 'Antar jemput'}</h2><PageHelp page="antar" /></div>{money && <Link href="/pesanan?baru=1"><button className="primary">+ Pesanan</button></Link>}</div>
+      <PageHeader title={kul ? 'Pengantaran' : 'Antar jemput'} help={<PageHelp page="antar" />} actions={<>{money && <Link href="/pesanan?baru=1"><button className="primary">+ Pesanan</button></Link>}</>} />
       <div className="seg">{[...(kul ? [] : [['jemput', `Jemput (${jemput.length})`]]), ['antar', `Antar (${antar.length})`], ...(settings ? [['atur', 'Wilayah & jadwal']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
       {tab !== 'atur' && d.zones.filter((z) => z.active).length === 0 && <div className="notice">Wilayah layanan belum diatur{settings ? <> — buka <b>Wilayah & jadwal</b>. Tanpa daftar wilayah, alamat mana pun bisa dicatat.</> : '. Minta pemilik mengaturnya.'}</div>}
       {tab === 'jemput' && <List rows={jemput} leg="jemput" key2="pickup_date" />}

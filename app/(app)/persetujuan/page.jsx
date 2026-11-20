@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, angka } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -50,8 +51,7 @@ export default function Persetujuan() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Persetujuan</h2><PageHelp page="persetujuan" /></div>
-      <p className="small muted" style={{ margin: 0 }}>{owner ? 'Tindakan berisiko dari karyawan dan otomatisasi menunggu keputusan Anda di sini. Setelah disetujui, sistem langsung menjalankannya dan mencatat hasilnya.' : approver ? 'Anda ditunjuk sebagai penyetuju tingkat 1: putuskan permintaan karyawan lain di modul Anda. Permintaan bernilai besar diteruskan ke pemilik.' : 'Permintaan Anda ke pemilik dan statusnya.'}</p>
+      <PageHeader title="Persetujuan" help={<PageHelp page="persetujuan" />} desc={<>{owner ? 'Tindakan berisiko dari karyawan dan otomatisasi menunggu keputusan Anda di sini. Setelah disetujui, sistem langsung menjalankannya dan mencatat hasilnya.' : approver ? 'Anda ditunjuk sebagai penyetuju tingkat 1: putuskan permintaan karyawan lain di modul Anda. Permintaan bernilai besar diteruskan ke pemilik.' : 'Permintaan Anda ke pemilik dan statusnya.'}</>} />
       <div className="seg">
         <button className={tab === 'menunggu' ? 'on' : ''} onClick={() => setTab('menunggu')}>Menunggu ({pending.length})</button>
         <button className={tab === 'riwayat' ? 'on' : ''} onClick={() => setTab('riwayat')}>Riwayat</button>

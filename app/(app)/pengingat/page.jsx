@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Loading, Empty, run } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -24,7 +25,7 @@ export default function Pengingat() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Pengingat toko</h2><PageHelp page="pengingat" /></div>
+      <PageHeader title="Pengingat toko" help={<PageHelp page="pengingat" />} />
       {alertCount(a) === 0 && <Empty title="Semua aman" text="Tidak ada stok menipis, pesanan terlambat, atau kasbon/utang jatuh tempo." />}
       <Sec title="🔴 Stok habis" list={a.habis}>{a.habis.map((p) => <div className="li" key={p.id}><span>{p.name}</span><span className="chip bad">{angka(p.stock)} {p.unit}</span></div>)}</Sec>
       <Sec title="🟡 Stok menipis" list={a.menipis}>{a.menipis.map((p) => <div className="li" key={p.id}><span>{p.name}</span><span className="small">{angka(p.stock)} / min {angka(p.min)} {p.unit}</span></div>)}</Sec>

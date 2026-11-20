@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import LogoUpload from '@/components/LogoUpload';
 import EntityPhotos from '@/components/media/EntityPhotos';
 import { Field, Loading, Tile, toast } from '@/components/ui';
@@ -57,7 +58,7 @@ export default function Halaman() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Halaman bisnis</h2><PageHelp page="halaman" /></div>
+      <PageHeader title="Halaman bisnis" help={<PageHelp page="halaman" />} />
       {canArea(kos, 'settings') && <section className="panel"><span className="label">Logo</span><LogoUpload /><span className="small muted">Tampil di halaman bisnis dan di aplikasi (pojok kiri atas). Gambar persegi paling bagus.</span></section>}
       {canArea(kos, 'settings') && <section className="panel">
         <EntityPhotos kosId={kosId} entity="kos_cover" category="cover" title="Cover (opsional)" max={1} hint="Satu foto lebar (16:9) di bagian atas halaman, mis. tampak depan." />

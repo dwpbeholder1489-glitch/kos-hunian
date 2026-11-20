@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Field, Loading, Empty, run } from '@/components/ui';
 import { rp, tgl, errMsg, parseRp, angka } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -46,7 +47,7 @@ export default function Shift() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Shift kasir</h2><PageHelp page="shift" /></div>
+      <PageHeader title="Shift kasir" help={<PageHelp page="shift" />} />
       {result && <div className={'notice ' + (Math.abs(result.diff) < 1 ? 'good' : 'bad')}>Shift ditutup. Seharusnya {rp(result.expected)}, dihitung {rp(result.counted)} — <b>{diffText(Number(result.diff))}</b>.</div>}
       {sell && (!cur ? (
         <section className="panel">

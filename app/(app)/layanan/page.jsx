@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp } from '@/lib/format';
 import { qtyNum } from '@/lib/retail';
@@ -46,8 +47,7 @@ export default function Layanan() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>{T.svcs}</h2><PageHelp page="layanan" /></div>{can && <button className="primary" onClick={() => setEdit({})}>+ {T.svc}</button>}</div>
-      <p className="small muted" style={{ margin: 0 }}>Harga di sini dipakai otomatis saat menerima pesanan (kasir tidak bisa mengubah harga satuan; potongan lewat diskon yang tercatat).</p>
+      <PageHeader title={T.svcs} help={<PageHelp page="layanan" />} actions={<>{can && <button className="primary" onClick={() => setEdit({})}>+ {T.svc}</button>}</>} desc={<>Harga di sini dipakai otomatis saat menerima pesanan (kasir tidak bisa mengubah harga satuan; potongan lewat diskon yang tercatat).</>} />
       {svc.length === 0 && <div className="notice">Belum ada {T.svc.toLowerCase()}. {can ? (T.kul ? 'Tekan + Menu untuk menambah (mis. Nasi goreng, Rp15.000/porsi).' : 'Tekan + Layanan untuk menambah (mis. Jahit celana, Rp15.000/pcs).') : `Minta pemilik menambahkan ${T.svc.toLowerCase()}.`}</div>}
       {groups.map((g) => (
         <section className="panel" key={g}>

@@ -1,5 +1,6 @@
 'use client';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -27,7 +28,7 @@ export default function Kamar() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Kamar</h2><PageHelp page="kamar" /></div><button className="primary" onClick={() => setSheet({ t: 'edit', room: null })}>+ Kamar</button></div>
+      <PageHeader title="Kamar" help={<PageHelp page="kamar" />} actions={<><button className="primary" onClick={() => setSheet({ t: 'edit', room: null })}>+ Kamar</button></>} />
       <div className="seg">
         <button className={!filter ? 'on' : ''} onClick={() => setFilter('')}>Semua {d.rooms.length}</button>
         {Object.entries(ROOM_ST).map(([k, l]) => <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l} {count(k)}</button>)}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
@@ -41,7 +42,7 @@ export default function Konsinyasi() {
   const done = (msg) => { setForm(null); setPay(null); toast(msg); load(); };
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Konsinyasi</h2><PageHelp page="konsinyasi" /></div><button className="primary" onClick={() => setForm({ kind: 'terima', contact: '' })}>+ Terima titipan</button></div>
+      <PageHeader title="Konsinyasi" help={<PageHelp page="konsinyasi" />} actions={<><button className="primary" onClick={() => setForm({ kind: 'terima', contact: '' })}>+ Terima titipan</button></>} />
       <div className="grid">
         <Tile label="Nilai barang titipan di toko" value={rp(sumStok)} sub="belum terjual · bukan milik toko" />
         {d.can_pay && <Tile label="Harus disetor ke penitip" value={rp(sumSetor)} tone={sumSetor > 0 ? 'gold' : ''} sub="dari yang terjual, rusak, atau hilang" />}

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useBaru } from '@/lib/useBaru';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
@@ -58,8 +59,7 @@ export default function Grosir() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Pesanan grosir</h2><PageHelp page="grosir" /></div>
-        {tab !== 'harga' && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</div>
+      <PageHeader title="Pesanan grosir" help={<PageHelp page="grosir" />} actions={<>{tab !== 'harga' && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</>} />
       <div className="grid">
         <Tile label="Pesanan berjalan" value={angka(running.length)} sub={running.length ? `sisa kirim ${rp(running.reduce((a, o) => a + remainOf(o), 0))}` : 'tidak ada'} />
         <Tile label="Dalam pengiriman" value={angka(onRoad)} tone={onRoad ? 'gold' : ''} sub="surat jalan belum diterima" />

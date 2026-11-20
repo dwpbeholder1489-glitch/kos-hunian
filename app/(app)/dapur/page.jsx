@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Loading, Empty, toast } from '@/components/ui';
 import { angka, errMsg } from '@/lib/format';
 import { isKul } from '@/lib/jasa';
@@ -39,7 +40,7 @@ export default function Dapur() {
   };
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Dapur</h2><PageHelp page="dapur" /></div><button className="sm ghost" onClick={load}>Muat ulang</button></div>
+      <PageHeader title="Dapur" help={<PageHelp page="dapur" />} actions={<><button className="sm ghost" onClick={load}>Muat ulang</button></>} />
       <span className="small muted">Pesanan terlama di atas. Layar memuat ulang sendiri tiap 20 detik.</span>
       {req.length > 0 && <Link href="/pesanan" className="notice" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}><b>{req.length} pesanan dari QR meja / halaman bisnis</b> menunggu konfirmasi kasir: {req.map((o) => (o.table_no ? `Meja ${o.table_no}` : o.customer_name)).join(', ')} →</Link>}
       {queue.length === 0 && ready.length === 0 && <Empty title="Belum ada pesanan untuk dimasak" text="Pesanan baru dari kasir atau halaman bisnis (setelah dikonfirmasi) muncul di sini." />}

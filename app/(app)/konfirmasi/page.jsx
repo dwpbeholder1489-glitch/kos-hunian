@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import LogoUpload from '@/components/LogoUpload';
 import Persiapan from '@/components/Persiapan';
 import { Field, Loading, Sheet, toast } from '@/components/ui';
@@ -209,7 +210,7 @@ export default function Konfirmasi() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Pusat Konfirmasi</h2><PageHelp page="konfirmasi" /></div><span className={'chip ' + stTone}>{stLabel}</span></div>
+      <PageHeader title="Pusat Konfirmasi" help={<PageHelp page="konfirmasi" />} actions={<><span className={'chip ' + stTone}>{stLabel}</span></>} />
       <section className="panel" style={{ gap: 6 }}>
         <b>{b.category?.icon} {b.name}</b>
         <span className="small muted">{b.category?.name}{b.subcategory ? ` · ${b.subcategory.name}` : ''} · template {b.template}{b.meta?.stage ? ` · ${{ berjalan: 'sudah berjalan', baru: 'baru akan dibangun', dikembangkan: 'sedang dikembangkan' }[b.meta.stage]}` : ''}{Number(b.meta?.branches) > 0 ? ` · ${b.meta.branches} cabang` : ''}</span>

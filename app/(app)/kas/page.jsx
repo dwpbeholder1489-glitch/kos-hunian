@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
@@ -69,7 +70,7 @@ export default function Kas() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>{kustom ? 'Kas & biaya' : jasa ? 'Kas' : 'Kas & kasbon'}</h2><PageHelp page={kustom ? 'kas-kustom' : jasa ? 'kas-jasa' : 'kas'} /></div>
+      <PageHeader title={kustom ? 'Kas & biaya' : jasa ? 'Kas' : 'Kas & kasbon'} help={<PageHelp page={kustom ? 'kas-kustom' : jasa ? 'kas-jasa' : 'kas'} />} />
       <div className="grid">
         <Tile label="Kas (laci)" value={rp(led.kas)} sub={Number(led.kas) < 0 ? 'minus: ada uang masuk yang belum dicatat?' : 'menurut catatan'} tone={Number(led.kas) < 0 ? 'bad' : ''} />
         <Tile label="Bank" value={rp(led.bank)} />

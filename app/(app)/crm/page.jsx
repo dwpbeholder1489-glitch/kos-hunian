@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import Timeline from '@/components/CrmTimeline';
 import LeadCheck from '@/components/LeadCheck';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
@@ -36,8 +37,7 @@ export default function Crm() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Prospek & tindak lanjut</h2><PageHelp page="crm" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Catat calon {jasa ? 'pelanggan (mis. kos/hotel yang mau langganan laundry)' : retail ? 'pelanggan (mis. warung yang mau ambil grosir)' : 'penghuni yang menanyakan kamar'}, ikuti tahapannya, dan jadwalkan kapan harus dihubungi lagi.</p>
+      <PageHeader title="Prospek & tindak lanjut" help={<PageHelp page="crm" />} desc={<>Catat calon {jasa ? 'pelanggan (mis. kos/hotel yang mau langganan laundry)' : retail ? 'pelanggan (mis. warung yang mau ambil grosir)' : 'penghuni yang menanyakan kamar'}, ikuti tahapannya, dan jadwalkan kapan harus dihubungi lagi.</>} />
       <div className="grid">
         <Tile label="Prospek aktif" value={angka(active.length)} sub={d.open_value > 0 ? `perkiraan ${rp(d.open_value)}` : 'belum ada perkiraan nilai'} />
         <Tile label="Tindak lanjut hari ini" value={angka(d.due)} tone={d.due > 0 ? 'bad' : undefined} sub="termasuk yang terlewat" />

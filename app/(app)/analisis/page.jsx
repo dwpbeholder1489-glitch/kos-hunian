@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { Loading, Tile } from '@/components/ui';
 import { rp, angka, errMsg, bulan, thisMonth, addMonthsYm } from '@/lib/format';
@@ -74,8 +75,7 @@ export default function Analisis() {
 
   return (
     <div className="stack">
-      <div className="row"><h2>Analisis bisnis</h2><PageHelp page="analisis" /></div>
-      <p className="small muted" style={{ margin: 0 }}>Angka uang diambil dari Pembukuan (jurnal otomatis dari setiap transaksi), jadi sama dengan laporan keuangan. Tingkat analisis: <b>{d.level === 'mendalam' ? 'Mendalam (Paket Pro)' : d.level === 'lanjutan' ? 'Lanjutan (Paket Bisnis)' : 'Dasar'}</b>.</p>
+      <PageHeader title="Analisis bisnis" help={<PageHelp page="analisis" />} desc={<>Angka uang diambil dari Pembukuan (jurnal otomatis dari setiap transaksi), jadi sama dengan laporan keuangan. Tingkat analisis: <b>{d.level === 'mendalam' ? 'Mendalam (Paket Pro)' : d.level === 'lanjutan' ? 'Lanjutan (Paket Bisnis)' : 'Dasar'}</b>.</>} />
       <div className="row between"><button className="sm ghost" onClick={() => setBln(addMonthsYm(bln, -1))} aria-label="Bulan sebelumnya">‹</button><b>{bulan(bln)}</b>
         <button className="sm ghost" disabled={bln >= thisMonth()} onClick={() => setBln(addMonthsYm(bln, 1))} aria-label="Bulan berikutnya">›</button></div>
 

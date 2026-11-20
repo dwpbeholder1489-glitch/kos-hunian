@@ -6,6 +6,7 @@ import { moduleOn, canArea } from '@/lib/business';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
@@ -13,6 +14,7 @@ import { rp, angka, parseRp, errMsg, today } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, unitPrice, breakPrice, uid, PAY } from '@/lib/retail';
 import { toBase } from '@/lib/units';
 import { CategoryBar } from '@/components/TokoLanjut';
+import { useMedia } from '@/components/Page';
 
 // Harga dasar = sama dengan price_resolve di server: daftar harga pelanggan (bila berlaku) › harga outlet/umum
 // (katalog sudah membawa harga outlet lokasi ini). Pratinjau saja — angka resmi dihitung server saat disimpan.
@@ -46,6 +48,9 @@ export default function Kasir() {
   const [done, setDone] = useState(null);
   const [shift, setShift] = useState(undefined);
   const [catF, setCatF] = useState('');   // saring per kategori
+  // Laptop ≥1280: katalog + keranjang & pembayaran berdampingan (spesifikasi §17). Laptop kecil, tablet & HP: bilah keranjang + lembar Bayar.
+  const desk = useMedia('(min-width: 1280px)');
+  const [seq, setSeq] = useState(0); // naik setiap transaksi tersimpan → panel bayar dibuat ulang (nomor transaksi baru)
   const thumbs = useThumbs(kosId, 'product', ver);
   useEffect(() => { supabase.rpc('shift_current', { p_kos: kosId }).then(({ data, error }) => setShift(error ? undefined : data)); }, [kosId, ver, done]);
 
@@ -106,10 +111,9 @@ export default function Kasir() {
   }
 
   return (
-    <div className="stack" style={{ paddingBottom: cart.length ? 90 : 0 }}>
-      <div className="row between"><div className="row"><h2>Kasir</h2><PageHelp page="kasir" /></div>
-        <div className="seg">{[['ecer', 'Eceran'], ['grosir', 'Grosir']].map(([k, l]) => <button key={k} className={tier === k ? 'on' : ''} onClick={() => switchTier(k)} aria-pressed={tier === k}>{l}</button>)}</div>
-      </div>
+    <div className={desk ? 'pos' : ''}>
+    <div className="stack" style={{ paddingBottom: cart.length && !desk ? 90 : 0, minWidth: 0 }}>
+      <PageHeader title="Kasir" help={<PageHelp page="kasir" />} actions={<><div className="seg">{[['ecer', 'Eceran'], ['grosir', 'Grosir']].map(([k, l]) => <button key={k} className={tier === k ? 'on' : ''} onClick={() => switchTier(k)} aria-pressed={tier === k}>{l}</button>)}</div></>} />
       <LokasiBar note="Stok yang tampil dan berkurang adalah stok di lokasi ini." />
       {lead && <div className="notice small" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
         <span>Dari permintaan <b>{lead.number}</b> · {lead.name}. Setelah dibayar, prospeknya otomatis <b>Jadi</b>.</span>
@@ -132,7 +136,7 @@ export default function Kasir() {
         ) : <span className="small muted">Tip: beri tanda ☆ di Barang & stok untuk barang yang sering dijual — muncul sebagai tombol cepat di sini.</span>;
       })()}
       {shown.length === 0 ? <Empty title="Barang tidak ditemukan" /> : (
-        <div className="stack" style={{ gap: 10 }}>{shown.map((p) => {
+        <div className={desk ? 'pos-grid' : 'stack'} style={desk ? undefined : { gap: 10 }}>{shown.map((p) => {
           const us = unitsOf(p, d.units);
           return (
             <section className="panel" key={p.id} style={{ padding: 12, gap: 8 }}>
@@ -147,19 +151,28 @@ export default function Kasir() {
           );
         })}</div>
       )}
-      {cart.length > 0 && (
+      {cart.length > 0 && !desk && (
         <button className="cartbar" onClick={() => setOpen(true)}>
           <span>Keranjang · {angka(count)} barang</span><b>{rp(total)} ›</b>
         </button>
       )}
-      {open && <Checkout kos={kos} kosId={kosId} d={d} tier={tier} cart={cart} setCart={setCart} lead={lead} onClose={() => setOpen(false)} reloadContacts={load}
-        onDone={(r) => { setOpen(false); setCart([]); setLead(null); setDone(r); load(); }} />}
+      {open && !desk && <Checkout kos={kos} kosId={kosId} d={d} tier={tier} cart={cart} setCart={setCart} lead={lead} onClose={() => setOpen(false)} reloadContacts={load}
+        onDone={(r) => { setOpen(false); setCart([]); setLead(null); setDone(r); setSeq((x) => x + 1); load(); }} />}
       {done && <Done r={done} onClose={() => setDone(null)} />}
+    </div>
+    {desk && (cart.length > 0
+      ? <Checkout key={seq} inline kos={kos} kosId={kosId} d={d} tier={tier} cart={cart} setCart={setCart} lead={lead} onClose={() => {}} reloadContacts={load}
+          onDone={(r) => { setCart([]); setLead(null); setDone(r); setSeq((x) => x + 1); load(); }} />
+      : <aside className="pos-cart panel" aria-label="Keranjang">
+          <h3>Keranjang</h3>
+          <p className="small muted" style={{ margin: 0 }}>Belum ada barang. Ketuk satuan barang di kiri, ketik nama, atau scan barcode (Enter).</p>
+          <span className="small muted">Ringkasan, promo, diskon, cara bayar, dan tombol Simpan muncul di sini.</span>
+        </aside>)}
     </div>
   );
 }
 
-function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, reloadContacts }) {
+function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, reloadContacts, inline }) {
   const [discount, setDiscount] = useState('');
   const [method, setMethod] = useState('tunai');
   const [paid, setPaid] = useState('');
@@ -178,7 +191,8 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
   const [kw, setKw] = useState([]);   // peringatan kasbon (tidak memblokir)
   const [ov, setOv] = useState(null);  // diskon/margin melewati batas → izin pemilik/pengelola {msg, reason}
   // Pilih pelanggan → harga dasar ikut daftar harganya (bila ada)
-  useEffect(() => { setCart(reprice(cart, d, tier, contact || null)); }, [contact]);
+  // Harga otomatis selalu mengikuti pelanggan terpilih — juga untuk barang yang ditambahkan setelahnya (panel bayar laptop tetap terbuka)
+  useEffect(() => { const r = reprice(cart, d, tier, contact || null); if (r.some((x, i) => x.price !== cart[i].price)) setCart(r); }, [contact, cart]);
   const cartKey = JSON.stringify(cart.map((c) => [c.product_id, c.unit, c.qty, c.auto ? null : c.price])) + tier + (contact || '');
   useEffect(() => {
     if (!cart.length || cart.some((c) => !(c.qty > 0))) { setPromo({ total: 0, items: [] }); return undefined; }
@@ -269,8 +283,8 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
     setBusy(false);
   };
 
-  return (
-    <Sheet title={`Bayar · ${tier === 'grosir' ? 'harga grosir' : 'harga eceran'}`} onClose={onClose}>
+  const title = `Bayar · ${tier === 'grosir' ? 'harga grosir' : 'harga eceran'}`;
+  const body = (<>
       <div className="list">{cart.map((c) => {
         const over = baseUsed(c.product_id) > stockOf(c.product_id);
         return (
@@ -342,8 +356,11 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, onClose, onDone, r
       </div>}
       <button className="cta" onClick={() => pay()} disabled={busy}>{busy ? 'Menyimpan…' : `Simpan · ${rp(total)}`}</button>
       <button className="ghost" onClick={() => { setCart([]); onClose(); }}>Kosongkan keranjang</button>
-    </Sheet>
-  );
+  </>);
+  // Laptop: panel tetap di kanan; tablet & HP: lembar Bayar
+  return inline
+    ? <aside className="pos-cart panel" aria-label="Keranjang & pembayaran"><h3>{title}</h3>{body}</aside>
+    : <Sheet title={title} onClose={onClose}>{body}</Sheet>;
 }
 
 // Kolom jumlah yang bisa diisi desimal (mis. 1,5 kg) tanpa melompat saat mengetik koma

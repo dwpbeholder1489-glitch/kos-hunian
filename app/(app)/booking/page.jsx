@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import PageHelp from '@/components/PageHelp';
+import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, tgl, today, parseRp, errMsg, waLink } from '@/lib/format';
 import { uid } from '@/lib/retail';
@@ -39,7 +40,7 @@ export default function Booking() {
 
   return (
     <div className="stack">
-      <div className="row between"><div className="row"><h2>Booking kamar</h2><PageHelp page="booking" /></div><button className="primary" onClick={() => setNeu({})}>+ Booking</button></div>
+      <PageHeader title="Booking kamar" help={<PageHelp page="booking" />} actions={<><button className="primary" onClick={() => setNeu({})}>+ Booking</button></>} />
       <div className="seg">{[['aktif', `Aktif (${d.bookings.filter((b) => b.status === 'aktif').length})`], ['selesai', 'Sudah masuk'], ['batal', 'Batal']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
       {f === 'aktif' && dpHeld > 0 && <span className="small muted">Uang tanda jadi yang dipegang: <b>{rp(dpHeld)}</b> (bukan pendapatan sampai penghuni masuk atau DP hangus).</span>}
       {list.length === 0 ? <Empty title={f === 'aktif' ? 'Belum ada booking aktif' : 'Tidak ada data'} text="Catat calon penghuni yang sudah pasti mau masuk agar kamarnya tidak diisi orang lain." /> : (
