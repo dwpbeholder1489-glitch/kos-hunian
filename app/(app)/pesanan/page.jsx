@@ -8,7 +8,7 @@ import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
+import { PageHeader, DataTable, FilterToolbar, useMedia } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp, waLink } from '@/lib/format';
 import { withApproval, requestApproval } from '@/lib/approval';
@@ -26,9 +26,11 @@ export default function Pesanan() {
   const [open, setOpen] = useState(null);
   const [neu, setNeu] = useState(false);
   useBaru(() => setNeu(true));
+  const desk = useMedia('(min-width: 1180px)');   // laptop: pesanan baru tampil penuh seperti Kasir
   const load = () => supabase.rpc('svc_board', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
   useEffect(() => { load(); }, [kosId, ver]);
   useEffect(() => { try { if (new URLSearchParams(window.location.search).get('baru')) setNeu(true); } catch {} }, []);
+  if (neu && desk && d) return <NewOrder inline kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />;
   if (err) return <div className="notice bad">{/svc_board/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
   const money = d.money;
@@ -78,13 +80,16 @@ export default function Pesanan() {
               <span className="small" style={{ color: late(o) ? 'var(--bad)' : 'var(--muted)' }}>{['selesai', 'batal'].includes(o.status) ? waktu(o.completed_at || o.received_at) : `Janji ${hari(o.due_at)}${late(o) ? ' · terlambat' : ''}`}{money && o.total != null && sisa(o) > 0 && o.status !== 'batal' ? ` · sisa ${rp(sisa(o))}` : ''}{o.open_complaints > 0 ? ' · ⚠ keluhan' : ''}</span></div><span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o, true)}</span></div>
           </>} />
       )}
-      {neu && <NewOrder kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />}
+      {neu && !desk && <NewOrder kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />}
       {cur && <Detail o={cur} d={d} kos={kos} onClose={() => setOpen(null)} onChanged={load} />}
     </div>
   );
 }
 
-function NewOrder({ kosId, onClose, onSaved }) {
+function NewOrder({ kosId, onClose, onSaved, inline }) {
+  const [cat, setCat] = useState('');   // saring kategori di katalog
+  const [sq, setSq] = useState('');     // cari layanan/menu
+  const [optOpen, setOptOpen] = useState(null); // baris yang membuka catatan
   const { kos } = useKos();
   const logi = moduleOn(kos, 'j_antar');
   const T = terms(kos);
@@ -132,9 +137,17 @@ function NewOrder({ kosId, onClose, onSaved }) {
   const hours = Math.max(0, ...priced.map((l) => Number(l.s?.hours || 0)));
   const autoDue = hours ? new Date(Date.now() + hours * 3600e3).toISOString() : null;
   const matches = useMemo(() => { const t = cq.trim().toLowerCase(); return t.length < 2 ? [] : contacts.filter((c) => c.name.toLowerCase().includes(t) || (c.phone || '').replace(/\D/g, '').includes(t.replace(/\D/g, '') || '§')).slice(0, 6); }, [cq, contacts]);
-  if (!svc) return <Sheet title="Pesanan baru" onClose={onClose}><Loading /></Sheet>;
-  if (!svc.length) return <Sheet title="Pesanan baru" onClose={onClose}><Empty title={`Belum ada ${T.svc.toLowerCase()}`} text={`Tambahkan ${T.svc.toLowerCase()} & harga dulu di menu ${T.svcs}.`}><Link href="/layanan"><button className="primary">Buka {T.svcs}</button></Link></Empty></Sheet>;
-  const addSvc = (s) => setLines([...lines, { service_id: s.id, qty: s.unit === 'kg' ? '' : '1', note: '' }]);
+  const Wrap = ({ children }) => (inline ? <div className="stack">{children}</div> : <Sheet title="Pesanan baru" onClose={onClose}>{children}</Sheet>);
+  if (!svc) return <Wrap><Loading /></Wrap>;
+  if (!svc.length) return <Wrap><Empty title={`Belum ada ${T.svc.toLowerCase()}`} text={`Tambahkan ${T.svc.toLowerCase()} & harga dulu di menu ${T.svcs}.`}><Link href="/layanan"><button className="primary">Buka {T.svcs}</button></Link></Empty></Wrap>;
+  // Ketuk layanan/menu: satuan hitung (pcs, porsi) → jumlah +1 bila sudah ada; satuan timbang (kg) → baris baru untuk diisi beratnya
+  const addSvc = (s) => {
+    const i = lines.findIndex((l) => l.service_id === s.id && s.unit !== 'kg' && !l.note);
+    if (i >= 0) setLines(lines.map((l, j) => (j === i ? { ...l, qty: String((qtyNum(l.qty) || 0) + 1) } : l)));
+    else setLines([...lines, { service_id: s.id, qty: s.unit === 'kg' ? '' : '1', note: '' }]);
+    toast(`+ ${s.name}`);
+  };
+  const step = (i, dlt) => { const l = lines[i]; const n = Math.round(((qtyNum(l.qty) || 0) + dlt) * 1000) / 1000; if (n <= 0) setLines(lines.filter((_, j) => j !== i)); else setL(i, 'qty', String(n).replace('.', ',')); };
   const setL = (i, k, v) => setLines(lines.map((l, j) => (j === i ? { ...l, [k]: v } : l)));
   const save = async () => {
     if (!cust && name.trim().length < 2 && !(T.kul && dine === 'tempat' && table.trim())) return toast(T.kul ? 'Isi nama pelanggan atau nomor meja.' : 'Isi nama pelanggan.');
@@ -153,72 +166,129 @@ function NewOrder({ kosId, onClose, onSaved }) {
     if (error) return toast(errMsg(error));
     toast(`Pesanan ${data.number} tersimpan`); onSaved(data.id);
   };
+  const cats = [...new Set(svc.map((x) => x.category || 'Lainnya'))];
+  const sw = sq.trim().toLowerCase();
+  const shownSvc = svc.filter((x) => (!cat || (x.category || 'Lainnya') === cat) && (!sw || x.name.toLowerCase().includes(sw)));
+  const count = priced.length;
+  const catalog = <>
+    {cats.length > 1 && <div className="pos-tabs" role="tablist" aria-label="Kategori">{[['', 'Semua'], ...cats.map((c) => [c, c])].map(([k, l]) => <button key={k || 'all'} role="tab" aria-selected={cat === k} className={cat === k ? 'on' : ''} onClick={() => setCat(k)}>{l}</button>)}</div>}
+    <label className="pos-q"><svg className="pos-ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4-4" /></svg>
+      <input type="search" value={sq} onChange={(e) => setSq(e.target.value)} placeholder={`Cari ${T.svc.toLowerCase()}…`} aria-label={`Cari ${T.svc.toLowerCase()}`} /></label>
+    {shownSvc.length === 0 ? <Empty title={`${T.svc} tidak ditemukan`} /> : <div className={inline ? 'pos-grid' : 'pos-grid pos-slide'}>{shownSvc.map((x) => (
+      <article className="pos-prod" key={x.id}>
+        <button type="button" className="pos-pic" onClick={() => addSvc(x)} aria-label={`Tambah ${x.name}`}>
+          {thumbs[x.id] ? <ListThumb path={thumbs[x.id]} radius={0} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span className="pos-ini" aria-hidden="true">{x.name.trim().slice(0, 1).toUpperCase()}</span>}
+        </button>
+        <div className="pos-pi">
+          <b className="pos-pn">{x.name}</b>
+          <span className="pos-pu">per {x.unit}{Number(x.hours) > 0 ? ` · ${x.hours} jam` : ''}{Number(x.min_qty) > 0 ? ` · min ${angka(x.min_qty)}` : ''}</span>
+          <div className="pos-pr"><b>{rp(x.price)}</b><button type="button" className="pos-add" onClick={() => addSvc(x)} aria-label={`Tambah ${x.name}`}>+</button></div>
+        </div>
+      </article>))}</div>}
+  </>;
+  const dineBlock = T.kul && <>
+    <span className="label">Jenis pesanan</span>
+    <div className="seg">{[['tempat', DINE.tempat], ['bungkus', DINE.bungkus], ...(logi ? [['antar', 'Diantar']] : [])].map(([k, l]) => <button key={k} className={dine === k ? 'on' : ''} onClick={() => { setDine(k); setDeliver(k === 'antar'); setPickup(false); }}>{l}</button>)}</div>
+    {dine === 'tempat' && (tables > 0
+      ? <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{Array.from({ length: tables }, (_, i2) => String(i2 + 1)).map((t) => <button key={t} className={'sm' + (table === t ? ' primary' : '')} onClick={() => setTable(table === t ? '' : t)} aria-label={`Meja ${t}`}>Meja {t}</button>)}</div>
+      : <Field label="Nomor meja (opsional)"><input value={table} onChange={(e) => setTable(e.target.value)} maxLength={10} placeholder="mis. 3" /></Field>)}
+  </>;
+  const custBlock = <>
+    <span className="label">Pelanggan{T.kul && dine === 'tempat' ? ' (opsional)' : ''}</span>
+    {cust ? <div className="li"><span className="small"><b>{cust.name}</b>{cust.phone ? ` · ${cust.phone}` : ''}</span><button className="sm ghost" onClick={() => setCust(null)}>Ganti</button></div> : <>
+      <input type="search" value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Cari pelanggan lama (nama / No. HP)" aria-label="Cari pelanggan" />
+      {matches.length > 0 && <div className="list">{matches.map((c) => <button key={c.id} className="li click" onClick={() => { setCust(c); setCq(''); }} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}><span className="small">{c.name}</span><span className="small muted">{c.phone}</span></button>)}</div>}
+      <div className="row">
+        <Field label={T.kul ? 'Nama' : 'Nama (pelanggan baru)'}><input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} /></Field>
+        <Field label="No. WhatsApp"><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} placeholder="08…" /></Field>
+      </div>
+      <span className="small muted">Dengan No. HP, pelanggan tersimpan otomatis (dicocokkan lewat nomor, tidak dobel).</span>
+    </>}
+  </>;
+  const linesBlock = <div className="pos-items">{priced.map((l, i2) => {
+    const kg = l.s?.unit === 'kg';
+    return (
+      <div key={i2} className="pos-item">
+        <div className="pos-irow">
+          <span className="pos-ith">{thumbs[l.service_id] ? <ListThumb path={thumbs[l.service_id]} size={44} radius={8} /> : <span className="pos-ini sm" aria-hidden="true">{(l.s?.name || '?').trim().slice(0, 1).toUpperCase()}</span>}</span>
+          <div className="pos-iname"><b>{l.s?.name}</b><span>{l.qn > 0 ? `${angka(l.cq)} ${l.s?.unit} × ${rp(l.s?.price)}` : `${rp(l.s?.price)}/${l.s?.unit}`}{l.qn > 0 && l.cq > l.qn ? ` (minimal ${angka(l.s.min_qty)})` : ''}</span>{l.note && <span>Catatan: {l.note}</span>}</div>
+          <b className="pos-isum">{l.qn > 0 ? rp(l.total) : '—'}</b>
+        </div>
+        <div className="pos-irow pos-ictl">
+          {kg ? <Field label={`Berat (${l.s?.unit})`}><input inputMode="decimal" value={l.qty} onChange={(e) => setL(i2, 'qty', e.target.value)} placeholder="mis. 3,5" autoFocus={!l.qty} style={{ maxWidth: 140 }} /></Field>
+            : <div className="qtybox"><button aria-label={`Kurangi ${l.s?.name}`} onClick={() => step(i2, -1)}>−</button><input inputMode="decimal" aria-label={`Jumlah ${l.s?.name}`} value={l.qty} onChange={(e) => setL(i2, 'qty', e.target.value)} /><button aria-label={`Tambah ${l.s?.name}`} onClick={() => step(i2, 1)}>+</button></div>}
+          <button type="button" className="sm ghost pos-more" aria-expanded={optOpen === i2} aria-label={`Pilihan lain ${l.s?.name}`} onClick={() => setOptOpen(optOpen === i2 ? null : i2)}>⋯</button>
+        </div>
+        {optOpen === i2 && <div className="pos-iopt">
+          <Field label="Catatan"><input value={l.note} onChange={(e) => setL(i2, 'note', e.target.value)} placeholder={T.kul ? 'mis. pedas, tanpa bawang' : 'mis. 3 kemeja putih'} maxLength={120} /></Field>
+          <button type="button" className="sm ghost" style={{ color: 'var(--bad)' }} onClick={() => { setLines(lines.filter((_, j) => j !== i2)); setOptOpen(null); }}>Hapus dari pesanan</button>
+        </div>}
+      </div>
+    );
+  })}{!priced.length && <span className="small muted">Belum ada {T.svc.toLowerCase()}. Ketuk <b>+</b> pada katalog.</span>}</div>;
+  const logiBlock = <>
+    {logi && !T.kul && <div className="row">
+      <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pickup} onChange={(e) => setPickup(e.target.checked)} />Dijemput</label>
+      <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={deliver} onChange={(e) => setDeliver(e.target.checked)} />Diantar</label>
+    </div>}
+    {logi && (deliver || pickup) && <>
+      {zones.length > 0 ? <Field label="Wilayah" hint="hanya wilayah yang dilayani"><select value={zoneId} onChange={(e) => { const z = zones.find((x) => x.id === e.target.value); setZoneId(e.target.value); if (z) setFee(String(Math.round(z.fee))); }}>
+        <option value="">— pilih wilayah —</option>{zones.map((z) => <option key={z.id} value={z.id}>{z.name} · {Number(z.fee) > 0 ? rp(z.fee) : 'gratis'}</option>)}</select></Field>
+        : <span className="small muted">Wilayah layanan belum diatur (menu {T.logi} › Wilayah & jadwal).</span>}
+      <div className="row">
+        <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} maxLength={200} placeholder="jalan, nomor, patokan" /></Field>
+        <Field label={T.kul ? 'Ongkos antar' : 'Ongkos antar-jemput'}><input inputMode="numeric" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" /></Field>
+      </div>
+      {pickup && <div className="row">
+        <Field label="Tanggal jemput (opsional)"><input type="date" value={pDate} onChange={(e) => setPDate(e.target.value)} /></Field>
+        <Field label="Jam jemput"><select value={pSlot} onChange={(e) => setPSlot(e.target.value)}><option value="">—</option>{slots.filter((x) => x.kind !== 'antar').map((x) => <option key={x.id} value={x.label}>{x.label}</option>)}</select></Field>
+      </div>}
+      {deliver && <div className="row">
+        <Field label="Tanggal antar (opsional)"><input type="date" value={dDate} onChange={(e) => setDDate(e.target.value)} /></Field>
+        <Field label="Jam antar"><select value={dSlot} onChange={(e) => setDSlot(e.target.value)}><option value="">—</option>{slots.filter((x) => x.kind !== 'jemput').map((x) => <option key={x.id} value={x.label}>{x.label}</option>)}</select></Field>
+      </div>}
+      {pickup && <span className="small muted">Pesanan yang dijemput baru bisa diproses setelah ditandai <b>Sudah dijemput</b>.</span>}
+    </>}
+  </>;
+  const tailBlock = <>
+    <div className="row">
+      <Field label="Diskon (opsional)"><input inputMode="numeric" value={disc} onChange={(e) => setDisc(e.target.value)} placeholder="0" /></Field>
+      <Field label="Janji selesai" hint={autoDue && !due ? `otomatis ${hari(autoDue)} (${hours} jam)` : null}><input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} /></Field>
+    </div>
+    <Field label="Catatan pesanan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder={T.kul ? 'mis. sendok plastik 2' : 'mis. pisahkan baju putih'} /></Field>
+    <div className="pos-sum">
+      <div className="row between"><span>Subtotal ({count} item)</span><b>{rp(sub)}</b></div>
+      {(parseRp(disc) || 0) > 0 && <div className="row between"><span>Diskon</span><span>−{rp(parseRp(disc))}</span></div>}
+      {(deliver || pickup) && (parseRp(fee) || 0) > 0 && <div className="row between"><span>Ongkos antar</span><span>{rp(parseRp(fee))}</span></div>}
+    </div>
+    <div className="row">
+      <Field label="Bayar sekarang (DP/lunas, opsional)"><input inputMode="numeric" value={pay} onChange={(e) => setPay(e.target.value)} placeholder="0" /></Field>
+      <Field label="Cara bayar"><select value={method} onChange={(e) => setMethod(e.target.value)}>{Object.entries(PAYM).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+    </div>
+    <div className="row"><button className="sm ghost" onClick={() => setPay(String(total))}>Lunas sekarang</button><button className="sm ghost" onClick={() => setPay('')}>{T.kul ? 'Bayar nanti' : 'Bayar saat ambil'}</button></div>
+    <span className="small muted">Harga dihitung ulang oleh server dari daftar {T.svc.toLowerCase()}.</span>
+  </>;
+  const footBlock = <div className="pos-foot">
+    <div className="pos-total"><span>Total Bayar</span><b>{rp(total)}</b></div>
+    <button type="button" className="pos-pay" onClick={save} disabled={busy} style={{ width: '100%' }}><span><b>{busy ? 'Menyimpan…' : 'Simpan pesanan'}</b><small>{(parseRp(pay) || 0) >= total && total > 0 ? 'lunas' : (parseRp(pay) || 0) > 0 ? `DP ${rp(parseRp(pay))}` : 'bayar nanti'}</small></span></button>
+  </div>;
+  const cartHead = <div className="pos-ch"><h3>Pesanan ({count})</h3>{count > 0 && <button type="button" className="sm ghost pos-clear" onClick={() => setLines([])}>Kosongkan</button>}</div>;
+  // Laptop lebar: katalog kiri + panel pesanan kanan (sama dengan Kasir toko). HP/tablet: lembar Pesanan baru dengan katalog geser.
+  if (inline) return (
+    <div className="stack">
+      <PageHeader title="Pesanan baru" help={<PageHelp page="pesanan" />} desc={false} actions={<button type="button" className="sm" onClick={onClose}>← Daftar pesanan</button>} />
+      <div className="pos">
+        <div className="stack pos-left" style={{ minWidth: 0 }}>{catalog}</div>
+        <aside className="pos-cart panel" aria-label="Pesanan">{cartHead}{linesBlock}{dineBlock}{custBlock}{logiBlock}{tailBlock}{footBlock}</aside>
+      </div>
+    </div>
+  );
   return (
     <Sheet title="Pesanan baru" onClose={onClose}>
-      {T.kul && <>
-        <span className="label">Jenis pesanan</span>
-        <div className="seg">{[['tempat', DINE.tempat], ['bungkus', DINE.bungkus], ...(logi ? [['antar', 'Diantar']] : [])].map(([k, l]) => <button key={k} className={dine === k ? 'on' : ''} onClick={() => { setDine(k); setDeliver(k === 'antar'); setPickup(false); }}>{l}</button>)}</div>
-        {dine === 'tempat' && (tables > 0
-          ? <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{Array.from({ length: tables }, (_, i) => String(i + 1)).map((t) => <button key={t} className={'sm' + (table === t ? ' primary' : '')} onClick={() => setTable(table === t ? '' : t)} aria-label={`Meja ${t}`}>Meja {t}</button>)}</div>
-          : <Field label="Nomor meja (opsional)"><input value={table} onChange={(e) => setTable(e.target.value)} maxLength={10} placeholder="mis. 3" /></Field>)}
-      </>}
-      <span className="label">Pelanggan{T.kul && dine === 'tempat' ? ' (opsional)' : ''}</span>
-      {cust ? <div className="li"><span className="small"><b>{cust.name}</b>{cust.phone ? ` · ${cust.phone}` : ''}</span><button className="sm ghost" onClick={() => setCust(null)}>Ganti</button></div> : <>
-        <input type="search" value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Cari pelanggan lama (nama / No. HP)" aria-label="Cari pelanggan" />
-        {matches.length > 0 && <div className="list">{matches.map((c) => <button key={c.id} className="li click" onClick={() => { setCust(c); setCq(''); }} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit' }}><span className="small">{c.name}</span><span className="small muted">{c.phone}</span></button>)}</div>}
-        <div className="row">
-          <Field label={T.kul ? 'Nama' : 'Nama (pelanggan baru)'}><input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} /></Field>
-          <Field label="No. WhatsApp"><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} placeholder="08…" /></Field>
-        </div>
-        <span className="small muted">Dengan No. HP, pelanggan tersimpan otomatis (dicocokkan lewat nomor, tidak dobel).</span>
-      </>}
+      {dineBlock}{custBlock}
       <span className="label">{T.svc}</span>
-      <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{svc.map((s) => <button key={s.id} className="sm" onClick={() => addSvc(s)} style={thumbs[s.id] ? { display: 'inline-flex', alignItems: 'center', gap: 6, paddingLeft: 4 } : undefined}>{thumbs[s.id] ? <ListThumb path={thumbs[s.id]} size={26} radius={6} /> : '+ '}{s.name}</button>)}</div>
-      {priced.map((l, i) => (
-        <div key={i} className="unitbox">
-          <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{l.s?.name}</b><button className="sm ghost" onClick={() => setLines(lines.filter((_, j) => j !== i))} aria-label="Hapus">✕</button></div>
-          <div className="row" style={{ flexWrap: 'nowrap' }}>
-            <Field label={`Jumlah (${l.s?.unit})`}><input inputMode="decimal" value={l.qty} onChange={(e) => setL(i, 'qty', e.target.value)} placeholder={l.s?.unit === 'kg' ? 'mis. 3,5' : '1'} autoFocus={l.s?.unit === 'kg' && !l.qty} /></Field>
-            <Field label="Catatan"><input value={l.note} onChange={(e) => setL(i, 'note', e.target.value)} placeholder={T.kul ? 'mis. pedas, tanpa bawang' : 'mis. 3 kemeja putih'} maxLength={120} /></Field>
-          </div>
-          <span className="small muted">{rp(l.s?.price)}/{l.s?.unit}{Number(l.s?.min_qty) > 0 ? ` · minimal ${angka(l.s.min_qty)} ${l.s.unit}` : ''}{l.qn > 0 ? ` · dihitung ${angka(l.cq)} ${l.s?.unit} = ${rp(l.total)}` : ''}</span>
-        </div>
-      ))}
-      {logi && !T.kul && <div className="row">
-        <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pickup} onChange={(e) => setPickup(e.target.checked)} />Dijemput</label>
-        <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={deliver} onChange={(e) => setDeliver(e.target.checked)} />Diantar</label>
-      </div>}
-      {logi && (deliver || pickup) && <>
-        {zones.length > 0 ? <Field label="Wilayah" hint="hanya wilayah yang dilayani"><select value={zoneId} onChange={(e) => { const z = zones.find((x) => x.id === e.target.value); setZoneId(e.target.value); if (z) setFee(String(Math.round(z.fee))); }}>
-          <option value="">— pilih wilayah —</option>{zones.map((z) => <option key={z.id} value={z.id}>{z.name} · {Number(z.fee) > 0 ? rp(z.fee) : 'gratis'}</option>)}</select></Field>
-          : <span className="small muted">Wilayah layanan belum diatur (menu {T.logi} › Wilayah & jadwal).</span>}
-        <div className="row">
-          <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} maxLength={200} placeholder="jalan, nomor, patokan" /></Field>
-          <Field label={T.kul ? 'Ongkos antar' : 'Ongkos antar-jemput'}><input inputMode="numeric" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" /></Field>
-        </div>
-        {pickup && <div className="row">
-          <Field label="Tanggal jemput (opsional)"><input type="date" value={pDate} onChange={(e) => setPDate(e.target.value)} /></Field>
-          <Field label="Jam jemput"><select value={pSlot} onChange={(e) => setPSlot(e.target.value)}><option value="">—</option>{slots.filter((s) => s.kind !== 'antar').map((s) => <option key={s.id} value={s.label}>{s.label}</option>)}</select></Field>
-        </div>}
-        {deliver && <div className="row">
-          <Field label="Tanggal antar (opsional)"><input type="date" value={dDate} onChange={(e) => setDDate(e.target.value)} /></Field>
-          <Field label="Jam antar"><select value={dSlot} onChange={(e) => setDSlot(e.target.value)}><option value="">—</option>{slots.filter((s) => s.kind !== 'jemput').map((s) => <option key={s.id} value={s.label}>{s.label}</option>)}</select></Field>
-        </div>}
-        {pickup && <span className="small muted">Pesanan yang dijemput baru bisa diproses setelah ditandai <b>Sudah dijemput</b>.</span>}
-      </>}
-      <div className="row">
-        <Field label="Diskon (opsional)"><input inputMode="numeric" value={disc} onChange={(e) => setDisc(e.target.value)} placeholder="0" /></Field>
-        <Field label="Janji selesai" hint={autoDue && !due ? `otomatis ${hari(autoDue)} (${hours} jam)` : null}><input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} /></Field>
-      </div>
-      <Field label="Catatan pesanan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder={T.kul ? 'mis. sendok plastik 2' : 'mis. pisahkan baju putih'} /></Field>
-      <div className="li"><b>Total</b><b>{rp(total)}</b></div>
-      <div className="row">
-        <Field label="Bayar sekarang (DP/lunas, opsional)"><input inputMode="numeric" value={pay} onChange={(e) => setPay(e.target.value)} placeholder="0" /></Field>
-        <Field label="Cara bayar"><select value={method} onChange={(e) => setMethod(e.target.value)}>{Object.entries(PAYM).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
-      </div>
-      <div className="row"><button className="sm ghost" onClick={() => setPay(String(total))}>Lunas sekarang</button><button className="sm ghost" onClick={() => setPay('')}>{T.kul ? 'Bayar nanti' : 'Bayar saat ambil'}</button></div>
-      <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan pesanan'}</button>
-      <span className="small muted">Harga dihitung ulang oleh server dari daftar {T.svc.toLowerCase()}.</span>
+      {catalog}
+      {cartHead}{linesBlock}{logiBlock}{tailBlock}{footBlock}
     </Sheet>
   );
 }

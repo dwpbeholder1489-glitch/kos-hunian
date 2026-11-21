@@ -19,7 +19,7 @@ const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</spa
 // Menu toko (Retail & Grosir)
 const MENUS_TOKO = [
   ['Dashboard toko', 'Penjualan & laba hari ini, bulan ini vs bulan lalu, tren harian, barang terlaris, transaksi terakhir, perlu perhatian, stok menipis'],
-  ['Kasir', 'Jual eceran/grosir, tombol barang cepat, scan barcode, struk'],
+  ['Kasir', 'Jual eceran/grosir, kartu barang bergambar per kategori, tahan transaksi, scan barcode, struk'],
   ['Penjualan & Shift kasir', 'Riwayat transaksi, retur, batal; buka/tutup laci'],
   ['Belanja', 'Pesan ke supplier, terima barang, retur ke supplier, utang supplier'],
   ['Mutasi stok', 'Pindahkan barang antar lokasi; pemilik: tambah gudang/cabang dari sini'],
@@ -248,8 +248,9 @@ const PARTS = [
     ], <>Scanner barcode Bluetooth/USB bekerja di iPhone maupun Android. Tombol kamera 📷 Pindai bisa dipakai di iPhone dan Android (izinkan akses kamera). Stok tidak bisa diketik langsung — setiap perubahan tercatat di <b>Riwayat stok</b> agar selisihnya bisa ditelusuri. Satuan utama tidak bisa diganti setelah barang punya stok/riwayat (angka lama tercatat dalam satuan itu) — tambahkan satuan lain sebagai satuan jual. Semua menu (Kasir, Belanja, Retur, Mutasi, Pesanan grosir, Stok) memakai isi satuan yang sama, sehingga stok, HPP, dan laba selalu cocok. Kode barang hanya penanda sendiri, bukan tempat satuan.</>, null, <ScrSatuan />],
     ['Jualan di kasir', 'Menu Kasir', [
       <>Buka <b>Kasir</b>. Pilih <b>Eceran</b> atau <b>Grosir</b> di kanan atas — harga mengikuti pilihan ini.</>,
-      <>Cari barang, lalu ketuk tombol satuannya (mis. <b>pcs · Rp 3.500</b> atau <b>dus · Rp 125.000</b>). Ketuk lagi untuk menambah jumlah.</>,
-      <>Ketuk bar <b>Keranjang</b> di bawah (di laptop/komputer lebar, keranjang & pembayaran sudah terbuka di sisi kanan, berdampingan dengan daftar barang). Ubah jumlah atau harga bila perlu, isi diskon, lalu pilih <b>Tunai</b> (isi uang diterima → kembalian), <b>Transfer / QRIS</b>, atau <b>Kasbon</b> (pilih/isi nama pelanggan).</>,
+      <>Pilih kategori di baris atas (<b>Semua</b>, Sembako, Minuman, …) atau ketik nama/kode di kotak cari. Setiap barang tampil sebagai kartu bergambar: ketuk <b>+</b> untuk memasukkan ke keranjang, ketuk lagi untuk menambah jumlah. Barang dengan beberapa satuan (mis. pcs & dus) bertanda <b>2 satuan ›</b> — ketuk untuk memilih satuannya.</>,
+      <>Keranjang tampil di sisi kanan (laptop) atau di bawah daftar barang (HP & tablet). Ubah jumlah dengan <b>−</b>/<b>+</b>; tombol <b>⋯</b> untuk mengubah harga atau menghapus baris. Ketuk <b>%</b> untuk diskon. Bilah aksi: <b>Pelanggan</b> (harga khusus & kasbon), <b>Diskon</b>, <b>Catatan</b>, <b>Tahan</b> (simpan keranjang dulu, layani pembeli lain, lanjutkan lewat <b>Ditahan</b>), <b>Riwayat</b>. Di laptop ada pintasan F2 pelanggan, F3 diskon, F4 catatan, F5 tahan, F6 riwayat, F10 bayar.</>,
+      <>Tekan <b>Bayar</b> (di HP juga ada di bilah hijau bawah). Pilih <b>Tunai</b> (isi uang diterima → kembalian), <b>Transfer / QRIS</b>, atau <b>Kasbon</b> (pilih/isi nama pelanggan).</>,
       <>Pembeli bayar dengan beberapa cara? Pilih <b>Campuran</b> lalu isi bagian <b>Tunai</b>, <b>Transfer / QRIS</b>, dan/atau <b>Kasbon</b> (tombol <b>Sisa</b> mengisi kekurangannya). Baris <b>Terbagi</b> harus sama dengan total. Bila ada bagian kasbon, pilih pelanggannya. Kas, bank, kasbon, shift, dan laporan otomatis dibagi sesuai rincian.</>,
       <>Toko PKP: setelah <b>Pajak (PPN)</b> diaktifkan di Pengaturan, layar bayar menampilkan <b>Termasuk PPN</b> dan struk mencetak bagian PPN-nya. Harga jual tetap harga yang Anda isi (sudah termasuk PPN).</>,
       <>Tekan <b>Simpan</b>. Stok berkurang otomatis. Tekan <b>Lihat / kirim struk</b> untuk mencetak atau mengirim struk lewat WhatsApp.</>,
@@ -309,7 +310,7 @@ const PARTS = [
       <>Pemilik bisa menyalakan <b>email pengingat setiap pagi</b> pukul 07.00 di halaman itu (paket Dasar ke atas).</>,
     ], <>Stok menipis memakai <b>peringatan stok minimum</b> yang diisi di setiap barang. Email hanya dikirim bila ada yang perlu ditindaklanjuti.</>, null, null],
     ['Barang tanpa barcode & label', 'Barang & stok › ☆ dan Cetak label', [
-      <>Tekan <b>☆</b> di samping barang yang sering dijual. Barang itu muncul sebagai <b>tombol cepat</b> di atas Kasir — satu ketukan = +1 (maks 24 barang).</>,
+      <>Tekan <b>☆</b> di samping barang yang sering dijual. Barang itu tampil <b>paling depan</b> di Kasir dengan tanda ★ — satu ketukan <b>+</b> = +1.</>,
       <>Untuk label barcode sendiri: buka <b>Barang & stok › Cetak label</b>. Barang yang belum punya kode: tekan <b>Buat kode otomatis</b>.</>,
       <>Tekan <b>+</b> pada barang untuk jumlah label, lalu <b>Cetak</b> (printer biasa atau simpan PDF). Tempel di rak atau kemasan ulang.</>,
       <>Di Kasir, scan label itu dengan <b>📷 Pindai</b> atau scanner Bluetooth — barang langsung masuk keranjang.</>,
@@ -400,7 +401,7 @@ const PARTS = [
     ], <>Harga tidak pernah diisi otomatis. Deskripsi & persyaratan tampil di halaman bisnis; layanan yang tidak tersedia tidak bisa dipilih. Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan. Setiap perubahan harga & tahap tercatat di Konfigurasi › Riwayat.</>, null, null],
     ['Terima pesanan & beri nota', 'Pesanan › + Pesanan baru', [
       <>Cari pelanggan lama (nama / No. HP) atau isi nama & No. WhatsApp pelanggan baru — tersimpan otomatis, dicocokkan lewat nomor.</>,
-      <>Ketuk layanan (mis. <b>+ Cuci kering setrika</b>), isi berat/jumlah dan catatan (mis. "3 kemeja putih"). Total dihitung otomatis termasuk minimal.</>,
+      <>Ketuk <b>+</b> pada kartu layanan/menu (kategori & kotak cari di atasnya). Layanan per kg: isi beratnya; per pcs/porsi: atur dengan <b>−</b>/<b>+</b>. Tombol <b>⋯</b> untuk catatan (mis. "3 kemeja putih") atau menghapus. Total dihitung otomatis termasuk minimal. Di laptop, Pesanan baru tampil penuh seperti Kasir: katalog kiri, pesanan kanan.</>,
       <>Bila perlu: centang <b>Dijemput</b>/<b>Diantar</b>, pilih <b>Wilayah</b> (ongkos terisi otomatis), alamat, dan tanggal/jam jemput-antar (Langkah 65); isi <b>diskon</b>, dan ubah <b>janji selesai</b>.</>,
       <>Isi <b>Bayar sekarang</b> untuk DP atau tekan <b>Lunas sekarang</b>; kosongkan bila bayar saat ambil. Tekan <b>Simpan pesanan</b>.</>,
       <>Di detail pesanan tekan <b>Nota</b> untuk mencetak (printer struk 58 mm) atau <b>Kirim via WhatsApp</b>, atau tombol <b>WA: diterima</b>.</>,
