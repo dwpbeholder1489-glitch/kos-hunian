@@ -16,6 +16,7 @@ import { canArea } from '@/lib/business';
 import { rp, tglShort, today, errMsg } from '@/lib/format';
 import { KIND, STATUS, PRIO, Chip, Progress, ProjectForm, jadwal } from '@/components/Proyek';
 import { QuoteForm, qStatus } from '@/components/Penawaran';
+import { ProfitTable } from '@/components/ProyekBiaya';
 
 const TABS = [['aktif', 'Berjalan'], ['selesai', 'Selesai'], ['batal', 'Batal']];
 const tabOf = (s) => (s === 'selesai' ? 'selesai' : s === 'batal' ? 'batal' : 'aktif');
@@ -29,9 +30,9 @@ export default function Proyek() {
   const [tab, setTab] = useState('aktif');
   const [q, setQ] = useState('');
   const [kind, setKind] = useState('');
-  const [view, setView] = useState('proyek');   // proyek | penawaran
+  const [view, setView] = useState('proyek');   // proyek | penawaran | laba
   const [qform, setQform] = useState(false);
-  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'penawaran') setView('penawaran'); } catch {} }, []);
+  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (t === 'penawaran' || t === 'laba') setView(t); } catch {} }, []);
   const load = () => supabase.rpc('prj_list', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setD(data))));
   useEffect(() => { load(); }, [kosId, ver]); // eslint-disable-line react-hooks/exhaustive-deps
   useBaru(() => setForm({}));
@@ -59,8 +60,10 @@ export default function Proyek() {
       {!d.allowed && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.REQUESTED" title="Proyek tersedia mulai Paket Bisnis"
         text={d.projects.length ? 'Proyek yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan proyeknya diselesaikan atau dibatalkan. Membuat & mengubah proyek butuh Paket Bisnis.'
           : 'Kelola setiap acara & pekerjaan klien sebagai proyek: klien, PIC, jadwal, milestone & rencana termin, tugas tiap anggota tim, lampiran, dan riwayat.'} />}
-      {d.can_quote && <div className="seg">{[['proyek', 'Proyek'], ['penawaran', `Penawaran${d.quotes_open ? ` (${d.quotes_open} berjalan)` : ''}`]].map(([k, l]) => <button key={k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}</div>}
-      {view === 'penawaran' ? <QuoteTab kosId={kosId} ver={ver} onNew={() => setQform(true)} allowed={d.allowed} /> : <>
+      {(d.can_quote || d.fin) && <div className="seg">{[['proyek', 'Proyek'], ...(d.can_quote ? [['penawaran', `Penawaran${d.quotes_open ? ` (${d.quotes_open} berjalan)` : ''}`]] : []), ...(d.fin ? [['laba', 'Laba proyek']] : [])]
+        .map(([k, l]) => <button key={k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}</div>}
+      {view === 'penawaran' ? <QuoteTab kosId={kosId} ver={ver} onNew={() => setQform(true)} allowed={d.allowed} />
+        : view === 'laba' ? <ProfitTab kosId={kosId} ver={ver} /> : <>
 
       {d.mine.length > 0 && <section className="panel" style={{ gap: 6 }}>
         <span className="label">Tugas saya ({d.mine.length})</span>
@@ -155,6 +158,33 @@ function QuoteTab({ kosId, ver, onNew, allowed }) {
             <span className="small muted">{x.number}{x.revision ? ` · revisi ${x.revision}` : ''}{x.kind === 'perubahan' ? ' · perubahan scope' : ''}{x.client ? ` · ${x.client}` : ''}</span>
             <span className="small"><b>{rp(x.total)}</b>{x.valid_until ? ` · berlaku s.d. ${tglShort(x.valid_until)}` : ''}{x.project ? ` · ${x.project}` : ''}</span>
           </>; }} />}
+    </>}
+  </>;
+}
+
+// Tab Laba proyek (pemilik & keuangan): nilai kontrak vs biaya nyata, komitmen, perkiraan laba per proyek
+function ProfitTab({ kosId, ver }) {
+  const router = useRouter();
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const [f, setF] = useState('aktif');
+  useEffect(() => { supabase.rpc('prj_profit_report', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data))); }, [kosId, ver]);
+  if (err) return <div className="notice bad">{err}</div>;
+  if (!d) return <Loading />;
+  const rows = d.rows.filter((r) => (f === 'aktif' ? ['berjalan', 'ditunda'].includes(r.status) : f === 'selesai' ? r.status === 'selesai' : true));
+  const sum = (k) => rows.reduce((a, r) => a + Number(r[k] || 0), 0);
+  const withValue = rows.filter((r) => r.value != null);
+  return <>
+    {d.rows.length === 0 ? <Empty title="Belum ada proyek berjalan" text="Laba proyek muncul setelah proyek berjalan punya nilai kontrak dan biaya yang ditandai." art={false} /> : <>
+      <div className="seg">{[['aktif', 'Berjalan'], ['selesai', 'Selesai'], ['semua', 'Semua']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
+      <div className="grid">
+        <Tile label="Nilai kontrak" value={rp(sum('value'))} sub={`${withValue.length} dari ${rows.length} proyek bernilai`} />
+        <Tile label="Biaya nyata" value={rp(sum('actual'))} sub={sum('committed') > 0 ? `+ komitmen ${rp(sum('committed'))}` : 'pengeluaran & belanja bertanda proyek'} />
+        <Tile label="Perkiraan laba" value={rp(withValue.reduce((a, r) => a + Number(r.profit_forecast || 0), 0))}
+          sub={rows.some((r) => Number(r.budget) === 0) ? `${rows.filter((r) => Number(r.budget) === 0).length} proyek tanpa anggaran — labanya bisa terlihat terlalu tinggi` : 'nilai kontrak − perkiraan biaya akhir'} />
+      </div>
+      {rows.length === 0 ? <Empty title="Tidak ada" art={false} /> : <ProfitTable rows={rows} onRow={(r) => router.push(`/proyek/${r.id}`)} DataTable={DataTable} Chip={Chip} STATUS={STATUS} />}
+      <span className="small muted">Perkiraan biaya akhir per kategori = yang lebih besar antara anggaran dan (biaya nyata + komitmen). Nilai kontrak belum menjadi pendapatan di Pembukuan sampai penagihan termin tersedia.</span>
     </>}
   </>;
 }

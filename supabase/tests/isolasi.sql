@@ -161,7 +161,12 @@ begin
       ('prj_quote_list', format('select public.prj_quote_list(%L)', k)),
       ('prj_quote_save', format('select public.prj_quote_save(%L, null, ''{"title":"dibajak","lines":[{"description":"x","qty":1,"price":1}]}'')', k)),
       ('prj_quote_get', format('select public.prj_quote_get((select id from public.prj_quotes where kos_id = %L limit 1))', k)),
-      ('prj_quote_decide', format('select public.prj_quote_decide((select id from public.prj_quotes where kos_id = %L limit 1), ''disetujui'', ''{}'')', k))
+      ('prj_quote_decide', format('select public.prj_quote_decide((select id from public.prj_quotes where kos_id = %L limit 1), ''disetujui'', ''{}'')', k)),
+      ('prj_costs', format('select public.prj_costs((select id from public.prj_projects where kos_id = %L limit 1))', k)),
+      ('prj_budget_save', format('select public.prj_budget_save((select id from public.prj_projects where kos_id = %L limit 1), ''[]'')', k)),
+      ('prj_cost_add', format('select public.prj_cost_add((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"category":"x"}'')', k)),
+      ('prj_cost_link', format('select public.prj_cost_link((select id from public.prj_projects where kos_id = %L limit 1), ''expense'', (select id from public.expenses where kos_id = %L limit 1), 1, ''x'', null)', k, k)),
+      ('prj_profit_report', format('select public.prj_profit_report(%L)', k))
     ) v(name, q) loop
     begin
       execute t.q;

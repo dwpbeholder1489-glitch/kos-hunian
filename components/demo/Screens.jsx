@@ -467,6 +467,22 @@ export function ScrPenawaranProyek() {
   );
 }
 
+export function ScrBiayaProyek() {
+  return (
+    <Phone bare>
+      <h3>Anggaran, biaya &amp; laba</h3>
+      <span className="small muted">Konser Amal · DATA CONTOH</span>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Biaya nyata</span><span className="v">{rp(46000000)}</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Perkiraan laba</span><span className="v">{rp(19000000)}</span></div>
+      </div>
+      <div className="small"><b>Sound</b> · {rp(24000000)} / {rp(22000000)}<div className="progress"><i style={{ width: '100%', background: 'var(--bad)' }} /></div><span style={{ color: 'var(--bad)' }}>lewat {rp(2000000)}</span></div>
+      <div className="small"><b>Talent</b> · {rp(15000000)} / {rp(25000000)}<div className="progress"><i style={{ width: '60%' }} /></div>sisa {rp(10000000)}</div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn cta">+ Catat biaya</span><span className="mini-btn">Tandai biaya lama</span></div>
+    </Phone>
+  );
+}
+
 export function ScrResep() {
   return (
     <Phone bare>

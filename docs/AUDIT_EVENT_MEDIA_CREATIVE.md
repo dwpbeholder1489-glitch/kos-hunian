@@ -160,5 +160,7 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | Halaman `/proyek` & `/proyek/[id]`, menu, aksi cepat, lampiran proyek, panduan | Selesai (render diuji dengan data tiruan) |
 | Penawaran proyek & scope (1B): rincian, termin, scope termasuk/tidak, kewajiban klien, batas revisi, revisi penawaran, keputusan klien → proyek & milestone, perubahan scope → nilai/revisi/jadwal bertambah, dokumen cetak & WA | Selesai (migrasi `20261121240000`), diuji (`proyek_penawaran.sql`, `isolasi.sql`) |
 | Persetujuan klien lewat portal, tanda tangan elektronik, PPN jasa, penawaran dari Prospek (CRM) | Belum |
-| Anggaran & biaya proyek (1C), tagihan termin & jurnal (1D) | Belum — tahap berikutnya |
+| Anggaran & biaya proyek (1C): anggaran per kategori & persetujuan, biaya nyata dari pengeluaran/belanja yang ditandai (boleh dibagi), komitmen vendor & belanja dipesan, perkiraan akhir, selisih, laba & margin per proyek, tab Laba proyek | Selesai (migrasi `20261121250000`), diuji (`proyek_biaya.sql`, `isolasi.sql`) |
+| Alokasi gaji/timesheet karyawan ke proyek | Belum |
+| Tagihan termin & jurnal uang muka → pendapatan (1D) | Belum — tahap berikutnya |
 | Lampiran untuk PIC/anggota tanpa area proses | Belum — lampiran memakai izin area (ops/settings) |

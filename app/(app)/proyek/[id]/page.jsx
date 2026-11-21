@@ -14,6 +14,7 @@ import { rp, tgl, tglShort, today, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { KIND, STATUS, TASK_ST, PRIO, Chip, Progress, ProjectForm, MilestoneForm, TaskForm, jadwal } from '@/components/Proyek';
 import { QuoteForm, qStatus } from '@/components/Penawaran';
+import CostPanel from '@/components/ProyekBiaya';
 
 const waktu = (iso) => new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 // Tombol pindah status yang masuk akal dari status sekarang (server tetap menerima perpindahan lain)
@@ -84,6 +85,8 @@ export default function ProyekDetail() {
               <div className="main"><b className="small">{x.kind === 'perubahan' ? 'Perubahan · ' : ''}{x.title}</b><span className="small muted">{x.number}{x.revision ? ` · revisi ${x.revision}` : ''} · {rp(x.total)}</span></div>
               <span className={'chip ' + st[1]}>{st[0]}</span></Link>); })}</div>}
       </section>}
+
+      {p.fin && <CostPanel project={p} onChange={load} />}
 
       <section className="panel" style={{ gap: 6 }}>
         <div className="row between"><span className="label">Milestone ({p.milestones.length})</span>{canEdit && <button className="sm" onClick={() => setForm({ ms: {} })}>+ Milestone</button>}</div>
