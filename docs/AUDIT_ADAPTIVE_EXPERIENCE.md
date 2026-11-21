@@ -118,7 +118,7 @@ Satu migrasi aditif (tanpa mengubah/menghapus kolom lama): kolom baru di `biz_ca
 | Tahap 1 (Fase 1+2) | Klasifikasi 20+, Business DNA, katalog & aturan relevansi, rekomendasi, lifecycle dasar; navigasi per bisnis, (+) permanen, registry aksi cepat, konfigurasi pemilik berversi, Business Experience Center, onboarding DNA, preferensi dashboard di server | Selesai 21 Nov (lihat §14) |
 | Fase 3 | Dashboard: KPI pilihan, periode bawaan, widget per subkategori (fashion: ukuran/warna; elektronik: garansi), Business Pulse/Signals | Selesai 21 Nov (§15) |
 | Fase 4 | Workflow registry, alur bersyarat, persetujuan per alur | Selesai 21 Nov (§16) |
-| Fase 5 | Ringkasan multi-bisnis lanjutan (konsolidasi berbatas izin) | Berikutnya |
+| Fase 5 | Ringkasan multi-bisnis lanjutan (konsolidasi berbatas izin) | Selesai 21 Nov (§17) |
 | Fase 6 | Integration registry & webhook umum | |
 | Fase 7 | Experience performance (pemakaian fitur, aksi cepat, rekomendasi) di server | |
 
@@ -176,3 +176,19 @@ Audit awal: alur sudah ada di tiga mesin terpisah (tahap pesanan jasa `svc_stage
 Keputusan yang perlu konfirmasi pemilik: aturan yang meminta **persetujuan** mengikuti fitur `persetujuan` (Paket Bisnis/Pro, sama seperti mengatur aturan persetujuan sendiri); aturan **tolak** & **wajib catatan** tersedia di semua paket.
 
 Belum / jujur: alur standar (penjualan, belanja, sewa, booking, grosir) tidak bisa diberi aturan bersyarat — hanya persetujuan per tindakan, agar stok/kas/jurnal tetap benar. Kurir yang terkena aturan persetujuan saat "Sudah diantar" diminta menyerahkan lewat pemilik/kasir (permintaan persetujuan dari menu Antar belum ada). Template alur untuk mesin selain jasa (mis. alur Builder event/proyek per subkategori) belum; status kustom tetap disusun di Builder.
+
+## 17. Hasil Fase 5 (21 Nov 2026): ringkasan multi-bisnis lanjutan
+
+Acuan blueprint: Bab 16 (konsolidasi hanya bila pemilik mengaktifkan secara eksplisit; data antarbisnis tidak boleh tercampur) dan dokumen Unified BI (pisahkan analisis individual, portofolio, laporan perusahaan, konsolidasi formal).
+
+| Bagian | Status | Bukti |
+|---|---|---|
+| Penjumlahan otomatis "Semua bisnis" lintas badan usaha DIHAPUS; gabungan hanya atas pilihan pemilik/karyawan (per akun) | Verified | uji A, B, C, D |
+| `portfolio_settings` (RLS, tanpa policy; akses lewat RPC) + `portfolio_get` / `portfolio_set` | Verified | uji B, G2 |
+| Pilihan lama diabaikan bila akses dicabut atau bisnis ditangguhkan | Verified | uji E, F |
+| Bisnis tanpa akses keuangan tidak bisa dipilih (karyawan tanpa `finance`) | Verified | uji C, D |
+| Angka tetap dari `owner_overview2` (sumber sama dengan Laporan); selisih vs bulan sebelumnya dihitung dari baris yang sama | Verified (render) | `bisnis_hp_gab.png` (dummy) |
+| Gabungan dipisah per badan usaha bila berbeda; tanda Indikasi bila basis berbeda atau ada angka belum final | Verified (render) | — |
+| Panduan Langkah 24 (teks langkah 5) & `lib/guide.js` bisnis; CLAUDE.md | Selesai | |
+
+Keputusan yang masih menunggu pemilik: apakah gabungan dibatasi paket (saat ini TIDAK dibatasi), dan apakah perlu ekspor gabungan. Belum ada: perbandingan periode lebih dari satu bulan, konsolidasi formal (eliminasi transaksi antarbisnis, tidak diperlukan selama gabungan diberi label indikasi), dan ringkasan gabungan di Beranda.

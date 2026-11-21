@@ -29,6 +29,19 @@ export default function Bisnis() {
     setD(null);
     supabase.rpc('owner_overview2', { p_month: ym + '-01' }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
   }, [ver, ym]);
+  // Gabungan bisnis (Fase 5): pilihan akun disimpan di server; angka tetap dari owner_overview2 (sumber yang sama)
+  const [inc, setInc] = useState(null);
+  const [prev, setPrev] = useState(null);
+  const [pick, setPick] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null);
+  useEffect(() => {
+    supabase.rpc('portfolio_get').then(({ data, error }) => setInc(error ? [] : data?.include || []));
+  }, [ver]);
+  useEffect(() => {
+    setPrev(null);
+    supabase.rpc('owner_overview2', { p_month: shift(ym, -1) + '-01' }).then(({ data, error }) => setPrev(error ? false : data));
+  }, [ver, ym]);
   if (err) return <div className="notice bad">{/owner_overview2/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -36,27 +49,26 @@ export default function Bisnis() {
   const fin = d.businesses.filter((b) => b.access);
   const att = fin.flatMap((b) => b.attention.map((a) => ({ ...a, b })));
   const money = fin.filter((b) => b.revenue != null); // bisnis kustom tanpa pengaturan uang masuk tidak ikut dijumlahkan
-  const groups = Object.values(money.reduce((g, b) => {
+  const entitiesOf = (items) => Object.values(items.reduce((g, b) => {
     const key = b.legal_entity?.id || 'none';
     (g[key] ||= { le: b.legal_entity, items: [] }).items.push(b);
     return g;
   }, {}));
   const isNow = ym === today().slice(0, 7);
-
-  const Total = ({ items, title, note }) => {
-    const mixed = new Set(items.map((b) => b.basis)).size > 1;
-    const incomplete = items.some((b) => !b.complete);
-    return (
-      <section className="panel">
-        <div className="row between"><h3>{title}</h3><span className={'chip ' + (mixed || incomplete ? 'gold' : 'good')}>{mixed || incomplete ? 'Indikasi' : 'Lengkap'}</span></div>
-        <div className="grid">
-          <Tile label="Pendapatan" value={rp(sum(items, 'revenue'))} sub={`${items.length} bisnis`} />
-          <Tile label="Laba operasional" value={rp(sum(items, 'profit'))} sub="pendapatan − modal barang − biaya" tone={sum(items, 'profit') < 0 ? 'bad' : ''} />
-          <Tile label="Belum diterima" value={rp(sum(items, 'receivables'))} sub="tunggakan sewa + kasbon" />
-        </div>
-        <span className="small muted">{note}{mixed ? ' Bisnis dalam kelompok ini memakai basis pencatatan berbeda, jadi jumlahnya hanya indikasi.' : ''}{incomplete ? ' Sebagian angka belum final (lihat tanda di tiap bisnis).' : ''}</span>
-      </section>
-    );
+  const sel = money.filter((b) => new Set(inc || []).has(b.id)); // bisnis yang dipilih untuk digabung
+  const pct = (a, base) => (Number(base) ? ((Number(a) - Number(base)) / Math.abs(Number(base))) * 100 : null);
+  const dTxt = (p) => (p == null ? '' : `${p >= 0 ? '+' : '−'}${Math.abs(p).toFixed(1).replace('.', ',')}% dari ${bulan(shift(ym, -1))}`);
+  const selPrev = prev && prev.businesses ? sel.map((b) => prev.businesses.find((x) => x.id === b.id)) : [];
+  const havePrev = sel.length > 0 && selPrev.length === sel.length && selPrev.every((b) => b && b.revenue != null);
+  const pv = (k) => (havePrev ? dTxt(pct(sum(sel, k), sum(selPrev, k))) : '');
+  const gabMixed = new Set(sel.map((b) => b.basis)).size > 1;
+  const gabIncomplete = sel.some((b) => !b.complete);
+  const saveInc = async (ids) => {
+    setBusy(true); setNote(null);
+    const { data, error } = await supabase.rpc('portfolio_set', { p_include: ids });
+    setBusy(false);
+    if (error) return setNote(errMsg(error));
+    setInc(data?.include || []); setPick(null);
   };
 
   return (
@@ -143,15 +155,60 @@ export default function Bisnis() {
         );
       })}
 
-      {money.length > 1 && <>
-        <h3 style={{ marginTop: 8 }}>Ringkasan manajemen</h3>
-        {groups.length > 1 && groups.map((g) => (
-          <Total key={g.le?.id || 'none'} items={g.items} title={g.le ? `${g.le.name} (${LEGAL_KIND[g.le.kind] || g.le.kind})` : 'Badan usaha belum diatur'}
-            note="Jumlah bisnis dalam satu badan usaha." />
-        ))}
-        <Total items={money} title="Semua bisnis" note={groups.length > 1 ? 'Gabungan beberapa badan usaha — bukan laporan konsolidasi resmi (transaksi antarbisnis tidak dieliminasi).' : 'Bukan laporan konsolidasi resmi; ketuk angka di tiap bisnis untuk melihat transaksinya.'} />
-        {groups.some((g) => !g.le) && <span className="small muted">Atur badan usaha tiap bisnis di Operasional › Konfigurasi › Profil agar ringkasan bisa dipisah per badan usaha.</span>}
-      </>}
+      {money.length > 1 && (
+        <>
+          <h3 style={{ marginTop: 8 }}>Gabungan bisnis</h3>
+          <section className="panel">
+            {note && <div className="notice bad">{note}</div>}
+            {inc === null ? <Loading /> : pick ? (
+              <>
+                <span className="small">Centang bisnis yang ingin dijumlahkan. Angka tiap bisnis di atas tetap terpisah. Pilih minimal dua, atau kosongkan untuk tidak menggabungkan.</span>
+                <div className="list">{money.map((b) => (
+                  <label key={b.id} className="li" style={{ cursor: 'pointer', borderTop: '1px solid var(--line)' }}>
+                    <span className="row" style={{ flexWrap: 'nowrap', gap: 10 }}>
+                      <input type="checkbox" checked={pick.includes(b.id)} onChange={(e) => setPick(e.target.checked ? [...pick, b.id] : pick.filter((x) => x !== b.id))} />
+                      <span className="small">{typeOf(b).icon} {b.name}</span>
+                    </span>
+                    <span className="small muted">{b.legal_entity?.name || 'Badan usaha belum diatur'}</span>
+                  </label>
+                ))}</div>
+                {pick.length === 1 && <span className="small muted">Pilih satu bisnis lagi untuk menggabungkan.</span>}
+                <div className="row">
+                  <button className="primary" disabled={busy || pick.length === 1 || (pick.length === 0 && !(inc || []).length)} onClick={() => saveInc(pick)}>{busy ? 'Menyimpan…' : pick.length ? 'Simpan gabungan' : 'Hapus gabungan'}</button>
+                  <button className="sm" disabled={busy} onClick={() => setPick(null)}>Batal</button>
+                </div>
+              </>
+            ) : sel.length >= 2 ? (
+              <>
+                <div className="row between">
+                  <div className="stack" style={{ gap: 0 }}><b>{sel.length} bisnis digabung</b><span className="small muted">{sel.map((b) => b.name).join(' · ')}</span></div>
+                  <span className={'chip ' + (gabMixed || gabIncomplete ? 'gold' : 'good')}>{gabMixed || gabIncomplete ? 'Indikasi' : 'Lengkap'}</span>
+                </div>
+                <div className="grid">
+                  <Tile label="Pendapatan" value={rp(sum(sel, 'revenue'))} sub={pv('revenue') || `${sel.length} bisnis`} />
+                  <Tile label="Laba operasional" value={rp(sum(sel, 'profit'))} sub={pv('profit') || 'pendapatan − modal barang − biaya'} tone={sum(sel, 'profit') < 0 ? 'bad' : ''} />
+                  <Tile label="Belum diterima" value={rp(sum(sel, 'receivables'))} sub="tunggakan sewa + kasbon" />
+                </div>
+                {entitiesOf(sel).length > 1 && (
+                  <div className="list">{entitiesOf(sel).map((g) => (
+                    <div className="li" key={g.le?.id || 'none'}>
+                      <span className="small">{g.le ? `${g.le.name} (${LEGAL_KIND[g.le.kind] || g.le.kind})` : 'Badan usaha belum diatur'}</span>
+                      <b className="small">{rp(sum(g.items, 'revenue'))}</b>
+                    </div>
+                  ))}</div>
+                )}
+                <span className="small muted">Bukan laporan konsolidasi resmi: transaksi antarbisnis tidak dieliminasi.{gabMixed ? ' Basis pencatatannya berbeda (kos dicatat saat uang diterima, toko saat penjualan), jadi jumlahnya hanya indikasi.' : ''}{gabIncomplete ? ' Sebagian angka belum final (lihat tanda di tiap bisnis).' : ''}{sel.some((b) => !b.legal_entity) ? ' Atur badan usaha tiap bisnis di Operasional › Konfigurasi › Profil agar gabungan bisa dipisah per badan usaha.' : ''}</span>
+                <div className="row"><button className="sm" onClick={() => setPick(inc)}>Ubah pilihan</button></div>
+              </>
+            ) : (
+              <>
+                <span className="small muted">{sel.length === 1 ? 'Baru satu bisnis yang dipilih. Pilih minimal dua untuk menggabungkan.' : 'Belum ada gabungan. Angka tiap bisnis di atas sudah lengkap dan terpisah. Gabungan hanya dibuat bila Anda memilihnya.'}</span>
+                <div className="row"><button className="sm" onClick={() => setPick(inc)}>{sel.length ? 'Ubah pilihan' : 'Pilih bisnis yang digabung'}</button></div>
+              </>
+            )}
+          </section>
+        </>
+      )}
 
       {d.activity?.length > 0 && (
         <section className="panel">

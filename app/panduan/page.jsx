@@ -232,7 +232,7 @@ const PARTS = [
       <>Tekan <b>+ Tambah bisnis</b> (atau ketuk nama bisnis di kiri atas › Tambah bisnis), pilih jenisnya, isi nama, tinjau modul, lalu <b>Setujui & buat bisnis</b>.</>,
       <>Jika punya lebih dari satu bisnis, aplikasi dibuka di <b>Ringkasan pemilik</b>: hal yang <b>perlu perhatian</b> dari semua bisnis, lalu angka tiap bisnis (pendapatan, biaya, laba, tunggakan/kasbon, utang, kas).</>,
       <>Ketuk angka mana pun untuk membuka <b>sumbernya</b> di bisnis itu (mis. Laporan atau Kas) dan melihat transaksinya. Ganti bulan dengan tombol ‹ ›.</>,
-      <>Tanda <b>Lengkap</b> / <b>Perkiraan</b> menunjukkan apakah angkanya sudah final. <b>Ringkasan manajemen</b> di bawah menjumlahkan per badan usaha dan semua bisnis.</>,
+      <>Tanda <b>Lengkap</b> / <b>Perkiraan</b> menunjukkan apakah angkanya sudah final. <b>Gabungan bisnis</b> (opsional) hanya dibuat bila Anda memilihnya: ketuk <b>Pilih bisnis yang digabung</b>, centang minimal dua bisnis, lalu <b>Simpan gabungan</b>. Gabungan menampilkan selisih dibanding bulan sebelumnya dan dipisah per badan usaha. Kosongkan lagi dengan <b>Hapus gabungan</b>.</>,
     ], <>Pembukuan setiap bisnis terpisah: transaksi toko tidak masuk ke laporan kos. Jumlah gabungan hanya indikasi (bukan laporan konsolidasi resmi), apalagi bila basis pencatatannya berbeda — kos dicatat saat uang diterima, toko saat penjualan terjadi.</>, null, null],
   ]],
   ['E', 'Retail & Grosir (toko)', [
