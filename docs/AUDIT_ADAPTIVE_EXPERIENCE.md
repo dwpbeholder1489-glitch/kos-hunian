@@ -116,9 +116,9 @@ Satu migrasi aditif (tanpa mengubah/menghapus kolom lama): kolom baru di `biz_ca
 |---|---|---|
 | Fase 0 | Audit ini | Selesai 21 Nov |
 | Tahap 1 (Fase 1+2) | Klasifikasi 20+, Business DNA, katalog & aturan relevansi, rekomendasi, lifecycle dasar; navigasi per bisnis, (+) permanen, registry aksi cepat, konfigurasi pemilik berversi, Business Experience Center, onboarding DNA, preferensi dashboard di server | Selesai 21 Nov (lihat §14) |
-| Fase 3 | Dashboard: KPI pilihan, periode bawaan, widget per subkategori (fashion: ukuran/warna; elektronik: garansi), Business Pulse/Signals | Berikutnya |
-| Fase 4 | Workflow registry, alur bersyarat, persetujuan per alur | |
-| Fase 5 | Ringkasan multi-bisnis lanjutan (konsolidasi berbatas izin) | |
+| Fase 3 | Dashboard: KPI pilihan, periode bawaan, widget per subkategori (fashion: ukuran/warna; elektronik: garansi), Business Pulse/Signals | Selesai 21 Nov (§15) |
+| Fase 4 | Workflow registry, alur bersyarat, persetujuan per alur | Selesai 21 Nov (§16) |
+| Fase 5 | Ringkasan multi-bisnis lanjutan (konsolidasi berbatas izin) | Berikutnya |
 | Fase 6 | Integration registry & webhook umum | |
 | Fase 7 | Experience performance (pemakaian fitur, aksi cepat, rekomendasi) di server | |
 
