@@ -162,5 +162,6 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | Persetujuan klien lewat portal, tanda tangan elektronik, PPN jasa, penawaran dari Prospek (CRM) | Belum |
 | Anggaran & biaya proyek (1C): anggaran per kategori & persetujuan, biaya nyata dari pengeluaran/belanja yang ditandai (boleh dibagi), komitmen vendor & belanja dipesan, perkiraan akhir, selisih, laba & margin per proyek, tab Laba proyek | Selesai (migrasi `20261121250000`), diuji (`proyek_biaya.sql`, `isolasi.sql`) |
 | Alokasi gaji/timesheet karyawan ke proyek | Belum |
-| Tagihan termin & jurnal uang muka → pendapatan (1D) | Belum — tahap berikutnya |
+| Tagihan termin & jurnal uang muka → pendapatan (1D): tagihan dari milestone, cetak/WA, pembayaran (bisa tanpa tagihan), pengembalian & uang muka hangus, jurnal otomatis per kejadian (uang muka → pendapatan saat milestone diserahkan, kekurangan = piutang), koreksi otomatis saat dibatalkan | Selesai (migrasi `20261121260000`), diuji (`proyek_tagihan.sql` memeriksa saldo akun tiap langkah & keseimbangan jurnal, `isolasi.sql`) |
+| Piutang proyek di laporan Umur piutang Pembukuan; persetujuan pembayaran; PPN jasa | Belum |
 | Lampiran untuk PIC/anggota tanpa area proses | Belum — lampiran memakai izin area (ops/settings) |

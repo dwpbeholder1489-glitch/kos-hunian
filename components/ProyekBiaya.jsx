@@ -241,12 +241,14 @@ export function ProfitTable({ rows, onRow, DataTable, Chip, STATUS }) {
       { key: 'b', label: 'Anggaran', align: 'right', hide: 'tablet', sort: (r) => Number(r.budget), render: (r) => rp(r.budget) },
       { key: 'a', label: 'Biaya nyata', align: 'right', sort: (r) => Number(r.actual), render: (r) => <>{rp(r.actual)}{Number(r.committed) > 0 && <div className="small muted">+ komitmen {rp(r.committed)}</div>}</> },
       { key: 'p', label: 'Perkiraan laba', align: 'right', sort: (r) => Number(r.profit_forecast ?? -1e15), render: (r) => (r.value == null ? <span className="muted">—</span> : <><b style={{ color: Number(r.profit_forecast) < 0 ? 'var(--bad)' : undefined }}>{rp(r.profit_forecast)}</b>{Number(r.budget) === 0 ? <div className="small" style={{ color: 'var(--att-fg)' }}>tanpa anggaran</div> : r.margin_forecast != null && <div className="small muted">{String(r.margin_forecast).replace('.', ',')}%</div>}</>) },
+      { key: 'r', label: 'Diterima / diakui', align: 'right', hide: 'tablet', sort: (r) => Number(r.bill?.recognized || 0), render: (r) => (r.bill ? <><span>{rp(Number(r.bill.received) - Number(r.bill.refunded))}</span><div className="small muted">diakui {rp(r.bill.recognized)}{Number(r.bill.overdue) > 0 ? ' · ' : ''}{Number(r.bill.overdue) > 0 && <b style={{ color: 'var(--bad)' }}>telat {rp(r.bill.overdue)}</b>}</div></> : '—') },
       { key: 's', label: 'Status', hide: 'tablet', render: (r) => <Chip map={STATUS} v={r.status} /> },
     ]}
     card={(r) => <>
       <div className="dt-row"><b>{r.name}</b><Chip map={STATUS} v={r.status} /></div>
       <span className="small muted">{r.number}{r.client ? ` · ${r.client}` : ''}</span>
       <span className="small">Nilai {r.value != null ? rp(r.value) : '—'} · biaya {rp(r.actual)}{Number(r.committed) > 0 ? ` + komitmen ${rp(r.committed)}` : ''}</span>
+      {r.bill && <span className="small muted">Diterima {rp(Number(r.bill.received) - Number(r.bill.refunded))} · diakui {rp(r.bill.recognized)}{Number(r.bill.overdue) > 0 ? ` · telat bayar ${rp(r.bill.overdue)}` : ''}</span>}
       {r.value != null && <span className="small">Perkiraan laba <b style={{ color: Number(r.profit_forecast) < 0 ? 'var(--bad)' : undefined }}>{rp(r.profit_forecast)}</b>{Number(r.budget) === 0 ? ' · tanpa anggaran' : r.margin_forecast != null ? ` (${String(r.margin_forecast).replace('.', ',')}%)` : ''}</span>}
     </>} />;
 }

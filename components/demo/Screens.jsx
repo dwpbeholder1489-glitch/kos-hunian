@@ -483,6 +483,22 @@ export function ScrBiayaProyek() {
   );
 }
 
+export function ScrTagihanProyek() {
+  return (
+    <Phone bare>
+      <h3>Tagihan &amp; pembayaran klien</h3>
+      <span className="small muted">Wedding Rina &amp; Bayu · DATA CONTOH</span>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Diterima</span><span className="v">{rp(30000000)}</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Diakui</span><span className="v">{rp(30000000)}</span></div>
+      </div>
+      <div className="row between small"><span><b>TGP-2611-001 · DP</b><br />jatuh tempo 1 Des</span><span className="chip good">Lunas</span></div>
+      <div className="row between small"><span><b>TGP-2611-002 · Pelunasan</b><br />{rp(70000000)}</span><span className="mini-btn cta">Catat bayar</span></div>
+      <span className="small muted">Uang sebelum diserahkan = uang muka → pendapatan saat milestone selesai</span>
+    </Phone>
+  );
+}
+
 export function ScrResep() {
   return (
     <Phone bare>

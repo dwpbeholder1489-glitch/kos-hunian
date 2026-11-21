@@ -80,7 +80,7 @@ export default function Proyek() {
         <Tile label="Proyek berjalan" value={aktif.filter((p) => p.status === 'berjalan').length} sub={`${aktif.filter((p) => p.status === 'penawaran').length} masih penawaran`} />
         <Tile label="Mulai 7 hari ke depan" value={minggu} sub="sesuai tanggal mulai" />
         <Tile label="Tugas terlambat" value={telat} tone={telat ? 'bad' : ''} sub="lewat tenggat, belum selesai" />
-        {nilai != null && <Tile label="Nilai kontrak berjalan" value={rp(nilai)} sub="rencana, belum masuk Pembukuan" />}
+        {nilai != null && <Tile label="Nilai kontrak berjalan" value={rp(nilai)} sub="proyek berjalan (bukan penawaran)" />}
       </div>}
 
       {d.projects.length === 0 ? (
@@ -116,7 +116,7 @@ export default function Proyek() {
               })()}
             </>} />}
       </>}
-      <span className="small muted">Nilai kontrak & rencana termin di sini belum menjadi tagihan atau pendapatan di Pembukuan. Penagihan termin menyusul di tahap berikutnya.</span>
+      <span className="small muted">Nilai kontrak menjadi pendapatan di Pembukuan saat milestone ditandai selesai (dan sisanya saat proyek selesai). Uang yang diterima lebih dulu dicatat sebagai uang muka.</span>
       </>}
       {qform && <QuoteForm kosId={kosId} init={{ kind: 'awal' }} onClose={() => setQform(false)} onDone={(id) => { setQform(false); if (id) router.push(`/proyek/penawaran/${id}`); }} />}
       {form && <ProjectForm kosId={kosId} init={form} fin={d.fin} onClose={() => setForm(null)} onDone={(id) => { setForm(null); if (id) router.push(`/proyek/${id}`); else load(); }} />}
@@ -180,11 +180,13 @@ function ProfitTab({ kosId, ver }) {
       <div className="grid">
         <Tile label="Nilai kontrak" value={rp(sum('value'))} sub={`${withValue.length} dari ${rows.length} proyek bernilai`} />
         <Tile label="Biaya nyata" value={rp(sum('actual'))} sub={sum('committed') > 0 ? `+ komitmen ${rp(sum('committed'))}` : 'pengeluaran & belanja bertanda proyek'} />
+        <Tile label="Belum dibayar klien" value={rp(rows.reduce((a, r) => a + Number(r.bill?.invoices_open || 0), 0))} tone={rows.some((r) => Number(r.bill?.overdue) > 0) ? 'bad' : ''}
+          sub={rows.some((r) => Number(r.bill?.overdue) > 0) ? `${rp(rows.reduce((a, r) => a + Number(r.bill?.overdue || 0), 0))} lewat jatuh tempo` : 'total ditagih − uang diterima'} />
         <Tile label="Perkiraan laba" value={rp(withValue.reduce((a, r) => a + Number(r.profit_forecast || 0), 0))}
           sub={rows.some((r) => Number(r.budget) === 0) ? `${rows.filter((r) => Number(r.budget) === 0).length} proyek tanpa anggaran — labanya bisa terlihat terlalu tinggi` : 'nilai kontrak − perkiraan biaya akhir'} />
       </div>
       {rows.length === 0 ? <Empty title="Tidak ada" art={false} /> : <ProfitTable rows={rows} onRow={(r) => router.push(`/proyek/${r.id}`)} DataTable={DataTable} Chip={Chip} STATUS={STATUS} />}
-      <span className="small muted">Perkiraan biaya akhir per kategori = yang lebih besar antara anggaran dan (biaya nyata + komitmen). Nilai kontrak belum menjadi pendapatan di Pembukuan sampai penagihan termin tersedia.</span>
+      <span className="small muted">Perkiraan biaya akhir per kategori = yang lebih besar antara anggaran dan (biaya nyata + komitmen). Nilai kontrak menjadi pendapatan di Pembukuan saat milestone diserahkan; kolom Diterima = uang klien yang sudah masuk.</span>
     </>}
   </>;
 }

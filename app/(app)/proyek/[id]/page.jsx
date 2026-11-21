@@ -15,6 +15,7 @@ import { canArea } from '@/lib/business';
 import { KIND, STATUS, TASK_ST, PRIO, Chip, Progress, ProjectForm, MilestoneForm, TaskForm, jadwal } from '@/components/Proyek';
 import { QuoteForm, qStatus } from '@/components/Penawaran';
 import CostPanel from '@/components/ProyekBiaya';
+import BillingPanel from '@/components/ProyekTagihan';
 
 const waktu = (iso) => new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 // Tombol pindah status yang masuk akal dari status sekarang (server tetap menerima perpindahan lain)
@@ -86,10 +87,12 @@ export default function ProyekDetail() {
               <span className={'chip ' + st[1]}>{st[0]}</span></Link>); })}</div>}
       </section>}
 
+      {p.fin && p.status !== 'penawaran' && <BillingPanel project={p} onChange={load} />}
       {p.fin && <CostPanel project={p} onChange={load} />}
 
       <section className="panel" style={{ gap: 6 }}>
         <div className="row between"><span className="label">Milestone ({p.milestones.length})</span>{canEdit && <button className="sm" onClick={() => setForm({ ms: {} })}>+ Milestone</button>}</div>
+        {p.fin && p.milestones.some((m) => Number(m.amount) > 0) && <span className="small muted">Mencentang milestone bernilai = pekerjaan diserahkan → nilainya diakui sebagai pendapatan di Pembukuan (dari uang muka lebih dulu, kekurangannya jadi piutang).</span>}
         {p.milestones.length === 0 ? <span className="small muted">Belum ada. Contoh: DP & konsep disetujui → Gladi bersih → Hari H → Pelunasan.</span>
           : <div className="list">{p.milestones.map((m) => (
             <div className="li" key={m.id}>

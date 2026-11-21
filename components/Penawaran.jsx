@@ -118,7 +118,7 @@ export function QuoteForm({ kosId, init, onClose, onDone }) {
         </div>))}
       <button type="button" className="sm" onClick={() => set('terms', [...f.terms, { name: '', pct: '', amount: '' }])}>+ Termin</button>
       {f.terms.length > 0 && <span className="small" style={{ color: termOk ? 'var(--muted)' : 'var(--bad)' }}>{f.termMode === 'persen' ? `Jumlah ${pctSum}% dari 100%` : `Jumlah ${rp(amtSum)} dari ${rp(total)}`}{f.termMode === 'persen' && termOk && total > 0 ? ` · ${f.terms.map((t) => `${t.name || '…'} ${rp(Math.round(total * num(t.pct) / 100))}`).join(' · ')}` : ''}</span>}
-      <span className="small muted">Saat disetujui klien, tiap termin menjadi milestone proyek (rencana; penagihan menyusul).</span>
+      <span className="small muted">Saat disetujui klien, tiap termin menjadi milestone proyek yang bisa langsung ditagihkan.</span>
 
       <span className="label">Scope & ketentuan</span>
       <Field label="Termasuk dalam pekerjaan"><textarea rows={3} value={f.scope_in} maxLength={3000} onChange={(e) => set('scope_in', e.target.value)} placeholder="mis. konsep, 1 hari shooting, editing 2 menit, musik berlisensi" /></Field>

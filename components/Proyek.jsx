@@ -76,7 +76,7 @@ export function ProjectForm({ kosId, init, fin, onClose, onDone }) {
       <Field label="PIC (penanggung jawab proyek)" hint={edit ? 'PIC bisa mengubah proyek ini, mengatur tugas, milestone, dan anggota.' : 'Kosong = Anda sendiri. PIC bisa mengatur tugas, milestone, dan anggota proyek ini.'}>
         <select value={f.manager_user} onChange={(e) => set('manager_user', e.target.value)}><option value="">{edit ? '— belum ada —' : 'Saya sendiri'}</option>{(opt?.team || []).map((t) => <option key={t.user_id} value={t.user_id}>{t.name}</option>)}</select>
       </Field>
-      {fin && <Field label="Nilai kontrak (opsional)" hint="Hanya rencana — belum masuk Pembukuan. Tagihan & termin menyusul."><input inputMode="numeric" value={f.value} onChange={(e) => set('value', e.target.value)} placeholder="mis. 85.000.000" /></Field>}
+      {fin && <Field label="Nilai kontrak (opsional)" hint="Pendapatan diakui di Pembukuan saat milestone diserahkan / proyek selesai — bukan saat diisi di sini."><input inputMode="numeric" value={f.value} onChange={(e) => set('value', e.target.value)} placeholder="mis. 85.000.000" /></Field>}
       <Field label="Lokasi (opsional)"><input value={f.location} maxLength={200} onChange={(e) => set('location', e.target.value)} placeholder="mis. Gedung Serbaguna, Jl. Merdeka 1" /></Field>
       <Field label="Keterangan (opsional)"><textarea rows={3} value={f.description} maxLength={2000} onChange={(e) => set('description', e.target.value)} placeholder="ringkasan kebutuhan klien, catatan penting" /></Field>
       {parents.length > 0 && <Field label="Bagian dari proyek lain? (opsional)" hint="mis. produksi panggung sebagai subproyek dari acara utama"><select value={f.parent_id} onChange={(e) => set('parent_id', e.target.value)}><option value="">— proyek mandiri —</option>{parents.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}</select></Field>}
@@ -102,7 +102,7 @@ export function MilestoneForm({ project, init, fin, onClose, onDone }) {
       <span className="small muted">Milestone = tahap besar proyek, mis. "DP & konsep disetujui", "Gladi bersih", "Hari H", "Pelunasan".</span>
       <Field label="Nama"><input value={f.name} maxLength={120} onChange={(e) => set('name', e.target.value)} /></Field>
       <Field label="Target tanggal (opsional)"><input type="date" value={f.due_date} onChange={(e) => set('due_date', e.target.value)} /></Field>
-      {fin && <Field label="Rencana nilai termin (opsional)" hint="Mis. DP 30%. Hanya rencana — penagihan termin menyusul di tahap berikutnya."><input inputMode="numeric" value={f.amount} onChange={(e) => set('amount', e.target.value)} placeholder="mis. 25.000.000" /></Field>}
+      {fin && <Field label="Rencana nilai termin (opsional)" hint="Mis. DP 30%. Bisa ditagihkan dari bagian Tagihan; saat milestone dicentang selesai, nilai ini diakui sebagai pendapatan."><input inputMode="numeric" value={f.amount} onChange={(e) => set('amount', e.target.value)} placeholder="mis. 25.000.000" /></Field>}
       <Field label="Catatan (opsional)"><input value={f.note} maxLength={500} onChange={(e) => set('note', e.target.value)} /></Field>
       <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
       {init?.id && init.status !== 'selesai' && <button className="ghost danger" onClick={del}>Hapus milestone</button>}

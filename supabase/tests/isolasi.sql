@@ -166,7 +166,12 @@ begin
       ('prj_budget_save', format('select public.prj_budget_save((select id from public.prj_projects where kos_id = %L limit 1), ''[]'')', k)),
       ('prj_cost_add', format('select public.prj_cost_add((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"category":"x"}'')', k)),
       ('prj_cost_link', format('select public.prj_cost_link((select id from public.prj_projects where kos_id = %L limit 1), ''expense'', (select id from public.expenses where kos_id = %L limit 1), 1, ''x'', null)', k, k)),
-      ('prj_profit_report', format('select public.prj_profit_report(%L)', k))
+      ('prj_profit_report', format('select public.prj_profit_report(%L)', k)),
+      ('prj_billing', format('select public.prj_billing((select id from public.prj_projects where kos_id = %L limit 1))', k)),
+      ('prj_invoice_create', format('select public.prj_invoice_create((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"description":"dibajak"}'')', k)),
+      ('prj_payment_add', format('select public.prj_payment_add((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"account":"kas"}'')', k)),
+      ('prj_invoice_get', format('select public.prj_invoice_get((select id from public.prj_invoices where kos_id = %L limit 1))', k)),
+      ('prj_payment_void', format('select public.prj_payment_void((select id from public.prj_payments where kos_id = %L limit 1), ''dibajak'')', k))
     ) v(name, q) loop
     begin
       execute t.q;
