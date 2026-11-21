@@ -6,15 +6,17 @@ import Link from 'next/link';
 import NavIcon from '@/components/NavIcon';
 import { quickFor, quickUsage, quickUsed } from '@/lib/quick';
 import { isDraft, canArea } from '@/lib/business';
+import { track, mineAksi } from '@/lib/usage';
 
 export function useQuick(kos, path) {
-  return quickFor(kos, path, typeof window === 'undefined' ? {} : quickUsage(kos.id));
+  // urutan "paling sering dipakai": dari server (semua perangkat, 60 hari); cadangan per perangkat bila belum termuat
+  return quickFor(kos, path, typeof window === 'undefined' ? {} : mineAksi(kos.id) || quickUsage(kos.id));
 }
 
 export default function QuickPanel({ kos, path, onPick, menu = false }) {
   const list = useQuick(kos, path);
   const settings = canArea(kos, 'settings');
-  const pick = (a) => { quickUsed(kos.id, a.id); onPick?.(); };
+  const pick = (a) => { quickUsed(kos.id, a.id); track(kos.id, 'aksi', a.id); onPick?.(); };
   if (!list.length) {
     return (
       <div className="qp-empty" role={menu ? 'none' : undefined}>

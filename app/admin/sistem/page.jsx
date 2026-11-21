@@ -18,11 +18,13 @@ export default function Sistem() {
   const [srv, setSrv] = useState(null);
   const [err, setErr] = useState(null);
   const [ev, setEv] = useState(null);   // pemantauan peristiwa (event_reconcile): jumlah per jenis & dokumen tanpa peristiwa
-  const [ig, setIg] = useState(null);   // pemantauan integrasi (admin_integration_overview): hanya angka
+  const [ig, setIg] = useState(null);
+  const [xp, setXp] = useState(null);   // pemakaian fitur lintas bisnis (admin_experience_overview): agregat tanpa nama   // pemantauan integrasi (admin_integration_overview): hanya angka
   useEffect(() => {
     if (!can(adminMe, 'system.view')) return;
     supabase.rpc('event_reconcile').then(({ data }) => setEv(data || null), () => {});
     supabase.rpc('admin_integration_overview').then(({ data }) => setIg(data || null), () => {});
+    supabase.rpc('admin_experience_overview').then(({ data }) => setXp(data || null), () => {});
     supabase.rpc('admin_system').then(({ data, error }) => (error ? setErr(errMsg(error)) : setDb(data)));
     supabase.auth.getSession().then(({ data }) => fetch('/api/admin/status', { headers: { authorization: 'Bearer ' + data.session?.access_token } }))
       .then((r) => r.json()).then(setSrv).catch(() => setSrv({ error: 'Server aplikasi tidak menjawab' }));
@@ -79,6 +81,16 @@ export default function Sistem() {
         {Number(ig.h7.galat || 0) > 0 && <div className="notice bad">Ada gangguan sistem pada kiriman webhook dalam 7 hari terakhir — periksa log server (kata kunci "[hook]").</div>}
         {Number(ig.h1.token_salah || 0) >= 100 && <div className="notice bad">Banyak percobaan tautan salah dalam 24 jam — kemungkinan ada yang menebak alamat webhook.</div>}
         <span className="small muted">Hanya angka — kode sambungan dan isi kiriman tidak pernah ditampilkan. Penyedia lain ({ig.katalog.filter((c) => c.impl_status === 'planned').map((c) => c.name).join(', ')}) berstatus dalam rencana.</span>
+      </section>}
+      {xp && <section className="panel">
+        <h3>Pemakaian fitur (30 hari)</h3>
+        <span className="small muted">{xp.since ? `Dicatat sejak ${xp.since}` : 'Belum ada data'} · {Number(xp.bisnis_tercatat)} bisnis · {Number(xp.pengguna_tercatat)} pengguna. Hanya jumlah — tanpa nama bisnis atau pengguna.</span>
+        {xp.menu_teratas.length > 0 && <><b className="small">Menu paling banyak dipakai (jumlah bisnis · kali dibuka)</b>
+          <div className="list">{xp.menu_teratas.map((m) => <div className="li" key={m.path}><span className="small">{m.path}</span><b className="small">{m.bisnis} · {Number(m.n).toLocaleString('id-ID')}</b></div>)}</div></>}
+        {xp.aksi_teratas.length > 0 && <><b className="small">Aksi cepat teratas</b>
+          <div className="list">{xp.aksi_teratas.map((m) => <div className="li" key={m.id}><span className="small">{m.id}</span><b className="small">{m.bisnis} · {Number(m.n).toLocaleString('id-ID')}</b></div>)}</div></>}
+        {xp.rekomendasi.length > 0 && <><b className="small">Rekomendasi 90 hari (saran · diterima · ditolak)</b>
+          <div className="list">{xp.rekomendasi.map((m) => <div className="li" key={m.module}><span className="small">{m.name}</span><b className="small">{m.total} · {m.diterima} · {m.ditolak}</b></div>)}</div></>}
       </section>}
       <section className="panel">
         <h3>Jumlah data</h3>

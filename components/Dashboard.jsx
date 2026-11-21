@@ -10,7 +10,8 @@ import { supabase } from '@/lib/supabase';
 import NavIcon from '@/components/NavIcon';
 import { Sheet, Tile } from '@/components/ui';
 import { rp } from '@/lib/format';
-import { quickFor } from '@/lib/quick';
+import { quickFor, quickUsed } from '@/lib/quick';
+import { track } from '@/lib/usage';
 import { useKos } from '@/components/KosProvider';
 import { canArea } from '@/lib/business';
 import { errMsg } from '@/lib/format';
@@ -46,7 +47,7 @@ export function Alerts({ items }) {
 export function QuickActions({ kos }) {
   const q = quickFor(kos);
   if (!q.length) return null;
-  return <div className="qa">{q.map((a) => <Link key={a.id} href={a.href}><NavIcon name={a.base} size={20} />{a.label}</Link>)}</div>;
+  return <div className="qa">{q.map((a) => <Link key={a.id} href={a.href} onClick={() => { quickUsed(kos.id, a.id); track(kos.id, 'aksi', a.id); }}><NavIcon name={a.base} size={20} />{a.label}</Link>)}</div>;
 }
 
 const jam = (ts) => new Date(ts).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });

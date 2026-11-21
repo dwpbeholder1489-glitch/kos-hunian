@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ClosedBar } from '@/components/DataTutup';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { trackMenu, loadMine } from '@/lib/usage';
 import { Sheet } from '@/components/ui';
 import NavIcon from '@/components/NavIcon';
 import { useKos } from '@/components/KosProvider';
@@ -102,6 +103,8 @@ export default function AppLayout({ children }) {
   const { session, list, kos, kosId, pickKos, isAdmin } = useKos();
   const [sheet, setSheet] = useState(null); // 'biz' | 'menu' | 'quick'
   const wide = useWide();
+  // Fase 7: catat menu yang dibuka (jumlah saja) & muat pemakaian sendiri untuk urutan tombol (+)
+  useEffect(() => { if (kosId && session) { loadMine(kosId); trackMenu(kosId, path); } }, [kosId, path, session]);
 
   if (!session || !list || !kos) {
     return <main className="wrap"><p className="muted">Membuka PRASARA…</p></main>;

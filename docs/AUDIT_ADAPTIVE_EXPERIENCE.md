@@ -84,7 +84,7 @@ Sumber menu: `BUSINESS_TYPES[engine].tabs` → `tabsFor(kos)` (tersaring peran, 
 | §22 Onboarding adaptif | 4 bagian + Pusat Konfirmasi | + bagian "Karakter operasional" (DNA) + pratinjau workspace |
 | §23 Keuangan | Verified | Tidak diubah |
 | §24 Integration registry | `pay_providers` saja | Fase 6 (selesai, §18) |
-| §28 Experience performance | Belum | Fase 7 (urutan aksi cepat memakai frekuensi pemakaian per perangkat sebagai langkah awal) |
+| §28 Experience performance | Belum | Fase 7 (selesai, §19) |
 
 ## 9. Reusable Components Inventory
 
@@ -120,7 +120,7 @@ Satu migrasi aditif (tanpa mengubah/menghapus kolom lama): kolom baru di `biz_ca
 | Fase 4 | Workflow registry, alur bersyarat, persetujuan per alur | Selesai 21 Nov (§16) |
 | Fase 5 | Ringkasan multi-bisnis lanjutan (konsolidasi berbatas izin) | Selesai 21 Nov (§17) |
 | Fase 6 | Integration registry & webhook umum | Selesai 21 Nov (§18) — webhook masuk; webhook keluar ditunda |
-| Fase 7 | Experience performance (pemakaian fitur, aksi cepat, rekomendasi) di server | |
+| Fase 7 | Experience performance (pemakaian fitur, aksi cepat, rekomendasi) di server | Selesai 21 Nov (§19) |
 
 Aturan yang dijaga: tidak menghapus fitur, tidak mengubah logika transaksi/keuangan, tidak mengaktifkan modul berbayar otomatis, tanpa AI generatif (aturan + skor tertulis), tanpa data contoh di aplikasi.
 
@@ -226,3 +226,19 @@ Belum / jujur: webhook keluar, WhatsApp resmi, pembayaran online untuk pelanggan
 | Tabel fitur paket (`lib/plan.js`), panduan Langkah 24 & 117, `lib/guide.js` | Selesai | |
 
 Keputusan Fase 4 (aturan persetujuan di Alur kerja mulai Paket Bisnis) tidak diubah.
+
+## 19. Hasil Fase 7 (21 Nov 2026): Experience performance di server
+
+Catatan sumber: teks lengkap §28 tidak tersimpan di dokumen Project; cakupan mengikuti rencana §8/§13 audit ini ("pemakaian fitur, aksi cepat, rekomendasi di server").
+
+| Bagian | Status | Bukti |
+|---|---|---|
+| Pencatatan pemakaian (menu dibuka & aksi cepat diketuk, jumlah per hari) lewat `exp_track`; validasi isian, batas per kiriman & per hari, galat ditelan | Verified | `kinerja_pengalaman.sql` uji A, B, D |
+| Tabel tertutup, orang luar/kasir tidak bisa membaca laporan, bisnis lain tidak bocor; `isolasi.sql` 205/205 | Verified | uji C, F |
+| Urutan tombol (+) dari pemakaian sendiri di server (semua perangkat), cadangan per perangkat | Verified (kode, bundle) | — |
+| Laporan Kinerja: orang aktif, menu & aksi teratas (tanpa rincian per orang), fitur aktif tak dipakai, hasil rekomendasi (hanya keputusan pemilik) + "lalu dipakai", saran alur, perubahan tampilan | Verified | uji E; render 390/1440 (isi & kosong) |
+| Super Admin: agregat lintas bisnis tanpa nama | Verified | uji G |
+| Retensi 180 hari (cron) & bisnis ditutup tidak tercatat | Verified | uji H |
+| Panduan Langkah 118, `lib/guide.js`, CLAUDE.md | Selesai | |
+
+Belum / jujur: data baru mulai terkumpul 21 Nov 2026 (angka awal belum penuh; daftar "jarang dipakai" sengaja disembunyikan sampai 14 hari data); waktu menyelesaikan tugas dan pemakaian widget dashboard belum diukur; pencatatan hanya dari aplikasi web yang terbuka (kiriman terakhir bisa hilang bila HP langsung mati).

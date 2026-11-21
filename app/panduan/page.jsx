@@ -795,7 +795,7 @@ const PARTS = [
       <>Setiap perubahan <b>batas kredit, tempo, daftar harga, tipe, dan sales</b> tercatat sebelum → sesudah di bagian <b>Riwayat syarat</b> (layar pelanggan) dan Konfigurasi › Riwayat — hanya terlihat oleh pemilik/pengelola.</>,
     ], <>Sales harus anggota tim bisnis ini. Laporan kinerja per sales menyusul bersama indikator grosir.</>, null, null],
   ]],
-  ['AD', 'Tampilan adaptif, Pusat Pengalaman, Alur kerja & Integrasi', [
+  ['AD', 'Tampilan adaptif, Pusat Pengalaman, Alur kerja, Integrasi & Kinerja', [
     ['Menu yang menyesuaikan bisnis & tombol (+)', 'Menu bawah · menu samping (☰ / laptop)', [
       <>Menu bawah di HP selalu: <b>Beranda</b> · <b>menu utama bisnis Anda</b> · <b>(+)</b> · <b>Laporan</b> · <b>Akun</b>. Menu utama mengikuti jenis bisnis: toko = <b>Transaksi</b>, kos = <b>Kamar</b>, laundry & kuliner = <b>Pesanan</b>, bisnis kustom = jenis data utama (mis. <b>Proyek</b>).</>,
       <>Tombol <b>(+)</b> di tengah <b>selalu ada</b> di semua bisnis. Ketuk untuk aksi cepat, mis. toko: Penjualan baru, Pesanan grosir, Tambah produk, Pembelian, Catat pengeluaran/pemasukan, Tambah pelanggan; kos: Tambah kamar, Tambah penghuni, Booking, Buat tagihan, Catat pembayaran.</>,
@@ -852,6 +852,13 @@ const PARTS = [
       <>Prospek yang masuk muncul di menu <b>Prospek</b> dengan sumber <b>Integrasi</b> dan nomor PRM-…, serta pengingatnya di Beranda. Tidak ada email otomatis. Nomor telepon yang sama dalam 10 menit dihitung sebagai kiriman ulang, bukan prospek baru; kiriman ulang yang persis sama bisa dicegah dengan header <b>Idempotency-Key</b>.</>,
       <>Di kartu sambungan: <b>Ubah</b> (nama & kolom khusus), <b>Jeda</b>/<b>Aktifkan</b>, <b>Kode baru</b> (alamat lama langsung berhenti bekerja), <b>Hapus</b>, dan <b>Riwayat</b>. Tab <b>Riwayat kiriman</b> menampilkan tiap kiriman: masuk jadi prospek, nomor sama dalam 10 menit, atau ditolak beserta alasannya (isi kurang tepat, terlalu banyak kiriman, sambungan dijeda).</>,
     ], <>Jangan menaruh alamat sambungan di JavaScript halaman web yang bisa dilihat pengunjung — siapa pun yang tahu alamatnya bisa mengirim prospek. Bila bocor, tekan <b>Kode baru</b>. Batas: maksimal 5 sambungan per bisnis, 60 kiriman per jam dan 300 prospek per hari per sambungan. PRASARA tidak menyimpan alamat lengkapnya (hanya sidik dan 4 karakter terakhir) dan tidak mengklaim pengirim sudah meminta izin dihubungi — pastikan sumbernya memintanya. Konektor lain (kabar keluar, WhatsApp resmi, pembayaran online, marketplace) masih <b>Dalam rencana</b> dan tidak berpura-pura aktif.</>, 'warn', null, 'pro'],
+    ['Kinerja: fitur & aksi cepat yang benar-benar dipakai', 'Pengaturan bisnis › Pusat Pengalaman › Kinerja', [
+      <>Pilih periode <b>7 hari</b>, <b>30 hari</b>, atau <b>90 hari</b>. <b>Ringkasan</b> menampilkan berapa orang yang memakai PRASARA (dari semua anggota), berapa hari dipakai, berapa kali menu dibuka, dan berapa kali aksi cepat diketuk.</>,
+      <><b>Menu paling sering dibuka</b> dan <b>Aksi cepat (tombol +)</b>: kali dipakai dan oleh berapa orang. Aksi yang <b>belum pernah diketuk</b> ditampilkan agar bisa Anda sembunyikan lewat <b>Atur aksi cepat</b>.</>,
+      <>Urutan tombol (+) yang belum Anda atur sendiri kini mengikuti aksi yang paling sering <b>Anda</b> pakai dari <b>semua perangkat</b> Anda (60 hari terakhir), bukan per HP lagi.</>,
+      <><b>Fitur aktif yang jarang dipakai</b>: fitur yang menyala tetapi tidak dibuka di periode itu, beserta tanggal terakhir dibuka. Muncul setelah minimal 14 hari data agar tidak menyesatkan.</>,
+      <><b>Hasil rekomendasi</b>: berapa saran yang Anda putuskan, berapa yang diterima, dan berapa yang <b>lalu dipakai</b> (menunya dibuka setelah diterima), plus saran alur kerja dan berapa kali tampilan diubah, dikembalikan, atau dipulihkan.</>,
+    ], <>Yang dicatat HANYA jumlah menu dibuka dan aksi cepat diketuk per hari — tanpa isi transaksi, tanpa lokasi/perangkat, dan tidak ditampilkan per karyawan. Data disimpan 180 hari. Pencatatan dimulai 21 Nov 2026, jadi angka awal belum penuh. Halaman ini hanya untuk pemilik & pengelola.</>, null, null],
   ]],
 ];
 
@@ -920,7 +927,7 @@ export default function Panduan() {
           <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
-          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–117</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain</span></div>
+          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

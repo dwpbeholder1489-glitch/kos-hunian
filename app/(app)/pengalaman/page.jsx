@@ -12,6 +12,7 @@ import { Sheet, Loading, toast, run } from '@/components/ui';
 import NavIcon from '@/components/NavIcon';
 import DnaForm from '@/components/DnaForm';
 import ProcessMap from '@/components/ProcessMap';
+import KinerjaPengalaman from '@/components/KinerjaPengalaman';
 import { errMsg, tgl } from '@/lib/format';
 import { loadVocab, STAGES, STAGE_ORDER, RELEVANCE, RECO_STATUS, EVENTS, HISTORY_ACTION, PART_NAME } from '@/lib/dna';
 import { sectionsFor, groupIcon, mainTabOf, fourthTab } from '@/lib/menu';
@@ -19,7 +20,7 @@ import { quickCatalog, quickFor } from '@/lib/quick';
 import { DASHBOARDS, dashOf, KPIS, defaultKpis, PERIODS } from '@/lib/dashboards';
 import { tabsFor, homeOf, canArea } from '@/lib/business';
 
-const TABS = [['profil', 'Profil bisnis'], ['fitur', 'Fitur saya'], ['rekomendasi', 'Rekomendasi'], ['navigasi', 'Navigasi'], ['aksi', 'Aksi cepat'], ['dashboard', 'Dashboard'], ['evolusi', 'Perkembangan']];
+const TABS = [['profil', 'Profil bisnis'], ['fitur', 'Fitur saya'], ['rekomendasi', 'Rekomendasi'], ['navigasi', 'Navigasi'], ['aksi', 'Aksi cepat'], ['dashboard', 'Dashboard'], ['evolusi', 'Perkembangan'], ['kinerja', 'Kinerja']];
 const SIG = [['employees', 'Karyawan'], ['outlets', 'Outlet/cabang'], ['products', 'Barang aktif'], ['tx30', 'Transaksi 30 hari'], ['customers', 'Pelanggan'], ['suppliers', 'Supplier'], ['age_days', 'Umur (hari)']];
 // tanggal + jam dari timestamp (tgl() khusus tanggal YYYY-MM-DD)
 const tglw = (ts) => (ts ? new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' }) : '—');
@@ -78,6 +79,7 @@ export default function Pengalaman() {
       {tab === 'aksi' && <Aksi kos={kos} kosId={kosId} onSaved={refresh} />}
       {tab === 'dashboard' && <Dash kos={kos} kosId={kosId} onSaved={refresh} />}
       {tab === 'evolusi' && <Evolusi kosId={kosId} ov={ov} hist={hist} onSaved={refresh} />}
+      {tab === 'kinerja' && <KinerjaPengalaman kos={kos} kosId={kosId} onTab={setTab} />}
     </div>
   );
 }
