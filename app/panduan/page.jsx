@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -15,6 +15,7 @@ export const metadata = {
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi PRASARA.')}`;
 const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Dasar</span>;
 const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</span>;
+const Bis = () => <span className="chip gold" style={{ marginLeft: 6 }}>Bisnis</span>;
 
 // Menu toko (Retail & Grosir)
 const MENUS_TOKO = [
@@ -934,6 +935,21 @@ const PARTS = [
       <><b>Tidak tersimpan</b> = belum masuk penjualan (mis. barang sudah dihapus, atau akses kasir dicabut sebelum terkirim). Isi barang & cara bayarnya ditampilkan; catat ulang lewat Kasir bila benar terjadi, lalu tandai sudah dicek.</>,
       <>Lonceng & <b>Pengingat toko</b> ikut menampilkan transaksi offline yang perlu dicek.</>,
     ], <>Kasir yang lupa mengirim lalu keluar akun: pemilik/pengelola bisa masuk di HP itu dan memakai <b>Kirim dengan akun saya</b> di Antrean HP. Penjualan tercatat atas nama yang mengirim, dengan catatan siapa yang mencatat offline.</>, null, null],
+  ]],  ['AH', 'Proyek: event, kreatif & produksi', [
+    ['Membuat proyek & milestone', 'Proyek (bisnis event, kreatif/media, kontraktor)', [
+      <>Buka menu <b>Proyek</b> (atau tombol <b>(+)</b> › <b>Proyek baru</b>). Menu ini muncul bila modul <b>Proyek</b> aktif — otomatis untuk bisnis Event, Media/kreatif, dan Kontraktor berpaket Bisnis/Pro; bisnis jasa atau kustom lain bisa mengaktifkannya di <b>Konfigurasi › Modul</b>.</>,
+      <>Tekan <b>+ Proyek baru</b>: isi nama (mis. <i>Wedding Andi &amp; Sari</i>), pilih jenis (<b>Event / acara</b>, <b>Kreatif &amp; media</b>, <b>Produksi</b>, <b>Umum</b>), tahap (<b>Sudah deal</b> atau <b>Masih penawaran</b>), klien (pilih pelanggan atau ketik <b>Klien baru</b> — otomatis masuk daftar Pelanggan), tanggal mulai–selesai, <b>PIC</b>, lokasi, dan keterangan.</>,
+      <><b>Nilai kontrak</b> hanya terlihat &amp; bisa diisi oleh pemilik/bagian keuangan. Angka ini masih <b>rencana</b>: belum menjadi tagihan atau pendapatan di Pembukuan.</>,
+      <>Di halaman proyek, tekan <b>+ Milestone</b> untuk tahap besar (mis. <i>DP &amp; konsep</i> → <i>Gladi bersih</i> → <i>Hari H</i> → <i>Pelunasan</i>) beserta target tanggal dan <b>rencana nilai termin</b>. Total termin dibandingkan dengan nilai kontrak (kurang/lebih ditampilkan). Centang milestone saat selesai.</>,
+      <>Pekerjaan besar bisa dipecah: <b>+ Subproyek</b> (mis. produksi panggung) dengan PIC &amp; tugas sendiri — hanya satu tingkat.</>,
+    ], <>Proyek memakai <b>Paket Bisnis</b> (juga Pro). Bila paket turun, proyek yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan proyeknya diselesaikan atau dibatalkan — membuat &amp; mengubah butuh Paket Bisnis lagi. Tagihan termin, anggaran proyek, dan laba per proyek <b>menyusul</b> di tahap berikutnya.</>, 'warn', <ScrProyek />, 'bisnis'],
+    ['Tugas tim, anggota & status proyek', 'Proyek › buka proyek', [
+      <>Tekan <b>+ Tugas</b>: judul, <b>penanggung jawab</b> (anggota tim bisnis), tenggat, prioritas, milestone. <b>Simpan &amp; tambah lagi</b> untuk mengetik banyak tugas berturut-turut.</>,
+      <>Penanggung jawab melihat tugasnya di menu <b>Proyek</b> › <b>Tugas saya</b> dari HP-nya sendiri dan menekan <b>Mulai</b> lalu <b>Selesai ✓</b> — walau perannya kasir atau gudang, ia hanya melihat proyek tempat ia diberi tugas. Tugas lewat tenggat ditandai <b>terlambat</b>.</>,
+      <><b>+ Anggota</b>: tambahkan anggota tim (mis. Koordinator lapangan, Editor) agar bisa melihat proyek ini. Karyawan bagian <b>proses</b> melihat semua proyek; pemilik, pengelola, dan PIC proyek yang bisa mengubah.</>,
+      <>Ubah status lewat tombol di atas: <b>Tandai selesai</b> (tugas yang belum selesai diingatkan, tidak menghalangi), <b>Tunda</b>, <b>Batalkan</b> (alasan wajib), atau <b>Jalankan / buka lagi</b> (alasan wajib bila proyek sudah selesai/batal).</>,
+      <><b>Dokumen proyek</b>: lampirkan kontrak, brief, denah, foto lokasi (foto/PDF maks. 4 MB). File desain/video besar simpan di Google Drive/Dropbox dan tempel tautannya di keterangan. <b>Riwayat</b> mencatat siapa membuat, mengubah, memberi tugas, dan menyelesaikan apa.</>,
+    ], <>Nilai kontrak &amp; rencana termin tidak terlihat oleh karyawan selain bagian keuangan. Tugas yang sudah selesai tidak bisa dihapus (jejak pekerjaan) — buka lagi bila keliru.</>, null, null, 'bisnis'],
   ]],
 ];
 
@@ -1003,6 +1019,7 @@ export default function Panduan() {
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
+          <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–133</a><br />Event, kreatif &amp; produksi: klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
@@ -1024,7 +1041,7 @@ export default function Panduan() {
               return (
                 <article key={title} id={`langkah-${n}`} className="g-step">
                   <div>
-                    <h3>Langkah {n} · {title}{std === 'pro' ? <Pro /> : std && <Std />}</h3>
+                    <h3>Langkah {n} · {title}{std === 'pro' ? <Pro /> : std === 'bisnis' ? <Bis /> : std && <Std />}</h3>
                     <p className="g-menu">Menu: <b>{menu}</b></p>
                     <ol>{items.map((it, i) => <li key={i}>{it}</li>)}</ol>
                     {note && <div className={'g-note' + (noteKind === 'warn' ? ' warn' : '')}>{note}</div>}

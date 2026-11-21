@@ -438,6 +438,21 @@ export function ScrAset() {
   );
 }
 
+export function ScrProyek() {
+  return (
+    <Phone bare>
+      <h3>Wedding Andi &amp; Sari</h3>
+      <span className="small muted">PRJ-2611-001 · Event / acara · DATA CONTOH</span>
+      <div className="row between small"><span className="chip good">Berjalan</span><span>14–15 Des · PIC Rani</span></div>
+      <div className="progress"><i style={{ width: '40%' }} /></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Milestone</b><span>☑ DP &amp; konsep · termin {rp(25000000)}</span><span>☐ Hari H · 14 Des</span><span>☐ Pelunasan · termin {rp(60000000)}</span></div>
+      <div className="row between small"><span><b>Survei venue</b><br />Rani · tenggat 2 Des</span><span className="chip good">Selesai</span></div>
+      <div className="row between small"><span><b>Booking dekorasi</b><br />Dimas · <span style={{ color: 'var(--bad)' }}>terlambat</span></span><span className="mini-btn">Selesai ✓</span></div>
+      <span className="mini-btn cta">+ Tugas</span>
+    </Phone>
+  );
+}
+
 export function ScrResep() {
   return (
     <Phone bare>

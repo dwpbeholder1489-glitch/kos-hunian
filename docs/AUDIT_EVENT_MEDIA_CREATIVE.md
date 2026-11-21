@@ -14,12 +14,14 @@ Industri ini **sudah bisa dipilih saat pendaftaran**, tetapi dilayani oleh mesin
 
 | Kategori di `/mulai` | Mesin yang dipakai sekarang | Akibatnya |
 |---|---|---|
-| Event, Hiburan & Entertainment (`event`) | Business Builder, template `bb_event` (Acara, Klien, Tugas, Vendor — isi di `bb_records.data` jsonb) | Nilai kontrak hanya angka di catatan: **tidak masuk Pembukuan**, tidak ada termin, anggaran vs realisasi, rundown, venue bentrok |
+| Event, Hiburan & Entertainment (`event`) | Business Builder, template `bb_event` (Acara, Klien, Tugas, Vendor — isi di `bb_records.data` jsonb) | Builder bisa mencatat "uang masuk per status" (satu angka → Kas & Pembukuan) bila pemilik mengaturnya, tetapi **tanpa uang muka/termin, piutang, anggaran vs realisasi, rundown, cek venue bentrok** |
 | Studio / Venue (`event_studio`, `event_venue`), Rental (`rental`) | Business Builder `bb_rental` | Ketersediaan unit **tidak dicek berdasarkan waktu**; deposit tidak tercatat sebagai kewajiban |
 | Media, Kreatif & Komunikasi (`media`) | Mesin Jasa (`svc_orders`, tahap, pembayaran) | Cocok untuk pesanan kecil; **tanpa penawaran, versi karya, review, batas revisi** |
 | Manufaktur / percetakan | Business Builder `bb_produksi` | Tanpa BOM, tanpa pemakaian bahan dari stok |
 
-Kesimpulan: blueprint ini **bukan sekadar menambah menu**; ia membutuhkan mesin inti baru (Proyek + penagihan proyek) yang terhubung ke Pembukuan. Tanpa itu, prinsip "satu fondasi transaksi dan keuangan" (Kesimpulan blueprint) dilanggar oleh template Builder yang sekarang.
+Kesimpulan: blueprint ini **bukan sekadar menambah menu**; ia membutuhkan mesin inti baru (Proyek + penagihan proyek) yang terhubung ke Pembukuan. Uang masuk Builder hanya "satu angka per status" (langsung kas), belum mengenal uang muka sebagai kewajiban, termin, dan piutang yang diminta blueprint (§12.5, K3).
+
+*Koreksi 21 Nov 2026: versi pertama dokumen ini menulis catatan Builder "tidak pernah dijurnal" — keliru. `bb_money_sync` + sumber `bb_record` di `acct_desired` menjurnal uang masuk bila "Uang masuk" diatur di Business Builder.*
 
 ---
 
@@ -33,7 +35,7 @@ Kesimpulan: blueprint ini **bukan sekadar menambah menu**; ia membutuhkan mesin 
 | Quotation & Proposal | **Partial** | `so_orders` (penawaran grosir **barang**), tanpa penawaran jasa (lihat `AUDIT_MODUL_V2.md` baris 42) | Perlu penawaran jasa/proyek dengan scope, revisi, termin |
 | Contract | **Missing** | — | Hanya lampiran PDF |
 | Payment Engine | **Partial / terpecah** | `payments` (kos), `svc_payments` (jasa), `sales` (kasir), `pay_*` (langganan platform), `deposits` | Tiga jalur uang pelanggan. Proyek harus memakai salah satu pola ini, bukan membuat jalur keempat tanpa alasan → **keputusan K3** |
-| Accounting Engine | **Existing** | `acct_*`, `acct_desired` (sumber jurnal per dokumen), neraca saldo, arus kas, umur piutang | Proyek cukup menjadi sumber baru di `acct_desired`. `bb_records` **tidak** pernah dijurnal |
+| Accounting Engine | **Existing** | `acct_*`, `acct_desired` (sumber jurnal per dokumen), neraca saldo, arus kas, umur piutang | Proyek cukup menjadi sumber baru di `acct_desired`. `bb_records` dijurnal hanya sebagai uang masuk per status (tanpa uang muka/piutang) |
 | Deposit sebagai kewajiban | **Existing (pola)** | `deposits` kos, DP booking = akun uang muka, uang muka jasa | Pola dipakai ulang untuk deposit sewa alat & DP event (EVT-019) |
 | Asset Management | **Partial** | `fixed_assets` + penyusutan | Aset akuntansi, bukan **unit peralatan bertanggal** (serial, kondisi, status sewa) |
 | Inventory Engine | **Existing** | `products`, `stock_moves`, lokasi, batch, nomor seri | Material produksi & merchandise bisa memakai ini |
@@ -123,7 +125,7 @@ Blueprint §44 melarang memutuskan ini dengan asumsi.
 
 | Kode | Pertanyaan | Rekomendasi | Alasan |
 |---|---|---|---|
-| K1 | Mesin dasar: tabel Proyek baru vs memperluas Business Builder vs memperluas mesin Jasa | **Tabel Proyek baru** (`prj_*`) | Builder (jsonb) tidak bisa dijurnal/divalidasi; Jasa dirancang untuk pesanan pendek tanpa milestone/anggaran |
+| K1 | Mesin dasar: tabel Proyek baru vs memperluas Business Builder vs memperluas mesin Jasa | **Tabel Proyek baru** (`prj_*`) | Builder (jsonb) hanya mengenal uang masuk per status dan sulit divalidasi per kolom; Jasa dirancang untuk pesanan pendek tanpa milestone/anggaran |
 | K2 | Event = objek sendiri yang selalu punya proyek induk (boleh subproyek), atau event = salah satu tipe proyek | **Event = perluasan 1-ke-1 dari proyek bertipe event; subproyek opsional** | Biaya, tagihan, tugas tetap satu tempat (proyek); data khusus event (venue, rundown) di tabel event |
 | K3 | Kapan pendapatan proyek diakui | **Pembayaran sebelum serah terima = uang muka; diakui saat termin/milestone dinyatakan selesai (diserahkan)** | Konsisten dengan Jasa (diakui saat diserahkan) tetapi tidak menunggu proyek panjang selesai seluruhnya |
 | K4 | Penyimpanan file karya | **Tahap awal: tautan eksternal (Google Drive/Dropbox/dll.) + metadata & versi di PRASARA; file kecil tetap lewat Lampiran. Konektor OAuth menyusul** | Sesuai EVT-002 & EVT-022 tanpa biaya penyimpanan besar; tidak mengklaim integrasi yang belum diuji |
@@ -144,3 +146,17 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | K4 | File karya tahap awal = tautan eksternal + metadata & versi di PRASARA; file kecil lewat Lampiran; konektor OAuth menyusul setelah diuji | **Final** (menjawab Open Question #3; mengunci arah EVT-012, EVT-022) |
 | K5 | Paket untuk Mesin Proyek | Menunggu |
 | K6 | Cara pindah data template Builder lama | Menunggu (cek jumlah pemakai di produksi dulu) |
+
+### Data produksi (dicek baca-saja, 21 Nov 2026)
+- 3 bisnis memakai template `bb_event`, **0 catatan** di semua workspace Builder → tidak ada data yang perlu dipindah.
+- K6 diputuskan: template Builder lama tetap berjalan sebagai pilihan untuk paket yang belum mencakup Proyek; Mesin Proyek aktif untuk bisnis event/media/konstruksi berpaket Bisnis/Pro.
+- K5 (pemilik): Paket Bisnis. Akibatnya bisnis event baru yang masih masa coba (Paket Dasar) belum mendapat Proyek sampai upgrade — Pusat Konfirmasi tidak menampilkan item modul Proyek bagi mereka (item yang tidak bisa disetujui hanya akan menghalangi aktivasi).
+
+## 8. Status Tahap 1A — Mesin Proyek (migrasi `20261121230000_proyek.sql`)
+| Bagian | Status |
+|---|---|
+| Tabel `prj_projects`/`prj_milestones`/`prj_tasks`/`prj_members` + guard bisnis ditutup + riwayat (`domain_events`) | Selesai, diuji (`supabase/tests/proyek.sql`, `isolasi.sql`) |
+| Akses per proyek (kelola/lihat), nilai uang hanya keuangan, batas paket (data tetap terbuka saat paket turun) | Selesai, diuji |
+| Halaman `/proyek` & `/proyek/[id]`, menu, aksi cepat, lampiran proyek, panduan | Selesai (render diuji dengan data tiruan) |
+| Penawaran proyek & scope (1B), anggaran & biaya proyek (1C), tagihan termin & jurnal (1D) | Belum — tahap berikutnya |
+| Lampiran untuk PIC/anggota tanpa area proses | Belum — lampiran memakai izin area (ops/settings) |
