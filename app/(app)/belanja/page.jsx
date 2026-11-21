@@ -33,17 +33,18 @@ export default function Belanja() {
   const [fk, setFk] = useState(null);   // belanja yang fakturnya sedang dibuka
   useEffect(() => { const t = new URLSearchParams(window.location.search).get('tab'); if (TABS.some(([k]) => k === t)) setTab(t); }, []);
   const load = async () => {
-    const [b, p, u, c, pl, rt] = await Promise.all([
+    const [b, p, u, c, pl, rt, si] = await Promise.all([
       supabase.from('purchases').select('*').eq('kos_id', kosId).order('purchase_date', { ascending: false }).order('created_at', { ascending: false }).limit(60),
       supabase.from('products').select('*').eq('kos_id', kosId).eq('active', true).order('name'),
       supabase.from('product_units').select('*').eq('kos_id', kosId),
       supabase.from('contacts').select('*').eq('kos_id', kosId).eq('kind', 'supplier').order('name'),
       supabase.from('purchase_lines').select('product_id,unit,price,purchase_id').eq('kos_id', kosId).limit(2000),
       supabase.from('purchase_returns').select('purchase_id,total,return_date').eq('kos_id', kosId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('supplier_items').select('contact_id,product_id,unit,price,moq,preferred,lead_days').eq('kos_id', kosId),
     ]);
     const e = b.error || p.error || u.error || c.error || pl.error;
     if (e) return setErr(errMsg(e));
-    setD({ purchases: b.data, products: p.data, units: u.data, suppliers: c.data, lines: pl.data, returns: rt.data || [] });
+    setD({ purchases: b.data, products: (p.data || []).filter((x) => !x.is_kit), units: u.data, suppliers: c.data, lines: pl.data, returns: rt.data || [], supItems: si.data || [] });
   };
   useEffect(() => { load(); }, [kosId, ver]);
   if (err) return <div className="notice bad">{err.includes('purchase') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
@@ -122,13 +123,22 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
     for (const l of d.lines) if (l.product_id === pid && l.unit === unit && rank.has(l.purchase_id) && (!best || rank.get(l.purchase_id) < rank.get(best.purchase_id))) best = l;
     return best ? Number(best.price) : null;
   };
-  const suggest = (p, u) => lastPrice(p.id, u.name) ?? Math.round(Number(p.cost) * Number(u.qty));
+  // Harga sepakat supplier terpilih (Barang › Harga dari supplier) didahulukan, lalu harga beli terakhir, lalu modal
+  const agreed = (sid, pid, unit) => (d.supItems || []).find((x) => x.contact_id === sid && x.product_id === pid && x.unit === unit);
+  const suggest = (p, u, sid = supplier) => { const a = sid ? agreed(sid, p.id, u.name) : null; return a?.price != null ? Number(a.price) : lastPrice(p.id, u.name) ?? Math.round(Number(p.cost) * Number(u.qty)); };
+  const cheaper = (p, unitCost, sid) => (d.supItems || []).filter((x) => x.product_id === p.id && x.contact_id !== sid && x.price != null).map((x) => { const uu = d.units.find((y) => y.product_id === p.id && y.name === x.unit); return uu ? { ...x, uc: Number(x.price) / Number(uu.qty) } : null; })
+    .filter((x) => x && x.uc < unitCost - 0.5).sort((a, b) => a.uc - b.uc)[0];
+  const pickSupplier = (sid) => {
+    setSupplier(sid);
+    if (sid) setLines(lines.map((l) => { const p = prodById.get(l.product_id); const a = agreed(sid, l.product_id, l.unit); return a?.price != null && p ? { ...l, price: angka(a.price) } : l; }));
+  };
 
   const w = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const found = w.length ? d.products.filter((p) => w.every((x) => p.name.toLowerCase().includes(x))).slice(0, 6) : [];
   const addProduct = (p) => {
     const us = unitsOf(p, d.units);
-    const u = [...us].sort((a, b) => b.qty - a.qty)[0];
+    const pref = supplier ? (d.supItems || []).find((x) => x.contact_id === supplier && x.product_id === p.id) : null;
+    const u = (pref && us.find((x) => x.name === pref.unit)) || [...us].sort((a, b) => b.qty - a.qty)[0];
     const price = suggest(p, u);
     setLines([...lines, { key: uid(), product_id: p.id, unit: u.name, qty: '1', price: price > 0 ? angka(price) : '' }]);
     setQ('');
@@ -172,7 +182,7 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
       {mode === 'pesan' && <p className="small muted" style={{ margin: 0 }}>Stok belum bertambah. Saat barang datang, buka pesanan ini lalu tekan <b>Terima barang</b>.</p>}
       <div className="row">
         {!init?.request && <Field label={mode === 'pesan' ? 'Tanggal pesan' : 'Tanggal'}><input type="date" max={today()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>}
-        <Field label="Supplier"><select value={supplier} onChange={(e) => setSupplier(e.target.value)}><option value="">— tanpa / baru —</option>{d.suppliers.filter((s) => !s.archived_at).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
+        <Field label="Supplier"><select value={supplier} onChange={(e) => pickSupplier(e.target.value)}><option value="">— tanpa / baru —</option>{d.suppliers.filter((s) => !s.archived_at).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
       </div>
       {!supplier && <Field label="Nama supplier baru (opsional)"><input value={newSup} onChange={(e) => setNewSup(e.target.value)} placeholder="mis. CV Sumber Rejeki" /></Field>}
 
@@ -193,6 +203,15 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
               <Field label="Satuan"><select value={l.unit} onChange={(e) => { const nu = us.find((x) => x.name === e.target.value); const s = suggest(p, nu); set(l.key, { unit: e.target.value, price: s > 0 ? angka(s) : '' }); }}>{us.map((x) => <option key={x.name} value={x.name}>{x.name}{Number(x.qty) !== 1 ? ` (${angka(x.qty)} ${p.base_unit})` : ''}</option>)}</select></Field>
               <Field label={`Harga beli per ${l.unit}`}><input inputMode="numeric" value={l.price} onChange={(e) => set(l.key, { price: e.target.value })} /></Field>
             </div>
+            {(() => {
+              const a = supplier ? agreed(supplier, p.id, l.unit) : null;
+              const ch = pr > 0 ? cheaper(p, unitCost, supplier) : null;
+              return <>
+                {a?.moq != null && qn > 0 && qn < Number(a.moq) && <span className="small" style={{ color: 'var(--warn)' }}>Minimal pesan di supplier ini {angka(a.moq)} {l.unit}. Tetap bisa disimpan bila memang disepakati lain.</span>}
+                {a?.price != null && pr === Number(a.price) && <span className="small" style={{ color: 'var(--good)' }}>Harga sepakat dengan supplier ini{a.lead_days != null ? ` · kirim ± ${a.lead_days} hari` : ''}</span>}
+                {ch && <span className="small muted">Lebih murah di {d.suppliers.find((x) => x.id === ch.contact_id)?.name}: {rp(ch.price)}/{ch.unit} ({rp(ch.uc)}/{p.base_unit})</span>}
+              </>;
+            })()}
             {p.track_expiry && <div className="row">
               <Field label={mode === 'pesan' ? 'Kedaluwarsa (bila sudah tahu)' : 'Tanggal kedaluwarsa'}><input type="date" value={l.expiry || ''} onChange={(e) => set(l.key, { expiry: e.target.value })} /></Field>
               <Field label="No. batch (opsional)"><input value={l.lot || ''} maxLength={40} onChange={(e) => set(l.key, { lot: e.target.value })} /></Field>
@@ -350,7 +369,7 @@ function SaranBelanja({ kosId, d, onClose, onPick }) {
   };
   return (
     <Sheet title="Saran belanja" onClose={onClose}>
-      <span className="small muted">Dihitung dari rata-rata barang keluar 30 hari terakhir, waktu tunggu supplier (atur di Barang › Ubah), stok minimum, dan pesanan yang belum datang.</span>
+      <span className="small muted">Dihitung dari rata-rata barang keluar 30 hari terakhir, waktu tunggu supplier, stok minimum, dan pesanan yang belum datang. Supplier utama, harga sepakat & minimal pesan diambil dari Barang › Ubah › Harga dari supplier.</span>
       <div className="seg">{[[7, 'Cukup 1 minggu'], [14, '2 minggu'], [30, '1 bulan']].map(([v, l]) => <button key={v} className={cover === v ? 'on' : ''} onClick={() => setCover(v)}>{l}</button>)}</div>
       {!rows ? <Loading /> : rows.length === 0 ? <Empty title="Belum ada yang perlu dibeli" text="Stok semua barang masih cukup untuk rentang ini. Barang tanpa penjualan & tanpa stok minimum tidak dihitung." /> :
         Object.entries(groups).map(([sid, list]) => (
@@ -360,7 +379,7 @@ function SaranBelanja({ kosId, d, onClose, onPick }) {
               <div key={r.product_id} className="li" style={{ alignItems: 'flex-start', gap: 8 }}>
                 <label className="row small" style={{ flexWrap: 'nowrap', alignItems: 'flex-start', gap: 8, minWidth: 0, flex: 1 }}>
                   <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pick[r.product_id]?.on || false} onChange={(e) => setPick({ ...pick, [r.product_id]: { ...pick[r.product_id], on: e.target.checked } })} />
-                  <span style={{ minWidth: 0 }}><b>{r.name}</b><br /><span className="muted">Stok {angka(r.stock)} {r.base_unit} · {r.reason}{Number(r.per_day) > 0 ? ` · keluar ±${angka(r.per_day)}/hari` : ''}{Number(r.on_order) > 0 ? ` · dipesan ${angka(r.on_order)}` : ''}</span></span>
+                  <span style={{ minWidth: 0 }}><b>{r.name}</b><br /><span className="muted">Stok {angka(r.stock)} {r.base_unit} · {r.reason}{Number(r.per_day) > 0 ? ` · keluar ±${angka(r.per_day)}/hari` : ''}{Number(r.on_order) > 0 ? ` · dipesan ${angka(r.on_order)}` : ''}{r.moq_applied ? ` · dibulatkan ke minimal pesan ${angka(r.moq)} ${r.unit}` : ''}{r.preferred ? ' · supplier utama' : ''}</span></span>
                 </label>
                 <span className="row" style={{ flexWrap: 'nowrap', gap: 4, flex: 'none' }}><input inputMode="decimal" value={pick[r.product_id]?.qty || ''} onChange={(e) => setPick({ ...pick, [r.product_id]: { ...pick[r.product_id], qty: e.target.value } })} style={{ width: 64 }} aria-label={`Jumlah ${r.name}`} /><span className="small">{r.unit}</span></span>
               </div>

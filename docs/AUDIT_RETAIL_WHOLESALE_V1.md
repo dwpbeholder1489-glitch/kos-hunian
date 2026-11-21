@@ -82,7 +82,7 @@ Urutan yang disetujui pemilik 15 Nov 2026 (sesuai Master Prompt Bagian 24 & Blue
 
 2. ✅ **Tahap 1 — Tata kelola harga & kredit** (Phase 3, SELESAI 20 Nov 2026 — lihat §5): urutan harga yang disetujui, harga per outlet, tanggal berlaku daftar harga/kontrak, batas diskon kasir + persetujuan, margin minimum, riwayat harga & limit, tahan kredit bila lewat jatuh tempo, cek limit untuk kasbon Kasir, tipe/grup pelanggan, sales rep. (RET-003, RET-008, RET-014, RET-004, RET-009)
 3. ✅ **Tahap 2 — Fondasi akuntansi dagang** (Phase 1, SELESAI 21 Nov 2026 — lihat §6): neraca saldo (trial balance), umur utang (AP aging), laporan nilai persediaan, + KPI grosir.
-4. **Tahap 3 — Katalog lanjutan** (Phase 1, RET-001): multi-barcode per satuan, merek produk, paket/kit yang memotong stok komponen, nomor seri + garansi (toko elektronik/specialty), tukar barang & nota kredit (RET-008), harga & MOQ per supplier.
+4. ✅ **Tahap 3 — Katalog lanjutan** (SELESAI 21 Nov 2026 — lihat §7) (Phase 1, RET-001): multi-barcode per satuan, merek produk, paket/kit yang memotong stok komponen, nomor seri + garansi (toko elektronik/specialty), tukar barang & nota kredit (RET-008), harga & MOQ per supplier.
 5. **Tahap 4 — POS offline** (prioritas: Master Bagian 18, ADR-003): antrean lokal + sinkron idempoten, deteksi konflik stok/harga, batas jelas apa yang boleh offline.
 6. **Tahap 5 — Portal B2B & pesanan langsung** (Phase 3): keranjang + pesanan langsung toko, akun pelanggan B2B dengan harga kontrak, riwayat dan faktur, pemesanan ulang.
 7. **Tahap 6 — Distribusi** (Phase 4, RET-005, RET-012, RET-013): picking/packing list, kendaraan & driver internal serta pihak ketiga, jadwal kirim, POD (nama + foto), retur sebagian dari pengiriman, rekonsiliasi & biaya kirim, KPI distribusi.
@@ -125,4 +125,21 @@ Migrasi `20261121170000_akuntansi_dagang.sql` (tanpa tabel baru; semua laporan d
 | Nilai persediaan tanggal lampau persis = jurnal | Partial | kartu stok memakai waktu dicatat, jurnal memakai tanggal dokumen — ditulis jujur di layar |
 | KPI grosir (§17): DSO, tertagih, margin per pelanggan, pemakaian limit, per sales, fill rate, tepat waktu, gagal kirim | Verified Implemented | `wholesale_kpi`, Laporan toko › Indikator grosir (finance; modul u_penawaran/u_kredit) |
 | Ekspor Excel/CSV laporan akuntansi | Verified Implemented | `downloadCsv` + `export_take` (neraca_saldo, umur_piutang, umur_utang, nilai_persediaan) |
+
+## 7. Status Tahap 3 — Katalog lanjutan (21 Nov 2026)
+
+Migrasi `20261121180000_katalog_1`, `…190000_katalog_2_paket`, `…200000_katalog_3_seri_garansi`, `…210000_katalog_4_nota_tukar`. Uji `supabase/tests/katalog_lanjutan.sql` (71) lulus; isolasi (267) lulus; layar diuji di HP 390 px & laptop 1366 px.
+
+| Butir | Status | Bukti / catatan |
+|---|---|---|
+| Multi-barcode per satuan (RET-001) | Verified Implemented | `product_barcodes`, `unit_barcodes_set`, `barcode_find`; Kasir & Barang mencari semua kode; bertahan saat barang disimpan ulang |
+| Merek produk (§5.3) | Verified Implemented | `product_brands`, filter Barang, pencarian Kasir, `brand_report` di Laporan toko |
+| Paket/kit memotong stok komponen (§5.3) | Verified Implemented | `kit_*`, `sale_line_parts`, retur/batal tepat; neraca saldo & nilai persediaan tetap cocok |
+| Nomor seri + garansi (RET-002) | Verified Implemented | `product_serials`, `warranty_claims`, menu Garansi, struk menampilkan SN & garansi |
+| Tukar barang & nota kredit (§12.1, §12.4) | Verified Implemented | `sale_exchange` atomik; `credit_notes` + jurnal Nota kredit (2-1700) & hangus → pendapatan lain |
+| Harga & MOQ per supplier (§13) | Verified Implemented | `supplier_items`, harga otomatis & peringatan MOQ di Belanja, Saran belanja memakai supplier utama + MOQ |
+| Reservasi stok untuk paket di pesanan grosir | Partial | pesanan grosir berisi paket belum memesan stok komponennya (cek stok pesanan melihat paket = 0) |
+| Mencairkan nota kredit jadi uang tunai | Not Started | sisa nota hanya bisa dipakai belanja atau dihanguskan pemilik |
+| Nomor seri di penerimaan Belanja | Not Started | nomor seri didaftarkan dari Barang atau saat dijual |
+| Master produk bersama lintas bisnis (RET-001/RET-006) | Not Started | tetap proposal |
 

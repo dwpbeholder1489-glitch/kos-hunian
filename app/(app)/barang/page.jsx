@@ -20,13 +20,14 @@ import { isiNum, isiText, measure, toBase, resolveUnit, contentOf, contentChoice
 import Kedaluwarsa from '@/components/Kedaluwarsa';
 import StokSehat, { availLine } from '@/components/StokSehat';
 import { CategoryBar, CategorySheet, VariantForm, PriceBreakSheet, OutletPriceSheet, PriceHistorySheet, groupOf } from '@/components/TokoLanjut';
+import { BrandSheet, BarcodeSheet, KitSheet, SerialSheet, SupplierPriceSheet } from '@/components/KatalogLanjut';
 
 // Muat barang + satuan untuk bisnis aktif
 function useProducts(kosId, ver, multi) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const load = useCallback(async () => {
-    const [p, u, l, c, g, b, av] = await Promise.all([
+    const [p, u, l, c, g, b, av, br, bc, kt] = await Promise.all([
       supabase.from('products').select('*').eq('kos_id', kosId).order('name'),
       supabase.from('product_units').select('*').eq('kos_id', kosId),
       multi ? supabase.rpc('stock_levels_list', { p_kos: kosId }) : Promise.resolve({ data: [] }),
@@ -34,9 +35,13 @@ function useProducts(kosId, ver, multi) {
       supabase.from('product_variant_groups').select('*').eq('kos_id', kosId),
       supabase.from('price_breaks').select('*').eq('kos_id', kosId),
       supabase.rpc('stock_avail', { p_kos: kosId }),
+      supabase.from('product_brands').select('*').eq('kos_id', kosId).order('name'),
+      supabase.from('product_barcodes').select('product_id, unit, code').eq('kos_id', kosId),
+      supabase.rpc('kit_overview', { p_kos: kosId }),
     ]);
     if (p.error || u.error) return setErr(errMsg(p.error || u.error));
-    setD({ products: p.data, units: u.data, levels: l.data || [], cats: c.data || [], groups: g.data || [], breaks: b.data || [], avail: av.data || { products: [], levels: [] } });
+    setD({ products: p.data, units: u.data, levels: l.data || [], cats: c.data || [], groups: g.data || [], breaks: b.data || [], avail: av.data || { products: [], levels: [] },
+      brands: br.data || [], codes: bc.data || [], kits: kt.error ? [] : kt.data || [] });
   }, [kosId, multi]);
   useEffect(() => { load(); }, [load, ver]);
   return { d, err, reload: load };
@@ -58,6 +63,12 @@ export default function Barang() {
   const [brk, setBrk] = useState(null);   // barang yang harga beli banyaknya diatur
   const [opr, setOpr] = useState(null);   // harga per outlet
   const [hist, setHist] = useState(null); // riwayat harga
+  const [brandSheet, setBrandSheet] = useState(false);
+  const [brandF, setBrandF] = useState('');
+  const [bcs, setBcs] = useState(null);    // barcode tambahan
+  const [kit, setKit] = useState(null);    // 'new' | barang (isi paket)
+  const [ser, setSer] = useState(null);    // nomor seri
+  const [sup, setSup] = useState(null);    // harga supplier
   const thumbs = useThumbs(kosId, 'product', `${ver}:${edit ? 1 : 0}`);
   if (err) return <div className="notice bad">{err.includes('products') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
@@ -73,16 +84,21 @@ export default function Barang() {
   const term = q.trim().toLowerCase();
   const catCount = active.reduce((m, p) => { const k = p.category_id || '-'; m[k] = (m[k] || 0) + 1; return m; }, {});
   const catName = (id) => d.cats.find((c) => c.id === id)?.name;
+  const brandName = (id) => d.brands.find((x) => x.id === id)?.name;
+  const kitOf = (id) => d.kits.find((k) => k.product_id === id);
   const shown = d.products.filter((p) => (f === 'arsip' ? !p.active : p.active) && (f !== 'menipis' || isLow(p))
     && (!cat || (cat === '-' ? !p.category_id : p.category_id === cat))
-    && (!term || term.split(/\s+/).every((w) => p.name.toLowerCase().includes(w)) || (p.sku || '').toLowerCase() === term
-      || d.units.some((u) => u.product_id === p.id && (u.barcode || '').toLowerCase() === term)));
+    && (!brandF || (brandF === '-' ? !p.brand_id : p.brand_id === brandF))
+    && (!term || term.split(/\s+/).every((w) => (p.name + ' ' + (brandName(p.brand_id) || '')).toLowerCase().includes(w)) || (p.sku || '').toLowerCase() === term
+      || d.units.some((u) => u.product_id === p.id && (u.barcode || '').toLowerCase() === term)
+      || d.codes.some((c) => c.product_id === p.id && c.code.toLowerCase() === term)));
 
   // Satu sumber isi baris barang: dipakai kartu HP dan kolom tabel laptop (Unified Design System §11)
   const info = (p, us, tbl) => (<>
-                <b>{p.name} {isLow(p) && <span className="chip bad">Menipis</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}</b>
-                {(p.sku || p.category_id || p.variant_group_id) && <span className="small muted">{[p.variant_group_id && 'Varian', p.category_id && catName(p.category_id), p.sku && `Kode ${p.sku}`].filter(Boolean).join(' · ')}</span>}
-                {!tbl && <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>}
+                <b>{p.name} {!p.is_kit && isLow(p) && <span className="chip bad">Menipis</span>}{p.is_kit && <span className="chip gold" style={{ marginLeft: 4 }}>Paket</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}{p.track_serial && <span className="chip" style={{ marginLeft: 4 }}>No. seri</span>}</b>
+                {(p.sku || p.category_id || p.variant_group_id || p.brand_id) && <span className="small muted">{[p.variant_group_id && 'Varian', brandName(p.brand_id), p.category_id && catName(p.category_id), p.sku && `Kode ${p.sku}`].filter(Boolean).join(' · ')}</span>}
+                {p.is_kit && kitOf(p.id) && <span className="small">Isi: {kitOf(p.id).components.map((c) => `${angka(c.qty)} ${c.unit} ${c.name}`).join(' + ')} · <b>bisa dibuat {angka(kitOf(p.id).avail)}</b>{kitOf(p.id).cost != null ? ` · modal ${rp(kitOf(p.id).cost)}` : ''}</span>}
+                {!tbl && !p.is_kit && <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>}
                 {availLine(d.avail, p, multi ? kos.locs?.current : null)}
                 {us.some((u, k) => k > 0 && unitProblem(u, p.base_unit)) && <span className="small" style={{ color: 'var(--bad)' }}>Periksa satuan: {us.filter((u, k) => k > 0 && unitProblem(u, p.base_unit)).map((u) => unitProblem(u, p.base_unit)).join(' ')} Buka Ubah untuk memperbaiki.</span>}
                 {!bahan && d.breaks.some((x) => x.product_id === p.id) && <span className="small" style={{ color: 'var(--good)' }}>Beli banyak: {d.breaks.filter((x) => x.product_id === p.id).sort((a, b) => Number(a.min_qty) - Number(b.min_qty)).slice(0, 3).map((x) => `≥${angka(x.min_qty)} ${x.unit} ${rp(x.price)}${x.tier !== 'semua' ? ` (${x.tier === 'grosir' ? 'grosir' : 'ecer'})` : ''}`).join(' · ')}</span>}
@@ -94,14 +110,14 @@ export default function Barang() {
                   style={{ fontSize: 18, color: p.favorite ? 'var(--att)' : 'var(--muted)' }}>{p.favorite ? '★' : '☆'}</button>}
                 {!bahan && kos?.profile?.tax?.aktif && <button className="sm ghost" aria-pressed={!!p.tax_exempt} title="Tandai barang yang tidak dikenai PPN"
                   onClick={async () => { if (await run(() => supabase.rpc('product_set_tax', { p_product: p.id, p_exempt: !p.tax_exempt }), p.tax_exempt ? 'Barang dikenai PPN lagi' : 'Barang ditandai bebas PPN', errMsg)) reload(); }}>{p.tax_exempt ? 'Bebas PPN' : 'Kena PPN'}</button>}
-                <button className="sm" onClick={() => setAdj(p)}>Stok</button>
+                {p.is_kit ? <button className="sm" onClick={() => setKit(p)}>Isi paket</button> : <button className="sm" onClick={() => setAdj(p)}>Stok</button>}
                 <button className="sm ghost" onClick={() => setEdit(p)}>Ubah</button>
   </div>);
   return (
     <div className="stack">
       <PageHeader title={bahan ? 'Bahan & stok' : 'Barang & stok'} help={<PageHelp page={bahan ? 'bahan' : 'barang'} />}
         desc={bahan ? 'Bahan operasional, stok, dan biaya pemakaian.' : 'Kelola barang, satuan & harga, persediaan, dan pergerakan stok.'}
-        actions={<>{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}{!bahan && <button className="sm" onClick={() => setVariant('new')}>+ Varian</button>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></>} />
+        actions={<>{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}{!bahan && <button className="sm" onClick={() => setVariant('new')}>+ Varian</button>}{!bahan && <button className="sm" onClick={() => setKit('new')}>+ Paket</button>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></>} />
       <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
       <div className="grid">
         <Tile label={bahan ? 'Bahan aktif' : 'Barang aktif'} value={angka(active.length)} />
@@ -114,6 +130,10 @@ export default function Barang() {
           {[['aktif', `Aktif (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['kesehatan', 'Kesehatan stok'], ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
         </div>
         {!['kedaluwarsa', 'kesehatan'].includes(f) && <CategoryBar cats={d.cats} value={cat} onChange={setCat} counts={catCount} onManage={() => setCatSheet(true)} />}
+        {!bahan && !['kedaluwarsa', 'kesehatan'].includes(f) && <div className="row" style={{ flexWrap: 'nowrap', gap: 6 }}>
+          {d.brands.length > 0 && <select value={brandF} onChange={(e) => setBrandF(e.target.value)} aria-label="Saring merek" style={{ maxWidth: 220 }}><option value="">Semua merek</option>{d.brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}<option value="-">Tanpa merek</option></select>}
+          <button className="sm ghost" style={{ flex: 'none' }} onClick={() => setBrandSheet(true)}>{d.brands.length ? 'Atur merek' : '+ Merek'}</button>
+        </div>}
       </>}
       {f === 'kedaluwarsa' ? <Kedaluwarsa kosId={kosId} ver={ver} multi={multi} tracked={active.some((p) => p.track_expiry)} onChanged={reload} /> : f === 'kesehatan' ? <StokSehat kosId={kosId} ver={ver} kos={kos} multi={multi} onChanged={reload} /> : d.products.length === 0 ? (
         <Empty title={bahan ? 'Belum ada bahan' : 'Belum ada barang'} text={bahan ? 'Catat bahan operasional (deterjen, pewangi, plastik, hanger) agar stok dan biaya bahan terpantau. Pemakaian dicatat lewat tombol Stok › Pemakaian bahan.' : 'Tambahkan barang yang dijual. Satu barang bisa punya beberapa satuan, misalnya pcs dan dus isi 40, masing-masing dengan harga eceran dan grosir.'}>
@@ -132,12 +152,18 @@ export default function Barang() {
             <div style={{ marginLeft: 'auto' }}>{acts(p)}</div>
           </div>} />
       )}
+      {brandSheet && <BrandSheet kosId={kosId} brands={d.brands} products={d.products} onClose={() => setBrandSheet(false)} onChanged={reload} />}
+      {bcs && <BarcodeSheet p={bcs} units={unitsOf(bcs, d.units)} onClose={() => { setBcs(null); reload(); }} />}
+      {kit && <KitSheet kosId={kosId} p={kit === 'new' ? null : kit} products={d.products} units={d.units} finance={canArea(kos, 'finance')} onClose={() => setKit(null)} onSaved={() => { setKit(null); reload(); }} />}
+      {ser && <SerialSheet kosId={kosId} p={ser} onClose={() => setSer(null)} onChanged={async () => { await reload(); }} />}
+      {sup && <SupplierPriceSheet kosId={kosId} p={sup} units={unitsOf(sup, d.units)} onClose={() => setSup(null)} />}
       {catSheet && <CategorySheet kosId={kosId} cats={d.cats} products={d.products} onClose={() => setCatSheet(false)} onChanged={reload} />}
       {variant && <VariantForm kosId={kosId} cats={d.cats} group={variant === 'new' ? null : variant} onClose={() => setVariant(null)} onSaved={(r) => { setVariant(null); toast(`${r.made.length} varian ${r.name} tersimpan`); reload(); }} />}
       {opr && <OutletPriceSheet p={opr} units={unitsOf(opr, d.units)} locs={kos.locs?.list} kosId={kosId} onClose={() => setOpr(null)} />}
       {hist && <PriceHistorySheet p={hist} kosId={kosId} onClose={() => setHist(null)} />}
       {brk && <PriceBreakSheet p={brk} units={unitsOf(brk, d.units)} breaks={d.breaks} onClose={() => setBrk(null)} onSaved={() => { setBrk(null); reload(); }} />}
-      {edit && <ProductForm onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
+      {edit && <ProductForm brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
+        onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
       {adj && <StockSheet bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
     </div>
   );
@@ -147,8 +173,9 @@ const blankUnit = () => ({ name: '', content_qty: '', content_unit: '', price_re
 const money = (v) => (Number(v) > 0 ? angka(v) : '');
 const kgText = (v) => (Number(v) > 0 ? String(Number(v)).replace('.', ',') : '');
 
-function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onClose, onSaved }) {
+function ProductForm({ kosId, p, units, bahan, batch, cats = [], brands = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onBarcodes, onSupplier, onSerial, onKit, onClose, onSaved }) {
   const [catId, setCatId] = useState(p?.category_id || '');
+  const [brandId, setBrandId] = useState(p?.brand_id || '');
   const [name, setName] = useState(p?.name || '');
   const [base, setBaseRaw] = useState(p?.base_unit || '');
   const [cost, setCost] = useState(money(p?.cost));
@@ -201,6 +228,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
     const leadN = lead.trim() === '' ? null : parseInt(lead, 10);
     const maxN = max.trim() ? qtyNum(max) : null;
     if (ok && pid && (maxN || null) !== (Number(p?.max_stock) || null)) await run(() => supabase.rpc('product_set_max', { p_product: pid, p_max: maxN || null }), null, errMsg);
+    if (ok && pid && (brandId || null) !== (p?.brand_id || null)) await run(() => supabase.rpc('product_set_brand', { p_products: [pid], p_brand: brandId || null }), null, errMsg);
     if (ok && pid && (catId || null) !== (p?.category_id || null)) await run(() => supabase.rpc('product_set_category', { p_products: [pid], p_category: catId || null }), null, errMsg);
     if (ok && pid && (track !== Boolean(p?.track_expiry) || leadN !== (p?.lead_days ?? null))) {
       await run(() => supabase.rpc('product_set_tracking', { p_product: pid, p_track: track, p_lead_days: Number.isFinite(leadN) ? leadN : null }), track && !p?.track_expiry ? 'Tanggal kedaluwarsa dicatat mulai sekarang' : null, errMsg);
@@ -218,6 +246,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
       {group && <div className="notice small">Varian dari <b>{group.name}</b> ({group.count} varian). Mengganti nama di sini hanya untuk varian ini.
         <button className="sm" style={{ marginTop: 6 }} onClick={() => onAddVariant(group)}>+ Tambah varian lain</button></div>}
       <Field label={bahan ? 'Nama bahan' : 'Nama barang'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={bahan ? 'mis. Deterjen cair' : 'mis. Gula pasir'} /></Field>
+      {!bahan && brands.length > 0 && <Field label="Merek"><select value={brandId} onChange={(e) => setBrandId(e.target.value)}><option value="">— tanpa merek —</option>{brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>}
       {!bahan && cats.length > 0 && <Field label="Kategori"><select value={catId} onChange={(e) => setCatId(e.target.value)}><option value="">— tanpa kategori —</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
       {p && !bahan && <EntityPhotos kosId={kosId} entity="product" entityId={p.id} category="produk" title="Foto barang" max={6} hint="Opsional. Foto utama tampil di katalog halaman bisnis." />}
 
@@ -226,7 +255,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
         {!baseLocked && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{BASE_PRESETS.map((x) => <button key={x} className={'sm' + (b.toLowerCase() === x ? ' primary' : '')} onClick={() => setBase(x)}>{x}</button>)}</div>}
         {baseLocked && <span className="small muted">Satuan utama tidak bisa diganti karena sudah ada stok — stok, modal, dan riwayat tercatat dalam {p.base_unit}. Tambahkan satuan lain sebagai satuan jual di bawah.</span>}
         <div className="row">
-          <Field label={p?.consign_contact_id ? `Harga titip per ${b || 'satuan'}` : `Harga modal per ${b || 'satuan'}`} hint={p?.consign_contact_id ? 'Barang titipan: diubah lewat Konsinyasi › Terima titipan' : 'harga beli rata-rata'}><input inputMode="numeric" value={cost} disabled={!!p?.consign_contact_id} onChange={(e) => setCost(e.target.value)} placeholder="mis. 12000" /></Field>
+          {p?.is_kit ? <span className="small muted">Barang paket: modal & stok dihitung dari barang isinya (Isi paket).</span> : <Field label={p?.consign_contact_id ? `Harga titip per ${b || 'satuan'}` : `Harga modal per ${b || 'satuan'}`} hint={p?.consign_contact_id ? 'Barang titipan: diubah lewat Konsinyasi › Terima titipan' : 'harga beli rata-rata'}><input inputMode="numeric" value={cost} disabled={!!p?.consign_contact_id} onChange={(e) => setCost(e.target.value)} placeholder="mis. 12000" /></Field>}
           {!p && <Field label={`Stok sekarang (${b || 'satuan'})`}><input inputMode="decimal" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" /></Field>}
         </div>
         {!bahan && <div className="row">
@@ -236,6 +265,10 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], group, onAddVar
         {!bahan && p && onBreaks && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onBreaks(p)}>Harga beli banyak (mis. beli 10 lebih murah) ›</button>}
         {!bahan && p && onOutlet && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onOutlet(p)}>Harga per outlet ›</button>}
         {!bahan && p && onHistory && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onHistory(p)}>Riwayat harga ›</button>}
+        {p && onSupplier && !p.is_kit && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onSupplier(p)}>Harga dari supplier & minimal pesan ›</button>}
+        {p && onBarcodes && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onBarcodes(p)}>Barcode tambahan ›</button>}
+        {p && onSerial && !p.is_kit && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onSerial(p)}>{p.track_serial ? 'Nomor seri & garansi ›' : 'Catat nomor seri / IMEI & garansi ›'}</button>}
+        {p && onKit && (p.is_kit || Number(p.stock) === 0) && !p.consign_contact_id && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onKit(p)}>{p.is_kit ? 'Isi paket ›' : 'Jadikan barang paket (isi dari barang lain) ›'}</button>}
         {!bahan && <div className="row" style={{ alignItems: 'flex-end' }}>
           <Field label={`Barcode ${b || 'satuan'} (opsional)`}><input inputMode="numeric" value={rows[0].barcode || ''} maxLength={40} onChange={(e) => set(0, { barcode: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} placeholder="scan / ketik angka" /></Field>
           <ScanButton onCode={(c) => set(0, { barcode: c })} />

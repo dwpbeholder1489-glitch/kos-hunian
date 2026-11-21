@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -882,6 +882,38 @@ const PARTS = [
       <><b>Per pelanggan</b>: omzet, laba, margin, piutang, dan pemakaian batas kredit (merah bila lewat).</>,
       <><b>Per sales</b>: dikelompokkan menurut <b>Sales yang memegang</b> di data pelanggan — jumlah pelanggan, omzet, laba, margin, dan piutang.</>,
     ], <>Hanya untuk pemilik & bagian keuangan. Angka omzet tanpa PPN dan dihitung dengan rumus yang sama dengan Indikator toko.</>, null, null],
+  ]],
+  ['AF', 'Toko: merek, barcode, harga supplier, paket, nomor seri, nota kredit & tukar barang', [
+    ['Merek & barcode tambahan', 'Barang & stok › Atur merek · Ubah › Barcode tambahan', [
+      <>Ketuk <b>+ Merek</b> / <b>Atur merek</b> di bawah kotak cari, tambahkan nama merek, lalu <b>Pilih barang</b> untuk memasangnya sekaligus — atau pilih <b>Merek</b> di form Ubah barang.</>,
+      <>Saring daftar barang per merek; di Kasir, mengetik nama merek ikut menemukan barangnya. <b>Laporan toko</b> menampilkan <b>Penjualan per merek</b> (omzet, laba, margin).</>,
+      <>Satu barang punya beberapa barcode (kemasan lama & baru, kode dari pemasok lain)? Buka <b>Ubah</b> › <b>Barcode tambahan</b>, scan atau ketik kodenya per satuan, <b>Tambah</b>. Semua kode bisa di-scan di Kasir.</>,
+    ], <>Satu kode hanya boleh dipakai satu barang/satuan — sistem menolak kode yang sudah dipakai barang lain. Barcode utama tetap diisi di form barang.</>, null, null],
+    ['Harga & minimal pesan per supplier', 'Barang & stok › Ubah › Harga dari supplier & minimal pesan', [
+      <>Ketuk <b>+ Harga supplier</b>, pilih supplier & satuan beli, isi <b>harga sepakat</b>, <b>minimal pesan (MOQ)</b>, dan waktu kirim. Centang <b>Supplier utama</b> untuk supplier yang biasa dipakai.</>,
+      <>Daftar menampilkan semua supplier untuk barang itu, termasuk <b>harga beli terakhir</b> dari Belanja dan harga per satuan utama, sehingga mudah dibandingkan.</>,
+      <>Di form <b>Belanja</b>, harga terisi otomatis dari harga sepakat supplier yang dipilih, muncul peringatan bila jumlah di bawah minimal pesan, dan info bila supplier lain lebih murah. <b>Saran belanja</b> memakai supplier utama dan membulatkan jumlah ke minimal pesan.</>,
+    ], <>Minimal pesan hanya peringatan — belanja tetap bisa disimpan bila kenyataannya berbeda.</>, null, null],
+    ['Barang paket (isi dari barang lain)', 'Barang & stok › + Paket', [
+      <>Ketuk <b>+ Paket</b>, isi nama & harga jual per paket, lalu cari dan tambahkan barang isinya beserta jumlah & satuannya (mis. 2 kg Gula + 3 pcs Teh). Terlihat modal per paket dan <b>bisa dibuat berapa</b> dari stok sekarang. <b>Simpan paket</b>.</>,
+      <>Paket dijual di Kasir seperti barang biasa. Setiap paket terjual, <b>stok barang isinya</b> yang berkurang; modal paket = nilai barang isi yang keluar, jadi laba & pembukuan tetap benar.</>,
+      <>Retur atau batal penjualan paket mengembalikan barang isi yang sama persis (walau isi paket sudah diubah). Ubah isi lewat tombol <b>Isi paket</b> di daftar barang.</>,
+    ], <>Paket tidak punya stok sendiri dan tidak bisa dibeli dari supplier. Barang yang sudah punya riwayat stok tidak bisa dijadikan paket — buat barang baru untuk paketnya. Berbeda dengan <b>Promo › paket bundling</b> yang hanya memotong harga.</>, 'warn', <ScrPaketSeri />],
+    ['Nomor seri / IMEI & garansi', 'Barang & stok › Ubah › Catat nomor seri · Kasir · Garansi', [
+      <>Di <b>Ubah</b> barang ketuk <b>Catat nomor seri / IMEI & garansi</b>, centang, isi <b>lama garansi toko</b> (hari, mis. 365), Simpan. Daftarkan nomor seri unit yang ada (scan atau ketik, pisahkan koma/baris baru). Menu <b>Garansi & nomor seri</b> muncul otomatis.</>,
+      <>Di Kasir, barang bernomor seri punya kolom <b>Nomor seri / IMEI</b> — scan saat dijual. Boleh menyusul: buka <b>Penjualan</b> › transaksi › <b>Isi</b> di baris barangnya. Nomor yang belum didaftarkan tetap dicatat. Struk menampilkan nomor seri & tanggal akhir garansi.</>,
+      <>Pelanggan datang membawa barang: buka <b>Garansi & nomor seri</b>, scan/ketik nomornya, lihat status <b>Garansi aktif/habis</b>, pembeli, dan tanggal beli. Ketuk <b>+ Catat klaim</b>, tulis keluhannya, lalu <b>Perbarui</b> sampai Selesai/Ditolak beserta hasilnya.</>,
+    ], <>Nomor seri yang sudah terjual tidak bisa dijual lagi. Retur (pilih nomor serinya) mengembalikan unit menjadi tersedia atau rusak; batal penjualan mengembalikannya tersedia. Unit diganti baru? Pakai <b>Tukar barang</b> agar stok ikut benar.</>, null, null],
+    ['Nota kredit (saldo belanja pelanggan)', 'Penjualan › transaksi › Retur barang › Nota kredit · Kasir › Pakai nota kredit', [
+      <>Saat retur, pilih pengembalian <b>Nota kredit (saldo belanja)</b>. Sistem menerbitkan nomor <b>NK-…</b> senilai retur; ketuk <b>kirim WA</b> untuk mengirim nomornya ke pelanggan.</>,
+      <>Di Kasir, ketuk <b>Pakai nota kredit</b>, ketik/scan nomornya, <b>Pakai</b>. Nota memotong total; sisanya dibayar tunai/transfer/kasbon seperti biasa. Sisa nota tetap bisa dipakai lain kali.</>,
+      <>Daftar & sisa semua nota ada di <b>Penjualan › Nota kredit</b>. Pemilik bisa mengisi <b>masa berlaku</b> nota baru, dan <b>Hanguskan sisa</b> nota yang tidak akan dipakai (menjadi pendapatan lain).</>,
+    ], <>Nota kredit bukan uang keluar: tidak mengurangi kas/laci. Sisa nota tercatat sebagai utang toko ke pelanggan (akun Nota kredit di Pembukuan). Membatalkan penjualan yang dibayar nota mengembalikan saldo notanya.</>, null, null],
+    ['Tukar barang', 'Penjualan › transaksi › Tukar barang', [
+      <>Buka transaksi asal, ketuk <b>Tukar barang</b>. Isi jumlah barang lama yang dikembalikan, lalu cari dan tambahkan <b>barang pengganti</b> beserta jumlahnya.</>,
+      <>Pilih cara uangnya (Tunai/Transfer, atau Potong kasbon bila penjualan asal kasbon). Terlihat perkiraan <b>Pelanggan membayar</b> atau <b>Dikembalikan ke pelanggan</b>.</>,
+      <>Ketuk <b>Simpan tukar barang</b>: retur & penjualan baru tersimpan bersamaan (bila satu gagal, keduanya batal) dan saling tertaut di detailnya. Stok, laci, laporan, dan pembukuan ikut benar.</>,
+    ], <>Harga barang pengganti dihitung ulang sistem saat disimpan (promo, harga pelanggan, harga beli banyak). Ingin selisihnya disimpan sebagai saldo? Lakukan Retur › Nota kredit, lalu pakai notanya di Kasir.</>, null, null],
   ]],
 ];
 

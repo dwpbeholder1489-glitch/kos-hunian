@@ -583,6 +583,28 @@ export function ScrUmurPiutang() {
   );
 }
 
+export function ScrPaketSeri() {
+  return (
+    <Phone bare>
+      <h3>Barang & stok</h3>
+      <div className="unitbox small" style={{ gap: 4 }}>
+        <b>Paket Sembako Hemat <span className="chip gold">Paket</span></b>
+        <span>Isi: 2 kg Gula + 3 pcs Teh · <b>bisa dibuat 9</b> · modal {rp(39000)}</span>
+        <span className="muted">paket {rp(60000)}</span>
+      </div>
+      <div className="unitbox small" style={{ gap: 4 }}>
+        <b>HP Android X1 <span className="chip">No. seri</span></b>
+        <span>Stok 3 unit · garansi toko 365 hari</span>
+      </div>
+      <b className="small">Kasir · Bayar</b>
+      <div className="row between small"><span>HP Android X1 × 1</span><b>{rp(2500000)}</b></div>
+      <span className="small muted">Nomor seri / IMEI: 356789012345671</span>
+      <div className="row between small" style={{ color: 'var(--good)' }}><span>Nota kredit NK-261121-001</span><b>−{rp(50000)}</b></div>
+      <span className="mini-btn cta">Simpan · {rp(2500000)}</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

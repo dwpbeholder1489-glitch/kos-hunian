@@ -13,6 +13,7 @@ import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
 import { canArea, moduleOn } from '@/lib/business';
 import { IndikatorGrosir } from '@/components/AkuntansiDagang';
+import { BrandReport } from '@/components/KatalogLanjut';
 import { useKuotaEkspor } from '@/lib/ekspor';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma)
@@ -133,6 +134,7 @@ export default function LaporanToko() {
         </section>
 
         {kpi && <Indikator k={kpi} names={names} />}
+        {canArea(kos, 'finance') && <BrandReport kosId={kosId} from={ym + '-01'} to={ym >= thisMonth() ? todayStr() : monthEnd(ym)} ver={ver} />}
         {canArea(kos, 'finance') && (moduleOn(kos, 'u_penawaran') || moduleOn(kos, 'u_kredit')) && <IndikatorGrosir kosId={kosId} from={ym + '-01'} to={ym >= thisMonth() ? todayStr() : monthEnd(ym)} names={names} ver={ver} />}
         {loss && <PerluDiperiksa w={loss} names={names} />}
 
