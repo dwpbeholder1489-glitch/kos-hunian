@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -859,6 +859,29 @@ const PARTS = [
       <><b>Fitur aktif yang jarang dipakai</b>: fitur yang menyala tetapi tidak dibuka di periode itu, beserta tanggal terakhir dibuka. Muncul setelah minimal 14 hari data agar tidak menyesatkan.</>,
       <><b>Hasil rekomendasi</b>: berapa saran yang Anda putuskan, berapa yang diterima, dan berapa yang <b>lalu dipakai</b> (menunya dibuka setelah diterima), plus saran alur kerja dan berapa kali tampilan diubah, dikembalikan, atau dipulihkan.</>,
     ], <>Yang dicatat HANYA jumlah menu dibuka dan aksi cepat diketuk per hari — tanpa isi transaksi, tanpa lokasi/perangkat, dan tidak ditampilkan per karyawan. Data disimpan 180 hari. Pencatatan dimulai 21 Nov 2026, jadi angka awal belum penuh. Halaman ini hanya untuk pemilik & pengelola.</>, null, null],
+  ]],
+  ['AE', 'Toko: neraca saldo, umur piutang & utang, nilai persediaan, indikator grosir', [
+    ['Neraca saldo', 'Keuangan › Pembukuan › Neraca saldo', [
+      <>Pilih bulan (atau centang <b>Sejak awal tahun</b>). Setiap akun tampil dengan <b>saldo awal</b>, <b>debit</b>, <b>kredit</b>, dan <b>saldo akhir</b> di kolom Debit atau Kredit.</>,
+      <>Lihat kotak <b>Status</b>: <b>Seimbang</b> berarti jumlah debit = jumlah kredit — tanda pembukuan rapi. Bila tidak seimbang, angka selisihnya ditampilkan.</>,
+      <>Tekan <b>Unduh Excel</b> untuk dikirim ke akuntan (dihitung sebagai ekspor bulan ini).</>,
+    ], <>Angkanya dari jurnal otomatis yang sama dengan Laporan & Buku besar. Di Paket Dasar akun aset, kewajiban, dan modal diringkas menjadi 3 baris; rincian per akun tersedia di Paket Bisnis/Pro (Laporan lanjutan).</>, null, null],
+    ['Umur piutang & utang', 'Pembukuan › Umur piutang & utang', [
+      <>Pilih <b>Piutang pelanggan</b> atau <b>Utang pemasok</b>, lalu rentang <b>30/60/90 hari</b> atau <b>7/14/30 hari</b>.</>,
+      <>Sisa tagihan dikelompokkan menurut <b>jatuh tempo</b>: belum jatuh tempo, lewat 1–30 hari, dan seterusnya. Pembayaran dianggap melunasi dokumen <b>terlama</b> lebih dulu.</>,
+      <>Ketuk nama pelanggan/pemasok untuk melihat dokumennya satu per satu (nomor, tanggal, jatuh tempo, sisa, terlambat berapa hari).</>,
+      <>Kontak yang <b>lebih bayar</b> (saldonya minus) ditampilkan terpisah, tidak dihitung dalam umur.</>,
+    ], <>Total umur selalu sama dengan saldo di Pelanggan & supplier. Barang titipan yang sudah terjual masuk utang ke penitip tanpa jatuh tempo (kolom <b>Tanpa tempo</b>). Isi tempo pelanggan di Syarat pelanggan agar jatuh tempo kasbon terisi.</>, null, <ScrUmurPiutang />],
+    ['Nilai persediaan per tanggal', 'Pembukuan › Nilai persediaan', [
+      <>Pilih <b>Posisi per tanggal</b> (bawaan hari ini). Nilai = jumlah stok × <b>modal rata-rata bergerak</b> (metode HPP resmi), per barang, per kategori, dan per lokasi bila punya lebih dari satu lokasi.</>,
+      <>Kotak terpisah: <b>Milik toko</b>, <b>Titipan</b> (milik penitip, bukan aset toko), dan <b>Dalam perjalanan</b> (kiriman antarlokasi yang belum diterima — tetap milik toko).</>,
+      <>Untuk hari ini, sistem membandingkan dengan saldo akun <b>Persediaan</b> di buku besar. Bila beda, selisihnya ditampilkan agar bisa diperiksa.</>,
+    ], <>Barang yang stoknya minus ditandai <b>Minus</b> dan mengurangi total — periksa di Barang & stok. Untuk tanggal lalu, posisi dihitung dari waktu gerak stok dicatat, jadi bisa sedikit berbeda dengan jurnal yang memakai tanggal dokumen.</>, 'warn', null],
+    ['Indikator grosir & kinerja sales', 'Laporan toko › Indikator grosir', [
+      <>Muncul bila modul Pesanan grosir atau Kredit pelanggan aktif. Isinya: <b>lama penagihan (DSO)</b>, piutang & yang tertagih, <b>pemenuhan pesanan</b> (nilai terkirim ÷ nilai dipesan), <b>kirim tepat waktu</b>, <b>gagal kirim</b>, dan rata-rata pesanan.</>,
+      <><b>Per pelanggan</b>: omzet, laba, margin, piutang, dan pemakaian batas kredit (merah bila lewat).</>,
+      <><b>Per sales</b>: dikelompokkan menurut <b>Sales yang memegang</b> di data pelanggan — jumlah pelanggan, omzet, laba, margin, dan piutang.</>,
+    ], <>Hanya untuk pemilik & bagian keuangan. Angka omzet tanpa PPN dan dihitung dengan rumus yang sama dengan Indikator toko.</>, null, null],
   ]],
 ];
 

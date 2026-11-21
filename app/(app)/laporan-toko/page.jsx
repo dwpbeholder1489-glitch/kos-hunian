@@ -11,7 +11,8 @@ import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg, today 
 import { DayColumns } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
-import { canArea } from '@/lib/business';
+import { canArea, moduleOn } from '@/lib/business';
+import { IndikatorGrosir } from '@/components/AkuntansiDagang';
 import { useKuotaEkspor } from '@/lib/ekspor';
 
 // Unduh CSV yang bisa dibuka Excel (pemisah titik koma)
@@ -132,6 +133,7 @@ export default function LaporanToko() {
         </section>
 
         {kpi && <Indikator k={kpi} names={names} />}
+        {canArea(kos, 'finance') && (moduleOn(kos, 'u_penawaran') || moduleOn(kos, 'u_kredit')) && <IndikatorGrosir kosId={kosId} from={ym + '-01'} to={ym >= thisMonth() ? todayStr() : monthEnd(ym)} names={names} ver={ver} />}
         {loss && <PerluDiperiksa w={loss} names={names} />}
 
         {pajak && (pajak.setelan?.aktif || Number(pajak.ppn_keluaran) !== 0 || Number(pajak.ppn_masukan) !== 0) && (

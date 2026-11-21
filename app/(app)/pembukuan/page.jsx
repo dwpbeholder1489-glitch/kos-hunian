@@ -10,6 +10,7 @@ import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
 import FiturUpgrade from '@/components/FiturUpgrade';
+import { NeracaSaldo, UmurPiutangUtang, NilaiPersediaan } from '@/components/AkuntansiDagang';
 
 const TYPE = { aset: 'Aset', kewajiban: 'Kewajiban', ekuitas: 'Ekuitas', pendapatan: 'Pendapatan', beban: 'Beban' };
 const KIND = { posting: ['Otomatis', ''], koreksi: ['Koreksi', 'gold'], manual: ['Manual', 'void'] };
@@ -22,6 +23,7 @@ export default function Pembukuan() {
   const { kos, kosId, ver } = useKos();
   const owner = canArea(kos, 'team');
   const retail = ['retail', 'jasa', 'kustom'].includes(kos?.business_type); // biaya dicatat di Kas
+  const toko = kos?.business_type === 'retail'; // umur piutang/utang & nilai persediaan (Tahap 2 Retail)
   const [tab, setTab] = useState('laporan');
   const [ym, setYm] = useState(today().slice(0, 7));
   const [ytd, setYtd] = useState(false);
@@ -53,7 +55,7 @@ export default function Pembukuan() {
         <button className={entity ? 'on' : ''} onClick={() => setEntity(true)}>Seluruh badan usaha</button>
       </div>}
       <div className="seg">
-        {[['laporan', 'Laporan'], ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['laporan', 'Laporan'], ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
       {!d && !err ? <Loading /> : d && <>
@@ -66,6 +68,9 @@ export default function Pembukuan() {
         {tab === 'jurnal' && <Jurnal kosId={kosId} from={from} to={to} retail={retail} ver={ver} />}
         {tab === 'periode' && owner && <Periode d={d} kosId={kosId} ym={ym} onDone={load} />}
         {tab === 'bank' && <RekonBank kosId={kosId} ym={ym} owner={owner} ver={ver} />}
+        {tab === 'saldo' && !entity && <NeracaSaldo kos={kos} kosId={kosId} from={from} to={to} period={period} owner={owner} ver={ver} />}
+        {tab === 'umur' && toko && !entity && <UmurPiutangUtang kos={kos} kosId={kosId} ver={ver} />}
+        {tab === 'persediaan' && toko && !entity && <NilaiPersediaan kos={kos} kosId={kosId} ver={ver} />}
       </>}
     </div>
   );

@@ -566,6 +566,23 @@ export function ScrHargaPelanggan() {
   );
 }
 
+export function ScrUmurPiutang() {
+  return (
+    <Phone bare>
+      <h3>Umur piutang · per hari ini</h3>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn cta">Piutang pelanggan</span><span className="mini-btn">Utang pemasok</span></div>
+      <div className="row between small"><span>Belum jatuh tempo</span><b>{rp(550000)}</b></div>
+      <div className="row between small"><span>31–60 hari</span><b>{rp(300000)}</b></div>
+      <div className="row between small"><span>&gt; 90 hari</span><b style={{ color: 'var(--bad)' }}>{rp(1200000)}</b></div>
+      <div className="row between"><b>Total piutang</b><b>{rp(2050000)}</b></div>
+      <span className="small muted">Sama dengan saldo pelanggan di Pelanggan & supplier.</span>
+      <div className="row between small" style={{ gap: 6 }}><span><b>Neraca saldo</b> · Debit {rp(48020000)} = Kredit {rp(48020000)}</span><span className="chip" style={{ color: 'var(--good)' }}>Seimbang</span></div>
+      <div className="row between small"><span><b>Nilai persediaan</b> · milik toko</span><b>{rp(41861000)}</b></div>
+      <span className="small" style={{ color: 'var(--good)' }}>✓ Sama dengan saldo akun Persediaan di buku besar</span>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

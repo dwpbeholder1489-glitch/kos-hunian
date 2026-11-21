@@ -81,7 +81,7 @@ yang mengizinkan rata-rata tertimbang), FIFO hanya untuk urutan keluar batch ked
 Urutan yang disetujui pemilik 15 Nov 2026 (sesuai Master Prompt Bagian 24 & Blueprint §17; wajib selesai semua sebelum pindah ke bisnis atau modul lain):
 
 2. ✅ **Tahap 1 — Tata kelola harga & kredit** (Phase 3, SELESAI 20 Nov 2026 — lihat §5): urutan harga yang disetujui, harga per outlet, tanggal berlaku daftar harga/kontrak, batas diskon kasir + persetujuan, margin minimum, riwayat harga & limit, tahan kredit bila lewat jatuh tempo, cek limit untuk kasbon Kasir, tipe/grup pelanggan, sales rep. (RET-003, RET-008, RET-014, RET-004, RET-009)
-3. **Tahap 2 — Fondasi akuntansi dagang** (Phase 1): neraca saldo (trial balance), umur utang (AP aging), laporan nilai persediaan.
+3. ✅ **Tahap 2 — Fondasi akuntansi dagang** (Phase 1, SELESAI 21 Nov 2026 — lihat §6): neraca saldo (trial balance), umur utang (AP aging), laporan nilai persediaan, + KPI grosir.
 4. **Tahap 3 — Katalog lanjutan** (Phase 1, RET-001): multi-barcode per satuan, merek produk, paket/kit yang memotong stok komponen, nomor seri + garansi (toko elektronik/specialty), tukar barang & nota kredit (RET-008), harga & MOQ per supplier.
 5. **Tahap 4 — POS offline** (prioritas: Master Bagian 18, ADR-003): antrean lokal + sinkron idempoten, deteksi konflik stok/harga, batas jelas apa yang boleh offline.
 6. **Tahap 5 — Portal B2B & pesanan langsung** (Phase 3): keranjang + pesanan langsung toko, akun pelanggan B2B dengan harga kontrak, riwayat dan faktur, pemesanan ulang.
@@ -106,8 +106,23 @@ Migrasi `20261115140000`–`20261115180000`. Uji `supabase/tests/tata_kelola_har
 | Cek limit kasbon di Kasir (§11.3) | Verified Implemented — PERINGATAN, tidak memblokir (keputusan pemilik) | `kasbon_check`, peringatan kuning di Kasir |
 | Tipe/grup pelanggan (RET-004, RET-009) | Verified Implemented | `contacts.tipe` (umum/reseller/distributor/institusi), tampil di daftar kontak |
 | Sales yang memegang pelanggan (§11.2) | Verified Implemented (penugasan) | `contacts.sales_user`, `customer_profile_set` |
-| Laporan kinerja per sales, margin per pelanggan, DSO, fill rate (§17 KPI grosir) | Not Started | dikerjakan bersama Tahap 2 (bergantung data akuntansi) |
+| Laporan kinerja per sales, margin per pelanggan, DSO, fill rate (§17 KPI grosir) | Verified Implemented (Tahap 2) | `wholesale_kpi`, lihat §6 |
 | Limit kredit per cabang pelanggan (§11.3) | Not Started | pelanggan belum punya cabang; menunggu kebutuhan nyata |
 | Persetujuan diskon jarak jauh (pemilik tidak di tempat) | Not Started | sekarang pemilik/pengelola harus login di perangkat itu (pola `BATAS_KREDIT`) |
 
 Status proposal: RET-008 (Pricing Resolution Engine) dan RET-014 (audit & persetujuan harga/kredit) sudah diimplementasikan sesuai keputusan pemilik 15 Nov, tetapi statusnya tetap **proposal** sampai pemilik menyatakan final.
+
+## 6. Status Tahap 2 — Fondasi akuntansi dagang (21 Nov 2026)
+
+Migrasi `20261121170000_akuntansi_dagang.sql` (tanpa tabel baru; semua laporan dihitung dari jurnal & kartu stok yang sudah ada). Uji `supabase/tests/akuntansi_dagang.sql` (44) lulus; isolasi (240) lulus; layar diuji di HP 390 px & laptop 1280 px.
+
+| Butir | Status | Bukti |
+|---|---|---|
+| Neraca saldo / trial balance (§16) | Verified Implemented | `acct_trial_balance` (saldo awal, debit, kredit, saldo akhir D/K, `seimbang`); Paket Dasar ringkas (aset/kewajiban/ekuitas 3 baris), rinci = `laporan_lanjutan` |
+| Umur utang / AP aging (§16) | Verified Implemented | `payable_open` (beli utang, faktur diposting, titipan terjual; FIFO) + `aging_report('utang')`; total = `contact_balance` (diuji) |
+| Umur piutang (sudah ada `receivable_open`) | Verified Implemented — kini dengan kelompok jatuh tempo & rentang pilihan | `aging_report('piutang', {30,60,90} / {7,14,30})`, lebih bayar dipisah |
+| Nilai persediaan per tanggal (§16) | Verified Implemented | `inventory_valuation`: milik/titipan/dalam perjalanan, per kategori & lokasi; hari ini dibanding akun Persediaan (selisih 0 di uji) |
+| Nilai persediaan tanggal lampau persis = jurnal | Partial | kartu stok memakai waktu dicatat, jurnal memakai tanggal dokumen — ditulis jujur di layar |
+| KPI grosir (§17): DSO, tertagih, margin per pelanggan, pemakaian limit, per sales, fill rate, tepat waktu, gagal kirim | Verified Implemented | `wholesale_kpi`, Laporan toko › Indikator grosir (finance; modul u_penawaran/u_kredit) |
+| Ekspor Excel/CSV laporan akuntansi | Verified Implemented | `downloadCsv` + `export_take` (neraca_saldo, umur_piutang, umur_utang, nilai_persediaan) |
+

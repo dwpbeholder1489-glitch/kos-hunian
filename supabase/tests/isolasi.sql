@@ -60,6 +60,18 @@ begin
       ('category_save', format('select public.category_save(%L, null, ''uji'')', k)),
       ('stock_avail', format('select public.stock_avail(%L)', k)),
       ('stock_health', format('select public.stock_health(%L)', k)),
+      -- Tahap 1 Retail: tata kelola harga & kredit
+      ('price_history_list', format('select public.price_history_list(%L)', k)),
+      ('kasbon_check', format('select public.kasbon_check(%L, (select id from public.contacts where kos_id = %L limit 1), 1000)', k, k)),
+      ('price_policy_set', format('select public.price_policy_set(%L, 10, null)', k)),
+      ('outlet_price_set', format('select public.outlet_price_set(%L, gen_random_uuid(), gen_random_uuid(), ''pcs'', 1, null)', k)),
+      ('price_list_dates_set', format('select public.price_list_dates_set(coalesce((select id from public.price_lists where kos_id = %L limit 1), gen_random_uuid()), null, null)', k)),
+      ('customer_profile_set', format('select public.customer_profile_set(coalesce((select id from public.contacts where kos_id = %L limit 1), gen_random_uuid()), null, null)', k)),
+      -- Tahap 2 Retail: akuntansi dagang
+      ('acct_trial_balance', format('select public.acct_trial_balance(%L, current_date - 30, current_date)', k)),
+      ('aging_report', format('select public.aging_report(%L, ''utang'')', k)),
+      ('inventory_valuation', format('select public.inventory_valuation(%L)', k)),
+      ('wholesale_kpi', format('select public.wholesale_kpi(%L, current_date - 30, current_date)', k)),
       ('hold_list', format('select public.hold_list(%L)', k)),
       ('hold_create', format('select public.hold_create(%L, (select id from public.products where kos_id = %L limit 1), null, 1, ''rusak'')', k, k)),
       ('stock_transfer_send', format('select public.stock_transfer_send(gen_random_uuid(), %L, null, null, ''[]'', null)', k)),
