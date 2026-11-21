@@ -51,7 +51,7 @@ export default function Portal() {
 
   return (
     <>
-      <header className="top">
+      <header className="top portal">
         <div className="wrap" style={{ paddingBottom: 0 }}>
           <div className="brandrow">
             <div className="brand"><LogoMark size={30} /><div><h1>{p.kos.name}</h1><small>Portal penghuni</small></div></div>

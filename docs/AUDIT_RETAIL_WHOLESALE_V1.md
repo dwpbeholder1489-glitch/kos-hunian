@@ -84,7 +84,7 @@ Urutan yang disetujui pemilik 15 Nov 2026 (sesuai Master Prompt Bagian 24 & Blue
 3. ✅ **Tahap 2 — Fondasi akuntansi dagang** (Phase 1, SELESAI 21 Nov 2026 — lihat §6): neraca saldo (trial balance), umur utang (AP aging), laporan nilai persediaan, + KPI grosir.
 4. ✅ **Tahap 3 — Katalog lanjutan** (SELESAI 21 Nov 2026 — lihat §7) (Phase 1, RET-001): multi-barcode per satuan, merek produk, paket/kit yang memotong stok komponen, nomor seri + garansi (toko elektronik/specialty), tukar barang & nota kredit (RET-008), harga & MOQ per supplier.
 5. ✅ **Tahap 4 — POS offline** (SELESAI 21 Nov 2026 — lihat §8) (prioritas: Master Bagian 18, ADR-003): antrean lokal + sinkron idempoten, deteksi konflik stok/harga, batas jelas apa yang boleh offline.
-6. **Tahap 5 — Portal B2B & pesanan langsung** (Phase 3): keranjang + pesanan langsung toko, akun pelanggan B2B dengan harga kontrak, riwayat dan faktur, pemesanan ulang.
+6. ✅ **Tahap 5 — Portal B2B & pesanan langsung** (Phase 3, SELESAI 22 Nov 2026 — lihat §9): keranjang + pesanan langsung toko, akun pelanggan B2B dengan harga kontrak, riwayat dan faktur, pemesanan ulang.
 7. **Tahap 6 — Distribusi** (Phase 4, RET-005, RET-012, RET-013): picking/packing list, kendaraan & driver internal serta pihak ketiga, jadwal kirim, POD (nama + foto), retur sebagian dari pengiriman, rekonsiliasi & biaya kirim, KPI distribusi.
 8. **Tahap 7 — Multi-outlet, konsolidasi & franchise** (Phase 5–6): katalog & harga per outlet terkonsolidasi, laporan gabungan lintas outlet, standarisasi katalog franchise (RET-012), tampilan per tier (Blueprint §19).
 
@@ -162,3 +162,31 @@ Keputusan pemilik 21 Nov 2026: tunai, transfer/QRIS, kasbon, dan campuran BOLEH 
 | Nota kredit saat offline | Not Started | saldo harus dicek server (risiko dipakai dua kali) |
 | Kasir jasa/kuliner (pesanan) offline | Not Started | Tahap ini khusus Kasir toko |
 | Kamera pindai barcode saat offline tanpa pernah dipakai online | Partial | file pemindai kamera disimpan setelah dipakai sekali saat online; scanner Bluetooth/USB & ketik kode tetap jalan |
+
+
+## 9. Status Tahap 5 — Portal pelanggan grosir / B2B (22 Nov 2026)
+
+Migrasi `20261121230000_portal_b2b.sql` (tanpa tabel baru; mesin pesanan/surat jalan/faktur tidak diubah). Uji `supabase/tests/portal_b2b.sql` (±60 pemeriksaan) lulus; regresi seluruh berkas uji: jumlah ERROR/f setiap berkas sama persis sebelum & sesudah migrasi (penolakan yang memang diharapkan). Layar diuji di HP 390 px & laptop 1280 px (portal pelanggan: katalog, periksa pesanan, terkirim, pesanan, tagihan; penjual: tab Penawaran bertanda portal, detail, tab Portal pelanggan), `scrollWidth` = lebar layar, tanpa galat skrip.
+
+Keputusan desain (mohon dikonfirmasi): portal = **link pribadi tanpa akun/sandi** (pola portal penghuni yang sudah dipakai, paling mudah dari HP); masuk **Paket Pro** lewat fitur `portal_bisnis` yang sudah ada (V2 "Portal hanya Pro"; bisnis sebelum 14 Nov tetap lewat `legacy_features`).
+
+| Butir Master Prompt Bagian 15 (B2B Portal) | Status | Bukti / catatan |
+|---|---|---|
+| Business account (akses pelanggan bisnis) | Verified Implemented — sebagai link pribadi | `cportal_link/off/list`; ganti link = link lama mati seketika; terakhir dibuka tercatat |
+| Customer-specific catalog & contract price | Verified Implemented | `cportal_price` = urutan harga resmi (daftar pelanggan berlaku › outlet/grosir › eceran) + harga beli banyak; barang tanpa harga disembunyikan |
+| Wholesale quantity (dus/karton, beli banyak) | Verified Implemented | semua satuan jual + tingkat harga per jumlah (tier semua/grosir) |
+| Quotation request | Verified Implemented | jenis "Minta penawaran dulu" (`portal_kind`) |
+| Purchase order | Verified Implemented | No. PO pelanggan, tanggal dibutuhkan, alamat kirim, catatan → `so_orders` |
+| Credit terms | Verified Implemented | batas, sisa, pesanan berjalan, tempo; lewat batas = peringatan ke pelanggan, keputusan tetap di `so_confirm` |
+| Invoice & payment status | Verified Implemented | faktur + sisa per faktur (FIFO sama dengan umur piutang), pembayaran tercatat, cara bayar |
+| Order history & status pengiriman | Verified Implemented | status, jumlah terkirim, surat jalan, nomor faktur |
+| Reorder | Verified Implemented | "Pesan lagi" (barang yang sudah tidak dijual dilewati & diberi tahu) |
+| Pembatalan oleh pelanggan | Verified Implemented | hanya sebelum dikonfirmasi; penjual diberi tahu lewat lonceng |
+| Notifikasi penjual | Verified Implemented | lonceng/Pengingat toko, tanda "Baru dari portal", email (`notify_email`) |
+| Keamanan | Verified Implemented | tulis hanya lewat server (service_role); harga dihitung server; tanpa modal/angka stok; idempoten; batas 10/jam & 20 menunggu; anon tidak bisa membaca tabel |
+| Unggah bukti bayar dari portal B2B | Not Started | sementara tombol WhatsApp ke penjual; pembayaran dicatat penjual di Kas & kasbon |
+| Banyak kontak/pengguna per pelanggan bisnis | Not Started | satu link per pelanggan (RET-004 banyak kontak belum ada) |
+| Retail portal (keranjang & pesanan langsung toko untuk umum) | Partial (sudah ada sebelumnya) | halaman bisnis: pilih barang → permintaan → prospek → keranjang Kasir, dikonfirmasi pemilik |
+| Marketplace / e-commerce eksternal | Not Started | konektor eksternal tidak diklaim |
+
+Perbaikan ikut: portal penghuni `/p` kehilangan header & tab di layar ≥768 px (aturan CSS shell aplikasi) — diperbaiki lewat kelas `header.top.portal`.

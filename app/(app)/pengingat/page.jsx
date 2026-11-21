@@ -26,10 +26,13 @@ export default function Pengingat() {
   return (
     <div className="stack">
       <PageHeader title="Pengingat toko" help={<PageHelp page="pengingat" />} />
-      {alertCount(a) === 0 && <Empty title="Semua aman" text="Tidak ada stok menipis, pesanan terlambat, kasbon/utang jatuh tempo, atau transaksi offline yang perlu dicek." />}
+      {alertCount(a) === 0 && <Empty title="Semua aman" text="Tidak ada stok menipis, pesanan terlambat, kasbon/utang jatuh tempo, transaksi offline, atau pesanan portal yang perlu dicek." />}
       {a.offline?.length > 0 && <section className="panel"><h3>📶 Transaksi offline perlu dicek ({a.offline.length})</h3>
         <p className="small muted" style={{ margin: 0 }}>Penjualan saat internet putus yang terkirim dengan temuan (harga berubah, stok minus, diskon lewat batas) atau tidak bisa disimpan.</p>
         <Link href="/penjualan?tab=offline"><button style={{ width: '100%' }}>Periksa di Penjualan › Offline</button></Link></section>}
+      {a.portal?.length > 0 && <section className="panel"><h3>🛒 Pesanan baru dari portal pelanggan ({a.portal.length})</h3>
+        <div className="list">{a.portal.map((o) => <div className="li" key={o.id}><div className="main"><b className="small">{o.customer}</b><span className="small muted">{o.number} · {o.status === 'batal' ? 'dibatalkan pelanggan' : o.kind === 'penawaran' ? 'minta penawaran' : 'pesanan'}</span></div><span className="small">{rp(o.total)}</span></div>)}</div>
+        <Link href="/grosir?tab=penawaran"><button style={{ width: '100%' }}>Periksa di Pesanan grosir</button></Link></section>}
       <Sec title="🔴 Stok habis" list={a.habis}>{a.habis.map((p) => <div className="li" key={p.id}><span>{p.name}</span><span className="chip bad">{angka(p.stock)} {p.unit}</span></div>)}</Sec>
       <Sec title="🟡 Stok menipis" list={a.menipis}>{a.menipis.map((p) => <div className="li" key={p.id}><span>{p.name}</span><span className="small">{angka(p.stock)} / min {angka(p.min)} {p.unit}</span></div>)}</Sec>
       {(a.habis.length > 0 || a.menipis.length > 0) && canArea(kos, 'stock') && <Link href="/belanja"><button className="primary" style={{ width: '100%' }}>Pesan / belanja barang</button></Link>}

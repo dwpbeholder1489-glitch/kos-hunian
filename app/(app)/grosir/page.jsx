@@ -12,6 +12,7 @@ import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 import { canArea } from '@/lib/business';
+import FiturUpgrade from '@/components/FiturUpgrade';
 
 const SO_ST = { penawaran: ['Penawaran', 'gold'], dikonfirmasi: ['Pesanan · belum dikirim', 'info'], sebagian: ['Dikirim sebagian', 'info'], selesai: ['Selesai', 'good'], batal: ['Batal', 'void'] };
 const DV_ST = { dikirim: ['Dalam pengiriman', 'gold'], diterima: ['Diterima', 'good'], gagal: ['Gagal kirim', 'bad'] };
@@ -21,7 +22,7 @@ const LI = { background: 'none', border: 0, borderTop: '1px solid var(--line)', 
 export default function Grosir() {
   const { kosId, kos, ver } = useKos();
   const [tab, setTab] = useState('jalan');
-  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'harga') setTab('harga'); } catch {} }, []);
+  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['harga', 'portal', 'penawaran'].includes(t)) setTab(t); } catch {} }, []);
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(null); // {order?} untuk baru/ubah
@@ -56,18 +57,20 @@ export default function Grosir() {
   const onRoad = d.deliveries.filter((x) => x.status === 'dikirim').length;
   const list = tab === 'jalan' ? running : tab === 'penawaran' ? quotes : done;
   const finance = canArea(kos, 'finance');
+  const newPortal = d.orders.filter((o) => o.source === 'portal' && !o.reviewed_at && o.status === 'penawaran').length;
+  const srcChip = (o) => (o.source === 'portal' ? <span className={'chip ' + (o.reviewed_at ? '' : 'gold')} style={{ marginLeft: 4 }}>{o.reviewed_at ? 'Dari portal' : 'Baru dari portal'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span> : null);
 
   return (
     <div className="stack">
-      <PageHeader title="Pesanan grosir" help={<PageHelp page="grosir" />} actions={<>{tab !== 'harga' && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</>} />
+      <PageHeader title="Pesanan grosir" help={<PageHelp page="grosir" />} actions={<>{!['harga', 'portal'].includes(tab) && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</>} />
       <div className="grid">
         <Tile label="Pesanan berjalan" value={angka(running.length)} sub={running.length ? `sisa kirim ${rp(running.reduce((a, o) => a + remainOf(o), 0))}` : 'tidak ada'} />
         <Tile label="Dalam pengiriman" value={angka(onRoad)} tone={onRoad ? 'gold' : ''} sub="surat jalan belum diterima" />
         <Tile label="Piutang lewat tempo" value={rp(overdue)} tone={overdue ? 'bad' : ''} sub={overdue ? 'tagih lewat WhatsApp' : 'aman'} />
       </div>
-      <div className="seg">{[['jalan', `Berjalan (${running.length})`], ['penawaran', `Penawaran (${quotes.length})`], ['selesai', 'Selesai'], ['harga', 'Daftar harga']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
+      <div className="seg">{[['jalan', `Berjalan (${running.length})`], ['penawaran', `Penawaran (${quotes.length})${newPortal ? ` · ${newPortal} baru` : ''}`], ['selesai', 'Selesai'], ['harga', 'Daftar harga'], ['portal', 'Portal pelanggan']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
 
-      {tab === 'harga' ? <PriceLists d={d} kosId={kosId} canEdit={finance} onChanged={load} /> : !d.products.length ? (
+      {tab === 'portal' ? <PortalLinks kos={kos} kosId={kosId} /> : tab === 'harga' ? <PriceLists d={d} kosId={kosId} canEdit={finance} onChanged={load} /> : !d.products.length ? (
         <Empty title="Belum ada barang" text="Tambahkan barang dulu di Barang & stok."><Link href="/barang"><button className="primary">Buka Barang & stok</button></Link></Empty>
       ) : list.length === 0 ? (
         <Empty title={tab === 'penawaran' ? 'Belum ada penawaran' : tab === 'jalan' ? 'Tidak ada pesanan berjalan' : 'Belum ada pesanan selesai'}
@@ -80,11 +83,11 @@ export default function Grosir() {
             { key: 'cust', label: 'Pelanggan', sort: (o) => (cust.get(o.contact_id)?.name || '').toLowerCase(), render: (o) => <><b>{cust.get(o.contact_id)?.name || '—'}</b>{o.customer_ref && <div className="small muted">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</div>}</> },
             { key: 'need', label: 'Perlu', hide: 'tablet', sort: (o) => o.need_date || '', render: (o) => (o.need_date ? tgl(o.need_date) : <span className="muted">—</span>) },
             { key: 'sj', label: 'Surat jalan', hide: 'tablet', align: 'right', render: (o) => d.deliveries.filter((x) => x.order_id === o.id).length || <span className="muted">—</span> },
-            { key: 'st', label: 'Status', render: (o) => <><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.status === 'penawaran' && o.valid_until && o.valid_until < t0 && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}</> },
+            { key: 'st', label: 'Status', render: (o) => <><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.status === 'penawaran' && o.valid_until && o.valid_until < t0 && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}{srcChip(o)}</> },
             { key: 'tot', label: 'Total', align: 'right', sort: (o) => Number(o.total), render: (o) => <><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</> },
           ]}
           card={(o) => { const dvs = d.deliveries.filter((x) => x.order_id === o.id); const expired = o.status === 'penawaran' && o.valid_until && o.valid_until < t0; return <>
-            <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{cust.get(o.contact_id)?.name || '—'} <span className={'chip ' + SO_ST[o.status][1]} style={{ marginLeft: 4 }}>{SO_ST[o.status][0]}</span>{expired && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}</b>
+            <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{cust.get(o.contact_id)?.name || '—'} <span className={'chip ' + SO_ST[o.status][1]} style={{ marginLeft: 4 }}>{SO_ST[o.status][0]}</span>{expired && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}{srcChip(o)}</b>
                 <span className="small muted">{o.number} · {tgl(o.order_date)}{o.customer_ref ? ` · ${/^po/i.test(o.customer_ref) ? '' : 'PO '}${o.customer_ref}` : ''}{o.need_date ? ` · perlu ${tgl(o.need_date)}` : ''}{dvs.length ? ` · ${dvs.length} surat jalan` : ''}</span></div><div style={{ textAlign: 'right' }}><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</div></div>
           </>; }} />
       )}
@@ -234,6 +237,7 @@ function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { supabase.rpc('customer_credit', { p_contact: o.contact_id }).then(({ data }) => setCr(data || null)); }, [o.id, o.status]);
+  useEffect(() => { if (o.source === 'portal' && !o.reviewed_at) supabase.rpc('so_mark_reviewed', { p_order: o.id }).then(() => {}, () => {}); }, [o.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [sc, setSc] = useState(null);   // cek stok tersedia (so_stock_check): stok lokasi − ditahan − dipesan pesanan lain
   useEffect(() => { if (['penawaran', 'dikonfirmasi', 'sebagian'].includes(o.status)) supabase.rpc('so_stock_check', { p_order: o.id }).then(({ data }) => setSc(data || [])); }, [o.id, o.status, o.updated_at]);
   const short = (sc || []).filter((x) => Number(x.need) > Number(x.available) + 0.0005);
@@ -255,7 +259,7 @@ function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
     `\n\nTotal ${rp(o.total)}${o.terms_days ? `\nPembayaran tempo ${o.terms_days} hari setelah barang dikirim` : ''}${o.status === 'penawaran' && o.valid_until ? `\nBerlaku sampai ${tgl(o.valid_until)}` : ''}${o.note ? `\n${o.note}` : ''}\n\nBalas pesan ini untuk konfirmasi. Terima kasih.`;
   return (
     <Sheet title={`${o.number} · ${c?.name || ''}`} onClose={onClose}>
-      <div className="row" style={{ gap: 6 }}><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.customer_ref && <span className="chip">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</span>}</div>
+      <div className="row" style={{ gap: 6 }}><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.source === 'portal' && <span className="chip">Dari portal pelanggan{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span>}{o.customer_ref && <span className="chip">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</span>}</div>
       <dl className="kv">
         <dt>Tanggal</dt><dd>{tgl(o.order_date)}</dd>
         {o.status === 'penawaran' && o.valid_until && <><dt>Berlaku sampai</dt><dd>{tgl(o.valid_until)}</dd></>}
@@ -289,7 +293,7 @@ function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
         <button className="primary" disabled={busy || (over && !owner)} onClick={() => act('so_confirm', { p_order: o.id, p_override: reason || null }, 'Penawaran dikonfirmasi jadi pesanan')}>Konfirmasi jadi pesanan</button></div>}
 
       <div className="row" style={{ flexWrap: 'wrap' }}>
-        {o.status === 'penawaran' && mode !== 'konfirmasi' && <button className="primary" onClick={() => setMode('konfirmasi')}>Pelanggan setuju → jadikan pesanan</button>}
+        {o.status === 'penawaran' && mode !== 'konfirmasi' && <button className="primary" onClick={() => setMode('konfirmasi')}>{o.source === 'portal' && o.portal_kind !== 'penawaran' ? 'Konfirmasi pesanan pelanggan' : 'Pelanggan setuju → jadikan pesanan'}</button>}
         {['dikonfirmasi', 'sebagian'].includes(o.status) && mode !== 'kirim' && <button className="primary" onClick={() => setMode('kirim')}>Buat surat jalan</button>}
         {!['selesai', 'batal'].includes(o.status) && <button onClick={() => onEdit(o)}>Ubah</button>}
         <Link href={`/dokumen/grosir/${o.id}`}><button>{o.status === 'penawaran' ? 'Cetak penawaran' : 'Cetak pesanan'}</button></Link>
@@ -456,5 +460,59 @@ function PriceListEdit({ pl, d, canEdit, onClose, onChanged }) {
       {prods.length > 80 && <span className="small muted">Menampilkan 80 barang pertama — cari untuk menemukan barang lain.</span>}
       {canEdit && <button className="ghost danger" onClick={archive}>Hapus daftar harga ini</button>}
     </Sheet>
+  );
+}
+
+// Portal pelanggan grosir: link pribadi per pelanggan (/c/<token>) — buat, salin, kirim WA, ganti, matikan. Server: cportal_list/link/off.
+function PortalLinks({ kos, kosId }) {
+  const [d, setD] = useState(null);
+  const [q, setQ] = useState('');
+  const [busy, setBusy] = useState(null);
+  const load = () => supabase.rpc('cportal_list', { p_kos: kosId }).then(({ data, error }) => (error ? toast(errMsg(error)) : setD(data)));
+  useEffect(() => { load(); }, [kosId]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!d) return <Loading />;
+  const day = (ts) => tgl(new Date(ts).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }));
+  const url = (t) => `${typeof window !== 'undefined' ? window.location.origin : ''}/c/${t}`;
+  const run = async (c, fn, args, ok) => {
+    setBusy(c.id);
+    const { data, error } = await supabase.rpc(fn, args);
+    setBusy(null);
+    if (error) { toast(errMsg(error)); return null; }
+    if (ok) toast(ok);
+    load(); return data;
+  };
+  const copy = async (t) => { try { await navigator.clipboard.writeText(url(t)); toast('Link disalin'); } catch { window.prompt('Salin link ini:', url(t)); } };
+  const waText = (c, t) => `Halo ${c.name}, ini link portal pelanggan ${kos.name}. Anda bisa melihat harga khusus, memesan, memantau pengiriman, dan melihat tagihan kapan saja:\n${url(t)}\n\nLink ini pribadi untuk ${c.name}, mohon tidak dibagikan.`;
+  const s = q.trim().toLowerCase();
+  const list = d.customers.filter((c) => !s || c.name.toLowerCase().includes(s) || String(c.phone || '').includes(s));
+  const active = d.customers.filter((c) => c.token).length;
+  return (
+    <div className="stack">
+      <section className="panel" style={{ gap: 6 }}>
+        <h3>Portal pelanggan grosir</h3>
+        <p className="small muted" style={{ margin: 0 }}>Setiap pelanggan mendapat link pribadi (tanpa sandi) untuk melihat harga miliknya (daftar harga, harga grosir, harga beli banyak), memesan atau minta penawaran, memantau surat jalan, dan melihat faktur & sisa piutang. Pesanan dari portal masuk ke tab <b>Penawaran</b> dengan tanda “Baru dari portal” — Anda tetap yang mengonfirmasi (cek stok & batas kredit). Angka stok dan harga modal tidak pernah ditampilkan.</p>
+        {d.allowed && !d.module && <div className="notice small">Modul Penawaran & pesanan pelanggan sedang mati — pelanggan belum bisa membuka portal. Aktifkan di Pusat konfigurasi.</div>}
+        {d.allowed && <span className="small muted">{active} pelanggan punya link aktif.</span>}
+      </section>
+      {!d.allowed && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} plan="pro" event="PORTAL.PUBLIC_PAGE.REQUESTED" title="Portal pelanggan tersedia di Paket Pro"
+        text="Pelanggan grosir memesan sendiri dengan harga khusus mereka, memantau pengiriman, dan melihat tagihan lewat link pribadi." />}
+      {d.customers.length === 0 ? <Empty title="Belum ada pelanggan" text="Tambahkan pelanggan di Pelanggan & supplier dulu." /> : <>
+        <input type="search" placeholder="Cari pelanggan" value={q} onChange={(e) => setQ(e.target.value)} />
+        <section className="panel" style={{ padding: 0 }}><div className="list">{list.map((c) => (
+          <div className="li" key={c.id} style={{ flexWrap: 'wrap', gap: 8, padding: '12px 14px' }}>
+            <div className="main" style={{ minWidth: 0 }}><b className="small" style={{ overflowWrap: 'anywhere' }}>{c.name}</b>
+              <span className="small muted">{c.token ? `Link aktif sejak ${day(c.at)} · ${c.seen ? `terakhir dibuka ${day(c.seen)}` : 'belum pernah dibuka'}${c.orders ? ` · ${c.orders} pesanan portal` : ''}` : 'Belum punya link'}</span></div>
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+              {c.token ? <>
+                <button className="sm" onClick={() => copy(c.token)}>Salin link</button>
+                {c.phone && <a href={waLink(c.phone, waText(c, c.token))} target="_blank" rel="noreferrer"><button className="sm">Kirim WA</button></a>}
+                <button className="sm ghost" disabled={busy === c.id} onClick={() => window.confirm(`Ganti link ${c.name}? Link lama langsung tidak berlaku.`) && run(c, 'cportal_link', { p_contact: c.id, p_reset: true }, 'Link diganti — kirim link baru ke pelanggan')}>Ganti link</button>
+                <button className="sm ghost danger" disabled={busy === c.id} onClick={() => window.confirm(`Matikan portal ${c.name}?`) && run(c, 'cportal_off', { p_contact: c.id }, 'Portal dimatikan')}>Matikan</button>
+              </> : <button className="sm primary" disabled={!d.allowed || busy === c.id} onClick={() => run(c, 'cportal_link', { p_contact: c.id, p_reset: false }, 'Link dibuat')}>Buat link</button>}
+            </div>
+          </div>
+        ))}</div></section>
+      </>}
+    </div>
   );
 }
