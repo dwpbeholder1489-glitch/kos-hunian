@@ -3,7 +3,7 @@
 // access 'kelola' (pemilik/pengelola/PIC) = semua tombol; 'lihat' = baca + menandai tugas miliknya sendiri.
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -13,6 +13,7 @@ import { Loading, Empty, Field, Sheet, run, toast } from '@/components/ui';
 import { rp, tgl, tglShort, today, errMsg } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { KIND, STATUS, TASK_ST, PRIO, Chip, Progress, ProjectForm, MilestoneForm, TaskForm, jadwal } from '@/components/Proyek';
+import { QuoteForm, qStatus } from '@/components/Penawaran';
 
 const waktu = (iso) => new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 // Tombol pindah status yang masuk akal dari status sekarang (server tetap menerima perpindahan lain)
@@ -21,6 +22,7 @@ const NEXT_LABEL = { berjalan: 'Jalankan / buka lagi', selesai: 'Tandai selesai'
 
 export default function ProyekDetail() {
   const { id } = useParams();
+  const router = useRouter();
   const { kosId, kos, ver } = useKos();
   const [p, setP] = useState(null);
   const [err, setErr] = useState(null);
@@ -28,6 +30,7 @@ export default function ProyekDetail() {
   const [stat, setStat] = useState(null);    // status tujuan
   const [taskTab, setTaskTab] = useState('buka');
   const [member, setMember] = useState(false);
+  const [qform, setQform] = useState(null);   // 'awal' | 'perubahan'
   const load = () => supabase.rpc('prj_get', { p_project: id }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setP(data))));
   useEffect(() => { load(); }, [id, ver]); // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="stack"><div className="notice bad">{/prj_get|function/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div><Link href="/proyek">← Kembali ke daftar proyek</Link></div>;
@@ -61,12 +64,26 @@ export default function ProyekDetail() {
           {p.client && <><dt>Klien</dt><dd>{p.client}</dd></>}
           {p.location && <><dt>Lokasi</dt><dd>{p.location}</dd></>}
           <dt>Tugas</dt><dd>{p.tasks_done}/{p.tasks_total} selesai{p.tasks_late > 0 ? ` · ${p.tasks_late} terlambat` : ''}</dd>
+          {p.revision_limit != null && <><dt>Batas revisi</dt><dd>{p.revision_limit} kali</dd></>}
           {p.fin && <><dt>Nilai kontrak</dt><dd>{p.value != null ? rp(p.value) : '—'}</dd></>}
           {p.fin && p.milestone_total != null && <><dt>Total rencana termin</dt><dd>{rp(p.milestone_total)}{p.value != null && Number(p.milestone_total) !== Number(p.value) ? <span className="small" style={{ color: 'var(--att-fg)', display: 'block' }}>{Number(p.milestone_total) < Number(p.value) ? `kurang ${rp(p.value - p.milestone_total)} dari nilai kontrak` : `lebih ${rp(p.milestone_total - p.value)} dari nilai kontrak`}</span> : null}</dd></>}
           {p.parent && <><dt>Bagian dari</dt><dd><Link href={`/proyek/${p.parent_id}`}>{p.parent}</Link></dd></>}
         </dl>
         {p.description && <p className="small" style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{p.description}</p>}
       </section>
+
+      {p.can_quote && <section className="panel" style={{ gap: 6 }}>
+        <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}><span className="label">Penawaran & perubahan scope ({(p.quotes || []).length})</span>
+          {p.allowed && p.status !== 'batal' && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+            {!p.quote_id && ['penawaran', 'berjalan', 'ditunda'].includes(p.status) && !(p.quotes || []).some((x) => x.kind === 'awal' && ['draf', 'terkirim'].includes(x.status)) && <button className="sm primary" onClick={() => setQform('awal')}>+ Buat penawaran</button>}
+            {(p.quote_id || p.status !== 'penawaran') && <button className="sm" onClick={() => setQform('perubahan')}>+ Perubahan scope</button>}
+          </div>}</div>
+        {(p.quotes || []).length === 0 ? <span className="small muted">{p.status === 'penawaran' ? 'Buat penawaran untuk klien. Saat disetujui, proyek berjalan dengan nilai kontrak, batas revisi, dan termin dari penawaran.' : 'Klien minta tambahan pekerjaan di luar kesepakatan? Ajukan Perubahan scope agar biaya & jadwalnya disetujui dulu.'}</span>
+          : <div className="list">{p.quotes.map((x) => { const st = qStatus(x); return (
+            <Link className="li" key={x.id} href={`/proyek/penawaran/${x.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="main"><b className="small">{x.kind === 'perubahan' ? 'Perubahan · ' : ''}{x.title}</b><span className="small muted">{x.number}{x.revision ? ` · revisi ${x.revision}` : ''} · {rp(x.total)}</span></div>
+              <span className={'chip ' + st[1]}>{st[0]}</span></Link>); })}</div>}
+      </section>}
 
       <section className="panel" style={{ gap: 6 }}>
         <div className="row between"><span className="label">Milestone ({p.milestones.length})</span>{canEdit && <button className="sm" onClick={() => setForm({ ms: {} })}>+ Milestone</button>}</div>
@@ -136,6 +153,7 @@ export default function ProyekDetail() {
       {form === 'sub' && <ProjectForm kosId={kosId} init={{ parent_id: p.id, kind: p.kind }} fin={p.fin} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}
       {form?.ms && <MilestoneForm project={p} init={form.ms} fin={p.fin} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}
       {form?.task && <TaskForm project={p} init={form.task} team={p.team} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}
+      {qform && <QuoteForm kosId={kosId} init={{ kind: qform, project: p }} onClose={() => setQform(null)} onDone={(qid) => { setQform(null); if (qid) router.push(`/proyek/penawaran/${qid}`); else load(); }} />}
       {stat && <StatusSheet p={p} to={stat} onClose={() => setStat(null)} onDone={() => { setStat(null); load(); }} />}
       {member && <MemberSheet p={p} onClose={() => setMember(false)} onDone={() => { setMember(false); load(); }} />}
     </div>

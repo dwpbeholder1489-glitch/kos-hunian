@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPenawaranProyek, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -949,7 +949,13 @@ const PARTS = [
       <><b>+ Anggota</b>: tambahkan anggota tim (mis. Koordinator lapangan, Editor) agar bisa melihat proyek ini. Karyawan bagian <b>proses</b> melihat semua proyek; pemilik, pengelola, dan PIC proyek yang bisa mengubah.</>,
       <>Ubah status lewat tombol di atas: <b>Tandai selesai</b> (tugas yang belum selesai diingatkan, tidak menghalangi), <b>Tunda</b>, <b>Batalkan</b> (alasan wajib), atau <b>Jalankan / buka lagi</b> (alasan wajib bila proyek sudah selesai/batal).</>,
       <><b>Dokumen proyek</b>: lampirkan kontrak, brief, denah, foto lokasi (foto/PDF maks. 4 MB). File desain/video besar simpan di Google Drive/Dropbox dan tempel tautannya di keterangan. <b>Riwayat</b> mencatat siapa membuat, mengubah, memberi tugas, dan menyelesaikan apa.</>,
-    ], <>Nilai kontrak &amp; rencana termin tidak terlihat oleh karyawan selain bagian keuangan. Tugas yang sudah selesai tidak bisa dihapus (jejak pekerjaan) — buka lagi bila keliru.</>, null, null, 'bisnis'],
+    ], <>Nilai kontrak &amp; rencana termin tidak terlihat oleh karyawan selain bagian keuangan. Tugas yang sudah selesai tidak bisa dihapus (jejak pekerjaan) — buka lagi bila keliru.</>, null, null, 'bisnis'],    ['Penawaran, scope & perubahan scope', 'Proyek › tab Penawaran · halaman proyek', [
+      <>Pemilik, pengelola, dan bagian keuangan melihat tab <b>Penawaran</b> di menu Proyek. Tekan <b>+ Penawaran baru</b>: judul, jenis proyek, klien, lalu <b>rincian pekerjaan</b> (uraian, jumlah, satuan, harga satuan) dan potongan bila ada. Total dihitung otomatis (tanpa PPN).</>,
+      <><b>Termin pembayaran</b>: pilih cepat <b>100</b>, <b>50/50</b>, <b>30/40/30</b>, atau isi sendiri dalam persen atau rupiah — jumlahnya harus pas 100% / sama dengan total. Isi juga <b>Termasuk</b>, <b>Tidak termasuk</b>, kewajiban klien, <b>batas revisi</b>, biaya revisi tambahan, masa berlaku, dan rencana jadwal.</>,
+      <>Buka penawaran untuk melihat dokumennya: <b>Cetak / PDF</b> atau <b>Kirim WA</b> ke klien (otomatis ditandai <b>Terkirim</b>). Mengubah penawaran yang sudah terkirim = <b>revisi</b> bernomor; versi lama tetap bisa dilihat.</>,
+      <>Klien setuju? Tekan <b>Klien setuju</b>, isi nama penyetuju & tanggalnya. Proyek <b>dibuat otomatis</b> (atau proyek berstatus penawaran dijalankan) dengan nilai kontrak, jadwal, batas revisi, dan tiap termin menjadi <b>milestone</b>. Klien menolak? Tekan <b>Klien menolak</b> dan tulis alasannya.</>,
+      <>Klien minta tambahan di luar kesepakatan? Di halaman proyek tekan <b>+ Perubahan scope</b>: rincian tambahan, termin, tambahan revisi, dan tanggal selesai baru. Setelah klien setuju, nilai kontrak dan batas revisi bertambah, jadwal bergeser, dan termin tambahan masuk milestone.</>,
+    ], <>Keputusan klien dicatat oleh pemilik atau pengelola. Penawaran yang disetujui terkunci — tambahan pekerjaan selalu lewat Perubahan scope agar riwayat harga jelas. Penawaran lewat masa berlaku tetap bisa disetujui bila klien memang setuju. Semua angka masih <b>rencana</b>: penagihan termin ke Pembukuan menyusul.</>, 'warn', <ScrPenawaranProyek />, 'bisnis'],
   ]],
 ];
 
@@ -1019,7 +1025,7 @@ export default function Panduan() {
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
-          <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–133</a><br />Event, kreatif &amp; produksi: klien, milestone, tugas tim, anggota, status</span></div>
+          <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–134</a><br />Event, kreatif &amp; produksi: penawaran & scope, klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

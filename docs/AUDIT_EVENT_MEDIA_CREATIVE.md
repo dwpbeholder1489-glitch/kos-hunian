@@ -158,5 +158,7 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | Tabel `prj_projects`/`prj_milestones`/`prj_tasks`/`prj_members` + guard bisnis ditutup + riwayat (`domain_events`) | Selesai, diuji (`supabase/tests/proyek.sql`, `isolasi.sql`) |
 | Akses per proyek (kelola/lihat), nilai uang hanya keuangan, batas paket (data tetap terbuka saat paket turun) | Selesai, diuji |
 | Halaman `/proyek` & `/proyek/[id]`, menu, aksi cepat, lampiran proyek, panduan | Selesai (render diuji dengan data tiruan) |
-| Penawaran proyek & scope (1B), anggaran & biaya proyek (1C), tagihan termin & jurnal (1D) | Belum — tahap berikutnya |
+| Penawaran proyek & scope (1B): rincian, termin, scope termasuk/tidak, kewajiban klien, batas revisi, revisi penawaran, keputusan klien → proyek & milestone, perubahan scope → nilai/revisi/jadwal bertambah, dokumen cetak & WA | Selesai (migrasi `20261121240000`), diuji (`proyek_penawaran.sql`, `isolasi.sql`) |
+| Persetujuan klien lewat portal, tanda tangan elektronik, PPN jasa, penawaran dari Prospek (CRM) | Belum |
+| Anggaran & biaya proyek (1C), tagihan termin & jurnal (1D) | Belum — tahap berikutnya |
 | Lampiran untuk PIC/anggota tanpa area proses | Belum — lampiran memakai izin area (ops/settings) |

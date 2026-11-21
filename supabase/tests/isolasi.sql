@@ -157,7 +157,11 @@ begin
       ('prj_save', format('select public.prj_save(%L, null, ''{"name":"Proyek dibajak"}'')', k)),
       ('prj_get', format('select public.prj_get((select id from public.prj_projects where kos_id = %L limit 1))', k)),
       ('prj_status', format('select public.prj_status((select id from public.prj_projects where kos_id = %L limit 1), ''batal'', ''uji isolasi'')', k)),
-      ('prj_task_save', format('select public.prj_task_save((select id from public.prj_projects where kos_id = %L limit 1), null, ''{"title":"dibajak"}'')', k))
+      ('prj_task_save', format('select public.prj_task_save((select id from public.prj_projects where kos_id = %L limit 1), null, ''{"title":"dibajak"}'')', k)),
+      ('prj_quote_list', format('select public.prj_quote_list(%L)', k)),
+      ('prj_quote_save', format('select public.prj_quote_save(%L, null, ''{"title":"dibajak","lines":[{"description":"x","qty":1,"price":1}]}'')', k)),
+      ('prj_quote_get', format('select public.prj_quote_get((select id from public.prj_quotes where kos_id = %L limit 1))', k)),
+      ('prj_quote_decide', format('select public.prj_quote_decide((select id from public.prj_quotes where kos_id = %L limit 1), ''disetujui'', ''{}'')', k))
     ) v(name, q) loop
     begin
       execute t.q;

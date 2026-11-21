@@ -453,6 +453,20 @@ export function ScrProyek() {
   );
 }
 
+export function ScrPenawaranProyek() {
+  return (
+    <Phone bare>
+      <h3>PENAWARAN · PNW-2611-001</h3>
+      <span className="small muted">Video profil PT Maju · DATA CONTOH</span>
+      <div className="row between small"><span>Produksi video 2 menit · 1 paket</span><b>{rp(9000000)}</b></div>
+      <div className="row between small"><span>Drone · 1 hari</span><b>{rp(1500000)}</b></div>
+      <div className="row between small"><b>Total</b><b>{rp(10500000)}</b></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Termin 30/40/30</b><span>DP {rp(3150000)} · Draft {rp(4200000)} · Final {rp(3150000)}</span><span>Termasuk 2 kali revisi · berlaku s.d. 5 Des</span></div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn">Kirim WA</span><span className="mini-btn cta">Klien setuju</span></div>
+    </Phone>
+  );
+}
+
 export function ScrResep() {
   return (
     <Phone bare>

@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Sheet, Field, run, toast } from '@/components/ui';
+import { useKos } from '@/components/KosProvider';
 import { angka, parseRp, rp, tgl, today, errMsg } from '@/lib/format';
 
 export const KIND = { event: 'Event / acara', kreatif: 'Kreatif & media', produksi: 'Produksi', umum: 'Umum' };
@@ -14,14 +15,17 @@ export const PRIO = { tinggi: ['Penting', 'bad'], normal: ['Normal', 'void'], re
 export const Chip = ({ map, v }) => { const s = map[v] || [v, 'void']; return <span className={'chip ' + s[1]}>{s[0]}</span>; };
 export const Progress = ({ pct }) => (pct == null ? <span className="small muted">belum ada tugas</span>
   : <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}><div className="progress" style={{ flex: 1, minWidth: 60 }}><i style={{ width: `${pct}%` }} /></div><span className="small" style={{ whiteSpace: 'nowrap' }}>{pct}%</span></div>);
+// Jenis proyek bawaan menurut kategori bisnis
+export const defaultKind = (kos) => ({ event: 'event', media: 'kreatif', konstruksi: 'umum' }[kos?.category_code] || 'umum');
 export const jadwal = (p) => (p.start_date ? (p.end_date && p.end_date !== p.start_date ? `${tgl(p.start_date)} – ${tgl(p.end_date)}` : tgl(p.start_date)) : p.end_date ? `s.d. ${tgl(p.end_date)}` : 'Tanpa jadwal');
 
 // Formulir proyek (baru / ubah). init = proyek (ubah) atau {} (baru). fin = boleh mengisi nilai kontrak.
 export function ProjectForm({ kosId, init, fin, onClose, onDone }) {
   const edit = init?.id ? init : null;
+  const { kos } = useKos();
   const [opt, setOpt] = useState(null);
   const [f, setF] = useState({
-    name: edit?.name || '', kind: edit?.kind || init?.kind || 'event', status: 'berjalan',
+    name: edit?.name || '', kind: edit?.kind || init?.kind || defaultKind(kos), status: 'berjalan',
     contact_id: edit?.contact_id || '', newClient: false, client_name: '', client_phone: '',
     manager_user: edit ? edit.manager_user || '' : '', parent_id: edit?.parent_id || init?.parent_id || '',
     start_date: edit?.start_date || '', end_date: edit?.end_date || '', value: edit?.value != null ? angka(edit.value) : '',

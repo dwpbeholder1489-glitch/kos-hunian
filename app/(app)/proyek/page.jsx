@@ -15,6 +15,7 @@ import { Loading, Empty, Tile, run } from '@/components/ui';
 import { canArea } from '@/lib/business';
 import { rp, tglShort, today, errMsg } from '@/lib/format';
 import { KIND, STATUS, PRIO, Chip, Progress, ProjectForm, jadwal } from '@/components/Proyek';
+import { QuoteForm, qStatus } from '@/components/Penawaran';
 
 const TABS = [['aktif', 'Berjalan'], ['selesai', 'Selesai'], ['batal', 'Batal']];
 const tabOf = (s) => (s === 'selesai' ? 'selesai' : s === 'batal' ? 'batal' : 'aktif');
@@ -28,6 +29,9 @@ export default function Proyek() {
   const [tab, setTab] = useState('aktif');
   const [q, setQ] = useState('');
   const [kind, setKind] = useState('');
+  const [view, setView] = useState('proyek');   // proyek | penawaran
+  const [qform, setQform] = useState(false);
+  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'penawaran') setView('penawaran'); } catch {} }, []);
   const load = () => supabase.rpc('prj_list', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setD(data))));
   useEffect(() => { load(); }, [kosId, ver]); // eslint-disable-line react-hooks/exhaustive-deps
   useBaru(() => setForm({}));
@@ -49,10 +53,14 @@ export default function Proyek() {
   const toggle = async (t) => { if (await run(() => supabase.rpc('prj_task_status', { p_id: t.id, p_status: t.status === 'proses' ? 'selesai' : 'proses' }), t.status === 'proses' ? 'Tugas selesai' : 'Tugas mulai dikerjakan', errMsg)) load(); };
   return (
     <div className="stack">
-      <PageHeader title="Proyek" help={<PageHelp page="proyek" />} actions={canNew && <button className="primary" onClick={() => setForm({})}>+ Proyek baru</button>} />
+      <PageHeader title="Proyek" help={<PageHelp page="proyek" />} actions={view === 'penawaran'
+        ? d.allowed && <button className="primary" onClick={() => setQform(true)}>+ Penawaran baru</button>
+        : canNew && <button className="primary" onClick={() => setForm({})}>+ Proyek baru</button>} />
       {!d.allowed && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.REQUESTED" title="Proyek tersedia mulai Paket Bisnis"
         text={d.projects.length ? 'Proyek yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan proyeknya diselesaikan atau dibatalkan. Membuat & mengubah proyek butuh Paket Bisnis.'
           : 'Kelola setiap acara & pekerjaan klien sebagai proyek: klien, PIC, jadwal, milestone & rencana termin, tugas tiap anggota tim, lampiran, dan riwayat.'} />}
+      {d.can_quote && <div className="seg">{[['proyek', 'Proyek'], ['penawaran', `Penawaran${d.quotes_open ? ` (${d.quotes_open} berjalan)` : ''}`]].map(([k, l]) => <button key={k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}</div>}
+      {view === 'penawaran' ? <QuoteTab kosId={kosId} ver={ver} onNew={() => setQform(true)} allowed={d.allowed} /> : <>
 
       {d.mine.length > 0 && <section className="panel" style={{ gap: 6 }}>
         <span className="label">Tugas saya ({d.mine.length})</span>
@@ -106,7 +114,47 @@ export default function Proyek() {
             </>} />}
       </>}
       <span className="small muted">Nilai kontrak & rencana termin di sini belum menjadi tagihan atau pendapatan di Pembukuan. Penagihan termin menyusul di tahap berikutnya.</span>
+      </>}
+      {qform && <QuoteForm kosId={kosId} init={{ kind: 'awal' }} onClose={() => setQform(false)} onDone={(id) => { setQform(false); if (id) router.push(`/proyek/penawaran/${id}`); }} />}
       {form && <ProjectForm kosId={kosId} init={form} fin={d.fin} onClose={() => setForm(null)} onDone={(id) => { setForm(null); if (id) router.push(`/proyek/${id}`); else load(); }} />}
     </div>
   );
+}
+
+// Tab Penawaran: semua penawaran & perubahan scope (pemilik, pengelola, keuangan)
+function QuoteTab({ kosId, ver, onNew, allowed }) {
+  const router = useRouter();
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const [f, setF] = useState('buka');
+  useEffect(() => { supabase.rpc('prj_quote_list', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data))); }, [kosId, ver]);
+  if (err) return <div className="notice bad">{err}</div>;
+  if (!d) return <Loading />;
+  const groups = { buka: (x) => ['draf', 'terkirim'].includes(x.status), setuju: (x) => x.status === 'disetujui', tutup: (x) => ['ditolak', 'batal'].includes(x.status) };
+  const rows = d.quotes.filter(groups[f]);
+  const nilai = d.quotes.filter(groups.buka).reduce((a, x) => a + Number(x.total), 0);
+  return <>
+    {d.quotes.length === 0 ? <Empty title="Belum ada penawaran" text="Buat penawaran berisi rincian pekerjaan, harga, termin pembayaran, batas revisi, dan apa yang termasuk/tidak termasuk. Saat klien setuju, proyeknya dibuat otomatis.">
+      {allowed && <button className="primary" onClick={onNew}>+ Buat penawaran pertama</button>}</Empty> : <>
+      <div className="grid">
+        <Tile label="Penawaran berjalan" value={d.quotes.filter(groups.buka).length} sub={`nilai ${rp(nilai)}`} />
+        <Tile label="Disetujui" value={d.quotes.filter(groups.setuju).length} sub="sudah menjadi proyek / perubahan" />
+        <Tile label="Lewat masa berlaku" value={d.quotes.filter((x) => x.expired).length} tone={d.quotes.some((x) => x.expired) ? 'bad' : ''} sub="belum diputuskan klien" />
+      </div>
+      <div className="seg">{[['buka', 'Berjalan'], ['setuju', 'Disetujui'], ['tutup', 'Ditolak / batal']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l} ({d.quotes.filter(groups[k]).length})</button>)}</div>
+      {rows.length === 0 ? <Empty title="Tidak ada" art={false} /> :
+        <DataTable rows={rows} caption="Daftar penawaran" onRow={(x) => router.push(`/proyek/penawaran/${x.id}`)} rowLabel={(x) => x.title}
+          columns={[
+            { key: 't', label: 'Penawaran', main: true, sort: (x) => x.title.toLowerCase(), render: (x) => <><b>{x.title}</b><div className="small muted">{x.number}{x.kind === 'perubahan' ? ' · perubahan scope' : ''}{x.client ? ` · ${x.client}` : ''}</div></> },
+            { key: 'd', label: 'Tanggal', hide: 'tablet', sort: (x) => x.quote_date, render: (x) => <span className="small">{tglShort(x.quote_date)}{x.valid_until ? ` · s.d. ${tglShort(x.valid_until)}` : ''}</span> },
+            { key: 'v', label: 'Nilai', align: 'right', sort: (x) => Number(x.total), render: (x) => rp(x.total) },
+            { key: 's', label: 'Status', render: (x) => { const s = qStatus(x); return <span className={'chip ' + s[1]}>{s[0]}{x.revision ? ` · rev ${x.revision}` : ''}</span>; } },
+          ]}
+          card={(x) => { const s = qStatus(x); return <>
+            <div className="dt-row"><b>{x.title}</b><span className={'chip ' + s[1]}>{s[0]}</span></div>
+            <span className="small muted">{x.number}{x.revision ? ` · revisi ${x.revision}` : ''}{x.kind === 'perubahan' ? ' · perubahan scope' : ''}{x.client ? ` · ${x.client}` : ''}</span>
+            <span className="small"><b>{rp(x.total)}</b>{x.valid_until ? ` · berlaku s.d. ${tglShort(x.valid_until)}` : ''}{x.project ? ` · ${x.project}` : ''}</span>
+          </>; }} />}
+    </>}
+  </>;
 }
