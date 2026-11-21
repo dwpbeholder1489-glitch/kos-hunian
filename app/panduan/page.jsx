@@ -794,7 +794,7 @@ const PARTS = [
       <>Setiap perubahan <b>batas kredit, tempo, daftar harga, tipe, dan sales</b> tercatat sebelum → sesudah di bagian <b>Riwayat syarat</b> (layar pelanggan) dan Konfigurasi › Riwayat — hanya terlihat oleh pemilik/pengelola.</>,
     ], <>Sales harus anggota tim bisnis ini. Laporan kinerja per sales menyusul bersama indikator grosir.</>, null, null],
   ]],
-  ['AD', 'Tampilan adaptif & Pusat Pengalaman', [
+  ['AD', 'Tampilan adaptif, Pusat Pengalaman & Alur kerja', [
     ['Menu yang menyesuaikan bisnis & tombol (+)', 'Menu bawah · menu samping (☰ / laptop)', [
       <>Menu bawah di HP selalu: <b>Beranda</b> · <b>menu utama bisnis Anda</b> · <b>(+)</b> · <b>Laporan</b> · <b>Akun</b>. Menu utama mengikuti jenis bisnis: toko = <b>Transaksi</b>, kos = <b>Kamar</b>, laundry & kuliner = <b>Pesanan</b>, bisnis kustom = jenis data utama (mis. <b>Proyek</b>).</>,
       <>Tombol <b>(+)</b> di tengah <b>selalu ada</b> di semua bisnis. Ketuk untuk aksi cepat, mis. toko: Penjualan baru, Pesanan grosir, Tambah produk, Pembelian, Catat pengeluaran/pemasukan, Tambah pelanggan; kos: Tambah kamar, Tambah penghuni, Booking, Buat tagihan, Catat pembayaran.</>,
@@ -824,6 +824,24 @@ const PARTS = [
       <>Ubah lewat <b>Atur dashboard</b>: centang/urutkan bagian, centang/urutkan <b>Angka utama</b>, dan pilih <b>Periode bawaan</b>. Bisa juga di Pusat Pengalaman › Dashboard. <b>Perlu perhatian</b> kini juga memberi sinyal: piutang lewat tempo, harga modal naik, barang tidak terjual ≥ 90 hari, food cost di atas 40%, bahan menipis, ketepatan waktu di bawah 80%.</>,
       <>Kontraktor & proyek (bisnis baru): selain Proyek & Klien kini ada jenis data <b>RAB</b>, <b>Material</b>, dan <b>Tenaga kerja</b>. Dashboard menghitung <b>Realisasi vs RAB</b> = total material + upah tenaga kerja dibanding total RAB semua proyek; rincian per proyek ada di Laporan (RAB per proyek, Material per proyek, Upah per proyek).</>,
     ], <>Bila satu bagian gagal dimuat, bagian lain tetap tampil dengan tombol <b>Coba lagi</b>. Angka yang butuh izin keuangan tidak tampil untuk karyawan tanpa izin itu. Bisnis kontraktor lama bisa menambah RAB/Material/Tenaga kerja sendiri di Business Builder.</>, null, null],
+    ['Peta proses & daftar alur', 'Pengaturan bisnis › Alur kerja', [
+      <>Tab <b>Peta proses</b> menampilkan urutan kerja bisnis Anda, mis. toko: Belanja ke supplier → Terima barang → Persediaan → Harga jual → Penjualan → Pembayaran → Pembukuan → Laporan; laundry: Terima pesanan → Periksa barang → Proses → Cek kualitas → Selesai dikerjakan → Antar/diambil → Pembayaran; kontraktor: Proyek → RAB → Pembelian material → Tenaga kerja → Pelaksanaan → Progres → Kontrol biaya → Serah terima.</>,
+      <>Tiap langkah diberi status dari <b>data 90 hari terakhir</b>: <b>Berjalan</b> (ada datanya), <b>Otomatis</b> (dikerjakan sistem, mis. pembukuan), <b>Belum dipakai</b>, <b>Belum diatur</b> (tahapnya belum ada di alur pesanan Anda, mis. belum ada tahap Cek kualitas), atau <b>Fitur nonaktif</b>. Ketuk langkah untuk membuka menunya.</>,
+      <>Tab <b>Alur</b> berisi semua alur yang aktif: <b>Bisa diatur</b> (Pesanan jasa/laundry/kuliner), <b>Kustom</b> (jenis data Business Builder yang punya status), dan <b>Standar</b> (mis. Penjualan kasir, Belanja, Pesanan grosir, Booking, Sewa, Keluhan & perbaikan). Angka di tiap status = data yang sedang berjalan + yang selesai/batal 90 hari terakhir.</>,
+      <>Ketuk alur untuk detail: status & jumlahnya, rata-rata lama di tiap tahap (bila minimal 3 pesanan), persetujuan yang berlaku, permintaan persetujuan terakhir, dan versi alur.</>,
+    ], <>Alur standar mengikuti aturan bawaan PRASARA agar stok, kas, dan pembukuan tetap benar — yang bisa diatur di sana hanya persetujuan untuk tindakan berisiko (menu Persetujuan). Halaman ini hanya untuk pemilik & pengelola.</>, null, null],
+    ['Aturan bersyarat untuk karyawan & persetujuan per alur', 'Alur kerja › Alur › Pesanan (atau jenis data kustom) › + Aturan', [
+      <>Pilih <b>langkah yang diatur</b>. Pesanan: <b>Langsung siap (melewati tahap)</b>, <b>Diserahkan ke pelanggan</b>, atau <b>Pesanan dibatalkan</b>. Catatan kustom: <b>Pindah ke</b> status tertentu (mis. Pindah ke Selesai).</>,
+      <>Isi <b>syarat</b> (boleh kosong = selalu): masih ada sisa bayar, sudah ada pembayaran, total minimal/maksimal, diantar atau diambil sendiri; untuk catatan kustom juga <b>isian</b> (mis. Progres kurang dari 100, Nilai minimal Rp100.000.000, Nomor kontrak masih kosong).</>,
+      <>Pilih <b>Maka</b>: <b>Tidak diizinkan</b> (karyawan tidak bisa), <b>Perlu persetujuan pemilik</b> (karyawan mengirim permintaan, langkah dijalankan otomatis setelah Anda setujui di menu Persetujuan), atau <b>Wajib catatan</b> (mis. nama penerima). Beri nama aturan dan, bila perlu, pesan untuk karyawan. Contoh: "Bila diserahkan ke pelanggan dan masih ada sisa bayar → tidak diizinkan".</>,
+      <>Aturan berlaku di semua jalan: menu Pesanan, Dapur, Antar jemput, dan tutup meja. Kurir yang terkena aturan persetujuan diminta menyerahkan lewat pemilik/kasir. Matikan, ubah, atau hapus aturan kapan saja.</>,
+    ], <>Aturan <b>tidak berlaku untuk pemilik</b> — pemilik tetap bisa mencatat apa pun yang benar-benar terjadi. Aturan yang meminta persetujuan tersedia mulai <b>Paket Bisnis</b>; "Tidak diizinkan" dan "Wajib catatan" bisa dipakai di semua paket. Maksimal 20 aturan per alur.</>, 'warn', null],
+    ['Alur siap pakai, versi & saran alur', 'Alur kerja › Alur · Saran · Riwayat', [
+      <><b>Alur siap pakai</b> (bisnis jasa): mis. Laundry kiloan (Timbang & cek → Cuci → Kering → Setrika & lipat → Cek kualitas → Kemas), Dry clean, Cuci sepatu, Jahit & permak, Servis perangkat, Percetakan, Jasa kreatif, Konsultasi, Dapur kuliner. Yang cocok dengan usaha Anda ditandai <b>Cocok</b>. Ketuk → <b>Pakai alur ini</b>; centang bila ingin menyertakan aturan yang disarankan.</>,
+      <>Tahap dengan nama sama dipakai ulang; tahap lain <b>dinonaktifkan, tidak dihapus</b>, sehingga riwayat pesanan tetap utuh. Tahap yang sedang dipakai pesanan dalam proses tidak bisa dinonaktifkan — selesaikan dulu pesanannya.</>,
+      <>Setiap perubahan tahap, status, langkah Builder, atau aturan disimpan sebagai <b>versi</b>. Versi pertama disimpan otomatis sebelum perubahan pertama. Di detail alur, tekan <b>Pulihkan</b> pada versi mana pun; tab <b>Riwayat</b> menampilkan semua perubahan.</>,
+      <>Tab <b>Saran</b> memberi saran dari data nyata: alur siap pakai untuk usaha sejenis, menambah tahap <b>Cek kualitas</b>, tahap yang paling lama, tahap yang sering dilewati, pesanan yang sering diserahkan belum lunas, banyak pesanan terlambat, catatan kustom yang tertahan, status yang tidak pernah dipakai, dan langkah proses yang belum dipakai. Pilih <b>Terapkan</b>, <b>Nanti</b> (30 hari), atau <b>Tidak perlu</b>.</>,
+    ], <>Saran tidak pernah diterapkan tanpa persetujuan Anda. Saran yang ditolak tidak muncul lagi selama kondisinya sama.</>, null, null],
   ]],
 ];
 
@@ -892,7 +910,7 @@ export default function Panduan() {
           <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
-          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–113</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman: profil bisnis, fitur, rekomendasi, atur & pulihkan tampilan</span></div>
+          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–116</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

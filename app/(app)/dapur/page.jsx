@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/Page';
 import { Loading, Empty, toast } from '@/components/ui';
 import { angka, errMsg } from '@/lib/format';
 import { isKul } from '@/lib/jasa';
+import { requestApproval } from '@/lib/approval';
 
 const menit = (ts) => Math.max(0, Math.round((Date.now() - new Date(ts).getTime()) / 60000));
 const umur = (ts) => { const m = menit(ts); return m < 60 ? `${m} mnt` : `${Math.floor(m / 60)} j ${m % 60} mnt`; };
@@ -35,7 +36,16 @@ export default function Dapur() {
     setBusy(o.id);
     const { data, error } = await supabase.rpc('svc_order_move', { p_order: o.id, p_to: to, p_note: null });
     setBusy(null);
-    if (error) return toast(errMsg(error));
+    if (error) {
+      // Aturan alur kerja: "Langsung siap" oleh karyawan bisa perlu persetujuan pemilik
+      if (/PERLU_PERSETUJUAN/.test(error.message || '') && to === 'siap') {
+        const why = errMsg(error).replace(/\s*Kirim permintaan dari aplikasi\.?\s*$/, '');
+        if (window.confirm(`${why}\n\nKirim permintaan persetujuan sekarang?`)
+            && await requestApproval({ kos: kos.id, action: 'langkah_pesanan_jasa', payload: { order_id: o.id, to } })) load();
+        return;
+      }
+      return toast(errMsg(error));
+    }
     toast(`${o.number}: ${data.stage}`); load();
   };
   return (

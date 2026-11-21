@@ -11,7 +11,7 @@ import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, errMsg, parseRp, waLink } from '@/lib/format';
-import { withApproval } from '@/lib/approval';
+import { withApproval, requestApproval } from '@/lib/approval';
 import { uid, qtyNum } from '@/lib/retail';
 import { STATUS, COMPLAINT, PAYM, waktu, hari, sisa, stageLabel, late, linesText, waText, toLocalInput, fromLocalInput, waitPickup, onTheWay, PICKUP, DELIVERY, tgl2, mapsLink, terms, DINE, dineText, COMPLAINT_K } from '@/lib/jasa';
 import { moduleOn } from '@/lib/business';
@@ -245,7 +245,16 @@ function Detail({ o, d, kos, onClose, onChanged }) {
     setBusy(true);
     const { data, error } = await supabase.rpc('svc_order_move', { p_order: o.id, p_to: to, p_note: note });
     setBusy(false);
-    if (error) return toast(errMsg(error));
+    if (error) {
+      // Aturan alur kerja (menu Alur kerja) bisa meminta persetujuan pemilik untuk langkah ini
+      if (/PERLU_PERSETUJUAN/.test(error.message || '') && (to === 'siap' || to === 'selesai')) {
+        const why = errMsg(error).replace(/\s*Kirim permintaan dari aplikasi\.?\s*$/, '');
+        if (window.confirm(`${why}\n\nKirim permintaan persetujuan sekarang?`)
+            && await requestApproval({ kos: kos.id, action: 'langkah_pesanan_jasa', payload: { order_id: o.id, to, note } })) refresh();
+        return;
+      }
+      return toast(errMsg(error));
+    }
     toast(data.stage); refresh();
   };
   const cancel = async () => {

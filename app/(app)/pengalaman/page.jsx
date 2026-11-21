@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/Page';
 import { Sheet, Loading, toast, run } from '@/components/ui';
 import NavIcon from '@/components/NavIcon';
 import DnaForm from '@/components/DnaForm';
+import ProcessMap from '@/components/ProcessMap';
 import { errMsg, tgl } from '@/lib/format';
 import { loadVocab, STAGES, STAGE_ORDER, RELEVANCE, RECO_STATUS, EVENTS, HISTORY_ACTION, PART_NAME } from '@/lib/dna';
 import { sectionsFor, groupIcon, mainTabOf, fourthTab } from '@/lib/menu';
@@ -19,14 +20,6 @@ import { DASHBOARDS, dashOf, KPIS, defaultKpis, PERIODS } from '@/lib/dashboards
 import { tabsFor, homeOf, canArea } from '@/lib/business';
 
 const TABS = [['profil', 'Profil bisnis'], ['fitur', 'Fitur saya'], ['rekomendasi', 'Rekomendasi'], ['navigasi', 'Navigasi'], ['aksi', 'Aksi cepat'], ['dashboard', 'Dashboard'], ['evolusi', 'Perkembangan']];
-// Alur bisnis yang dikenali per mesin (§7) — urutan kerja yang didukung PRASARA untuk jenis bisnis ini
-const PROCESS = {
-  retail: ['Pembelian', 'Penerimaan barang', 'Persediaan', 'Harga', 'Penjualan', 'Pembayaran', 'Pembukuan', 'Laporan'],
-  kuliner: ['Belanja bahan', 'Bahan masuk', 'Persediaan', 'Resep', 'Dapur', 'Pesanan', 'Pembayaran', 'Food cost'],
-  jasa: ['Terima pesanan', 'Pemeriksaan', 'Proses', 'Cek kualitas', 'Selesai', 'Antar', 'Pembayaran'],
-  properti: ['Siapkan kamar', 'Ketersediaan', 'Booking', 'Sewa', 'Tagihan', 'Pembayaran', 'Perawatan', 'Laporan'],
-  kustom: ['Data masuk', 'Alur status', 'Persetujuan', 'Selesai', 'Kas & biaya', 'Laporan'],
-};
 const SIG = [['employees', 'Karyawan'], ['outlets', 'Outlet/cabang'], ['products', 'Barang aktif'], ['tx30', 'Transaksi 30 hari'], ['customers', 'Pelanggan'], ['suppliers', 'Supplier'], ['age_days', 'Umur (hari)']];
 // tanggal + jam dari timestamp (tgl() khusus tanggal YYYY-MM-DD)
 const tglw = (ts) => (ts ? new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' }) : '—');
@@ -92,6 +85,8 @@ export default function Pengalaman() {
 // ---------- A. Profil bisnis (Business DNA) ----------
 function Profil({ kosId, ov, vocab, onSaved }) {
   const [d, setD] = useState(ov.profile.dna);
+  const [pm, setPm] = useState(null);
+  useEffect(() => { supabase.rpc('process_map', { p_kos: kosId }).then((r) => setPm(r.data || [])); }, [kosId]);
   const [why, setWhy] = useState('');
   const [busy, setBusy] = useState(false);
   const changed = JSON.stringify(d) !== JSON.stringify(ov.profile.dna);
@@ -103,13 +98,12 @@ function Profil({ kosId, ov, vocab, onSaved }) {
     toast(data?.new_recommendations ? `Profil disimpan · ${data.new_recommendations} rekomendasi baru` : 'Profil disimpan');
     setWhy(''); onSaved();
   };
-  const engine = ov.engine === 'jasa' && ov.category === 'kuliner' ? 'kuliner' : ov.engine;
   return (
     <div className="stack">
-      <section className="panel">
-        <h3>Alur bisnis yang dikenali</h3>
-        <ol className="bec-flow">{(PROCESS[engine] || PROCESS.kustom).map((s) => <li key={s}>{s}</li>)}</ol>
-        <span className="small muted">Alur ini menentukan urutan menu dan saran fitur. Alur kerja khusus (tahap, status, persetujuan) diatur di menu masing-masing.</span>
+      <section className="panel stack">
+        <div className="row between"><h3>Alur bisnis yang dikenali</h3><Link className="small" href="/alur">Buka Alur kerja ›</Link></div>
+        {pm ? <ProcessMap data={pm} compact /> : <Loading rows={1} />}
+        <span className="small muted">Hijau = sudah berjalan, garis putus = belum diatur/fitur nonaktif (data 90 hari terakhir). Tahap, status, aturan untuk karyawan, dan saran alur diatur di menu Alur kerja.</span>
       </section>
       <section className="panel">
         <div className="row between"><h3>Business DNA</h3><span className="small muted">{ov.profile.stored ? `Versi ${ov.profile.version} · ${tglw(ov.profile.updated_at)}` : 'Belum disimpan — bawaan kategori'}</span></div>

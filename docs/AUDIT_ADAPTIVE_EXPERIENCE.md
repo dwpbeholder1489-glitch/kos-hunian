@@ -154,3 +154,25 @@ Belum (fase berikutnya): KPI pilihan & periode bawaan dashboard, widget khusus s
 | Kegagalan satu widget tidak menggagalkan dashboard | Verified (kode) | `WidgetBoundary` |
 
 Belum / jujur: nomor seri & garansi elektronik (belum ada data di mesin Retail), kinerja shift kuliner (kuliner tidak memakai shift kasir), stok per ukuran/warna sebagai widget khusus (varian sudah ada di Barang; widget menyusul), Realisasi vs RAB per proyek di dashboard (tersedia sebagai laporan per proyek).
+
+## 16. Hasil Fase 4 — Process & Workflow Adaptation (21 Nov 2026)
+
+Audit awal: alur sudah ada di tiga mesin terpisah (tahap pesanan jasa `svc_stages`, status & langkah Builder `bb_statuses/bb_transitions`, persetujuan per tindakan `approval_*`). Belum ada peta proses, registry, aturan bersyarat, versi/pulihkan alur, template, atau saran alur. Fase 4 dibangun DI ATAS mesin itu (migrasi `20261121120000_alur_kerja.sql`), tanpa mengubah perilaku lama.
+
+| Bagian blueprint | Status | Bukti |
+|---|---|---|
+| Business Process Recognition — peta proses toko, grosir, kuliner, laundry, jasa, kos, konstruksi, event (+ kustom dari jenis data); status langkah dari data 90 hari (berjalan/otomatis/belum dipakai/belum diatur/fitur nonaktif) | Verified | uji A, F, H (`alur_kerja.sql`) |
+| Workflow Registry — 12 alur standar + alur kustom per jenis data, jumlah per status, lama per tahap | Verified | uji H; render |
+| Custom Workflow — tahap pesanan (menu lama) + 14 alur siap pakai per subkategori; status/langkah kustom tetap di Builder | Verified | uji B |
+| Conditional Rules — tolak / perlu persetujuan / wajib catatan; syarat sisa bayar, sudah bayar, total, diantar, isian catatan kustom; ditegakkan di database untuk semua jalur; pemilik dikecualikan | Verified | uji C, D, F |
+| Approval Workflow per alur — `langkah_pesanan_jasa` (dijalankan otomatis setelah disetujui), `bb_pindah_status`, batal pesanan | Verified | uji C |
+| Workflow History & versioning — versi awal otomatis, versi tiap perubahan (tahap, Builder, aturan, template), pulihkan | Verified | uji B, E, F, J |
+| Workflow Recommendations — template cocok, tahap cek kualitas, tahap paling lama, tahap sering dilewati, sering diserahkan belum lunas, banyak terlambat, catatan kustom tertahan, status tak terpakai, langkah proses belum dipakai; terima/tunda/tolak, tidak berulang | Verified (aturan template, cek kualitas, keputusan) | uji G; aturan berbasis volume (≥10 pesanan) diuji lewat kode, belum dengan data 30 hari |
+| Izin & isolasi | Verified | uji C, I; `isolasi.sql` 201/201 |
+| Regresi | Verified | 44 uji lama identik sebelum/sesudah; harga V2 identik |
+| UI `/alur` + ringkasan di Pusat Pengalaman | Verified (render) | Chrome 375/390/820/1440 tanpa overflow |
+| Panduan Langkah 114–116, `lib/guide.js` (alur, pesanan, layanan) | Selesai | |
+
+Keputusan yang perlu konfirmasi pemilik: aturan yang meminta **persetujuan** mengikuti fitur `persetujuan` (Paket Bisnis/Pro, sama seperti mengatur aturan persetujuan sendiri); aturan **tolak** & **wajib catatan** tersedia di semua paket.
+
+Belum / jujur: alur standar (penjualan, belanja, sewa, booking, grosir) tidak bisa diberi aturan bersyarat — hanya persetujuan per tindakan, agar stok/kas/jurnal tetap benar. Kurir yang terkena aturan persetujuan saat "Sudah diantar" diminta menyerahkan lewat pemilik/kasir (permintaan persetujuan dari menu Antar belum ada). Template alur untuk mesin selain jasa (mis. alur Builder event/proyek per subkategori) belum; status kustom tetap disusun di Builder.

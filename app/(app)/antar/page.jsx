@@ -43,6 +43,8 @@ export default function Antar() {
 
   const act = async (fn, args, ok) => {
     const { error } = await supabase.rpc(fn, args);
+    // Aturan alur kerja yang meminta persetujuan: kurir tidak bisa menyelesaikan sendiri — pemilik/kasir yang menyerahkan.
+    if (error && /PERLU_PERSETUJUAN/.test(error.message || '')) return toast(`${errMsg(error).replace(/\s*—.*$/, '')}: penyerahan ini perlu persetujuan pemilik. Minta pemilik menyelesaikannya dari menu Pesanan.`);
     if (error) return toast(errMsg(error));
     toast(ok); load();
   };

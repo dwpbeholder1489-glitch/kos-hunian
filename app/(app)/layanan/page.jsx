@@ -63,9 +63,9 @@ export default function Layanan() {
         </section>
       ))}
       {T.kul && <Tables kos={kos} can={can} />}
-      <section className="panel">
+      <section className="panel" id="tahap">
         <h3>Tahap proses</h3>
-        <span className="small muted">Urutan tahap antara "Diterima" dan "Siap". {T.kul ? 'Contoh kuliner: Dimasak → Siap saji.' : 'Contoh laundry: Cuci → Kering → Setrika → QC → Kemas.'} Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan.</span>
+        <span className="small muted">Urutan tahap antara "Diterima" dan "Siap". {T.kul ? 'Contoh kuliner: Dimasak → Siap saji.' : 'Contoh laundry: Cuci → Kering → Setrika → QC → Kemas.'} Tahap yang sedang dipakai pesanan tidak bisa dinonaktifkan. Alur siap pakai, aturan untuk karyawan & versi tahap ada di menu <Link href="/alur?w=svc_order">Alur kerja</Link>.</span>
         {st.map((x, i) => (
           <div className="row" key={x.id || 'n' + i} style={{ flexWrap: 'nowrap', alignItems: 'center' }}>
             <span className="small muted" style={{ width: 18 }}>{i + 1}</span>
