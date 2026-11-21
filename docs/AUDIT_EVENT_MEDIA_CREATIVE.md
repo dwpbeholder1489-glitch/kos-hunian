@@ -131,3 +131,16 @@ Blueprint §44 melarang memutuskan ini dengan asumsi.
 | K6 | Template Builder lama (`bb_event`, dst.) | Tetap berjalan; bisnis baru kategori event/media memakai mesin baru setelah siap; impor data lama atas persetujuan pemilik | Tidak menghilangkan fitur yang sudah ada |
 
 Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Proposed** sampai pemilik menguncinya.
+
+---
+
+## 7. Keputusan pemilik (21 Nov 2026)
+
+| Kode | Keputusan | Status |
+|---|---|---|
+| K1 | Mesin Proyek baru (`prj_*`), template Builder lama tetap berjalan | **Final** |
+| K2 | Event = proyek bertipe event (perluasan 1-ke-1), subproyek opsional | **Final** (menjawab Open Question #1; mengunci EVT-004, EVT-017) |
+| K3 | Pembayaran sebelum serah terima = uang muka; pendapatan diakui per termin/milestone yang diserahkan | **Final** |
+| K4 | File karya tahap awal = tautan eksternal + metadata & versi di PRASARA; file kecil lewat Lampiran; konektor OAuth menyusul setelah diuji | **Final** (menjawab Open Question #3; mengunci arah EVT-012, EVT-022) |
+| K5 | Paket untuk Mesin Proyek | Menunggu |
+| K6 | Cara pindah data template Builder lama | Menunggu (cek jumlah pemakai di produksi dulu) |
