@@ -14,6 +14,8 @@ import { rp, angka, parseRp, errMsg, today } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, unitPrice, breakPrice, uid, PAY, PAY_ALL, splitSerials } from '@/lib/retail';
 import { toBase } from '@/lib/units';
 import { useMedia } from '@/components/Page';
+import { saveCatalog, loadCatalog, isNetErr, enqueue, deviceId, localNumber, pendingStock, pendingOf, online as isOnline } from '@/lib/offline';
+import { useNet, useQueue, AntreanSheet, OfflineStrukSheet, waktu } from '@/components/KasirOffline';
 
 // Harga dasar = sama dengan price_resolve di server: daftar harga pelanggan (bila berlaku) › harga outlet/umum
 // (katalog sudah membawa harga outlet lokasi ini). Pratinjau saja — angka resmi dihitung server saat disimpan.
@@ -38,8 +40,11 @@ const heldKey = (k) => 'prasara.held.' + k;   // transaksi ditahan (per perangka
 const lastKey = (k) => 'prasara.lastsale.' + k;
 
 export default function Kasir() {
-  const { kos, kosId, ver } = useKos();
-  const [d, setD] = useState(null);
+  const { kos, kosId, ver, session } = useKos();
+  const [raw, setD] = useState(null);
+  const online = useNet();
+  const queue = useQueue();
+  const [antre, setAntre] = useState(false);
   const [err, setErr] = useState(null);
   const [q, setQ] = useState('');
   const [tier, setTier] = useState('ecer');
@@ -56,8 +61,8 @@ export default function Kasir() {
   const [sheet, setSheet] = useState(null);  // 'cust' | 'note' | 'held' | {units: product}
   const [cmd, setCmd] = useState({ k: '', n: 0 });  // perintah ke panel bayar: 'pay' | 'disc'
   const [lastSale, setLastSale] = useState(null);
-  const [online, setOnline] = useState(true);
-  const [who, setWho] = useState('');
+  // nama kasir dari sesi (tetap ada saat offline)
+  const who = (() => { const u = session?.user; return u?.user_metadata?.name || u?.user_metadata?.full_name || (u?.email || '').split('@')[0] || ''; })();
   // ≥1180px: katalog + keranjang berdampingan (gambar acuan Kasir). Lebih sempit (HP, tablet, laptop kecil dengan sidebar): katalog geser, keranjang di bawahnya + bilah Bayar.
   const desk = useMedia('(min-width: 1180px)');
   const [seq, setSeq] = useState(0); // naik setiap transaksi tersimpan → panel bayar dibuat ulang (nomor transaksi baru)
@@ -65,22 +70,40 @@ export default function Kasir() {
   const searchRef = useRef(null);
   const cartRef = useRef(null);
   useEffect(() => { supabase.rpc('shift_current', { p_kos: kosId }).then(({ data, error }) => setShift(error ? undefined : data)); }, [kosId, ver, done]);
-  useEffect(() => {
-    const on = () => setOnline(navigator.onLine);
-    on(); window.addEventListener('online', on); window.addEventListener('offline', on);
-    supabase.auth.getUser().then(({ data }) => { const u = data?.user; setWho(u?.user_metadata?.name || u?.user_metadata?.full_name || (u?.email || '').split('@')[0] || ''); });
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', on); };
-  }, []);
 
   const load = async () => {
-    // katalog kasir dari database tanpa harga modal (aman untuk karyawan kasir)
+    // katalog kasir dari database tanpa harga modal (aman untuk karyawan kasir); salinannya disimpan di HP untuk Kasir offline
     const { data, error } = await supabase.rpc('kasir_catalog', { p_kos: kosId });
-    if (error) return setErr(errMsg(error));
+    if (error) {
+      if (isNetErr(error)) {
+        const c = await loadCatalog(kosId);
+        if (c?.data) { setErr(null); return setD({ ...c.data, offline: true, cachedAt: c.at }); }
+        return setErr('OFFLINE_KOSONG');
+      }
+      return setErr(errMsg(error));
+    }
     const c = await supabase.from('product_categories').select('id, name, sort').eq('kos_id', kosId).order('sort').order('name');
-    setD({ products: data.products, units: data.units, contacts: data.customers, cats: c.data || [], breaks: data.breaks || [], policy: data.stock_policy || 'izinkan',
-      listItems: data.list_items || [], pricePolicy: data.price_policy || {} });
+    const next = { products: data.products, units: data.units, contacts: data.customers, cats: c.data || [], breaks: data.breaks || [], policy: data.stock_policy || 'izinkan',
+      listItems: data.list_items || [], pricePolicy: data.price_policy || {} };
+    setErr(null); setD(next);
+    saveCatalog(kosId, next);
   };
   useEffect(() => { load(); }, [kosId, ver]);
+  // internet kembali / antrean terkirim → muat ulang katalog (stok terbaru dari server)
+  const sentN = queue.filter((e) => e.kos === kosId && e.state !== 'antre').length;
+  useEffect(() => { if (online && raw) load(); }, [online, sentN]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Stok yang tampil = stok terakhir − penjualan di HP yang belum terkirim; pelanggan baru buatan HP ikut terdaftar
+  const pend = useMemo(() => pendingStock(queue, kosId), [queue, kosId]);
+  const d = useMemo(() => {
+    if (!raw) return raw;
+    const extra = [];
+    for (const e of pendingOf(queue, kosId)) {
+      const nc = e.payload?.new_contact;
+      if (nc?.key && !raw.contacts.some((x) => x.id === nc.key) && !extra.some((x) => x.id === nc.key)) extra.push({ id: nc.key, name: nc.name, phone: nc.phone, local: true });
+    }
+    return { ...raw, offline: raw.offline || !online, products: raw.products.map((p) => (pend[p.id] ? { ...p, stock: Number(p.stock) - pend[p.id] } : p)), contacts: [...raw.contacts, ...extra] };
+  }, [raw, pend, online, queue, kosId]);
+  const waiting = pendingOf(queue, kosId).length;
   // Keranjang (dan pelanggan/diskon/catatan) disimpan di perangkat ini supaya tidak hilang saat pindah menu
   useEffect(() => {
     try {
@@ -127,6 +150,7 @@ export default function Kasir() {
   };
   useEffect(() => { const h = (e) => keyRef.current?.(e); window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, []);
 
+  if (err === 'OFFLINE_KOSONG') return <Empty title="Kasir belum siap offline di HP ini" text="Buka Kasir sekali saat ada internet supaya daftar barang & harga tersimpan di HP. Setelah itu Kasir bisa dipakai walau internet putus." />;
   if (err) return <div className="notice bad">{err.includes('kasir_catalog') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -179,12 +203,16 @@ export default function Kasir() {
   const catalog = (
     <div className="stack pos-left" style={{ minWidth: 0 }}>
       <PageHeader title="Kasir" help={<PageHelp page="kasir" />} desc={false} actions={<>
-        <span className={'chip ' + (online ? 'good' : 'bad')} title={online ? 'Tersambung ke internet' : 'Tidak ada internet — transaksi tidak bisa disimpan'}>● {online ? 'Online' : 'Offline'}</span>
+        <span className={'chip ' + (online ? 'good' : 'bad')} title={online ? 'Tersambung ke internet' : 'Tidak ada internet — penjualan disimpan di HP dan dikirim otomatis'}>● {online && !d.offline ? 'Online' : 'Offline'}</span>
         {held.length > 0 && <button type="button" className="sm" onClick={() => setSheet('held')}>Ditahan ({held.length})</button>}
         {lastSale && <Link href={`/struk/${lastSale}`}><button type="button" className="sm ghost">Struk terakhir</button></Link>}
         {who && <span className="chip info" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>Kasir: {who}</span>}
         <div className="seg">{[['ecer', 'Eceran'], ['grosir', 'Grosir']].map(([k, l]) => <button key={k} className={tier === k ? 'on' : ''} onClick={() => switchTier(k)} aria-pressed={tier === k}>{l}</button>)}</div>
       </>} />
+      {d.offline ? <div className="offnote off"><span><b>Offline</b> · daftar barang & harga dari salinan di HP{raw.cachedAt ? ` (${waktu(raw.cachedAt)})` : ''}. Penjualan disimpan di HP dan dikirim otomatis saat internet kembali.</span>
+        <button className="sm" onClick={() => setAntre(true)}>{waiting ? `${waiting} menunggu` : 'Antrean HP'}</button></div>
+        : waiting > 0 || queue.some((e) => e.kos === kosId) ? <div className="offnote"><span>{waiting ? <><b>{waiting} transaksi offline</b> sedang dikirim dari HP ini.</> : 'Transaksi offline di HP ini sudah terkirim.'}</span><button className="sm ghost" onClick={() => setAntre(true)}>Lihat</button></div> : null}
+      {antre && <AntreanSheet kos={kos} onClose={() => setAntre(false)} />}
       <LokasiBar note="Stok yang tampil dan berkurang adalah stok di lokasi ini." />
       {lead && <div className="notice small" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
         <span>Dari permintaan <b>{lead.number}</b> · {lead.name}. Setelah dibayar, prospeknya otomatis <b>Jadi</b>.</span>
@@ -227,8 +255,8 @@ export default function Kasir() {
     </div>
   );
 
-  const panelProps = { kos, kosId, d, tier, cart, setCart, lead, contact, setContact, discount, setDiscount, note, setNote, cmd, thumbs, onHold: hold, reloadContacts: load,
-    onDone: (r) => { clearAll(); setDone(r); setSeq((x) => x + 1); setLastSale(r.id); try { localStorage.setItem(lastKey(kosId), r.id); } catch {} load(); } };
+  const panelProps = { kos, kosId, d, tier, cart, setCart, lead, contact, setContact, discount, setDiscount, note, setNote, cmd, thumbs, onHold: hold, reloadContacts: load, offline: d.offline,
+    onDone: (r) => { clearAll(); setDone(r); setSeq((x) => x + 1); if (!r.offline) { setLastSale(r.id); try { localStorage.setItem(lastKey(kosId), r.id); } catch {} } load(); } };
   const emptyPanel = (
     <aside className="pos-cart panel" aria-label="Keranjang">
       <div className="pos-ch"><h3><PosIcon n="cart" /> Keranjang (0)</h3></div>
@@ -273,7 +301,7 @@ export default function Kasir() {
           <button key={u.name} onClick={() => { add(sheet.units, u); setSheet(null); }} disabled={!(unitPrice(u, tier) > 0)}>{u.name} · {unitPrice(u, tier) > 0 ? rp(unitPrice(u, tier)) : 'harga kosong'}</button>
         ))}</div>
       </Sheet>}
-      {done && <Done r={done} onClose={() => setDone(null)} />}
+      {done && <Done r={done} kos={kos} onClose={() => setDone(null)} />}
     </div>
   );
 }
@@ -287,7 +315,7 @@ function CustPick({ contacts, value, onPick }) {
     <div className="list">
       <button type="button" className="li click" onClick={() => onPick('')} style={LI}><b className="small">Tanpa pelanggan</b>{!value && <span className="chip good">dipilih</span>}</button>
       {list.map((c) => <button type="button" key={c.id} className="li click" onClick={() => onPick(c.id)} style={LI}>
-        <div className="main"><b className="small">{c.name}</b>{(c.phone || c.price_list) && <span className="small muted">{[c.phone, c.price_list && `harga ${c.price_list}`].filter(Boolean).join(' · ')}</span>}</div>
+        <div className="main"><b className="small">{c.name}{c.local ? ' · baru (di HP)' : ''}</b>{(c.phone || c.price_list) && <span className="small muted">{[c.phone, c.price_list && `harga ${c.price_list}`].filter(Boolean).join(' · ')}</span>}</div>
         {value === c.id && <span className="chip good">dipilih</span>}</button>)}
     </div>
     {contacts.length === 0 && <span className="small muted">Belum ada pelanggan tersimpan.</span>}
@@ -314,7 +342,9 @@ function PosIcon({ n }) {
   return <svg className="pos-ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{P[n]}</svg>;
 }
 
-function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContact, discount, setDiscount, note, setNote, cmd, thumbs, onHold, onDone, reloadContacts }) {
+function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContact, discount, setDiscount, note, setNote, cmd, thumbs, onHold, onDone, reloadContacts, offline }) {
+  const { session } = useKos();
+  const [offReason, setOffReason] = useState('');   // offline: alasan diskon di atas batas (dicatat untuk pemilik)
   const [payOpen, setPayOpen] = useState(false);  // lembar Pembayaran (cara bayar, uang diterima, simpan)
   const [discOpen, setDiscOpen] = useState(!!discount);
   const [lineOpen, setLineOpen] = useState(null); // baris yang sedang dibuka menu ⋯ (ubah harga, nomor seri, hapus)
@@ -341,7 +371,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
   useEffect(() => { const r = reprice(cart, d, tier, contact || null); if (r.some((x, i) => x.price !== cart[i].price)) setCart(r); }, [contact, cart]);
   const cartKey = JSON.stringify(cart.map((c) => [c.product_id, c.unit, c.qty, c.auto ? null : c.price])) + tier + (contact || '');
   useEffect(() => {
-    if (!cart.length || cart.some((c) => !(c.qty > 0))) { setPromo({ total: 0, items: [] }); return undefined; }
+    if (offline || !cart.length || cart.some((c) => !(c.qty > 0))) { setPromo({ total: 0, items: [] }); setPromoBusy(false); return undefined; }
     setPromoBusy(true);
     const t = setTimeout(async () => {
       const { data, error } = await supabase.rpc('promo_preview', { p_kos: kosId, p_tier: tier, p_lines: cart.map(lineOut), ...(contact ? { p_contact: contact } : {}) });
@@ -349,7 +379,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
       setPromoBusy(false);
     }, 350);
     return () => clearTimeout(t);
-  }, [cartKey]);
+  }, [cartKey, offline]);
 
   const sub = cart.reduce((s, c) => s + Math.round(c.qty * c.price), 0);
   const disc = parseRp(discount);
@@ -392,7 +422,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
   };
   const serialProblem = (c) => { const n = splitSerials(c.serials).length; return n > toBase(c.qty, c.unit_qty) ? `Nomor seri ${c.name} (${n}) lebih banyak dari jumlahnya.` : null; };
   useEffect(() => {
-    if (!contact || !(kasbonAmt > 0)) { setKw([]); return undefined; }
+    if (offline || !contact || String(contact).startsWith('new:') || !(kasbonAmt > 0)) { setKw([]); return undefined; }
     const t = setTimeout(async () => {
       const { data, error } = await supabase.rpc('kasbon_check', { p_kos: kosId, p_contact: contact, p_amount: kasbonAmt });
       setKw(error ? [] : data?.warnings || []);
@@ -400,6 +430,36 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
     return () => clearTimeout(t);
   }, [contact, kasbonAmt]);
   useEffect(() => { setOv(null); }, [cartKey, discount]);
+  useEffect(() => { if (offline) { setNota(null); setNotaOpen(false); } }, [offline]);
+
+  // Offline (atau internet putus saat menyimpan): simpan di HP. Harga = harga yang ditagih sekarang; server mencatat temuan untuk pemilik.
+  const saveOffline = async (cid) => {
+    const dev = deviceId();
+    const local = cid && String(cid).startsWith('new:') ? d.contacts.find((x) => x.id === cid) : null;
+    const nc = local ? { key: cid, name: local.name, phone: local.phone || '' }
+      : !cid && needContact ? { key: 'new:' + txId, name: newName.trim(), phone: newPhone.trim() } : null;
+    const restPay = method === 'campuran' ? Object.entries(sp).filter(([, v]) => v > 0).map(([m, a]) => ({ method: m, amount: a })) : null;
+    const cashIn = method === 'tunai' || (method === 'campuran' && sp.tunai > 0);
+    const at = new Date().toISOString();
+    const payload = {
+      id: txId, client_at: at, device: dev, tier, total,
+      lines: cart.map((c) => ({ product_id: c.product_id, unit: c.unit, qty: c.qty, price: c.price, ...(c.auto ? {} : { manual: true }), ...(splitSerials(c.serials).length ? { serials: splitSerials(c.serials) } : {}) })),
+      discount: disc, method: total > 0 ? method : 'tunai', paid: total > 0 && cashIn ? paidN : null,
+      contact: local ? null : cid || null, ...(nc ? { new_contact: nc } : {}),
+      due: needContact && dueDate ? dueDate : null, note,
+      ...(restPay ? { payments: restPay } : {}),
+      ...(overDisc && offReason.trim() ? { override_reason: offReason.trim() } : {}),
+      ...(lead ? { lead_id: lead.id } : {}),
+      ...(kos?.locs?.current ? { branch_id: kos.locs.current } : {}),
+    };
+    const whoC = (local || (cid && d.contacts.find((x) => x.id === cid))) || (nc ? { name: nc.name, phone: nc.phone } : null);
+    const entry = { id: txId, kos: kosId, user: session?.user?.id, userName: (session?.user?.email || '').split('@')[0], at, payload,
+      view: { number: localNumber(dev), total, sub, contact: whoC?.name || '', phone: whoC?.phone || '',
+        lines: cart.map((c) => ({ product_id: c.product_id, name: c.name, unit: c.unit, unit_qty: c.unit_qty, qty: c.qty, price: c.price, serials: splitSerials(c.serials) })) } };
+    await enqueue(entry);
+    setPayOpen(false);
+    onDone({ offline: true, entry, number: entry.view.number, total, method: payload.method, change: total > 0 && cashIn ? Math.max(0, change) : 0 });
+  };
   // Perintah dari bilah aksi / keyboard: F10 bayar, F3 diskon
   const cmd0 = useRef(cmd?.n);   // perintah lama (sebelum panel ini dibuat) diabaikan
   useEffect(() => {
@@ -421,8 +481,20 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
       if (paid.trim() && paidN < sp.tunai) return toast('Uang tunai diterima kurang dari bagian tunai.');
     }
     let cid = contact || null;
+    if (offline || !isOnline()) {
+      if (needContact && due > 0 && !cid && !newName.trim()) return toast('Pilih pelanggan atau isi nama pelanggan baru.');
+      if (overDisc && offReason.trim().length < 3) return toast('Diskon melewati batas pemilik — tulis alasan singkat (dicatat untuk dicek pemilik).');
+      setBusy(true);
+      try { await saveOffline(cid); } catch (e) { toast('Gagal menyimpan di HP: ' + errMsg(e) + '. Pastikan memori HP tidak penuh.'); }
+      setBusy(false);
+      return;
+    }
     setBusy(true);
     try {
+      if (cid && String(cid).startsWith('new:')) {
+        // pelanggan baru yang dibuat saat offline dan belum terkirim → lewat jalur offline supaya tidak jadi dua pelanggan
+        await saveOffline(cid); setBusy(false); return;
+      }
       if (needContact && due > 0 && !cid) {
         if (!newName.trim()) { toast('Pilih pelanggan atau isi nama pelanggan baru.'); setBusy(false); return; }
         const { data, error } = await supabase.rpc('contact_save', { p_kos: kosId, p_id: null, p_kind: 'pelanggan', p_name: newName, p_phone: newPhone });
@@ -448,7 +520,10 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
       onDone({ ...data, change: due > 0 && (method === 'tunai' || method === 'campuran') ? Math.max(0, change) : 0, method: data.method || pMethod, nota: notaAmt > 0 ? { number: nota.number, amount: notaAmt, left: Number(nota.balance) - notaAmt } : null });
     } catch (e) {
       if (/BATAS_DISKON/.test(e?.message || '')) setOv({ msg: errMsg(e), reason: '' });
-      else toast(errMsg(e));
+      else if (isNetErr(e) && notaAmt === 0) {
+        // Internet putus saat menyimpan: simpan di HP dengan nomor transaksi yang SAMA — bila ternyata sudah masuk server, tidak dobel
+        try { await saveOffline(cid); toast('Internet putus — transaksi disimpan di HP dan dikirim otomatis nanti.'); } catch (e2) { toast(errMsg(e2)); }
+      } else toast(errMsg(e));
     }
     setBusy(false);
   };
@@ -508,7 +583,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
             <button type="button" className="pos-pct" aria-label="Isi diskon" aria-pressed={discOpen} onClick={() => { setDiscOpen(!discOpen); setTimeout(() => discRef.current?.focus(), 30); }}>%</button></span>
           {discOpen ? <input ref={discRef} inputMode="numeric" aria-label="Diskon (rupiah)" style={{ maxWidth: 140, textAlign: 'right' }} value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="0" /> : <span>{disc > 0 ? '−' + rp(disc) : rp(0)}</span>}
         </div>
-        {overDisc && <span className="small" style={{ color: 'var(--warn)' }}>Diskon {angka(discPct)}% melewati batas {angka(pol.max_disc)}% dari pemilik. {canAllow ? 'Anda bisa mengizinkannya dengan alasan saat menyimpan.' : 'Perlu izin pemilik/pengelola, atau kurangi diskon.'}</span>}
+        {overDisc && <span className="small" style={{ color: 'var(--warn)' }}>Diskon {angka(discPct)}% melewati batas {angka(pol.max_disc)}% dari pemilik. {offline ? 'Saat offline tetap bisa disimpan dengan alasan; pemilik akan memeriksanya.' : canAllow ? 'Anda bisa mengizinkannya dengan alasan saat menyimpan.' : 'Perlu izin pemilik/pengelola, atau kurangi diskon.'}</span>}
         {rate > 0 && <div className="row between"><span>PPN {rate}% (termasuk harga)</span><span>{rp(ppn)}</span></div>}
         {note.trim() && <span className="small muted">Catatan: {note}</span>}
       </div>
@@ -524,7 +599,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
     <Sheet title={`Pembayaran · ${rp(total)}`} onClose={() => setPayOpen(false)}>
       <div className="pos-total"><span>Total Bayar</span><b>{rp(total)}</b></div>
       {ppn > 0 && <span className="small muted">Termasuk PPN {rate}% ± {rp(ppn)} (dihitung pasti saat disimpan; barang bebas PPN tidak dikenai)</span>}
-      {nota ? <div className="notice small" style={{ display: 'grid', gap: 4 }}>
+      {offline ? <span className="small muted">Saat offline: promo otomatis & nota kredit tidak bisa dihitung/dipakai, batas kredit dicek setelah terkirim. Harga mengikuti salinan di HP.</span> : nota ? <div className="notice small" style={{ display: 'grid', gap: 4 }}>
         <div className="row between" style={{ flexWrap: 'nowrap', gap: 8 }}><span>Nota kredit <b>{nota.number}</b>{nota.customer ? ` · ${nota.customer}` : ''}</span><button className="sm ghost" aria-label="Lepas nota kredit" onClick={() => setNota(null)}>✕</button></div>
         <div className="row between"><span>Dipakai</span><b>−{rp(notaAmt)}</b></div>
         {Number(nota.balance) - notaAmt > 0 && <span className="muted">Sisa nota {rp(Number(nota.balance) - notaAmt)} tetap bisa dipakai lain kali.</span>}
@@ -559,7 +634,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
       {(needContact || d.contacts.length > 0) && <Field label={needContact ? 'Pelanggan' : 'Pelanggan (opsional)'}>
         <select value={contact} onChange={(e) => setContact(e.target.value)}>
           <option value="">{needContact ? '+ Pelanggan baru' : 'Tanpa pelanggan'}</option>
-          {d.contacts.map((c) => <option key={c.id} value={c.id}>{c.name}{c.price_list ? ` · ${c.price_list}` : ''}</option>)}
+          {d.contacts.map((c) => <option key={c.id} value={c.id}>{c.name}{c.price_list ? ` · ${c.price_list}` : ''}{c.local ? ' · baru (di HP)' : ''}</option>)}
         </select></Field>}
       {!needContact && cust?.price_list && <span className="small muted">Harga mengikuti daftar harga <b>{cust.price_list}</b> untuk barang yang ada di daftar itu.</span>}
       {needContact && <>
@@ -575,7 +650,8 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
           <button className="primary" disabled={busy || ov.reason.trim().length < 3} onClick={() => pay(ov.reason.trim())}>Izinkan & simpan</button>
         </> : <span className="muted">Kurangi diskon, atau minta pemilik/pengelola menyimpan transaksi ini dari akun mereka.</span>}
       </div>}
-      <button className="cta" onClick={() => pay()} disabled={busy}>{busy ? 'Menyimpan…' : `Simpan · ${rp(total)}`}</button>
+      {overDisc && offline && <Field label="Alasan diskon (wajib saat offline)"><input value={offReason} onChange={(e) => setOffReason(e.target.value)} placeholder="mis. pelanggan langganan, barang hampir kedaluwarsa" /></Field>}
+      <button className="cta" onClick={() => pay()} disabled={busy}>{busy ? 'Menyimpan…' : `${offline ? 'Simpan di HP' : 'Simpan'} · ${rp(total)}`}</button>
     </Sheet>
   );
   return <>{cartPanel}{paySheet}</>;
@@ -588,7 +664,17 @@ function QtyInput({ value, onChange, label }) {
   return <input inputMode="decimal" aria-label={label} value={t} onChange={(e) => { setT(e.target.value); const n = qtyNum(e.target.value); if (isFinite(n)) onChange(n); }} />;
 }
 
-function Done({ r, onClose }) {
+function Done({ r, kos, onClose }) {
+  const [struk, setStruk] = useState(false);
+  if (r.offline) return (
+    <Sheet title="Tersimpan di HP" onClose={onClose}>
+      <div className="notice">{r.number} · {rp(r.total)} · {PAY_ALL[r.method] || 'Campuran'}<br /><span className="small">Dikirim otomatis saat internet kembali. Nomor TRX resmi muncul setelah terkirim.</span></div>
+      {r.change > 0 && <div className="row between" style={{ fontSize: 22 }}><span>Kembalian</span><b>{rp(r.change)}</b></div>}
+      <button className="primary" style={{ width: '100%' }} onClick={() => setStruk(true)}>Lihat / cetak struk</button>
+      <button className="cta" onClick={onClose}>Transaksi baru</button>
+      {struk && <OfflineStrukSheet kos={kos} entry={r.entry} onClose={() => setStruk(false)} />}
+    </Sheet>
+  );
   return (
     <Sheet title="Transaksi tersimpan" onClose={onClose}>
       <div className="notice good">{r.number} · {rp(r.total)} · {PAY_ALL[r.method] || 'Campuran'}{Number(r.promo) > 0 ? ` · hemat promo ${rp(r.promo)}` : ''}{Number(r.tax) > 0 ? ` · termasuk PPN ${rp(r.tax)}` : ''}</div>

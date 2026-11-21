@@ -1,6 +1,9 @@
 -- Uji isolasi antar bisnis (blueprint 23.2): pengguna yang bukan anggota TIDAK boleh membaca atau mengubah data bisnis lain.
 -- Jalankan di database uji: psql -v K=<id bisnis> -v U=<id pengguna luar> -f supabase/tests/isolasi.sql  (selalu di-ROLLBACK)
 begin;
+-- id catatan kasir offline milik bisnis target (dibaca sebelum berganti peran) untuk uji kirim ulang/tandai
+select set_config('uji.off', coalesce((select id::text from public.pos_offline where kos_id = :'K' and status <> 'tersimpan' limit 1), gen_random_uuid()::text), true),
+       set_config('uji.off_ok', coalesce((select id::text from public.pos_offline where kos_id = :'K' limit 1), gen_random_uuid()::text), true);
 set local role authenticated;
 select set_config('uji.kos', :'K', true), set_config('request.jwt.claim.sub', :'U', true), set_config('request.jwt.claims', json_build_object('sub', :'U', 'aal', 'aal1')::text, true);
 create temp table hasil(uji text, lolos boolean) on commit drop;
@@ -90,6 +93,11 @@ begin
       ('credit_notes_list', format('select public.credit_notes_list(%L)', k)),
       ('credit_note_check', format('select public.credit_note_check(%L, ''NK-1'')', k)),
       ('credit_note_policy_set', format('select public.credit_note_policy_set(%L, 30)', k)),
+      -- Tahap 4 Retail: kasir offline
+      ('pos_offline_submit', format('select public.pos_offline_submit(%L, jsonb_build_object(''id'', gen_random_uuid(), ''client_at'', now(), ''lines'', ''[]''::jsonb))', k)),
+      ('pos_offline_submit_ulang', format('select public.pos_offline_submit(%L, jsonb_build_object(''id'', %L, ''client_at'', now()))', k, current_setting('uji.off_ok'))),
+      ('pos_offline_list', format('select public.pos_offline_list(%L)', k)),
+      ('pos_offline_review', format('select public.pos_offline_review(%L)', current_setting('uji.off'))),
       ('hold_list', format('select public.hold_list(%L)', k)),
       ('hold_create', format('select public.hold_create(%L, (select id from public.products where kos_id = %L limit 1), null, 1, ''rusak'')', k, k)),
       ('stock_transfer_send', format('select public.stock_transfer_send(gen_random_uuid(), %L, null, null, ''[]'', null)', k)),

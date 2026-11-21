@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase, configured } from '@/lib/supabase';
+import { offlineSession, cacheKosList, cachedKosList, isNetErr } from '@/lib/offline';
 
 const Ctx = createContext(null);
 export const useKos = () => useContext(Ctx);
@@ -21,20 +22,35 @@ export default function KosProvider({ children }) {
 
   useEffect(() => {
     if (!configured) { setSession(null); return; }
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    // Tanpa internet & token perlu diperbarui → supabase memberi sesi kosong, tetapi token masih tersimpan: pakai sesi itu
+    // (offline) supaya Kasir tetap terbuka. Keluar/ditolak server menghapus token → benar-benar keluar.
+    supabase.auth.getSession().then(({ data }) => setSession(data.session || offlineSession()), () => setSession(offlineSession()));
+    const { data } = supabase.auth.onAuthStateChange((e, s) => setSession(s || (e === 'SIGNED_OUT' ? null : offlineSession())));
     return () => data.subscription.unsubscribe();
   }, []);
 
   const accepted = useRef(false);
+  const uidRef = useRef(null);
+  uidRef.current = session?.user?.id || null;
+  const pickFrom = (data) => {
+    let saved = null;
+    try { saved = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch {}
+    const pick = data.find((k) => k.id === saved) || data[0] || null;
+    setKosId(pick?.id || null);
+  };
   const loadKos = useCallback(async () => {
     // undangan karyawan untuk email ini otomatis diterima saat masuk
     if (!accepted.current) { accepted.current = true; await supabase.rpc('accept_invites').then(() => {}, () => {}); }
     // coba kolom terlengkap dulu; kalau database belum diperbarui, turun ke kolom yang lebih sedikit
     const COLS = ['id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary,business_type,suspended_at,suspend_reason,receipt_footer,business_groups,profile,legal_entity_id,closed_at,close_reason,last_export_at,setup_status,category_code,activated_at,template_code', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary,business_type,suspended_at,suspend_reason,receipt_footer,business_groups,profile,legal_entity_id,closed_at,close_reason,last_export_at', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary,business_type,suspended_at,suspend_reason,receipt_footer,business_groups,profile,legal_entity_id', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary,business_type,suspended_at,suspend_reason,receipt_footer', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary,business_type', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails,weekly_summary,monthly_summary', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl,onboarding_emails', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest,wa_reminder_tpl,wa_portal_tpl', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email,daily_digest', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules,notify_email', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin,contact_phone,payment_info,house_rules', 'id,name,address,owner_id,plan,trial_until,paid_until,effective_plan,owner_is_admin', 'id,name,address,owner_id,plan,trial_until,paid_until', 'id,name,address,owner_id'];
     let data = null, error = null;
-    for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error) break; }
-    if (error) { setList([]); return []; }
+    for (const c of COLS) { ({ data, error } = await supabase.from('kos').select(c).order('created_at')); if (!error || isNetErr(error)) break; }
+    if (error) {
+      // Offline: daftar bisnis terakhir yang tersimpan di HP ini (Kasir offline)
+      const cached = isNetErr(error) && uidRef.current ? cachedKosList(uidRef.current) : null;
+      if (cached?.length) { setList(cached.map((k) => ({ ...k, offline: true }))); pickFrom(cached); return cached; }
+      setList([]); return [];
+    }
     let mods = null, locs = {}, acc = {}, exp = {};
     const [roles, ents] = await Promise.all([
       supabase.rpc('my_roles').then((r) => r.data || {}, () => ({})),
@@ -61,10 +77,8 @@ export default function KosProvider({ children }) {
       my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver), bb: bb[k.id] || null,
       dna: exp[k.id]?.dna || null, dna_stored: Boolean(exp[k.id]?.dna_stored), exp: exp[k.id]?.cfg || { nav: {}, quick: {}, dash: {}, version: 0 } }));
     setList(data);
-    let saved = null;
-    try { saved = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY); } catch {}
-    const pick = data.find((k) => k.id === saved) || data[0] || null;
-    setKosId(pick?.id || null);
+    if (uidRef.current) cacheKosList(uidRef.current, data);
+    pickFrom(data);
     return data;
   }, []);
 

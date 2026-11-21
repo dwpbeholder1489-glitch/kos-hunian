@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 
-export const alertCount = (a) => (a ? ['habis', 'menipis', 'pesanan', 'kasbon', 'utang'].reduce((s, k) => s + (a[k]?.length || 0), 0) : 0);
+export const alertCount = (a) => (a ? ['habis', 'menipis', 'pesanan', 'kasbon', 'utang', 'offline'].reduce((s, k) => s + (a[k]?.length || 0), 0) : 0);
 
-// Lonceng toko: stok habis/menipis, pesanan terlambat, kasbon & utang jatuh tempo
+// Lonceng toko: stok habis/menipis, pesanan terlambat, kasbon & utang jatuh tempo, transaksi offline perlu dicek
 export default function RetailBell() {
   const { kosId, ver } = useKos();
   const path = usePathname();

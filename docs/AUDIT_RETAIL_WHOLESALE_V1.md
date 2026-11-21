@@ -36,7 +36,7 @@ dokumen mewajibkan keputusan pemilik (tidak boleh saya kunci sendiri).
 | 16 Akuntansi | posting 20 jenis transaksi, valuasi, HPP, laporan minimum | Partial | jurnal otomatis double-entry ✔ untuk penjualan/kredit/retur/beli/retur beli/bayar supplier/persediaan/HPP/diskon/PPN/biaya/aset/bank. Laporan: L/R ✔, neraca ✔, arus kas ✔, buku besar ✔, umur piutang ✔. Belum: **neraca saldo (trial balance)**, **umur utang**, **laporan nilai persediaan**, biaya distribusi terpisah |
 | 16 Metode HPP | FIFO vs rata-rata tertimbang | **Needs Decision** | Yang berjalan: **rata-rata tertimbang bergerak** (moving average) sejak awal. Dokumen: jangan memilih tanpa kajian → perlu keputusan resmi (rekomendasi saya: tetap rata-rata, alasan di §3) |
 | 17 KPI | retail, wholesale, distribusi; tiap KPI berdefinisi & berformula | Partial | Retail: rata-rata transaksi, jenis/transaksi, margin, perputaran, hari persediaan, stok habis, susut, per kasir, per kategori ✔. Belum: penjualan per jam, return rate, dead stock %. Wholesale: fill rate, on-time, utilisasi kredit, DSO, margin per pelanggan, per sales = Not Started. Distribusi = Not Started |
-| 18 POS offline | antrean lokal, sinkron, idempotensi, konflik | **Not Started** | Hanya: id transaksi idempoten (simpan dua kali aman) + keranjang tersimpan di HP. Kasir tidak bisa menyimpan tanpa internet |
+| 18 POS offline | antrean lokal, sinkron, idempotensi, konflik | Verified (21 Nov) | Tahap 4 — Kasir toko bisa dipakai tanpa internet, antrean di HP dikirim otomatis tanpa dobel, temuan untuk pemilik. Lihat §8 |
 | 20 Keamanan & audit | riwayat transaksi, persetujuan, **harga**, **limit kredit**, penyesuaian stok, izin, versi dokumen | Partial | transaksi/persetujuan/stok/modul tercatat (`domain_events`, `config_history`). Belum: **riwayat perubahan harga**, **riwayat limit kredit**, riwayat perubahan izin karyawan (perlu dicek), versi dokumen penawaran |
 | 21 Konfigurasi | template, dependensi modul, izin bawaan, upgrade path | Partial | template + Pusat Konfirmasi + registri modul ✔. Belum: template khusus Grosir/Distributor/Fashion/Specialty (sekarang satu template toko) |
 | 23 Tier pengalaman | Retail / Wholesale & Distribution / Enterprise | Partial | Satu ruang kerja toko dengan modul menyala/mati; belum ada tampilan per tier |
@@ -83,7 +83,7 @@ Urutan yang disetujui pemilik 15 Nov 2026 (sesuai Master Prompt Bagian 24 & Blue
 2. ✅ **Tahap 1 — Tata kelola harga & kredit** (Phase 3, SELESAI 20 Nov 2026 — lihat §5): urutan harga yang disetujui, harga per outlet, tanggal berlaku daftar harga/kontrak, batas diskon kasir + persetujuan, margin minimum, riwayat harga & limit, tahan kredit bila lewat jatuh tempo, cek limit untuk kasbon Kasir, tipe/grup pelanggan, sales rep. (RET-003, RET-008, RET-014, RET-004, RET-009)
 3. ✅ **Tahap 2 — Fondasi akuntansi dagang** (Phase 1, SELESAI 21 Nov 2026 — lihat §6): neraca saldo (trial balance), umur utang (AP aging), laporan nilai persediaan, + KPI grosir.
 4. ✅ **Tahap 3 — Katalog lanjutan** (SELESAI 21 Nov 2026 — lihat §7) (Phase 1, RET-001): multi-barcode per satuan, merek produk, paket/kit yang memotong stok komponen, nomor seri + garansi (toko elektronik/specialty), tukar barang & nota kredit (RET-008), harga & MOQ per supplier.
-5. **Tahap 4 — POS offline** (prioritas: Master Bagian 18, ADR-003): antrean lokal + sinkron idempoten, deteksi konflik stok/harga, batas jelas apa yang boleh offline.
+5. ✅ **Tahap 4 — POS offline** (SELESAI 21 Nov 2026 — lihat §8) (prioritas: Master Bagian 18, ADR-003): antrean lokal + sinkron idempoten, deteksi konflik stok/harga, batas jelas apa yang boleh offline.
 6. **Tahap 5 — Portal B2B & pesanan langsung** (Phase 3): keranjang + pesanan langsung toko, akun pelanggan B2B dengan harga kontrak, riwayat dan faktur, pemesanan ulang.
 7. **Tahap 6 — Distribusi** (Phase 4, RET-005, RET-012, RET-013): picking/packing list, kendaraan & driver internal serta pihak ketiga, jadwal kirim, POD (nama + foto), retur sebagian dari pengiriman, rekonsiliasi & biaya kirim, KPI distribusi.
 8. **Tahap 7 — Multi-outlet, konsolidasi & franchise** (Phase 5–6): katalog & harga per outlet terkonsolidasi, laporan gabungan lintas outlet, standarisasi katalog franchise (RET-012), tampilan per tier (Blueprint §19).
@@ -143,3 +143,22 @@ Migrasi `20261121180000_katalog_1`, `…190000_katalog_2_paket`, `…200000_kata
 | Nomor seri di penerimaan Belanja | Not Started | nomor seri didaftarkan dari Barang atau saat dijual |
 | Master produk bersama lintas bisnis (RET-001/RET-006) | Not Started | tetap proposal |
 
+
+## 8. Status Tahap 4 — Kasir offline (21 Nov 2026)
+
+Keputusan pemilik 21 Nov 2026: tunai, transfer/QRIS, kasbon, dan campuran BOLEH dicatat offline. Migrasi `20261121220000_kasir_offline.sql`. Uji `supabase/tests/kasir_offline.sql` (42) lulus; isolasi (271) lulus; penyimpan halaman diuji di Chromium (offline: Kasir terbuka & JS berjalan, halaman lain → "Sedang offline"); alur Kasir offline → antrean → kirim otomatis diuji di harness (HP 390 px & laptop 1366 px).
+
+| Butir | Status | Bukti / catatan |
+|---|---|---|
+| Kasir terbuka tanpa internet (Master Bagian 18) | Verified Implemented | `public/sw.js` (Kasir & pembuka + file JS/CSS-nya), sesi tersimpan (`offlineSession`), daftar bisnis & katalog di HP |
+| Antrean lokal + sinkron idempoten (ADR-003) | Verified Implemented | IndexedDB `prasara-offline`; `pos_offline_submit` idempoten per id transaksi (juga bila sudah tersimpan lewat jalur online); urutan waktu transaksi |
+| Waktu transaksi asli | Verified Implemented | tanggal & nomor TRX hari itu, `sold_at` (shift), kartu stok; jam HP di masa depan → waktu terima + temuan |
+| Deteksi konflik harga/promo/stok/batas diskon/kredit | Verified Implemented | temuan `pos_offline.issues`; transaksi TETAP tersimpan (uang sudah diterima); stok minus 'tolak' & batas diskon tidak menolak transaksi offline |
+| Batas yang boleh offline | Verified Implemented | nota kredit ditolak (HP & server); promo otomatis tidak dihitung (ditandai); diskon di atas batas wajib alasan |
+| Shift / tutup harian yang sudah ditutup | Verified Implemented | ditandai untuk pemilik (laci & rekap berubah) |
+| Akses kasir dicabut sebelum terkirim | Verified Implemented | tidak jadi penjualan; dicatat 'Tidak tersimpan' untuk pemilik bila akun pernah bekerja di bisnis itu; orang asing ditolak |
+| Pemeriksaan pemilik | Verified Implemented | Penjualan › Offline (`pos_offline_list/review`), lonceng & Pengingat (`retail_alerts.offline`) |
+| Promo dihitung di HP saat offline | Not Started | butuh salinan aturan promo di HP — sengaja ditunda (temuan 'promo' memberi tahu pemilik) |
+| Nota kredit saat offline | Not Started | saldo harus dicek server (risiko dipakai dua kali) |
+| Kasir jasa/kuliner (pesanan) offline | Not Started | Tahap ini khusus Kasir toko |
+| Kamera pindai barcode saat offline tanpa pernah dipakai online | Partial | file pemindai kamera disimpan setelah dipakai sekali saat online; scanner Bluetooth/USB & ketik kode tetap jalan |

@@ -605,6 +605,28 @@ export function ScrPaketSeri() {
   );
 }
 
+// Kasir offline (Tahap 4 Retail) — DATA CONTOH
+export function ScrKasirOffline() {
+  return (
+    <Phone bare>
+      <h3>Kasir</h3>
+      <div className="unitbox small" style={{ gap: 4, borderColor: 'var(--warn)', background: 'var(--warn-bg)' }}>
+        <b>Offline</b>
+        <span>Daftar barang & harga dari salinan di HP. Penjualan disimpan di HP dan dikirim otomatis saat internet kembali.</span>
+        <span className="mini-btn" style={{ alignSelf: 'flex-start' }}>2 menunggu</span>
+      </div>
+      <div className="row between small"><span>Gula pasir × 2 kg</span><b>{rp(36000)}</b></div>
+      <div className="row between small"><span>Teh celup × 1 pcs</span><b>{rp(5000)}</b></div>
+      <span className="mini-btn cta">Simpan di HP · {rp(41000)}</span>
+      <div className="unitbox small" style={{ gap: 4 }}>
+        <b>OFF-7Q2K-101245 · {rp(41000)} · Tunai</b>
+        <span className="muted">Internet kembali → terkirim sebagai TRX-261121-018</span>
+        <span><span className="chip good">Terkirim</span> <span className="chip info">perlu dicek: harga teh sudah naik</span></span>
+      </div>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>

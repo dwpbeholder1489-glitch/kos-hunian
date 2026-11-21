@@ -11,6 +11,7 @@ import { rp, angka, tgl, today, errMsg } from '@/lib/format';
 import { PAY, jam, qtyNum, uid, payLabel, splitSerials, unitPrice } from '@/lib/retail';
 import { canArea } from '@/lib/business';
 import { CreditNotes } from '@/components/KatalogLanjut';
+import { OfflineReview } from '@/components/KasirOffline';
 
 const REFUND = { tunai: 'Uang tunai dari laci', transfer: 'Transfer balik', kasbon: 'Potong kasbon', nota: 'Nota kredit (saldo belanja)' };
 
@@ -26,7 +27,9 @@ export default function Penjualan() {
   const [err, setErr] = useState(null);
   const [open, setOpen] = useState(null);
   const [tab, setTab] = useState('jual');
-  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'nota') setTab('nota'); } catch {} }, []);
+  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (t === 'nota' || t === 'offline') setTab(t); } catch {} }, []);
+  // dari daftar transaksi offline: buka detail penjualannya
+  const openSale = async (id) => { const { data, error } = await supabase.rpc('sale_detail', { p_sale: id }); if (error) return toast(errMsg(error)); if (data?.sale) setOpen({ ...data.sale, contact_name: data.contact?.name }); };
   const load = async () => {
     // kasir hanya menerima penjualannya sendiri, tanpa harga modal (diatur database)
     const { data, error } = await supabase.rpc('sales_day', { p_kos: kosId, p_date: day });
@@ -46,8 +49,8 @@ export default function Penjualan() {
   return (
     <div className="stack">
       <PageHeader title="Penjualan" help={<PageHelp page="penjualan" />} desc="Riwayat transaksi per hari — ketuk transaksi untuk detail, struk, retur, atau pembatalan." actions={<Link href="/kasir"><button className="primary">+ Transaksi</button></Link>} />
-      <div className="seg">{[['jual', 'Penjualan'], ['nota', 'Nota kredit']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)} aria-pressed={tab === k}>{l}</button>)}</div>
-      {tab === 'nota' ? <CreditNotes kos={kos} kosId={kosId} ver={ver} finance={fin} settings={canArea(kos, 'settings')} /> : <>
+      <div className="seg">{[['jual', 'Penjualan'], ['nota', 'Nota kredit'], ...(fin ? [['offline', 'Offline']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)} aria-pressed={tab === k}>{l}</button>)}</div>
+      {tab === 'offline' && fin ? <OfflineReview kosId={kosId} ver={ver} onOpen={openSale} /> : tab === 'nota' ? <CreditNotes kos={kos} kosId={kosId} ver={ver} finance={fin} settings={canArea(kos, 'settings')} /> : <>
       <div className="daynav">
         <button className="sm" onClick={() => setDay(shift(day, -1))} aria-label="Hari sebelumnya">‹</button>
         <b style={{ flex: 1, textAlign: 'center' }}>{day === today() ? 'Hari ini, ' : ''}{tgl(day)}</b>
@@ -78,7 +81,7 @@ export default function Penjualan() {
         )}
       </>}
       </>}
-      {open && <Detail fin={fin} onReturned={load} s={open} contact={contacts.get(open.contact_id)} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
+      {open && <Detail fin={fin} onReturned={load} s={open} contact={contacts.get(open.contact_id) || open.contact_name} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
     </div>
   );
 }

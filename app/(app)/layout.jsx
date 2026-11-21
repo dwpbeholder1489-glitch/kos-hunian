@@ -18,6 +18,7 @@ import { planOf, PLANS, BUSINESS, limitOf } from '@/lib/plan';
 import NotifBell from '@/components/NotifBell';
 import RetailBell from '@/components/RetailBell';
 import AnnounceBanner from '@/components/AnnounceBanner';
+import { OfflineSync } from '@/components/KasirOffline';
 
 import { typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, pathModuleOff, moduleOn, isDraft, SETUP_STATUS } from '@/lib/business';
 import { sectionsFor, fourthTab, mainTabOf, groupIcon, pinsFor } from '@/lib/menu';
@@ -146,6 +147,7 @@ export default function AppLayout({ children }) {
         </div>
       </header>
       )}
+      <OfflineSync />
       {!path.startsWith('/langganan') && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && role === 'pemilik' && <TrialReminder kosId={kos.id} />}

@@ -1640,3 +1640,13 @@ button.wf-line{background:none;border-width:0 0 1px;border-radius:0;color:inheri
 .pmap-mini li.berjalan,.pmap-mini li.otomatis{background:var(--good-bg);border-color:transparent;color:var(--good)}
 .pmap-mini li.belum_diatur,.pmap-mini li.nonaktif{border-style:dashed;color:var(--warn)}
 .pmap-mini li.belum_dipakai,.pmap-mini li.menunggu{color:var(--muted)}
+
+/* Kasir offline (Tahap 4 Retail): bilah status antrean di atas konten */
+.offbar{background:var(--info-bg);color:var(--fg);border-bottom:1px solid var(--line);font-size:13px}
+.offbar.off{background:var(--warn-bg)}
+.offbar .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding-top:8px;padding-bottom:8px}
+.offbar .wrap>span{flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
+.offbar .sm{flex:none}
+.offnote{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:var(--radius-md,10px);padding:8px 12px;font-size:13px;background:var(--surface,#fff)}
+.offnote.off{border-color:var(--warn);background:var(--warn-bg)}
+.offnote>span{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}

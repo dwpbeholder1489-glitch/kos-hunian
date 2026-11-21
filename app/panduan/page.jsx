@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -915,6 +915,25 @@ const PARTS = [
       <>Pilih cara uangnya (Tunai/Transfer, atau Potong kasbon bila penjualan asal kasbon). Terlihat perkiraan <b>Pelanggan membayar</b> atau <b>Dikembalikan ke pelanggan</b>.</>,
       <>Ketuk <b>Simpan tukar barang</b>: retur & penjualan baru tersimpan bersamaan (bila satu gagal, keduanya batal) dan saling tertaut di detailnya. Stok, laci, laporan, dan pembukuan ikut benar.</>,
     ], <>Harga barang pengganti dihitung ulang sistem saat disimpan (promo, harga pelanggan, harga beli banyak). Ingin selisihnya disimpan sebagai saldo? Lakukan Retur › Nota kredit, lalu pakai notanya di Kasir.</>, null, null],
+  ]],
+  ['AG', 'Toko: Kasir offline (tetap berjualan saat internet putus)', [
+    ['Siapkan HP untuk Kasir offline', 'Browser HP › Tambahkan ke Layar Utama · Kasir', [
+      <>Buka PRASARA di Chrome (Android) atau Safari (iPhone), lalu pilih <b>Tambahkan ke Layar Utama</b> (Chrome: menu ⋮; Safari: tombol Bagikan). Ikon PRASARA muncul di layar HP dan terbuka seperti aplikasi.</>,
+      <><b>Masuk</b> dengan akun kasir/pemilik, lalu buka <b>Kasir</b> sekali saat ada internet. Daftar barang, harga, pelanggan, dan halaman Kasir tersimpan di HP. Ulangi sesekali saat online agar harga & stok di HP ikut terbaru.</>,
+      <>Jangan <b>Keluar</b> dari akun dan jangan hapus data browser/aplikasi di HP kasir — sesi masuk dan antrean transaksi disimpan di sana.</>,
+    ], <>Kasir offline berlaku per HP: setiap HP kasir perlu dibuka sekali saat online. Halaman lain (laporan, barang, pembukuan, dll.) tetap butuh internet; saat offline yang tampil "Sedang offline" dengan tombol <b>Buka Kasir</b>.</>, 'warn', null],
+    ['Berjualan saat internet putus', 'Kasir (kotak kuning "Offline")', [
+      <>Saat internet putus, Kasir menampilkan tanda <b>● Offline</b> dan kotak kuning <b>Offline</b>. Pilih barang seperti biasa (ketuk <b>+</b>), lalu tekan <b>Bayar</b> — tombol simpannya menjadi <b>Simpan di HP</b>. Stok yang tampil sudah dikurangi penjualan di HP yang belum terkirim.</>,
+      <>Cara bayar <b>Tunai</b>, <b>Transfer/QRIS</b>, <b>Kasbon</b>, dan <b>Campuran</b> bisa dipakai. Kasbon pelanggan baru: isi nama (dan No. HP) — pelanggan itu bisa dipilih lagi untuk transaksi berikutnya di HP yang sama.</>,
+      <>Setelah <b>Simpan di HP</b>, muncul nomor sementara <b>OFF-…</b> dan tombol <b>Lihat / cetak struk</b>. Nomor TRX resmi muncul setelah terkirim.</>,
+      <>Saat internet kembali, transaksi <b>dikirim otomatis</b> berurutan (tanpa dobel, walau internet putus di tengah pengiriman). Tanggal, jam, shift, dan kartu stok memakai waktu transaksi aslinya. Lihat statusnya lewat tombol <b>Antrean HP</b>.</>,
+    ], <>Saat offline: <b>promo otomatis</b> tidak dihitung, <b>nota kredit</b> tidak bisa dipakai, batas kredit kasbon dicek setelah terkirim, dan diskon di atas batas pemilik wajib diberi alasan. Harga mengikuti salinan di HP; bila harga sudah berubah, transaksi tetap tersimpan dengan harga yang ditagih dan ditandai untuk pemilik.</>, 'warn', <ScrKasirOffline />],
+    ['Memeriksa transaksi offline (pemilik)', 'Penjualan › Offline · Pengingat toko', [
+      <>Buka <b>Penjualan</b> › tab <b>Offline</b> (pemilik & bagian keuangan). Tab <b>Perlu dicek</b> berisi transaksi yang terkirim dengan <b>temuan</b>: harga sudah berubah, promo tidak terhitung, stok jadi minus, diskon lewat batas, kasbon lewat batas kredit, shift atau tutup harian sudah ditutup, atau jam HP salah.</>,
+      <>Transaksi bertemuan <b>sudah masuk</b> penjualan, stok, dan pembukuan — temuan hanya bahan pemeriksaan. Tindak lanjuti (mis. hitung ulang stok, tutup ulang hari), lalu ketuk <b>Tandai sudah dicek</b> dan tulis catatannya.</>,
+      <><b>Tidak tersimpan</b> = belum masuk penjualan (mis. barang sudah dihapus, atau akses kasir dicabut sebelum terkirim). Isi barang & cara bayarnya ditampilkan; catat ulang lewat Kasir bila benar terjadi, lalu tandai sudah dicek.</>,
+      <>Lonceng & <b>Pengingat toko</b> ikut menampilkan transaksi offline yang perlu dicek.</>,
+    ], <>Kasir yang lupa mengirim lalu keluar akun: pemilik/pengelola bisa masuk di HP itu dan memakai <b>Kirim dengan akun saya</b> di Antrean HP. Penjualan tercatat atas nama yang mengirim, dengan catatan siapa yang mencatat offline.</>, null, null],
   ]],
 ];
 
