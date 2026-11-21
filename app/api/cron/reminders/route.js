@@ -25,6 +25,9 @@ export async function GET(req) {
   // Adaptive Experience: evaluasi ulang rekomendasi fitur dari profil & data terbaru (tidak mengaktifkan apa pun)
   let pengalaman = { ok: true, skipped: 'belum dikonfigurasi' };
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('experience_tick'); pengalaman = r.error ? { ok: false, error: r.error.message } : { ok: true, ...r.data }; } } catch (e) { pengalaman = { ok: false, error: e.message }; }
+  // Integrasi: riwayat kiriman webhook disimpan 60 hari (percobaan tautan salah 7 hari)
+  let integrasi = { ok: true, skipped: 'belum dikonfigurasi' };
+  try { const sb = adminDb(); if (sb) { const r = await sb.rpc('integ_logs_purge'); integrasi = r.error ? { ok: false, error: r.error.message } : { ok: true, dihapus: r.data }; } } catch (e) { integrasi = { ok: false, error: e.message }; }
   // Lampiran: hapus file yang sudah dihapus pengguna / unggahan yang tidak selesai dari penyimpanan
   let lampiran = { ok: true, skipped: 'belum dikonfigurasi' };
   try {
@@ -48,7 +51,7 @@ export async function GET(req) {
       media = { ok: true, dibersihkan: paths.length };
     }
   } catch (e) { media = { ok: false, error: e.message }; }
-  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && pengalaman.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, pengalaman, lampiran, media };
+  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && pengalaman.ok && integrasi.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, pengalaman, integrasi, lampiran, media };
   console.log('[cron daily]', JSON.stringify(res));
   try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });

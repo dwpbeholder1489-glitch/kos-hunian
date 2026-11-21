@@ -83,7 +83,7 @@ Sumber menu: `BUSINESS_TYPES[engine].tabs` → `tabsFor(kos)` (tersaring peran, 
 | §20–21 Lifecycle & event | Belum | `biz_signals`, tahap kematangan, evaluasi saat profil/cabang/karyawan/paket berubah (trigger aman) + harian |
 | §22 Onboarding adaptif | 4 bagian + Pusat Konfirmasi | + bagian "Karakter operasional" (DNA) + pratinjau workspace |
 | §23 Keuangan | Verified | Tidak diubah |
-| §24 Integration registry | `pay_providers` saja | Fase 6 |
+| §24 Integration registry | `pay_providers` saja | Fase 6 (selesai, §18) |
 | §28 Experience performance | Belum | Fase 7 (urutan aksi cepat memakai frekuensi pemakaian per perangkat sebagai langkah awal) |
 
 ## 9. Reusable Components Inventory
@@ -119,7 +119,7 @@ Satu migrasi aditif (tanpa mengubah/menghapus kolom lama): kolom baru di `biz_ca
 | Fase 3 | Dashboard: KPI pilihan, periode bawaan, widget per subkategori (fashion: ukuran/warna; elektronik: garansi), Business Pulse/Signals | Selesai 21 Nov (§15) |
 | Fase 4 | Workflow registry, alur bersyarat, persetujuan per alur | Selesai 21 Nov (§16) |
 | Fase 5 | Ringkasan multi-bisnis lanjutan (konsolidasi berbatas izin) | Selesai 21 Nov (§17) |
-| Fase 6 | Integration registry & webhook umum | |
+| Fase 6 | Integration registry & webhook umum | Selesai 21 Nov (§18) — webhook masuk; webhook keluar ditunda |
 | Fase 7 | Experience performance (pemakaian fitur, aksi cepat, rekomendasi) di server | |
 
 Aturan yang dijaga: tidak menghapus fitur, tidak mengubah logika transaksi/keuangan, tidak mengaktifkan modul berbayar otomatis, tanpa AI generatif (aturan + skor tertulis), tanpa data contoh di aplikasi.
@@ -192,3 +192,25 @@ Acuan blueprint: Bab 16 (konsolidasi hanya bila pemilik mengaktifkan secara eksp
 | Panduan Langkah 24 (teks langkah 5) & `lib/guide.js` bisnis; CLAUDE.md | Selesai | |
 
 Keputusan yang masih menunggu pemilik: apakah gabungan dibatasi paket (saat ini TIDAK dibatasi), dan apakah perlu ekspor gabungan. Belum ada: perbandingan periode lebih dari satu bulan, konsolidasi formal (eliminasi transaksi antarbisnis, tidak diperlukan selama gabungan diberi label indikasi), dan ringkasan gabungan di Beranda.
+
+## 18. Hasil Fase 6 (21 Nov 2026): Integration registry & webhook masuk
+
+Acuan: Culinary §12.1 dan IBOS Bab 9.2 (registry konektor, autentikasi, cakupan, pemetaan data, retry/idempotensi, log sambungan, aktif/nonaktif per bisnis, kunci hanya di server, status jujur).
+
+| Bagian | Status | Bukti |
+|---|---|---|
+| Registry konektor `integration_catalog` (1 production_ready, 4 dalam rencana beserta syarat) | Verified | uji A |
+| Sambungan per bisnis: buat, ubah, jeda/aktifkan, kode baru, hapus; maks. 5 | Verified | uji C, F, G |
+| Token tidak disimpan (hanya sha256 + 4 karakter), tampil sekali; tabel tanpa policy & revoke | Verified | uji C, E |
+| Webhook masuk → Prospek (alias kolom, pemetaan khusus, nomor angka, email ke kebutuhan, nama kosong → "Tanpa nama") | Verified | uji D1–D5, D9 |
+| Idempotensi (`Idempotency-Key`), duplikat nomor 10 menit, batas 60/jam & 300/hari, token salah per IP | Verified | uji D2, D3, D10–D12 |
+| Bisnis ditutup / ditangguhkan / CRM mati / sambungan dijeda ditolak; kode lama mati setelah rotasi | Verified | uji D11, D13–D15 |
+| Isolasi antar bisnis & izin (kasir & orang luar ditolak); `isolasi.sql` 204/204 | Verified | uji B, E |
+| Audit aksi pemilik tanpa token; log tanpa data pelanggan; purge retensi | Verified | uji H, J |
+| Rute `/api/hook/[token]` (JSON/form/multipart, 16 KB, CORS, GET 405) | Verified (kode, lint, bundle); belum diuji pengirim luar sungguhan | — |
+| UI `/integrasi` + panel di Admin › Status sistem + sumber "Integrasi" di Prospek & pengingat Beranda | Verified (render) | Chrome 390/1440 tanpa overflow |
+| Panduan Langkah 117, `lib/guide.js` (integrasi), CLAUDE.md | Selesai | |
+
+Keputusan yang perlu konfirmasi pemilik: (1) apakah webhook dibatasi paket — saat ini semua paket, karena matriks V2 tidak menyebutnya; (2) penjadwal untuk webhook KELUAR: cron Vercel paket sekarang hanya harian sehingga kabar keluar real-time tidak mungkin; pilihannya paket cron per menit, penjadwal luar (mis. GitHub Actions / cron-job.org dengan `CRON_SECRET`), atau menerima kiriman batch harian.
+
+Belum / jujur: webhook keluar, WhatsApp resmi, pembayaran online untuk pelanggan bisnis, dan marketplace berstatus Dalam rencana (tidak ada klaim aktif tanpa kredensial). Prospek dari webhook tidak membawa persetujuan dihubungi (`consent_at` kosong) dan tidak mengirim email ke pemilik (kuota email). Belum ada: kategori sumber data selain prospek (mis. pesanan/penjualan masuk lewat webhook), tanda tangan HMAC dari pengirim (kini kerahasiaan alamat), dan uji dari layanan luar sungguhan.

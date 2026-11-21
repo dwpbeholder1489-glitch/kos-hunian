@@ -13,7 +13,7 @@ import { moduleOn } from '@/lib/business';
 
 const STAGES = { baru: ['Baru', ''], dihubungi: ['Dihubungi', 'gold'], penawaran: ['Penawaran', 'gold'], jadi: ['Jadi', 'good'], batal: ['Tidak jadi', 'void'] };
 const NEXT = { baru: ['dihubungi', 'penawaran', 'jadi', 'batal'], dihubungi: ['penawaran', 'jadi', 'batal'], penawaran: ['dihubungi', 'jadi', 'batal'], jadi: ['dihubungi'], batal: ['dihubungi'] };
-const SOURCE = { wa: 'WhatsApp', datang: 'Datang langsung', telepon: 'Telepon', rekomendasi: 'Rekomendasi', media_sosial: 'Media sosial', lainnya: 'Lainnya', halaman: 'Halaman bisnis' };
+const SOURCE = { wa: 'WhatsApp', datang: 'Datang langsung', telepon: 'Telepon', rekomendasi: 'Rekomendasi', media_sosial: 'Media sosial', lainnya: 'Lainnya', halaman: 'Halaman bisnis', webhook: 'Integrasi' };
 
 // CRM sederhana (blueprint 5.4): prospek & tahapannya, catatan komunikasi, tindak lanjut terjadwal
 export default function Crm() {
@@ -57,14 +57,14 @@ export default function Crm() {
         {shown.length === 0 ? <Empty title="Belum ada prospek di sini" text="Tekan + Prospek baru setiap ada orang yang bertanya atau tertarik." /> : (
           <DataTable rows={shown} caption="Daftar prospek" onRow={setOpen} rowLabel={(l) => l.name} pageSize={50}
             columns={[
-              { key: 'name', label: 'Nama', sort: (l) => l.name.toLowerCase(), render: (l) => <><b>{l.name}</b>{l.source === 'halaman' && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || 'Halaman'}</span>}</> },
+              { key: 'name', label: 'Nama', sort: (l) => l.name.toLowerCase(), render: (l) => <><b>{l.name}</b>{(l.source === 'halaman' || l.source === 'webhook') && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || SOURCE[l.source]}</span>}</> },
               { key: 'need', label: 'Kebutuhan', hide: 'tablet', render: (l) => <span className="small">{l.need || '—'}</span> },
               { key: 'src', label: 'Sumber', render: (l) => SOURCE[l.source] },
               { key: 'val', label: 'Perkiraan nilai', align: 'right', sort: (l) => Number(l.est_value) || 0, render: (l) => (Number(l.est_value) > 0 ? rp(l.est_value) : <span className="muted">—</span>) },
               { key: 'next', label: 'Tindak lanjut', sort: (l) => l.next_due || '', render: (l) => (l.next_due ? <span style={{ color: l.next_due <= today() ? 'var(--bad)' : undefined }}>{tgl(l.next_due)}</span> : <span className="muted">—</span>) },
               { key: 'st', label: 'Tahap', render: (l) => <span className={'chip ' + (waiting.includes(l) ? 'gold' : STAGES[l.stage][1])}>{waiting.includes(l) ? 'Perlu konfirmasi' : l.ref_number ? `✓ ${l.ref_number}` : STAGES[l.stage][0]}</span> },
             ]}
-            card={(l) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b className="small">{l.name}{l.source === 'halaman' && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || 'Halaman'}</span>}</b>
+            card={(l) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b className="small">{l.name}{(l.source === 'halaman' || l.source === 'webhook') && <span className="chip gold" style={{ marginLeft: 6 }}>{l.number || SOURCE[l.source]}</span>}</b>
                 <span className="small muted">{l.need ? `${l.need} · ` : ''}{SOURCE[l.source]}{Number(l.est_value) > 0 ? ` · ${rp(l.est_value)}` : ''}</span>
                 {l.next_due && <span className="small" style={{ color: l.next_due <= today() ? 'var(--bad)' : 'var(--muted)' }}>Tindak lanjut {tgl(l.next_due)}</span>}</div><span className={'chip ' + (waiting.includes(l) ? 'gold' : STAGES[l.stage][1])}>{waiting.includes(l) ? 'Perlu konfirmasi' : l.ref_number ? `✓ ${l.ref_number}` : STAGES[l.stage][0]}</span></div>} />
         )}
@@ -116,7 +116,7 @@ function LeadSheet({ l, kosId, retail, jasa, onClose, onSaved }) {
         <Field label="No. HP / WhatsApp"><input inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
         <Field label="Kebutuhan"><input value={f.need} onChange={(e) => setF({ ...f, need: e.target.value })} placeholder={retail ? (jasa ? 'mis. laundry seprai 20 kg/minggu' : 'mis. ambil beras 5 karung/minggu') : 'mis. kamar mandi dalam, mulai Desember'} /></Field>
         <div className="row">
-          <Field label="Dari mana"><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{Object.entries(SOURCE).filter(([k]) => k !== 'halaman' || f.source === 'halaman').map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="Dari mana"><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{Object.entries(SOURCE).filter(([k]) => (k !== 'halaman' && k !== 'webhook') || f.source === k).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
           <Field label="Perkiraan nilai (opsional)"><input inputMode="numeric" value={f.est} onChange={(e) => setF({ ...f, est: e.target.value })} placeholder="Rp" /></Field>
         </div>
         <button className="primary" disabled={busy || f.name.trim().length < 2} onClick={save}>{busy ? 'Menyimpan…' : isNew ? 'Simpan prospek' : 'Simpan perubahan'}</button>
@@ -127,6 +127,7 @@ function LeadSheet({ l, kosId, retail, jasa, onClose, onSaved }) {
         {cur.source === 'halaman' && <div className="notice small">Permintaan <b>{cur.number}</b> dari halaman bisnis{cur.consent_at ? ' · pengunjung menyetujui dihubungi' : ''}.{cur.need ? <><br />{cur.need}</> : ''}
           {Array.isArray(cur.items) && cur.items.length > 0 && <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>{cur.items.map((it, i) => <li key={i}>{it.name} · {angka(it.qty)} {it.unit}{it.price != null ? ` × ${rp(it.price)}` : ''}</li>)}</ul>}
           {cur.req_date && <><br />Tanggal diminta: <b>{tgl(cur.req_date)}</b></>}</div>}
+        {cur.source === 'webhook' && <div className="notice small">Prospek <b>{cur.number}</b> masuk lewat integrasi. Persetujuan untuk dihubungi <b>belum dikonfirmasi</b> oleh PRASARA — pastikan sumbernya sudah meminta izin pelanggan.{cur.need ? <><br />{cur.need}</> : ''}</div>}
         {cur.source === 'halaman' && <LeadCheck lead={cur} kos={kos} onChanged={async () => { onSaved(); const { data } = await supabase.from('crm_leads').select('*').eq('id', cur.id).maybeSingle(); if (data) setCur({ ...cur, ...data }); }} />}
         <div className="row">{NEXT[cur.stage].map((to) => <button key={to} className={to === 'jadi' ? 'sm primary' : to === 'batal' ? 'sm ghost danger' : 'sm'} onClick={() => move(to)}>{['jadi', 'batal'].includes(cur.stage) ? 'Buka lagi' : `→ ${STAGES[to][0]}`}</button>)}</div>
         {!retail && !['jadi', 'batal'].includes(cur.stage) && moduleOn(kos, 'p_booking') && <Link href={`/booking?lead=${cur.id}`} className="small">📅 Buat booking kamar untuk {cur.name} →</Link>}
@@ -137,7 +138,7 @@ function LeadSheet({ l, kosId, retail, jasa, onClose, onSaved }) {
         <Field label="No. HP / WhatsApp"><input inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
         <Field label="Kebutuhan"><input value={f.need} onChange={(e) => setF({ ...f, need: e.target.value })} placeholder={retail ? (jasa ? 'mis. laundry seprai 20 kg/minggu' : 'mis. ambil beras 5 karung/minggu') : 'mis. kamar mandi dalam, mulai Desember'} /></Field>
         <div className="row">
-          <Field label="Dari mana"><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{Object.entries(SOURCE).filter(([k]) => k !== 'halaman' || f.source === 'halaman').map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="Dari mana"><select value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })}>{Object.entries(SOURCE).filter(([k]) => (k !== 'halaman' && k !== 'webhook') || f.source === k).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
           <Field label="Perkiraan nilai (opsional)"><input inputMode="numeric" value={f.est} onChange={(e) => setF({ ...f, est: e.target.value })} placeholder="Rp" /></Field>
         </div>
         <button className="primary" disabled={busy || f.name.trim().length < 2} onClick={save}>{busy ? 'Menyimpan…' : isNew ? 'Simpan prospek' : 'Simpan perubahan'}</button>

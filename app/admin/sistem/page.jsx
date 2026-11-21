@@ -18,9 +18,11 @@ export default function Sistem() {
   const [srv, setSrv] = useState(null);
   const [err, setErr] = useState(null);
   const [ev, setEv] = useState(null);   // pemantauan peristiwa (event_reconcile): jumlah per jenis & dokumen tanpa peristiwa
+  const [ig, setIg] = useState(null);   // pemantauan integrasi (admin_integration_overview): hanya angka
   useEffect(() => {
     if (!can(adminMe, 'system.view')) return;
     supabase.rpc('event_reconcile').then(({ data }) => setEv(data || null), () => {});
+    supabase.rpc('admin_integration_overview').then(({ data }) => setIg(data || null), () => {});
     supabase.rpc('admin_system').then(({ data, error }) => (error ? setErr(errMsg(error)) : setDb(data)));
     supabase.auth.getSession().then(({ data }) => fetch('/api/admin/status', { headers: { authorization: 'Bearer ' + data.session?.access_token } }))
       .then((r) => r.json()).then(setSrv).catch(() => setSrv({ error: 'Server aplikasi tidak menjawab' }));
@@ -64,6 +66,19 @@ export default function Sistem() {
         <div className="list">{Object.entries(ev.per_jenis || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => <div className="li" key={k}><span className="small">{k}</span><b className="small">{Number(n).toLocaleString('id-ID')}</b></div>)}</div>
         {Object.keys(ev.per_jenis || {}).length === 0 && <span className="small muted">Belum ada peristiwa dalam 7 hari terakhir.</span>}
         <span className="small muted">Hanya jumlah — isi transaksi pelanggan tidak ditampilkan.</span>
+      </section>}
+      {ig && <section className="panel">
+        <h3>Integrasi (webhook masuk)</h3>
+        <div className="list">
+          <div className="li"><span className="small">Sambungan aktif / dijeda / total</span><b className="small">{ig.sambungan.aktif} / {ig.sambungan.dijeda} / {ig.sambungan.total} · {ig.sambungan.bisnis} bisnis</b></div>
+          <div className="li"><span className="small">Kiriman 24 jam: masuk / ulang / ditolak</span><b className="small">{Number(ig.h1.ok || 0)} / {Number(ig.h1.duplikat || 0)} / {['tidak_valid', 'dibatasi', 'dijeda', 'nonaktif', 'galat'].reduce((t, k) => t + Number(ig.h1[k] || 0), 0)}</b></div>
+          <div className="li"><span className="small">Tautan salah 24 jam</span><b className="small">{Number(ig.h1.token_salah || 0)}</b></div>
+          <div className="li"><span className="small">Gangguan sistem 7 hari</span><b className="small">{Number(ig.h7.galat || 0)}</b></div>
+          <div className="li"><span className="small">Kiriman berhasil terakhir</span><b className="small">{ig.terakhir_ok ? when(ig.terakhir_ok) : '—'}</b></div>
+        </div>
+        {Number(ig.h7.galat || 0) > 0 && <div className="notice bad">Ada gangguan sistem pada kiriman webhook dalam 7 hari terakhir — periksa log server (kata kunci "[hook]").</div>}
+        {Number(ig.h1.token_salah || 0) >= 100 && <div className="notice bad">Banyak percobaan tautan salah dalam 24 jam — kemungkinan ada yang menebak alamat webhook.</div>}
+        <span className="small muted">Hanya angka — kode sambungan dan isi kiriman tidak pernah ditampilkan. Penyedia lain ({ig.katalog.filter((c) => c.impl_status === 'planned').map((c) => c.name).join(', ')}) berstatus dalam rencana.</span>
       </section>}
       <section className="panel">
         <h3>Jumlah data</h3>

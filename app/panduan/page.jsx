@@ -794,7 +794,7 @@ const PARTS = [
       <>Setiap perubahan <b>batas kredit, tempo, daftar harga, tipe, dan sales</b> tercatat sebelum → sesudah di bagian <b>Riwayat syarat</b> (layar pelanggan) dan Konfigurasi › Riwayat — hanya terlihat oleh pemilik/pengelola.</>,
     ], <>Sales harus anggota tim bisnis ini. Laporan kinerja per sales menyusul bersama indikator grosir.</>, null, null],
   ]],
-  ['AD', 'Tampilan adaptif, Pusat Pengalaman & Alur kerja', [
+  ['AD', 'Tampilan adaptif, Pusat Pengalaman, Alur kerja & Integrasi', [
     ['Menu yang menyesuaikan bisnis & tombol (+)', 'Menu bawah · menu samping (☰ / laptop)', [
       <>Menu bawah di HP selalu: <b>Beranda</b> · <b>menu utama bisnis Anda</b> · <b>(+)</b> · <b>Laporan</b> · <b>Akun</b>. Menu utama mengikuti jenis bisnis: toko = <b>Transaksi</b>, kos = <b>Kamar</b>, laundry & kuliner = <b>Pesanan</b>, bisnis kustom = jenis data utama (mis. <b>Proyek</b>).</>,
       <>Tombol <b>(+)</b> di tengah <b>selalu ada</b> di semua bisnis. Ketuk untuk aksi cepat, mis. toko: Penjualan baru, Pesanan grosir, Tambah produk, Pembelian, Catat pengeluaran/pemasukan, Tambah pelanggan; kos: Tambah kamar, Tambah penghuni, Booking, Buat tagihan, Catat pembayaran.</>,
@@ -842,6 +842,14 @@ const PARTS = [
       <>Setiap perubahan tahap, status, langkah Builder, atau aturan disimpan sebagai <b>versi</b>. Versi pertama disimpan otomatis sebelum perubahan pertama. Di detail alur, tekan <b>Pulihkan</b> pada versi mana pun; tab <b>Riwayat</b> menampilkan semua perubahan.</>,
       <>Tab <b>Saran</b> memberi saran dari data nyata: alur siap pakai untuk usaha sejenis, menambah tahap <b>Cek kualitas</b>, tahap yang paling lama, tahap yang sering dilewati, pesanan yang sering diserahkan belum lunas, banyak pesanan terlambat, catatan kustom yang tertahan, status yang tidak pernah dipakai, dan langkah proses yang belum dipakai. Pilih <b>Terapkan</b>, <b>Nanti</b> (30 hari), atau <b>Tidak perlu</b>.</>,
     ], <>Saran tidak pernah diterapkan tanpa persetujuan Anda. Saran yang ditolak tidak muncul lagi selama kondisinya sama.</>, null, null],
+    ['Integrasi: kirim data dari website atau aplikasi lain jadi Prospek', 'Pengaturan bisnis › Integrasi', [
+      <>Buka <b>Integrasi</b> (hanya pemilik & pengelola). Modul <b>Prospek & tindak lanjut (CRM)</b> harus aktif karena setiap kiriman dari luar masuk sebagai Prospek. Tekan <b>+ Sambungan baru</b>, beri <b>nama</b> pengingat (mis. "Formulir website" atau "Bot WhatsApp"), lalu <b>Buat sambungan</b>.</>,
+      <>PRASARA mengenali nama kolom umum otomatis: <b>name/nama</b>, <b>phone/telepon/hp</b>, <b>message/pesan</b>, dan <b>email</b>. Bila aplikasi Anda memakai nama lain (boleh bersarang, mis. <b>kontak.wa</b>), isi di bagian <b>Nama kolom khusus</b>. Email dicatat di kolom kebutuhan prospek.</>,
+      <>Layar berikutnya menampilkan <b>alamat sambungan</b>. Alamat itu <b>hanya tampil sekali</b> — tekan <b>Salin</b> dan simpan di tempat aman (catatan HP atau pengelola kata sandi). Tempel di aplikasi pengirim (Zapier, Make, n8n, Google Apps Script, bot, atau server website Anda) sebagai permintaan <b>POST</b>.</>,
+      <>Tekan <b>Kirim contoh</b> untuk memastikan sambungan bekerja: PRASARA membuat satu prospek bernama "Contoh Uji PRASARA" yang boleh Anda batalkan. Tersedia juga contoh perintah kirim (curl) di layar yang sama.</>,
+      <>Prospek yang masuk muncul di menu <b>Prospek</b> dengan sumber <b>Integrasi</b> dan nomor PRM-…, serta pengingatnya di Beranda. Tidak ada email otomatis. Nomor telepon yang sama dalam 10 menit dihitung sebagai kiriman ulang, bukan prospek baru; kiriman ulang yang persis sama bisa dicegah dengan header <b>Idempotency-Key</b>.</>,
+      <>Di kartu sambungan: <b>Ubah</b> (nama & kolom khusus), <b>Jeda</b>/<b>Aktifkan</b>, <b>Kode baru</b> (alamat lama langsung berhenti bekerja), <b>Hapus</b>, dan <b>Riwayat</b>. Tab <b>Riwayat kiriman</b> menampilkan tiap kiriman: masuk jadi prospek, nomor sama dalam 10 menit, atau ditolak beserta alasannya (isi kurang tepat, terlalu banyak kiriman, sambungan dijeda).</>,
+    ], <>Jangan menaruh alamat sambungan di JavaScript halaman web yang bisa dilihat pengunjung — siapa pun yang tahu alamatnya bisa mengirim prospek. Bila bocor, tekan <b>Kode baru</b>. Batas: maksimal 5 sambungan per bisnis, 60 kiriman per jam dan 300 prospek per hari per sambungan. PRASARA tidak menyimpan alamat lengkapnya (hanya sidik dan 4 karakter terakhir) dan tidak mengklaim pengirim sudah meminta izin dihubungi — pastikan sumbernya memintanya. Konektor lain (kabar keluar, WhatsApp resmi, pembayaran online, marketplace) masih <b>Dalam rencana</b> dan tidak berpura-pura aktif.</>, 'warn', null],
   ]],
 ];
 
@@ -910,7 +918,7 @@ export default function Panduan() {
           <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
-          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–116</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran</span></div>
+          <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–117</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

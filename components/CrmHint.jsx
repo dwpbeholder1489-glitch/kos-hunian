@@ -16,10 +16,10 @@ export default function CrmHint() {
     if (!show) return;
     supabase.from('crm_tasks').select('id', { count: 'exact', head: true }).eq('kos_id', kosId).is('done_at', null).lte('due_date', today())
       .then(({ count }) => setN(count || 0), () => {});
-    supabase.from('crm_leads').select('id', { count: 'exact', head: true }).eq('kos_id', kosId).eq('source', 'halaman').eq('stage', 'baru')
+    supabase.from('crm_leads').select('id', { count: 'exact', head: true }).eq('kos_id', kosId).in('source', ['halaman', 'webhook']).eq('stage', 'baru')
       .then(({ count }) => setReq(count || 0), () => {});
   }, [kosId, ver, show]);
   if (!show || (!n && !req)) return null;
-  if (req) return <Link href="/crm" className="notice" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>📨 <b>{req} permintaan baru</b> dari halaman bisnis{n ? ` · ${n} tindak lanjut jatuh tempo` : ''} · <span style={{ textDecoration: 'underline' }}>Buka</span></Link>;
+  if (req) return <Link href="/crm" className="notice" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>📨 <b>{req} permintaan baru</b> dari halaman bisnis/integrasi{n ? ` · ${n} tindak lanjut jatuh tempo` : ''} · <span style={{ textDecoration: 'underline' }}>Buka</span></Link>;
   return <Link href="/crm" className="notice" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>📞 <b>{n} tindak lanjut</b> jatuh tempo hari ini atau terlewat · <span style={{ textDecoration: 'underline' }}>Buka</span></Link>;
 }

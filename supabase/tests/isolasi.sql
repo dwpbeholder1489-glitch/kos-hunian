@@ -108,7 +108,10 @@ begin
       ('logo_set', format('select public.logo_set(%L, null)', k)),
       ('bb_people', format('select public.bb_people(%L)', k)),
       ('booking_create', format('select public.booking_create(gen_random_uuid(), %L, ''{"name":"uji"}'')', k)),
-      ('meter_record', format('select public.meter_record(%L, (select id from public.utility_types where kos_id = %L limit 1), current_date, current_date, ''[]'')', k, k))
+      ('meter_record', format('select public.meter_record(%L, (select id from public.utility_types where kos_id = %L limit 1), current_date, current_date, ''[]'')', k, k)),
+      ('integ_overview', format('select public.integ_overview(%L)', k)),
+      ('integ_create', format('select public.integ_create(%L, ''webhook_masuk'', ''Dibajak'')', k)),
+      ('integ_logs', format('select public.integ_logs(%L)', k))
     ) v(name, q) loop
     begin
       execute t.q;
