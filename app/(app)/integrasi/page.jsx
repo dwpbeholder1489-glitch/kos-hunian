@@ -9,14 +9,15 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { Sheet, Loading, Empty, Field, toast, run } from '@/components/ui';
-import { isDraft } from '@/lib/business';
+import { isDraft, canArea } from '@/lib/business';
+import FiturUpgrade from '@/components/FiturUpgrade';
 import { errMsg } from '@/lib/format';
 import { tglJam } from '@/lib/workflow';
 
 const TABS = [['sambungan', 'Sambungan'], ['riwayat', 'Riwayat kiriman']];
 const OUT = {
   ok: ['Masuk jadi prospek', 'good'], duplikat: ['Kiriman ulang — diabaikan', 'void'], tidak_valid: ['Ditolak — isi kurang tepat', 'bad'],
-  dibatasi: ['Ditolak — terlalu banyak kiriman', 'bad'], dijeda: ['Ditolak — sambungan dijeda', 'void'], nonaktif: ['Ditolak — bisnis/fitur belum aktif', 'bad'], galat: ['Gangguan sistem', 'bad'],
+  dibatasi: ['Ditolak — terlalu banyak kiriman', 'bad'], dijeda: ['Ditolak — sambungan dijeda', 'void'], nonaktif: ['Ditolak — bisnis, fitur, atau paket tidak aktif', 'bad'], galat: ['Gangguan sistem', 'bad'],
 };
 const FIELDS = [['name', 'Nama', 'name / nama'], ['phone', 'Telepon / WhatsApp', 'phone / telepon / hp'], ['message', 'Pesan / kebutuhan', 'message / pesan'], ['email', 'Email', 'email']];
 const SAMPLE = { name: 'Contoh Uji PRASARA', phone: '081200000000', message: 'Kiriman contoh dari halaman Integrasi — boleh dibatalkan di Prospek.' };
@@ -53,7 +54,8 @@ export default function Integrasi() {
   if (!d) return <div className="stack">{head}<Loading /></div>;
 
   const planned = d.catalog.filter((c) => c.impl_status === 'planned');
-  const canCreate = !ro && !draft && d.crm_on && d.connections.length < d.limits.maks_sambungan;
+  const pro = d.allowed !== false;   // Integrasi = Paket Pro (keputusan pemilik 21 Nov 2026); diputuskan server
+  const canCreate = pro && !ro && !draft && d.crm_on && d.connections.length < d.limits.maks_sambungan;
 
   const toggle = async (c) => {
     const to = c.status !== 'aktif';
@@ -79,6 +81,8 @@ export default function Integrasi() {
       {draft && <div className="notice small">Bisnis ini masih draf. Aktifkan dulu di <Link href="/konfirmasi" style={{ textDecoration: 'underline' }}>Pusat Konfirmasi</Link> sebelum membuat sambungan.</div>}
       {!d.crm_on && !draft && !ro && <div className="notice small">Kiriman dari luar masuk sebagai Prospek, jadi modul <b>Prospek & tindak lanjut (CRM)</b> harus aktif. Nyalakan di <Link href="/konfigurasi" style={{ textDecoration: 'underline' }}>Konfigurasi › Modul</Link>.</div>}
 
+      {!pro && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} plan="pro" event="INTEGRATION.REQUESTED" title="Integrasi tersedia di Paket Pro"
+        text={d.connections.length ? 'Kiriman ke sambungan yang ada sedang ditolak karena paket bisnis ini bukan Pro. Sambungan tetap bisa dijeda, diubah namanya, atau dihapus; riwayat tetap bisa dilihat.' : 'Sambungkan formulir website, Zapier, Make, n8n, Apps Script, atau bot Anda — setiap kiriman otomatis masuk menu Prospek.'} />}
       <div className="seg bec-tabs" role="tablist" aria-label="Bagian Integrasi">
         {TABS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
@@ -110,8 +114,8 @@ export default function Integrasi() {
             )}
             <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
               <button className="sm ghost" disabled={ro} onClick={() => setForm(c)}>Ubah</button>
-              <button className="sm ghost" disabled={ro} onClick={() => toggle(c)}>{c.status === 'aktif' ? 'Jeda' : 'Aktifkan'}</button>
-              <button className="sm ghost" disabled={ro} onClick={() => rotate(c)}>Kode baru</button>
+              <button className="sm ghost" disabled={ro || (!pro && c.status !== 'aktif')} onClick={() => toggle(c)}>{c.status === 'aktif' ? 'Jeda' : 'Aktifkan'}</button>
+              <button className="sm ghost" disabled={ro || !pro} onClick={() => rotate(c)}>Kode baru</button>
               <button className="sm ghost danger" disabled={ro} onClick={() => remove(c)}>Hapus</button>
               <button className="sm ghost" onClick={() => { setFilter(c.id); setTab('riwayat'); }}>Riwayat</button>
             </div>

@@ -214,3 +214,15 @@ Acuan: Culinary §12.1 dan IBOS Bab 9.2 (registry konektor, autentikasi, cakupan
 Keputusan yang perlu konfirmasi pemilik: (1) apakah webhook dibatasi paket — saat ini semua paket, karena matriks V2 tidak menyebutnya; (2) penjadwal untuk webhook KELUAR: cron Vercel paket sekarang hanya harian sehingga kabar keluar real-time tidak mungkin; pilihannya paket cron per menit, penjadwal luar (mis. GitHub Actions / cron-job.org dengan `CRON_SECRET`), atau menerima kiriman batch harian.
 
 Belum / jujur: webhook keluar, WhatsApp resmi, pembayaran online untuk pelanggan bisnis, dan marketplace berstatus Dalam rencana (tidak ada klaim aktif tanpa kredensial). Prospek dari webhook tidak membawa persetujuan dihubungi (`consent_at` kosong) dan tidak mengirim email ke pemilik (kuota email). Belum ada: kategori sumber data selain prospek (mis. pesanan/penjualan masuk lewat webhook), tanda tangan HMAC dari pengirim (kini kerahasiaan alamat), dan uji dari layanan luar sungguhan.
+
+### 18.1 Keputusan pemilik 21 Nov 2026 (migrasi `20261121150000`)
+
+| Bagian | Status | Bukti |
+|---|---|---|
+| Integrasi = Paket Pro (buat/kode baru/aktifkan ditolak; jeda/hapus/riwayat tetap; webhook ke bisnis non-Pro ditolak & dicatat) | Verified | `integrasi.sql` uji K |
+| Gabungan bisnis = Paket Pro (minimal satu bisnis Pro di gabungan; jumlah disembunyikan bila paket turun, pilihan tetap) | Verified | `ringkasan_portofolio.sql` uji H |
+| Ekspor gabungan (Excel: per bisnis + jumlah, per badan usaha, catatan; kuota bisnis Pro) | Verified (bundle); belum diuji di HP | — |
+| Perbaikan galat Alur kerja "column reference x is ambiguous" (saran langkah proses R9) | Verified | `alur_kerja.sql` uji Z (gagal di kode lama, lulus di kode baru) |
+| Tabel fitur paket (`lib/plan.js`), panduan Langkah 24 & 117, `lib/guide.js` | Selesai | |
+
+Keputusan Fase 4 (aturan persetujuan di Alur kerja mulai Paket Bisnis) tidak diubah.

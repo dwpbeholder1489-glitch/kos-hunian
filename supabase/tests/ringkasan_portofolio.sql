@@ -85,3 +85,25 @@ end $$;
 select set_config('request.jwt.claim.sub', :'KS', false);
 select 'G4 kasir tidak melihat pilihan pemilik' as k, (portfolio_get() ->> 'include') = '[]' as ok;
 reset role;
+
+\echo == H. Gabungan = Paket Pro (minimal satu bisnis Pro di gabungan)
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'PM', false);
+do $$ begin
+  begin
+    perform portfolio_set(array['b2b2b2b2-0000-0000-0000-00000000000c'::uuid]);
+    raise notice 'H1_GAGAL: gabungan tanpa bisnis Pro diterima';
+  exception when others then
+    if sqlerrm like 'BATAS_PAKET:%' then raise notice 'H1_OK (ditolak: %)', sqlerrm; else raise notice 'H1_GAGAL pesan lain: %', sqlerrm; end if;
+  end;
+end $$;
+select 'H2 Pro + Dasar boleh' as k, (portfolio_set(array[:'A'::uuid, :'C'::uuid]) ->> 'allowed')::boolean as ok;
+select 'H3 daftar Pro benar' as k, (portfolio_get() -> 'pro') @> jsonb_build_array(:'A'::text) and not ((portfolio_get() -> 'pro') @> jsonb_build_array(:'C'::text)) as ok;
+reset role;
+update kos set plan = 'dasar' where id = :'A';
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'PM', false);
+select 'H4 paket turun: tidak boleh ditampilkan' as k, not (portfolio_get() ->> 'allowed')::boolean and jsonb_array_length(portfolio_get() -> 'include') = 2 as ok;
+select 'H5 kosongkan tetap boleh' as k, jsonb_array_length(portfolio_set(array[]::uuid[]) -> 'include') = 0 as ok;
+reset role;
+update kos set plan = 'pro' where id = :'A';

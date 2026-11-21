@@ -334,3 +334,40 @@ select (admin_integration_overview() -> 'sambungan' ->> 'total')::int >= 5 j_adm
        (admin_integration_overview() -> 'h7' ->> 'token_salah')::int = 1 j_admin_h7_salah,
        not (admin_integration_overview()::text like '%prs\_%') j_admin_tanpa_token,
        not (admin_integration_overview()::text like '%Budi%') j_admin_tanpa_data_pelanggan;
+
+\echo == K. Integrasi = Paket Pro (keputusan pemilik 21 Nov 2026)
+select set_config('request.jwt.claim.sub', :'PM', false) \g /dev/null
+select integ_create(:'A', 'webhook_masuk', 'Uji paket') as kc \gset
+select :'kc'::jsonb ->> 'id' as kid, :'kc'::jsonb ->> 'token' as ktok \gset
+select (integ_overview(:'A') ->> 'allowed')::boolean k_pro_boleh;
+reset role;
+update kos set plan = 'bisnis' where id = :'A';
+select set_config('uji.kid', :'kid', false) \g /dev/null
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'PM', false) \g /dev/null
+select not (integ_overview(:'A') ->> 'allowed')::boolean k_bisnis_tidak_boleh,
+       jsonb_array_length(integ_overview(:'A') -> 'connections') >= 1 k_sambungan_tetap_terlihat;
+do $$ declare m text; kid uuid := current_setting('uji.kid')::uuid; begin
+  begin perform integ_create('c1c1c1c1-0000-0000-0000-00000000000a', 'webhook_masuk', 'Uji bisnis'); exception when others then m := sqlerrm; end;
+  if coalesce(m, '') not like 'BATAS_PAKET:%Paket Pro%' then raise exception 'K_GAGAL buat tanpa Pro: %', m; end if;
+  m := null;
+  begin perform integ_rotate(kid); exception when others then m := sqlerrm; end;
+  if coalesce(m, '') not like 'BATAS_PAKET:%' then raise exception 'K_GAGAL kode baru tanpa Pro: %', m; end if;
+  perform integ_set_status(kid, false);   -- jeda tetap boleh
+  m := null;
+  begin perform integ_set_status(kid, true); exception when others then m := sqlerrm; end;
+  if coalesce(m, '') not like 'BATAS_PAKET:%' then raise exception 'K_GAGAL aktifkan tanpa Pro: %', m; end if;
+  raise notice 'k_OK: buat/kode baru/aktifkan ditolak, jeda boleh';
+end $$;
+reset role;
+update integration_connections set status = 'aktif', paused_at = null where id = :'kid';
+select hook_inbound(:'ktok', 'ipk', '{"name":"Paket","phone":"081377779999"}'::jsonb) as kh \gset
+select :'kh'::jsonb ->> 'status' = '403' k_webhook_ditolak,
+       not exists (select 1 from crm_leads where phone like '%81377779999%') k_tanpa_prospek,
+       exists (select 1 from integration_logs where connection_id = :'kid' and outcome = 'nonaktif' and detail like '%Paket Pro%') k_dicatat;
+update kos set plan = 'pro' where id = :'A';
+select (hook_inbound(:'ktok', 'ipk', '{"name":"Paket","phone":"081377779999"}'::jsonb) ->> 'ok')::boolean k_pro_lagi_jalan;
+select 'INTEGRATION.REQUESTED' = any (select trigger_event from growth_rules where to_plan = 'pro') k_penawaran,
+       growth_event_feature('INTEGRATION.REQUESTED') = 'integrasi' k_peta_event,
+       'integrasi' = any (plan_feature_codes()) k_kode_fitur,
+       not ('integrasi' = any ((plan_current('bisnis')).features)) k_bukan_bisnis;

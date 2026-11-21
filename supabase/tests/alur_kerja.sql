@@ -217,3 +217,23 @@ select wf_rule_save(:'E', jsonb_build_object('workflow','bb:' || :'oa','point', 
 select id as ve1 from workflow_versions where kos_id = :'E' and version = 1 \gset
 select wf_restore(:'E', :'ve1') is not null j_pulihkan_draf;
 reset role;
+
+\echo == Z. Regresi 21 Nov: saran langkah proses (R9) tidak galat "column reference x is ambiguous"
+-- R9 hanya berjalan bila ada alur dengan ≥2 langkah berjalan; peta proses dipalsukan sementara agar jalur itu pasti dieksekusi.
+reset role;
+alter function public.process_map(uuid) rename to process_map_asli;
+create function public.process_map(p_kos uuid) returns jsonb language sql stable as $f$
+  select jsonb_build_array(jsonb_build_object('code', bp.code, 'name', bp.name, 'version', 1, 'done', 2,
+    'steps', jsonb_build_array(jsonb_build_object('key', e->>'key', 'name', 'Langkah uji', 'state', 'belum_dipakai', 'path', '/beranda'))))
+  from business_processes bp, jsonb_array_elements(bp.steps) e where coalesce((e->>'reco')::boolean, false) limit 1 $f$;
+select set_config('uji.r', :'R', false) \g /dev/null
+do $$ declare o uuid; r jsonb; begin
+  select owner_id into o from kos where id = current_setting('uji.r')::uuid;
+  perform set_config('request.jwt.claim.sub', o::text, true);
+  r := workflow_recommendations(current_setting('uji.r')::uuid);
+  if not exists (select 1 from jsonb_array_elements(r) x where x->>'code' like 'proses:%') then raise exception 'Z_GAGAL saran langkah proses tidak muncul: %', r; end if;
+  raise notice 'z_OK: saran langkah proses dihitung tanpa galat';
+end $$;
+drop function public.process_map(uuid);
+alter function public.process_map_asli(uuid) rename to process_map;
+select position('jsonb_array_elements(bp.steps) x' in pg_get_functiondef('public.workflow_recommendations(uuid)'::regprocedure)) = 0 z_alias_diperbaiki;

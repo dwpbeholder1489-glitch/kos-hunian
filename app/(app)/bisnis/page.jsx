@@ -8,7 +8,11 @@ import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { Loading, Tile } from '@/components/ui';
 import { rp, bulan, today, errMsg, tgl } from '@/lib/format';
-import { typeOf, homeOf, ROLES, isDraft, SETUP_STATUS } from '@/lib/business';
+import { typeOf, homeOf, ROLES, isDraft, SETUP_STATUS, canArea } from '@/lib/business';
+import FiturUpgrade from '@/components/FiturUpgrade';
+import { useKuotaEkspor } from '@/lib/ekspor';
+import { makeXlsx } from '@/lib/xlsx';
+import { download } from '@/lib/zip';
 import { LEGAL_KIND } from '@/lib/modules';
 
 const BASIS = { kas: 'dicatat saat uang diterima (basis kas)', penjualan: 'dicatat saat penjualan terjadi, termasuk kasbon', 'pesanan selesai': 'dicatat saat pesanan diserahkan ke pelanggan, termasuk yang belum lunas', 'status catatan': 'dicatat saat catatan mencapai status uang masuk yang diatur di Business Builder' };
@@ -20,7 +24,7 @@ const sum = (xs, k) => xs.reduce((s, b) => s + (Number(b[k]) || 0), 0);
 
 // Owner Overview: ringkasan lintas bisnis dengan label kelengkapan & basis, per badan usaha, dan tautan ke sumber angka
 export default function Bisnis() {
-  const { kosId, pickKos, ver, list } = useKos();
+  const { kos, kosId, pickKos, ver, list } = useKos();
   const router = useRouter();
   const [ym, setYm] = useState(today().slice(0, 7));
   const [d, setD] = useState(null);
@@ -31,13 +35,17 @@ export default function Bisnis() {
   }, [ver, ym]);
   // Gabungan bisnis (Fase 5): pilihan akun disimpan di server; angka tetap dari owner_overview2 (sumber yang sama)
   const [inc, setInc] = useState(null);
+  const [pro, setPro] = useState([]);   // bisnis akun ini yang Paket Pro (gabungan = Pro, diputuskan server)
   const [prev, setPrev] = useState(null);
   const [pick, setPick] = useState(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
   useEffect(() => {
-    supabase.rpc('portfolio_get').then(({ data, error }) => setInc(error ? [] : data?.include || []));
+    supabase.rpc('portfolio_get').then(({ data, error }) => { setInc(error ? [] : data?.include || []); setPro(error ? [] : data?.pro || []); });
   }, [ver]);
+  // kuota ekspor gabungan dihitung pada bisnis Pro pertama di gabungan
+  const exKos = (inc || []).find((id) => pro.includes(id)) || null;
+  const ek = useKuotaEkspor(exKos);
   useEffect(() => {
     setPrev(null);
     supabase.rpc('owner_overview2', { p_month: shift(ym, -1) + '-01' }).then(({ data, error }) => setPrev(error ? false : data));
@@ -62,13 +70,34 @@ export default function Bisnis() {
   const havePrev = sel.length > 0 && selPrev.length === sel.length && selPrev.every((b) => b && b.revenue != null);
   const pv = (k) => (havePrev ? dTxt(pct(sum(sel, k), sum(selPrev, k))) : '');
   const gabMixed = new Set(sel.map((b) => b.basis)).size > 1;
+  const proSet = new Set(pro);
+  const anyPro = money.some((b) => proSet.has(b.id));
+  const gabOk = sel.some((b) => proSet.has(b.id));
+  const exportGab = () => {
+    const prevOf = (b) => prev?.businesses?.find((x) => x.id === b.id);
+    const cols = ['Bisnis', 'Jenis', 'Badan usaha', 'Pencatatan pendapatan', 'Status angka', 'Pendapatan', 'Modal barang / bahan', 'Biaya operasional', 'Laba operasional', 'Belum diterima', 'Kas', 'Bank', `Pendapatan ${bulan(shift(ym, -1))}`];
+    const types = ['t', 't', 't', 't', 't', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r'];
+    const row = (b) => [b.name, typeOf(b).name, b.legal_entity?.name || '—', BASIS[b.basis] || b.basis, b.complete ? 'Lengkap' : 'Perkiraan',
+      Number(b.revenue) || 0, Number(b.cogs) || 0, Number(b.ops) || 0, Number(b.profit) || 0, Number(b.receivables) || 0, b.cash ?? null, b.bank ?? null, prevOf(b)?.revenue ?? null];
+    const tot = ['JUMLAH GABUNGAN', `${sel.length} bisnis`, '', gabMixed ? 'Basis berbeda — indikasi' : '', gabIncomplete ? 'Ada angka belum final' : 'Lengkap',
+      sum(sel, 'revenue'), sum(sel, 'cogs'), sum(sel, 'ops'), sum(sel, 'profit'), sum(sel, 'receivables'), sum(sel, 'cash'), sum(sel, 'bank'), havePrev ? sum(selPrev, 'revenue') : null];
+    const sheets = [{ name: `Gabungan ${bulan(ym)}`, cols, types, rows: [...sel.map(row), tot] }];
+    if (entitiesOf(sel).length > 1) sheets.push({ name: 'Per badan usaha', cols: ['Badan usaha', 'Jumlah bisnis', 'Pendapatan', 'Laba operasional', 'Belum diterima'], types: ['t', 'n', 'r', 'r', 'r'],
+      rows: entitiesOf(sel).map((g) => [g.le ? `${g.le.name} (${LEGAL_KIND[g.le.kind] || g.le.kind})` : 'Badan usaha belum diatur', g.items.length, sum(g.items, 'revenue'), sum(g.items, 'profit'), sum(g.items, 'receivables')]) });
+    sheets.push({ name: 'Catatan', cols: ['Catatan'], types: ['t'], rows: [
+      [`Periode ${tgl(d.from)}–${tgl(d.to)}, diunduh ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}.`],
+      ['Angka tiap bisnis sama dengan menu Laporan bisnis itu. Bukan laporan konsolidasi resmi: transaksi antarbisnis tidak dieliminasi.'],
+      ...(gabMixed ? [['Basis pencatatan berbeda (kos saat uang diterima, toko saat penjualan), jadi jumlahnya hanya indikasi.']] : []),
+      ['Kas & bank dan "Belum diterima" = saldo saat ini, bukan per akhir bulan.']] });
+    download(makeXlsx(sheets), `Gabungan bisnis - ${bulan(ym)}.xlsx`);
+  };
   const gabIncomplete = sel.some((b) => !b.complete);
   const saveInc = async (ids) => {
     setBusy(true); setNote(null);
     const { data, error } = await supabase.rpc('portfolio_set', { p_include: ids });
     setBusy(false);
     if (error) return setNote(errMsg(error));
-    setInc(data?.include || []); setPick(null);
+    setInc(data?.include || []); setPro(data?.pro || pro); setPick(null);
   };
 
   return (
@@ -166,17 +195,26 @@ export default function Bisnis() {
                 <div className="list">{money.map((b) => (
                   <label key={b.id} className="li" style={{ cursor: 'pointer', borderTop: '1px solid var(--line)' }}>
                     <span className="row" style={{ flexWrap: 'nowrap', gap: 10 }}>
-                      <input type="checkbox" checked={pick.includes(b.id)} onChange={(e) => setPick(e.target.checked ? [...pick, b.id] : pick.filter((x) => x !== b.id))} />
-                      <span className="small">{typeOf(b).icon} {b.name}</span>
+                      <input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={pick.includes(b.id)} onChange={(e) => setPick(e.target.checked ? [...pick, b.id] : pick.filter((x) => x !== b.id))} />
+                      <span className="stack" style={{ gap: 2, minWidth: 0 }}>
+                        <span className="small" style={{ overflowWrap: 'anywhere' }}>{typeOf(b).icon} {b.name}{proSet.has(b.id) && <span className="chip good" style={{ marginLeft: 6 }}>Pro</span>}</span>
+                        <span className="small muted" style={{ overflowWrap: 'anywhere' }}>{b.legal_entity?.name || 'Badan usaha belum diatur'}</span>
+                      </span>
                     </span>
-                    <span className="small muted">{b.legal_entity?.name || 'Badan usaha belum diatur'}</span>
                   </label>
                 ))}</div>
                 {pick.length === 1 && <span className="small muted">Pilih satu bisnis lagi untuk menggabungkan.</span>}
+                {pick.length > 1 && !pick.some((id) => proSet.has(id)) && <span className="small" style={{ color: 'var(--bad)' }}>Minimal satu bisnis yang digabung harus berpaket Pro.</span>}
                 <div className="row">
-                  <button className="primary" disabled={busy || pick.length === 1 || (pick.length === 0 && !(inc || []).length)} onClick={() => saveInc(pick)}>{busy ? 'Menyimpan…' : pick.length ? 'Simpan gabungan' : 'Hapus gabungan'}</button>
+                  <button className="primary" disabled={busy || pick.length === 1 || (pick.length === 0 && !(inc || []).length) || (pick.length > 1 && !pick.some((id) => proSet.has(id)))} onClick={() => saveInc(pick)}>{busy ? 'Menyimpan…' : pick.length ? 'Simpan gabungan' : 'Hapus gabungan'}</button>
                   <button className="sm" disabled={busy} onClick={() => setPick(null)}>Batal</button>
                 </div>
+              </>
+            ) : !anyPro || (sel.length >= 2 && !gabOk) ? (
+              <>
+                <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} plan="pro" event="PORTFOLIO.CONSOLIDATION.REQUESTED" title="Gabungan bisnis tersedia di Paket Pro"
+                  text={sel.length >= 2 ? 'Gabungan yang Anda pilih tidak lagi memuat bisnis berpaket Pro, jadi jumlahnya disembunyikan. Angka tiap bisnis di atas tetap lengkap.' : 'Jumlahkan pendapatan, laba, dan uang yang belum diterima dari bisnis pilihan Anda, bandingkan dengan bulan lalu, pisahkan per badan usaha, dan unduh sebagai Excel. Cukup satu bisnis yang digabung berpaket Pro.'} />
+                {(inc || []).length > 0 && <div className="row"><button className="sm" disabled={busy} onClick={() => saveInc([])}>Hapus pilihan gabungan</button></div>}
               </>
             ) : sel.length >= 2 ? (
               <>
@@ -198,7 +236,11 @@ export default function Bisnis() {
                   ))}</div>
                 )}
                 <span className="small muted">Bukan laporan konsolidasi resmi: transaksi antarbisnis tidak dieliminasi.{gabMixed ? ' Basis pencatatannya berbeda (kos dicatat saat uang diterima, toko saat penjualan), jadi jumlahnya hanya indikasi.' : ''}{gabIncomplete ? ' Sebagian angka belum final (lihat tanda di tiap bisnis).' : ''}{sel.some((b) => !b.legal_entity) ? ' Atur badan usaha tiap bisnis di Operasional › Konfigurasi › Profil agar gabungan bisa dipisah per badan usaha.' : ''}</span>
-                <div className="row"><button className="sm" onClick={() => setPick(inc)}>Ubah pilihan</button></div>
+                <div className="row">
+                  <button className="sm" onClick={() => setPick(inc)}>Ubah pilihan</button>
+                  <button className="sm" disabled={ek.habis || !exKos} onClick={() => ek.jalankan('gabungan_bisnis', exportGab)}>Unduh Excel</button>
+                </div>
+                {ek.info && <span className="small muted">{ek.info} (dihitung di {money.find((b) => b.id === exKos)?.name})</span>}
               </>
             ) : (
               <>
