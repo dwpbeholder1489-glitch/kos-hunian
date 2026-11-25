@@ -3,7 +3,7 @@
   grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
   gap: .5rem;
 }
-.modules a {
+.modules :is(a,button) {
   min-width: 0;
   display: grid;
   justify-items: center;
@@ -19,12 +19,37 @@
   text-align: center;
 }
 .modules svg { color: #15803d; }
-.modules a:hover, .modules a:focus-visible { background: #e1f3e9; }
+.modules :is(a,button):hover, .modules :is(a,button):focus-visible { background: #e1f3e9; }
 @media (max-width: 600px) {
   .modules { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .modules span { font-size: .75rem; overflow-wrap: anywhere; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .modules svg { transition: transform .16s ease; }
-  .modules a:hover svg { transform: translateY(-2px); }
+  .modules :is(a,button):hover svg { transform: translateY(-2px); }
 }
+.home {min-width:0}
+.hero {position:relative;isolation:isolate;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:18px 22px;border-radius:18px;background:linear-gradient(90deg,#064e3b 12%,#064e3be0 31%,transparent 67%),url('/property/hero.webp') center 52%/cover;color:white}
+.hero h1 {font-size:clamp(20px,2.2vw,32px);margin:0}
+.hero img {width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 3px 5px #154d343b)}
+.controls {display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;background:#f7faf8f2;border-radius:12px;padding:4px;color:#14251f}
+.operations h3 {margin:0 0 8px}
+.rooms {display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:6px}
+.rooms article {display:grid;align-content:start;gap:4px;padding:8px;border:1px solid #dce7e0;border-radius:10px;background:#f7faf8;overflow-wrap:anywhere}
+.rooms span {justify-self:start}
+.finance {margin:0}
+.finance div {display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #e3ebe6}
+.finance div:last-child {background:#e1f3e9;border-radius:8px;padding:10px;font-weight:bold}
+.finance dd {margin:0;text-align:right}
+.chart {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end;gap:6px;min-height:145px;background:repeating-linear-gradient(to top,transparent 0 29px,#e7efe9 30px);text-align:center}
+.chart div {display:grid;justify-items:center;min-width:0;gap:4px}
+.chart small {font-size:10px;overflow-wrap:anywhere}
+.chart i {width:72%;background:linear-gradient(#59c971,#a8e6b5);border-radius:6px 6px 0 0;min-height:1px}
+.chart div:last-child i {background:#15803d}
+.home [data-widget=kpi] :global(.grid) {display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.home [data-widget=kpi] svg {color:#15803d}
+@media(min-width:1024px){.home [data-widget=operasional]{display:none}.home [data-widget=kamar]{grid-column:span 2}}
+@media(max-width:600px){.hero {padding:12px;background:linear-gradient(90deg,#e1f3e9 5%,#e1f3e9e6 40%,transparent 82%),url('/property/hero.webp') center/cover;color:#14251f}.hero img{width:50px;height:50px}.controls{margin:0;flex-basis:100%;width:100%;font-size:12px}.home [data-widget=kpi] :global(.grid){grid-template-columns:repeat(2,minmax(0,1fr))}.modules :is(a,button){padding:5px;min-height:64px}}
+@media(prefers-reduced-motion:no-preference){.hero img{animation:wave 1.8s ease-in-out 2;transform-origin:bottom center}.chart i{animation:grow .55s ease-out;transform-origin:bottom}}
+@keyframes wave{50%{transform:translateY(-4px) rotate(-5deg)}}
+@keyframes grow{from{transform:scaleY(.1)}}
