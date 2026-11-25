@@ -1178,7 +1178,8 @@ input::placeholder,textarea::placeholder{color:var(--muted-2)}
 @media (min-width:768px){
   :root{--side-w:var(--sidebar-collapsed-width)}
   .shell{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);min-height:100vh;min-height:100dvh}
-  header.top,.bnav{display:none!important}
+  header.top:not(.portal),.bnav{display:none!important}
+  body:has(header.top.portal) .toast{left:50%}
   .side,.topbar{display:flex}
   .crumbs{display:block}
   .side-fly{display:flex}

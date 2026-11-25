@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -968,6 +968,19 @@ const PARTS = [
       <>Selama milestone belum diserahkan, uang itu tercatat sebagai <b>uang muka</b> (belum pendapatan). Saat milestone bernilai dicentang selesai, nilainya menjadi <b>pendapatan</b>; bila klien belum membayar, kekurangannya menjadi <b>piutang</b>. Saat proyek ditandai selesai, sisa nilai kontrak ikut diakui.</>,
       <>Acara batal padahal DP sudah masuk? Pakai <b>Kembalikan uang muka</b> (uang keluar dari kas/bank) dan/atau <b>Uang muka hangus</b> (sesuai kontrak; menjadi pendapatan lain, tanpa uang keluar).</>,
     ], <>Salah catat pembayaran? Tekan <b>Batal</b> dan tulis alasannya — Pembukuan dikoreksi otomatis. Tagihan yang sudah dibayar tidak bisa dibatalkan sebelum pembayarannya dibatalkan. Pembayaran tetap bisa dicatat walau paket turun; membuat tagihan baru butuh Paket Bisnis. Tab <b>Laba proyek</b> kini juga menampilkan uang diterima, pendapatan diakui, dan tagihan yang lewat jatuh tempo.</>, 'warn', <ScrTagihanProyek />, 'bisnis'],
+  ]],
+  ['AI', 'Toko: Portal pelanggan grosir (pelanggan memesan sendiri)', [
+    ['Membuat & membagikan link portal', 'Transaksi › Pesanan grosir › Portal pelanggan (Paket Pro)', [
+      <>Atur dulu syarat pelanggan (daftar harga, batas kredit, tempo, alamat) di <b>Pelanggan & supplier › Syarat pelanggan</b> — portal memakai harga dan syarat itu.</>,
+      <>Buka <b>Pesanan grosir</b> › tab <b>Portal pelanggan</b> › cari pelanggan › <b>Buat link</b>.</>,
+      <>Tekan <b>Kirim WA</b> (pesan berisi link pribadi) atau <b>Salin link</b>. Pelanggan cukup membuka link — tanpa daftar akun atau kata sandi. Daftar menampilkan kapan link terakhir dibuka.</>,
+      <>Link bocor atau pelanggan berhenti? <b>Ganti link</b> (link lama langsung mati) atau <b>Matikan</b>.</>,
+    ], <>Portal hanya menampilkan harga milik pelanggan itu (daftar harga khusus › harga outlet/grosir › eceran, lalu harga beli banyak) dan status <b>Tersedia</b>/<b>Stok terbatas</b> — angka stok, harga modal, dan pelanggan lain tidak pernah terlihat. Barang tanpa harga jual tidak muncul. Promo Kasir tidak berlaku di portal.</>, 'warn', null],
+    ['Pelanggan memesan, penjual mengonfirmasi', 'Link portal (pelanggan) · Pesanan grosir › Penawaran (penjual)', [
+      <>Pelanggan: tab <b>Pesan barang</b> › cari/pilih kategori › ketuk <b>+ satuan</b> dan atur jumlah › <b>Lanjut pesan</b>. Pilih <b>Pesan sekarang</b> atau <b>Minta penawaran dulu</b>, isi tanggal dibutuhkan, No. PO, alamat kirim, catatan › <b>Kirim</b>. Muncul nomor pesanan dan langkah berikutnya.</>,
+      <>Penjual: pesanan masuk ke <b>Pesanan grosir › Penawaran</b> bertanda <b>Baru dari portal</b>, juga di lonceng & Pengingat toko (dan email bila diaktifkan di Pengaturan). Buka, periksa stok & batas kredit, <b>Ubah</b> bila perlu, lalu <b>Konfirmasi pesanan pelanggan</b>. Selanjutnya sama: surat jalan → faktur → piutang.</>,
+      <>Pelanggan memantau di tab <b>Pesanan</b> (status, jumlah terkirim, surat jalan, nomor faktur), bisa <b>Pesan lagi</b> dari pesanan lama, dan <b>Batalkan</b> selama belum dikonfirmasi. Tab <b>Tagihan</b>: sisa tagihan, batas kredit, faktur & jatuh tempo, pembayaran yang sudah dicatat, cara bayar, tombol kirim bukti lewat WhatsApp.</>,
+    ], <>Pesanan portal belum mengubah stok atau uang sampai dikirim. Harga terkunci saat pelanggan memesan (dihitung server, bukan dari HP pelanggan). Melewati batas kredit tetap bisa dikirim pelanggan — penjual yang memutuskan saat konfirmasi (aturan batas kredit sama). Batas wajar: 10 pesanan per jam & 20 pesanan menunggu per pelanggan.</>, 'warn', <ScrPortalPelanggan />],
   ]],
 ];
 

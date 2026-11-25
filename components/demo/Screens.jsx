@@ -688,6 +688,24 @@ export function ScrKasirOffline() {
   );
 }
 
+export function ScrPortalPelanggan() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Portal pelanggan · Warung Bu Tini</h3>
+      <span className="small muted">Harga khusus: Reseller · tempo 14 hari</span>
+      <div className="row between small"><span><b>Beras 5kg</b> · {rp(56000)}/karung</span><span className="mini-btn">− 4 +</span></div>
+      <div className="row between small"><span><b>Minyak 1L</b> · {rp(185000)}/dus <span className="muted">(≥10 dus)</span></span><span className="mini-btn">− 10 +</span></div>
+      <span className="mini-btn cta">Kirim pesanan · {rp(2074000)}</span>
+      <div className="unitbox small" style={{ gap: 4 }}>
+        <b>SO-261122-003 <span className="chip gold">Menunggu konfirmasi</span></b>
+        <span className="muted">Penjual: Pesanan grosir › Penawaran › “Baru dari portal” › Konfirmasi pesanan pelanggan</span>
+      </div>
+      <div className="row between small"><span>Sisa tagihan</span><b>{rp(280000)}</b></div>
+    </Phone>
+  );
+}
+
 export function ScrSDM() {
   return (
     <Phone bare>
