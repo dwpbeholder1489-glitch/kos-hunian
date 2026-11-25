@@ -150,7 +150,28 @@ begin
       ('integ_overview', format('select public.integ_overview(%L)', k)),
       ('integ_create', format('select public.integ_create(%L, ''webhook_masuk'', ''Dibajak'')', k)),
       ('integ_logs', format('select public.integ_logs(%L)', k)),
-      ('exp_performance', format('select public.exp_performance(%L, 30)', k))
+      ('exp_performance', format('select public.exp_performance(%L, 30)', k)),
+      -- Mesin Proyek (Tahap 1A Event, Media & Creative)
+      ('prj_list', format('select public.prj_list(%L)', k)),
+      ('prj_form_options', format('select public.prj_form_options(%L)', k)),
+      ('prj_save', format('select public.prj_save(%L, null, ''{"name":"Proyek dibajak"}'')', k)),
+      ('prj_get', format('select public.prj_get((select id from public.prj_projects where kos_id = %L limit 1))', k)),
+      ('prj_status', format('select public.prj_status((select id from public.prj_projects where kos_id = %L limit 1), ''batal'', ''uji isolasi'')', k)),
+      ('prj_task_save', format('select public.prj_task_save((select id from public.prj_projects where kos_id = %L limit 1), null, ''{"title":"dibajak"}'')', k)),
+      ('prj_quote_list', format('select public.prj_quote_list(%L)', k)),
+      ('prj_quote_save', format('select public.prj_quote_save(%L, null, ''{"title":"dibajak","lines":[{"description":"x","qty":1,"price":1}]}'')', k)),
+      ('prj_quote_get', format('select public.prj_quote_get((select id from public.prj_quotes where kos_id = %L limit 1))', k)),
+      ('prj_quote_decide', format('select public.prj_quote_decide((select id from public.prj_quotes where kos_id = %L limit 1), ''disetujui'', ''{}'')', k)),
+      ('prj_costs', format('select public.prj_costs((select id from public.prj_projects where kos_id = %L limit 1))', k)),
+      ('prj_budget_save', format('select public.prj_budget_save((select id from public.prj_projects where kos_id = %L limit 1), ''[]'')', k)),
+      ('prj_cost_add', format('select public.prj_cost_add((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"category":"x"}'')', k)),
+      ('prj_cost_link', format('select public.prj_cost_link((select id from public.prj_projects where kos_id = %L limit 1), ''expense'', (select id from public.expenses where kos_id = %L limit 1), 1, ''x'', null)', k, k)),
+      ('prj_profit_report', format('select public.prj_profit_report(%L)', k)),
+      ('prj_billing', format('select public.prj_billing((select id from public.prj_projects where kos_id = %L limit 1))', k)),
+      ('prj_invoice_create', format('select public.prj_invoice_create((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"description":"dibajak"}'')', k)),
+      ('prj_payment_add', format('select public.prj_payment_add((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"account":"kas"}'')', k)),
+      ('prj_invoice_get', format('select public.prj_invoice_get((select id from public.prj_invoices where kos_id = %L limit 1))', k)),
+      ('prj_payment_void', format('select public.prj_payment_void((select id from public.prj_payments where kos_id = %L limit 1), ''dibajak'')', k))
     ) v(name, q) loop
     begin
       execute t.q;

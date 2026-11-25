@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -15,6 +15,7 @@ export const metadata = {
 const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent('Halo, saya butuh bantuan memakai aplikasi PRASARA.')}`;
 const Std = () => <span className="chip gold" style={{ marginLeft: 6 }}>Dasar</span>;
 const Pro = () => <span className="chip gold" style={{ marginLeft: 6 }}>Pro</span>;
+const Bis = () => <span className="chip gold" style={{ marginLeft: 6 }}>Bisnis</span>;
 
 // Menu toko (Retail & Grosir)
 const MENUS_TOKO = [
@@ -181,7 +182,7 @@ const PARTS = [
       <>Pilih paket: <b>Dasar</b>, <b>Bisnis</b>, atau <b>Pro</b>. Harga normal tampil dicoret di atas harga yang berlaku (harga per bisnis per bulan). Lalu pilih durasi; untuk Pro tersedia <b>1 tahun</b> dengan harga tahunan yang dibayar sekali untuk 12 bulan.</>,
       <>Bayar lewat <b>QRIS</b>, <b>transfer bank</b>, atau <b>Lynk.id</b> sesuai total. Dengan <b>Lynk.id</b>, pilih tombol itu lalu tekan <b>Buat tagihan & buka Lynk.id</b>. Di halaman Lynk, isi email akun Anda (tertulis di layar) agar pembayaran otomatis cocok; paket aktif sendiri begitu pembayaran diterima, tanpa kirim bukti.</>,
       <>Tekan <b>Saya sudah bayar</b>, lalu <b>Kirim bukti via WhatsApp</b>. Setiap pembayaran mendapat <b>nomor invoice</b> (INV-…) dan <b>ID transaksi</b> (TRX-…). Tagihan punya <b>batas waktu bayar 3 hari</b>; lewat batas, tanda <b>sudah lewat</b> muncul. Salah pilih dan belum membayar? Tekan <b>Belum bayar — batalkan</b>, lalu pilih lagi.</>,
-      <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam pada hari kerja (pembayaran lewat Lynk.id: otomatis). Invoice bisa dibuka & dicetak di <b>Riwayat tagihan</b>.</>,
+      <>Paket aktif setelah diperiksa, biasanya dalam 1×24 jam pada hari kerja (pembayaran lewat Lynk.id: otomatis bila email dan nominal cocok dengan satu tagihan Lynk yang menunggu). Invoice bisa dibuka & dicetak di <b>Riwayat tagihan</b>.</>,
       <>Begitu pembayaran diverifikasi, kartu <b>Upgrade Berhasil!</b> muncul sekali (di HP mana pun Anda masuk): paket baru, jumlah dibayar, masa aktif, kapasitas baru, dan fitur baru. Bila upgrade dimulai dari penawaran, tombol <b>Lanjut tambah karyawan</b> / <b>Lanjut tambah cabang</b> membawa Anda kembali ke formulir yang tadi tertahan, tanpa mengulang dari awal.</>,
       <><b>Naik paket</b> berlaku sejak disetujui (sisa hari paket lama dihitung ulang dan ditambahkan). <b>Turun paket</b> berlaku setelah paket sekarang berakhir.</>,
       <>Saat <b>akun karyawan</b> sudah penuh, penawaran <b>Paket Bisnis</b> muncul (hingga 5 karyawan). Ketuk <b>Upgrade</b> untuk langsung memilih paket itu, atau <b>Tetap menggunakan Paket Dasar</b>. Penawaran yang Anda tutup tidak muncul lagi selama 7 hari.</>,
@@ -924,18 +925,51 @@ const PARTS = [
     ], <>Kasir offline berlaku per HP: setiap HP kasir perlu dibuka sekali saat online. Halaman lain (laporan, barang, pembukuan, dll.) tetap butuh internet; saat offline yang tampil "Sedang offline" dengan tombol <b>Buka Kasir</b>.</>, 'warn', null],
     ['Berjualan saat internet putus', 'Kasir (kotak kuning "Offline")', [
       <>Saat internet putus, Kasir menampilkan tanda <b>● Offline</b> dan kotak kuning <b>Offline</b>. Pilih barang seperti biasa (ketuk <b>+</b>), lalu tekan <b>Bayar</b> — tombol simpannya menjadi <b>Simpan di HP</b>. Stok yang tampil sudah dikurangi penjualan di HP yang belum terkirim.</>,
-      <>Cara bayar <b>Tunai</b>, <b>Transfer/QRIS</b>, <b>Kasbon</b>, dan <b>Campuran</b> bisa dipakai. Kasbon pelanggan baru: isi nama (dan No. HP) — pelanggan itu bisa dipilih lagi untuk transaksi berikutnya di HP yang sama.</>,
+      <>Cara bayar <b>Tunai</b>, <b>Transfer/QRIS</b>, <b>Kasbon</b>, dan <b>Campuran</b> bisa dipakai. Untuk semua cara bayar, pilih <b>+ Pelanggan baru</b> untuk mengisi nama (dan No. HP opsional). Jika tunai kurang, pilih <b>Catat sisa sebagai kasbon</b>, pilih atau tambah pelanggan, lalu konfirmasi persetujuannya. Pelanggan baru yang dibuat saat offline bisa dipilih lagi untuk transaksi berikutnya di HP yang sama.</>,
       <>Setelah <b>Simpan di HP</b>, muncul nomor sementara <b>OFF-…</b> dan tombol <b>Lihat / cetak struk</b>. Nomor TRX resmi muncul setelah terkirim.</>,
-      <>Saat internet kembali, transaksi <b>dikirim otomatis</b> berurutan (tanpa dobel, walau internet putus di tengah pengiriman). Tanggal, jam, shift, dan kartu stok memakai waktu transaksi aslinya. Lihat statusnya lewat tombol <b>Antrean HP</b>.</>,
+      <>Saat internet kembali, transaksi <b>dikirim otomatis</b> berurutan (tanpa dobel, walau internet putus di tengah pengiriman). Tanggal, jam, shift, dan kartu stok memakai waktu transaksi aslinya. Buka <b>Antrean HP</b> untuk melihat status: Menunggu dikirim, Tersimpan, Tersimpan · perlu dicek, atau Gagal dicatat. Jika kiriman ditolak dan masih di HP, periksa alasannya sebelum mengirim ulang transaksi yang sama. Saat mengganti akun di HP yang sama, buka Kasir saat online sekali untuk menyiapkan salinan data akun tersebut.</>,
     ], <>Saat offline: <b>promo otomatis</b> tidak dihitung, <b>nota kredit</b> tidak bisa dipakai, batas kredit kasbon dicek setelah terkirim, dan diskon di atas batas pemilik wajib diberi alasan. Harga mengikuti salinan di HP; bila harga sudah berubah, transaksi tetap tersimpan dengan harga yang ditagih dan ditandai untuk pemilik.</>, 'warn', <ScrKasirOffline />],
     ['Memeriksa transaksi offline (pemilik)', 'Penjualan › Offline · Pengingat toko', [
       <>Buka <b>Penjualan</b> › tab <b>Offline</b> (pemilik & bagian keuangan). Tab <b>Perlu dicek</b> berisi transaksi yang terkirim dengan <b>temuan</b>: harga sudah berubah, promo tidak terhitung, stok jadi minus, diskon lewat batas, kasbon lewat batas kredit, shift atau tutup harian sudah ditutup, atau jam HP salah.</>,
       <>Transaksi bertemuan <b>sudah masuk</b> penjualan, stok, dan pembukuan — temuan hanya bahan pemeriksaan. Tindak lanjuti (mis. hitung ulang stok, tutup ulang hari), lalu ketuk <b>Tandai sudah dicek</b> dan tulis catatannya.</>,
-      <><b>Tidak tersimpan</b> = belum masuk penjualan (mis. barang sudah dihapus, atau akses kasir dicabut sebelum terkirim). Isi barang & cara bayarnya ditampilkan; catat ulang lewat Kasir bila benar terjadi, lalu tandai sudah dicek.</>,
+      <><b>Gagal dicatat</b> = belum masuk penjualan (mis. barang sudah dihapus, atau akses kasir dicabut sebelum terkirim). Isi barang & cara bayarnya ditampilkan; catat ulang lewat Kasir bila benar terjadi, lalu tandai sudah dicek.</>,
       <>Lonceng & <b>Pengingat toko</b> ikut menampilkan transaksi offline yang perlu dicek.</>,
     ], <>Kasir yang lupa mengirim lalu keluar akun: pemilik/pengelola bisa masuk di HP itu dan memakai <b>Kirim dengan akun saya</b> di Antrean HP. Penjualan tercatat atas nama yang mengirim, dengan catatan siapa yang mencatat offline.</>, null, null],
+  ]],  ['AH', 'Proyek: event, kreatif & produksi', [
+    ['Membuat proyek & milestone', 'Proyek (bisnis event, kreatif/media, kontraktor)', [
+      <>Buka menu <b>Proyek</b> (atau tombol <b>(+)</b> › <b>Proyek baru</b>). Menu ini muncul bila modul <b>Proyek</b> aktif — otomatis untuk bisnis Event, Media/kreatif, dan Kontraktor berpaket Bisnis/Pro; bisnis jasa atau kustom lain bisa mengaktifkannya di <b>Konfigurasi › Modul</b>.</>,
+      <>Tekan <b>+ Proyek baru</b>: isi nama (mis. <i>Wedding Andi &amp; Sari</i>), pilih jenis (<b>Event / acara</b>, <b>Kreatif &amp; media</b>, <b>Produksi</b>, <b>Umum</b>), tahap (<b>Sudah deal</b> atau <b>Masih penawaran</b>), klien (pilih pelanggan atau ketik <b>Klien baru</b> — otomatis masuk daftar Pelanggan), tanggal mulai–selesai, <b>PIC</b>, lokasi, dan keterangan.</>,
+      <><b>Nilai kontrak</b> hanya terlihat &amp; bisa diisi oleh pemilik/bagian keuangan. Nilai ini baru menjadi pendapatan di Pembukuan saat milestone diserahkan / proyek selesai (Langkah 136).</>,
+      <>Di halaman proyek, tekan <b>+ Milestone</b> untuk tahap besar (mis. <i>DP &amp; konsep</i> → <i>Gladi bersih</i> → <i>Hari H</i> → <i>Pelunasan</i>) beserta target tanggal dan <b>rencana nilai termin</b>. Total termin dibandingkan dengan nilai kontrak (kurang/lebih ditampilkan). Centang milestone saat selesai.</>,
+      <>Pekerjaan besar bisa dipecah: <b>+ Subproyek</b> (mis. produksi panggung) dengan PIC &amp; tugas sendiri — hanya satu tingkat.</>,
+    ], <>Proyek memakai <b>Paket Bisnis</b> (juga Pro). Bila paket turun, proyek yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan proyeknya diselesaikan atau dibatalkan — membuat &amp; mengubah butuh Paket Bisnis lagi. Anggaran & laba proyek ada di Langkah 135, tagihan & pembayaran klien di Langkah 136.</>, 'warn', <ScrProyek />, 'bisnis'],
+    ['Tugas tim, anggota & status proyek', 'Proyek › buka proyek', [
+      <>Tekan <b>+ Tugas</b>: judul, <b>penanggung jawab</b> (anggota tim bisnis), tenggat, prioritas, milestone. <b>Simpan &amp; tambah lagi</b> untuk mengetik banyak tugas berturut-turut.</>,
+      <>Penanggung jawab melihat tugasnya di menu <b>Proyek</b> › <b>Tugas saya</b> dari HP-nya sendiri dan menekan <b>Mulai</b> lalu <b>Selesai ✓</b> — walau perannya kasir atau gudang, ia hanya melihat proyek tempat ia diberi tugas. Tugas lewat tenggat ditandai <b>terlambat</b>.</>,
+      <><b>+ Anggota</b>: tambahkan anggota tim (mis. Koordinator lapangan, Editor) agar bisa melihat proyek ini. Karyawan bagian <b>proses</b> melihat semua proyek; pemilik, pengelola, dan PIC proyek yang bisa mengubah.</>,
+      <>Ubah status lewat tombol di atas: <b>Tandai selesai</b> (tugas yang belum selesai diingatkan, tidak menghalangi), <b>Tunda</b>, <b>Batalkan</b> (alasan wajib), atau <b>Jalankan / buka lagi</b> (alasan wajib bila proyek sudah selesai/batal).</>,
+      <><b>Dokumen proyek</b>: lampirkan kontrak, brief, denah, foto lokasi (foto/PDF maks. 4 MB). File desain/video besar simpan di Google Drive/Dropbox dan tempel tautannya di keterangan. <b>Riwayat</b> mencatat siapa membuat, mengubah, memberi tugas, dan menyelesaikan apa.</>,
+    ], <>Nilai kontrak &amp; rencana termin tidak terlihat oleh karyawan selain bagian keuangan. Tugas yang sudah selesai tidak bisa dihapus (jejak pekerjaan) — buka lagi bila keliru.</>, null, null, 'bisnis'],    ['Penawaran, scope & perubahan scope', 'Proyek › tab Penawaran · halaman proyek', [
+      <>Pemilik, pengelola, dan bagian keuangan melihat tab <b>Penawaran</b> di menu Proyek. Tekan <b>+ Penawaran baru</b>: judul, jenis proyek, klien, lalu <b>rincian pekerjaan</b> (uraian, jumlah, satuan, harga satuan) dan potongan bila ada. Total dihitung otomatis (tanpa PPN).</>,
+      <><b>Termin pembayaran</b>: pilih cepat <b>100</b>, <b>50/50</b>, <b>30/40/30</b>, atau isi sendiri dalam persen atau rupiah — jumlahnya harus pas 100% / sama dengan total. Isi juga <b>Termasuk</b>, <b>Tidak termasuk</b>, kewajiban klien, <b>batas revisi</b>, biaya revisi tambahan, masa berlaku, dan rencana jadwal.</>,
+      <>Buka penawaran untuk melihat dokumennya: <b>Cetak / PDF</b> atau <b>Kirim WA</b> ke klien (otomatis ditandai <b>Terkirim</b>). Mengubah penawaran yang sudah terkirim = <b>revisi</b> bernomor; versi lama tetap bisa dilihat.</>,
+      <>Klien setuju? Tekan <b>Klien setuju</b>, isi nama penyetuju & tanggalnya. Proyek <b>dibuat otomatis</b> (atau proyek berstatus penawaran dijalankan) dengan nilai kontrak, jadwal, batas revisi, dan tiap termin menjadi <b>milestone</b>. Klien menolak? Tekan <b>Klien menolak</b> dan tulis alasannya.</>,
+      <>Klien minta tambahan di luar kesepakatan? Di halaman proyek tekan <b>+ Perubahan scope</b>: rincian tambahan, termin, tambahan revisi, dan tanggal selesai baru. Setelah klien setuju, nilai kontrak dan batas revisi bertambah, jadwal bergeser, dan termin tambahan masuk milestone.</>,
+    ], <>Keputusan klien dicatat oleh pemilik atau pengelola. Penawaran yang disetujui terkunci — tambahan pekerjaan selalu lewat Perubahan scope agar riwayat harga jelas. Penawaran lewat masa berlaku tetap bisa disetujui bila klien memang setuju. Penagihan termin & pencatatan uang klien ada di Langkah 136.</>, 'warn', <ScrPenawaranProyek />, 'bisnis'],    ['Anggaran, biaya & laba proyek', 'Proyek › buka proyek › Anggaran, biaya & laba · tab Laba proyek', [
+      <>Bagian ini hanya untuk pemilik & bagian keuangan. Tekan <b>+ Anggaran</b>: isi rencana biaya per kategori (tombol cepat mis. <b>Venue</b>, <b>Sound</b>, <b>Talent</b>, <b>Dekorasi</b> untuk event; <b>Freelancer</b>, <b>Sewa alat</b> untuk kreatif). Rencana laba = nilai kontrak − anggaran langsung terlihat. Pemilik/pengelola menekan <b>Setujui anggaran</b> — perubahan berikutnya tampil sebagai selisih.</>,
+      <><b>+ Catat biaya</b>: nominal, kategori anggaran, keterangan, tanggal, kas/bank. Biaya ini dicatat sebagai <b>pengeluaran biasa</b> (muncul di Kas & Pembukuan) dan langsung ditandai ke proyek.</>,
+      <>Sudah mencatat di Kas atau Belanja? Pakai <b>Tandai biaya lama</b>: pilih pengeluaran/belanja 120 hari terakhir, kategori anggarannya, dan nominal untuk proyek ini — satu biaya bisa <b>dibagi</b> ke beberapa proyek. Belanja yang masih <b>dipesan</b> dihitung sebagai komitmen sampai barangnya diterima.</>,
+      <><b>+ Komitmen vendor</b>: biaya yang sudah disepakati tapi belum dibayar (mis. sewa sound, fee band). Setelah dibayar tekan <b>Sudah dibayar</b>, lalu <b>Catat biaya</b> pembayarannya.</>,
+      <>Baca bilah per kategori (merah = lewat anggaran) dan kotak <b>Perkiraan laba</b> + margin. Tab <b>Laba proyek</b> di menu Proyek merangkum nilai kontrak, biaya nyata, komitmen, dan perkiraan laba semua proyek.</>,
+    ], <>Menandai biaya <b>tidak mengubah</b> jurnal atau saldo kas — uangnya sudah tercatat di Kas/Belanja. <b>Lepas</b> tanda tidak menghapus pengeluaran. Gaji karyawan tetap belum dibagi otomatis ke proyek; catat fee freelancer/kru sebagai biaya proyek. Perkiraan biaya akhir per kategori = yang lebih besar antara anggaran dan (biaya nyata + komitmen).</>, 'warn', <ScrBiayaProyek />, 'bisnis'],    ['Tagihan termin & pembayaran klien', 'Proyek › buka proyek › Tagihan & pembayaran klien', [
+      <>Bagian ini hanya untuk pemilik & bagian keuangan. Di <b>Termin yang belum ditagih</b>, tekan <b>Tagihkan</b> — nominal & uraian terisi dari milestone (mis. DP 30%). Pilih jatuh tempo (<b>+7</b>, <b>+14</b>, <b>+30 hari</b>) lalu <b>Buat tagihan</b>. Tagihan lain (mis. tambahan) lewat <b>+ Tagihan</b>.</>,
+      <>Buka tagihan untuk <b>Cetak / PDF</b> atau <b>Kirim WA</b> ke klien — rekening pembayaran dari Pengaturan ikut tercantum.</>,
+      <>Uang masuk? Tekan <b>Catat bayar</b> di tagihannya, atau <b>+ Terima pembayaran</b> untuk DP yang langsung ditransfer tanpa tagihan. Pilih bank/kas dan tanggalnya. Pembayaran langsung tercatat di Kas & Pembukuan.</>,
+      <>Selama milestone belum diserahkan, uang itu tercatat sebagai <b>uang muka</b> (belum pendapatan). Saat milestone bernilai dicentang selesai, nilainya menjadi <b>pendapatan</b>; bila klien belum membayar, kekurangannya menjadi <b>piutang</b>. Saat proyek ditandai selesai, sisa nilai kontrak ikut diakui.</>,
+      <>Acara batal padahal DP sudah masuk? Pakai <b>Kembalikan uang muka</b> (uang keluar dari kas/bank) dan/atau <b>Uang muka hangus</b> (sesuai kontrak; menjadi pendapatan lain, tanpa uang keluar).</>,
+    ], <>Salah catat pembayaran? Tekan <b>Batal</b> dan tulis alasannya — Pembukuan dikoreksi otomatis. Tagihan yang sudah dibayar tidak bisa dibatalkan sebelum pembayarannya dibatalkan. Pembayaran tetap bisa dicatat walau paket turun; membuat tagihan baru butuh Paket Bisnis. Tab <b>Laba proyek</b> kini juga menampilkan uang diterima, pendapatan diakui, dan tagihan yang lewat jatuh tempo.</>, 'warn', <ScrTagihanProyek />, 'bisnis'],
   ]],
-  ['AH', 'Toko: Portal pelanggan grosir (pelanggan memesan sendiri)', [
+  ['AI', 'Toko: Portal pelanggan grosir (pelanggan memesan sendiri)', [
     ['Membuat & membagikan link portal', 'Transaksi › Pesanan grosir › Portal pelanggan (Paket Pro)', [
       <>Atur dulu syarat pelanggan (daftar harga, batas kredit, tempo, alamat) di <b>Pelanggan & supplier › Syarat pelanggan</b> — portal memakai harga dan syarat itu.</>,
       <>Buka <b>Pesanan grosir</b> › tab <b>Portal pelanggan</b> › cari pelanggan › <b>Buat link</b>.</>,
@@ -951,6 +985,7 @@ const PARTS = [
 ];
 
 const RULES = [
+  'Jika opname langsung membetulkan salah ketik stok awal, buka Barang & stok › Stok › Riwayat stok. Pilih Koreksi salah input pada opname terkait, periksa jumlah dan dampak laporan, lalu isi alasan. Stok fisik tetap sesuai saldo terakhir.',
   'Catat semua uang keluar, sekecil apa pun — termasuk yang diambil pemilik untuk pribadi (prive). Saldo kas hanya cocok jika semuanya tercatat.',
   'Transfer dan QRIS dicatat sebagai diterima hanya setelah uang benar-benar masuk ke rekening.',
   'Penghuni lama: isi "Sewa dihitung mulai" dengan awal periode berikutnya yang belum dibayar.',
@@ -1016,6 +1051,7 @@ export default function Panduan() {
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
+          <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–136</a><br />Event, kreatif &amp; produksi: penawaran & scope, anggaran & laba proyek, tagihan termin & pembayaran, klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
@@ -1037,7 +1073,7 @@ export default function Panduan() {
               return (
                 <article key={title} id={`langkah-${n}`} className="g-step">
                   <div>
-                    <h3>Langkah {n} · {title}{std === 'pro' ? <Pro /> : std && <Std />}</h3>
+                    <h3>Langkah {n} · {title}{std === 'pro' ? <Pro /> : std === 'bisnis' ? <Bis /> : std && <Std />}</h3>
                     <p className="g-menu">Menu: <b>{menu}</b></p>
                     <ol>{items.map((it, i) => <li key={i}>{it}</li>)}</ol>
                     {note && <div className={'g-note' + (noteKind === 'warn' ? ' warn' : '')}>{note}</div>}

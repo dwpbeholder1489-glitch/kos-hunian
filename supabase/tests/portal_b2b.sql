@@ -1,4 +1,4 @@
--- Uji Tahap 5 Retail — Portal pelanggan grosir (migrasi 20261121230000): link pribadi, katalog harga pelanggan, pesanan portal →
+-- Uji Tahap 5 Retail — Portal pelanggan grosir (migrasi 20261125120000): link pribadi, katalog harga pelanggan, pesanan portal →
 -- penawaran → dikonfirmasi penjual, idempoten, batal oleh pelanggan, faktur & piutang terlihat, lonceng, batas paket & isolasi.
 -- Database baru; lulus = semua kolom t, notice *_OK, tanpa GAGAL.
 \set ON_ERROR_STOP off

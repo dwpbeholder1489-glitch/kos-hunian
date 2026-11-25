@@ -166,7 +166,7 @@ Keputusan pemilik 21 Nov 2026: tunai, transfer/QRIS, kasbon, dan campuran BOLEH 
 
 ## 9. Status Tahap 5 — Portal pelanggan grosir / B2B (22 Nov 2026)
 
-Migrasi `20261121230000_portal_b2b.sql` (tanpa tabel baru; mesin pesanan/surat jalan/faktur tidak diubah). Uji `supabase/tests/portal_b2b.sql` (±60 pemeriksaan) lulus; regresi seluruh berkas uji: jumlah ERROR/f setiap berkas sama persis sebelum & sesudah migrasi (penolakan yang memang diharapkan). Layar diuji di HP 390 px & laptop 1280 px (portal pelanggan: katalog, periksa pesanan, terkirim, pesanan, tagihan; penjual: tab Penawaran bertanda portal, detail, tab Portal pelanggan), `scrollWidth` = lebar layar, tanpa galat skrip.
+Migrasi `20261125120000_portal_b2b.sql` (tanpa tabel baru; mesin pesanan/surat jalan/faktur tidak diubah). Uji `supabase/tests/portal_b2b.sql` (±60 pemeriksaan) lulus; regresi seluruh berkas uji: jumlah ERROR/f setiap berkas sama persis sebelum & sesudah migrasi (penolakan yang memang diharapkan). Layar diuji di HP 390 px & laptop 1280 px (portal pelanggan: katalog, periksa pesanan, terkirim, pesanan, tagihan; penjual: tab Penawaran bertanda portal, detail, tab Portal pelanggan), `scrollWidth` = lebar layar, tanpa galat skrip.
 
 Keputusan desain (mohon dikonfirmasi): portal = **link pribadi tanpa akun/sandi** (pola portal penghuni yang sudah dipakai, paling mudah dari HP); masuk **Paket Pro** lewat fitur `portal_bisnis` yang sudah ada (V2 "Portal hanya Pro"; bisnis sebelum 14 Nov tetap lewat `legacy_features`).
 
