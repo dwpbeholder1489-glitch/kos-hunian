@@ -1,4 +1,5 @@
 'use client';
+import styles from './fnb-pos.module.css';
 import IsianTambahan from '@/components/IsianTambahan';
 import { useBaru } from '@/lib/useBaru';
 import Lampiran from '@/components/Lampiran';
@@ -24,13 +25,14 @@ export default function Pesanan() {
   const [f, setF] = useState('aktif');
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
+  const [boardView, setBoardView] = useState(false);
   const [neu, setNeu] = useState(false);
   useBaru(() => setNeu(true));
   const desk = useMedia('(min-width: 1180px)');   // laptop: pesanan baru tampil penuh seperti Kasir
   const load = () => supabase.rpc('svc_board', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
   useEffect(() => { load(); }, [kosId, ver]);
   useEffect(() => { try { if (new URLSearchParams(window.location.search).get('baru')) setNeu(true); } catch {} }, []);
-  if (neu && desk && d) return <NewOrder inline kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />;
+  if (neu && d?.money && (desk || terms(kos).kul)) return <NewOrder inline kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />;
   if (err) return <div className="notice bad">{/svc_board/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
   const money = d.money;
@@ -63,8 +65,9 @@ export default function Pesanan() {
       <PageHeader title="Pesanan" help={<PageHelp page="pesanan" />} actions={<>{money && <button className="primary" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</>} />
       {req.length > 0 && money && f !== 'permintaan' && <div className="notice"><b>{req.length} pesanan dari halaman bisnis</b> menunggu konfirmasi. <button className="sm" onClick={() => setF('permintaan')}>Lihat</button></div>}
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
+      {T.kul && <div className="seg" aria-label="Tampilan pesanan">{[[false,'Daftar'],[true,'Papan dapur']].map(([board,label]) => <button key={label} aria-pressed={boardView === board} className={boardView === board ? 'on' : ''} onClick={() => setBoardView(board)}>{label}</button>)}</div>}
       <FilterToolbar q={q} onQ={setQ} placeholder="Cari nomor, nama, atau No. HP" />
-      {shown.length === 0 ? <Empty title="Tidak ada pesanan di sini" text={money ? (T.kul ? 'Tekan + Pesanan baru saat pelanggan memesan.' : 'Tekan + Pesanan baru saat pelanggan menyerahkan cucian.') : 'Pesanan yang perlu dikerjakan akan muncul di sini.'} /> : (
+      {shown.length === 0 ? <Empty title="Tidak ada pesanan di sini" text={money ? (T.kul ? 'Tekan + Pesanan baru saat pelanggan memesan.' : 'Tekan + Pesanan baru saat pelanggan menyerahkan cucian.') : 'Pesanan yang perlu dikerjakan akan muncul di sini.'} /> : T.kul && boardView ? <OrderBoard orders={shown} money={money} onOpen={setOpen} /> : (
         <DataTable rows={shown} caption="Daftar pesanan" onRow={(o) => setOpen(o.id)} rowLabel={(o) => `${o.number} ${o.customer_name}`} pageSize={50}
           columns={[
             { key: 'no', label: 'Nomor', sort: (o) => o.number, render: (o) => <span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> },
@@ -80,13 +83,32 @@ export default function Pesanan() {
               <span className="small" style={{ color: late(o) ? 'var(--bad)' : 'var(--muted)' }}>{['selesai', 'batal'].includes(o.status) ? waktu(o.completed_at || o.received_at) : `Janji ${hari(o.due_at)}${late(o) ? ' · terlambat' : ''}`}{money && o.total != null && sisa(o) > 0 && o.status !== 'batal' ? ` · sisa ${rp(sisa(o))}` : ''}{o.open_complaints > 0 ? ' · ⚠ keluhan' : ''}</span></div><span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o, true)}</span></div>
           </>} />
       )}
-      {neu && !desk && <NewOrder kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />}
+      {neu && money && !desk && <NewOrder kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />}
       {cur && <Detail o={cur} d={d} kos={kos} onClose={() => setOpen(null)} onChanged={load} />}
     </div>
   );
 }
 
+function OrderBoard({orders, money, onOpen}) {
+  const groups = new Map();
+  for (const order of orders) {
+    const label = stageLabel(order, true) || order.status;
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(order);
+  }
+  return <div className={styles.board}>{Array.from(groups, ([label, rows]) => <section key={label} className="panel">
+    <h3>{label} · {rows.length}</h3>
+    {rows.map(o => <button key={o.id} type="button" onClick={() => onOpen(o.id)}>
+      <b>{o.number}</b><small>{dineText(o) || o.customer_name} · {waktu(o.received_at)}</small>
+      <span>{linesText(o.lines)}</span>
+      {money && o.total != null && o.status !== 'batal' && <small>{rp(o.total)} · {sisa(o) === 0 ? 'Lunas' : Number(o.paid) > 0 ? 'Dibayar sebagian' : 'Belum dibayar'}</small>}
+    </button>)}
+  </section>)}</div>;
+}
+
 function NewOrder({ kosId, onClose, onSaved, inline }) {
+  const compact = useMedia('(max-width: 767px)');
+  const [cartOpen, setCartOpen] = useState(false);
   const [cat, setCat] = useState('');   // saring kategori di katalog
   const [sq, setSq] = useState('');     // cari layanan/menu
   const [optOpen, setOptOpen] = useState(null); // baris yang membuka catatan
@@ -94,7 +116,7 @@ function NewOrder({ kosId, onClose, onSaved, inline }) {
   const logi = moduleOn(kos, 'j_antar');
   const T = terms(kos);
   const tables = Math.max(0, Math.min(200, Math.floor(Number(kos?.profile?.tables) || 0)));
-  const [dine, setDine] = useState(T.kul ? 'tempat' : null); // kuliner: tempat | bungkus | antar
+  const [dine, setDine] = useState(T.kul ? (tables || kos.profile?.tables == null ? 'tempat' : 'bungkus') : null); // kuliner: tempat | bungkus | antar
   // dari Meja & reservasi: /pesanan?baru=1&meja=N → meja sudah terpilih
   const [table, setTable] = useState(() => { try { const m = new URLSearchParams(window.location.search).get('meja'); return T.kul && /^\d{1,3}$/.test(m || '') ? m : ''; } catch { return ''; } });
   const [zones, setZones] = useState([]);
@@ -273,6 +295,19 @@ function NewOrder({ kosId, onClose, onSaved, inline }) {
     <button type="button" className="pos-pay" onClick={save} disabled={busy} style={{ width: '100%' }}><span><b>{busy ? 'Menyimpan…' : 'Simpan pesanan'}</b><small>{(parseRp(pay) || 0) >= total && total > 0 ? 'lunas' : (parseRp(pay) || 0) > 0 ? `DP ${rp(parseRp(pay))}` : 'bayar nanti'}</small></span></button>
   </div>;
   const cartHead = <div className="pos-ch"><h3>Pesanan ({count})</h3>{count > 0 && <button type="button" className="sm ghost pos-clear" onClick={() => setLines([])}>Kosongkan</button>}</div>;
+  if (T.kul) {
+    const cart = <>{cartHead}{linesBlock}{dineBlock}{custBlock}{logiBlock}{tailBlock}{footBlock}</>;
+    return <div className={styles.workspace}>
+      <PageHeader title="Kasir kuliner" desc={kos.name} help={<PageHelp page="pesanan" />} actions={<button className="sm" onClick={onClose}>Daftar pesanan</button>} />
+      <div className={styles.layout}>
+        <section className={styles.catalog} aria-label="Katalog menu">{catalog}</section>
+        {compact ? <>
+          <button className={styles.cartButton} onClick={() => setCartOpen(true)} aria-haspopup="dialog">Keranjang · {count} jenis menu <strong>{rp(total)}</strong></button>
+          {cartOpen && <Sheet title="Keranjang pesanan" onClose={() => setCartOpen(false)}>{cart}</Sheet>}
+        </> : <aside className={'panel ' + styles.cart} aria-label="Keranjang pesanan">{cart}</aside>}
+      </div>
+    </div>;
+  }
   // Laptop lebar: katalog kiri + panel pesanan kanan (sama dengan Kasir toko). HP/tablet: lembar Pesanan baru dengan katalog geser.
   if (inline) return (
     <div className="stack">
