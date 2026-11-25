@@ -1,0 +1,30 @@
+.modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+  gap: .5rem;
+}
+.modules a {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: .35rem;
+  min-height: 4.5rem;
+  border: 1px solid var(--border, #dce7e0);
+  border-radius: .8rem;
+  background: var(--surface, white);
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+}
+.modules svg { color: #15803d; }
+.modules a:hover, .modules a:focus-visible { background: #e1f3e9; }
+@media (max-width: 600px) {
+  .modules { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .modules span { font-size: .75rem; overflow-wrap: anywhere; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .modules svg { transition: transform .16s ease; }
+  .modules a:hover svg { transform: translateY(-2px); }
+}

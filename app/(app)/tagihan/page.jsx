@@ -2,7 +2,7 @@
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
@@ -20,6 +20,15 @@ export default function Tagihan() {
   const [f, setF] = useState('terbuka');
   const [q, setQ] = useState('');
   const [sheet, setSheet] = useState(null);
+  useEffect(() => {
+    if (!d.ready) return;
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get('invoice');
+    if (!id) return;
+    if (d.invById.has(id)) setSheet({ t: 'detail', id });
+    url.searchParams.delete('invoice');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  }, [d.ready, d.invById]);
   useBaru(() => setSheet({ t: 'extra' }));
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
