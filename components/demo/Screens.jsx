@@ -1007,7 +1007,13 @@ export function ScrDapur() {
   return (
     <Phone tab="Dapur" tabs={['Dashboard', 'Pesanan', 'Dapur', 'Kas']} name="Warung Contoh">
       <Title>Dapur</Title>
-      <span className="small muted">Pesanan terlama di atas.</span>
+      <div className="row" style={{ gap: 5 }}>
+        <span className="chip">2 Dalam antrean</span><span className="chip gold">0 Lebih dari 30 menit</span><span className="chip good">0 Siap</span>
+      </div>
+      <div className="row" style={{ gap: 5 }}>
+        <span className="chip good">Semua</span><span className="chip">Makan di tempat</span><span className="chip">Bungkus</span><span className="chip">Antar</span>
+      </div>
+      <span className="small muted">Tahap · Semua tahap</span>
       <span className="label">Dimasak (2)</span>
       {R.map(([m, n, lines, nx]) => (
         <div className="panel" key={n} style={{ gap: 4 }}>

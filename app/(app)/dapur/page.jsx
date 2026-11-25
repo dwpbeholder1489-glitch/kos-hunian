@@ -1,6 +1,6 @@
 'use client';
-// Layar dapur (Kuliner): pesanan aktif per tahap, tombol besar ke tahap berikutnya. Tanpa angka uang (aman untuk petugas dapur).
-import { useEffect, useState } from 'react';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -8,82 +8,177 @@ import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { Loading, Empty, toast } from '@/components/ui';
 import { angka, errMsg } from '@/lib/format';
-import { isKul } from '@/lib/jasa';
+import { isKul, onTheWay } from '@/lib/jasa';
 import { requestApproval } from '@/lib/approval';
+import { kitchenBoard, waitMinutes, orderChannel } from './kitchen-board.mjs';
+import s from './kitchen.module.css';
 
-const menit = (ts) => Math.max(0, Math.round((Date.now() - new Date(ts).getTime()) / 60000));
-const umur = (ts) => { const m = menit(ts); return m < 60 ? `${m} mnt` : `${Math.floor(m / 60)} j ${m % 60} mnt`; };
+const refreshMs = 20_000;
+const channels = [['semua', 'Semua'], ['meja', 'Makan di tempat'], ['bungkus', 'Bungkus'], ['antar', 'Antar']];
 
 export default function Dapur() {
   const { kos, kosId, ver } = useKos();
-  const [d, setD] = useState(null);
-  const [err, setErr] = useState(null);
-  const [busy, setBusy] = useState(null);
-  const [, tick] = useState(0);
-  const load = () => supabase.rpc('svc_board', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setD(data))));
-  useEffect(() => { load(); const t = setInterval(() => { load(); tick((x) => x + 1); }, 20000); return () => clearInterval(t); }, [kosId, ver]);
-  if (err) return <div className="notice bad">{err}</div>;
-  if (!d) return <Loading />;
+  if (!kos || !kosId) return <Loading />;
   if (!isKul(kos)) return <Empty title="Layar dapur khusus bisnis Kuliner" text="Untuk jasa lain, pakai menu Pesanan." />;
-  // Antrean dapur: diterima & diproses (pesanan antar yang belum berangkat tetap tampil sampai siap)
-  const queue = d.orders.filter((o) => ['diterima', 'proses'].includes(o.status)).sort((a, b) => new Date(a.received_at) - new Date(b.received_at));
-  const ready = d.orders.filter((o) => o.status === 'siap');
-  const req = d.orders.filter((o) => o.status === 'permintaan');
-  const cols = [{ id: 'baru', name: 'Baru masuk', list: queue.filter((o) => o.status === 'diterima') },
-    ...d.stages.map((s) => ({ id: s.id, name: s.name, list: queue.filter((o) => o.stage_id === s.id) }))];
-  const next = (o) => { if (o.status === 'diterima') return d.stages[0]?.name || 'Siap'; const i = d.stages.findIndex((s) => s.id === o.stage_id); return d.stages[i + 1]?.name || 'Siap'; };
-  const move = async (o, to = 'next') => {
-    setBusy(o.id);
-    const { data, error } = await supabase.rpc('svc_order_move', { p_order: o.id, p_to: to, p_note: null });
-    setBusy(null);
-    if (error) {
-      // Aturan alur kerja: "Langsung siap" oleh karyawan bisa perlu persetujuan pemilik
-      if (/PERLU_PERSETUJUAN/.test(error.message || '') && to === 'siap') {
-        const why = errMsg(error).replace(/\s*Kirim permintaan dari aplikasi\.?\s*$/, '');
-        if (window.confirm(`${why}\n\nKirim permintaan persetujuan sekarang?`)
-            && await requestApproval({ kos: kos.id, action: 'langkah_pesanan_jasa', payload: { order_id: o.id, to } })) load();
-        return;
-      }
-      return toast(errMsg(error));
+  return <Kitchen key={kosId} kosId={kosId} ver={ver} />;
+}
+
+function Kitchen({ kosId, ver }) {
+  const [board, setBoard] = useState(null);
+  const [now, setNow] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pending, setPending] = useState(null);
+  const [channel, setChannel] = useState('semua');
+  const [phase, setPhase] = useState('semua');
+  const request = useRef(null);
+  const active = useRef(false);
+  const mutation = useRef(false);
+
+  const load = useCallback(async () => {
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.rpc('svc_board', { p_kos: kosId }).abortSignal(controller.signal);
+      if (controller.signal.aborted) return;
+      if (error) throw error;
+      setBoard(data);
+      setError(null);
+      const timestamp = Date.now();
+      setLastUpdated(timestamp);
+      setNow(timestamp);
+    } catch (error) {
+      if (!controller.signal.aborted) setError(errMsg(error));
+    } finally {
+      if (!controller.signal.aborted) setRefreshing(false);
     }
-    toast(`${o.number}: ${data.stage}`); load();
-  };
+  }, [kosId]);
+
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
+
+  useEffect(() => {
+    load();
+    const timer = setInterval(() => {
+      setNow(Date.now());
+      if (!mutation.current) load();
+    }, refreshMs);
+    return () => {
+      clearInterval(timer);
+      request.current?.abort();
+    };
+  }, [load, ver]);
+
+  async function move(order, to) {
+    if (mutation.current || error || refreshing) return;
+    mutation.current = true;
+    setPending(order.id);
+    try {
+      const { data, error } = await supabase.rpc('svc_order_move', { p_order: order.id, p_to: to, p_note: null });
+      if (!active.current) return;
+      if (!error) {
+        toast(`${order.number}: ${data.stage}`);
+      } else if (to === 'siap' && /PERLU_PERSETUJUAN/.test(error.message || '')) {
+        const reason = errMsg(error).replace(/\s*Kirim permintaan dari aplikasi\.?\s*$/, '');
+        if (window.confirm(`${reason}\n\nKirim permintaan persetujuan sekarang?`)) {
+          await requestApproval({ kos: kosId, action: 'langkah_pesanan_jasa', payload: { order_id: order.id, to } });
+        }
+      } else {
+        toast(errMsg(error));
+      }
+    } catch (error) {
+      if (active.current) toast(errMsg(error));
+    } finally {
+      if (active.current) {
+        await load();
+        if (active.current) setPending(null);
+      }
+      mutation.current = false;
+    }
+  }
+
+  const queue = board && kitchenBoard(board, now, channel);
+  const selected = queue?.columns.some((column) => column.id === phase) ? phase : 'semua';
+  const visible = queue?.columns.filter((column) => selected === 'semua' || selected === column.id);
+  const count = queue?.columns.reduce((sum, column) => sum + column.orders.length, 0);
+
   return (
     <div className="stack">
-      <PageHeader title="Dapur" help={<PageHelp page="dapur" />} actions={<><button className="sm ghost" onClick={load}>Muat ulang</button></>} />
-      <span className="small muted">Pesanan terlama di atas. Layar memuat ulang sendiri tiap 20 detik.</span>
-      {req.length > 0 && <Link href="/pesanan" className="notice" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}><b>{req.length} pesanan dari QR meja / halaman bisnis</b> menunggu konfirmasi kasir: {req.map((o) => (o.table_no ? `Meja ${o.table_no}` : o.customer_name)).join(', ')} →</Link>}
-      {queue.length === 0 && ready.length === 0 && <Empty title="Belum ada pesanan untuk dimasak" text="Pesanan baru dari kasir atau halaman bisnis (setelah dikonfirmasi) muncul di sini." />}
-      {cols.filter((c) => c.list.length).map((c) => (
-        <section key={c.id} className="stack" style={{ gap: 8 }}>
-          <span className="label">{c.name} ({c.list.length})</span>
-          {c.list.map((o) => (
-            <div key={o.id} className="panel stack" style={{ gap: 6, borderColor: menit(o.received_at) > 30 ? 'var(--bad)' : undefined }}>
-              <div className="row between" style={{ flexWrap: 'nowrap' }}>
-                <b style={{ fontSize: 18 }}>{o.dine === 'tempat' ? `Meja ${o.table_no || '—'}` : o.deliver ? '🛵 Antar' : '🥡 Bungkus'}</b>
-                <span className="small" style={{ color: menit(o.received_at) > 30 ? 'var(--bad)' : 'var(--muted)', whiteSpace: 'nowrap' }}>{umur(o.received_at)}</span>
-              </div>
-              <span className="small muted">{o.number} · {o.customer_name}</span>
-              <div className="list">{(o.lines || []).map((l, i) => (
-                <div className="li" key={i} style={{ alignItems: 'flex-start' }}><span style={{ fontSize: 16 }}><b>{angka(l.qty)}×</b> {l.name}{l.note ? <span className="small" style={{ display: 'block', color: 'var(--att-fg)' }}>↳ {l.note}</span> : null}</span></div>
-              ))}</div>
-              {o.note && <span className="small" style={{ color: 'var(--att-fg)' }}>Catatan: {o.note}</span>}
-              <div className="row" style={{ flexWrap: 'nowrap' }}>
-                <button className="cta" style={{ flex: 1 }} disabled={busy === o.id} onClick={() => move(o)}>→ {next(o)}</button>
-                {o.status === 'proses' && <button className="sm ghost" disabled={busy === o.id} onClick={() => move(o, 'siap')}>Langsung siap</button>}
-              </div>
-            </div>
-          ))}
-        </section>
-      ))}
-      {ready.length > 0 && <>
-        <span className="label">Siap disajikan / diambil ({ready.length})</span>
-        <section className="panel"><div className="list">{ready.map((o) => (
-          <div key={o.id} className="li"><span className="small"><b>{o.dine === 'tempat' ? `Meja ${o.table_no || '—'}` : o.deliver ? 'Antar' : 'Bungkus'}</b> · {o.number} · {o.customer_name}</span>
-            <Link href="/pesanan" className="small">Serahkan di Pesanan →</Link></div>
-        ))}</div></section>
-        <span className="small muted">Penyerahan & pembayaran dicatat kasir di menu Pesanan (petugas dapur tidak melihat uang).</span>
+      <PageHeader title="Dapur" desc="Pantau pesanan dari masuk hingga siap disajikan." help={<PageHelp page="dapur" />}
+        actions={<button type="button" className="sm ghost" disabled={refreshing || pending !== null} onClick={load}>Muat ulang</button>} />
+      {error && <div className="notice bad" role="alert">
+        {board ? 'Gagal memperbarui antrean. Data terakhir masih ditampilkan. Muat ulang untuk melanjutkan.' : 'Antrean gagal dimuat. Ketuk Muat ulang untuk mencoba lagi.'} {error}
+      </div>}
+      {!board && !error && <Loading />}
+      {queue && <>
+        <div className={s.summary}>
+          <div><strong>{queue.inKitchen}</strong><span>Dalam antrean</span></div>
+          <div><strong>{queue.longWait}</strong><span>Lebih dari 30 menit</span></div>
+          <div><strong>{queue.ready}</strong><span>Siap diserahkan</span></div>
+        </div>
+        {queue.requests > 0 && <Link href="/pesanan" className={s.request}>
+          <strong>{queue.requests} pesanan menunggu konfirmasi kasir</strong>
+          <span>Buka Pesanan →</span>
+        </Link>}
+        <div className={s.tools}>
+          <div className={s.channels} role="group" aria-label="Jenis pesanan">
+            {channels.map(([id, label]) => <button key={id} type="button" aria-pressed={channel === id} onClick={() => setChannel(id)}>{label}</button>)}
+          </div>
+          <label className={s.filter}>Tahap
+            <select value={selected} onChange={(event) => setPhase(event.target.value)}>
+              <option value="semua">Semua tahap</option>
+              {queue.columns.map((column) => <option key={column.id} value={column.id}>{column.name} ({column.orders.length})</option>)}
+            </select>
+          </label>
+        </div>
+        <span className="small muted">Diperbarui {new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).format(lastUpdated)} WIB · Muat otomatis tiap 20 detik</span>
+        {count === 0 && <Empty title={channel === 'semua' ? 'Belum ada pesanan aktif' : 'Belum ada pesanan untuk jenis ini'}
+          text={channel === 'semua' ? 'Pesanan kasir atau pesanan pelanggan yang dikonfirmasi akan muncul di antrean.' : 'Pilih Semua untuk melihat jenis pesanan lain.'} />}
+        {count > 0 && <div className={s.board}>
+          {visible.map((column) => <section key={column.id} className={s.column}>
+            <h3>{column.name} <span>{column.orders.length}</span></h3>
+            {column.orders.length === 0 && <p className="small muted">Belum ada pesanan</p>}
+            {column.orders.map((order) => <Ticket key={order.id} order={order} now={now}
+              next={column.next} busy={pending === order.id} disabled={!!error || refreshing || pending !== null} move={move} canHandover={board.money} />)}
+          </section>)}
+        </div>}
       </>}
     </div>
   );
+}
+
+function Ticket({ order, now, next, busy, disabled, move, canHandover }) {
+  const minutes = waitMinutes(order.received_at, now);
+  const age = minutes === null ? null : (minutes < 60 ? `${minutes} mnt` : `${Math.floor(minutes / 60)} j ${minutes % 60} mnt`);
+  const delayed = order.status !== 'siap' && minutes > 30;
+  const channel = orderChannel(order);
+  const title = channel === 'antar' ? 'Antar' : channel === 'bungkus' ? 'Bungkus' : order.table_no ? `Meja ${order.table_no}` : 'Makan di tempat';
+
+  return <article className={s.ticket} data-delayed={delayed}>
+    <div className={s.ticketTop}>
+      <div><h4>{title}</h4><span className={s.orderNo}>{order.number}</span></div>
+      {age && <span className={s.age}>{delayed ? 'Menunggu ' : ''}{age}</span>}
+    </div>
+    {order.customer_name && <span className="small muted">{order.customer_name}</span>}
+    {!!order.lines?.length && <ul className={s.items}>
+      {order.lines.map((line, index) => <li key={index}>
+        <strong>{angka(line.qty)}×</strong>
+        <span>{line.name}{line.note && <small>{line.note}</small>}</span>
+      </li>)}
+    </ul>}
+    {order.note && <p className={s.note}><strong>Catatan pesanan</strong> {order.note}</p>}
+    {order.status === 'siap'
+      ? onTheWay(order) ? <span className="small muted">Sedang diantar</span>
+        : canHandover ? <Link href="/pesanan" className={s.handover}>Serahkan lewat Pesanan →</Link>
+          : <span className="small muted">Menunggu diserahkan</span>
+      : <div className={s.actions}>
+        <button type="button" className="cta" disabled={disabled} onClick={() => move(order, 'next')}>{busy ? 'Memperbarui…' : `→ ${next}`}</button>
+        {order.status === 'proses' && <button type="button" className="sm ghost" disabled={disabled} onClick={() => move(order, 'siap')}>Langsung siap</button>}
+      </div>}
+  </article>;
 }

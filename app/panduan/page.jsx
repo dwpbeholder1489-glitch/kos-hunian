@@ -39,7 +39,7 @@ const MENUS_JASA = [
   ['Laporan', 'Pendapatan, laba perkiraan, per layanan, pelanggan, ketepatan waktu, keluhan'],
   ['Layanan & tahap', 'Harga per kg/pcs, minimal, lama pengerjaan; urutan tahap proses'],
   ['Bahan & stok', 'Deterjen, pewangi, plastik: stok, belanja, pemakaian'],
-  ['Dapur (Kuliner)', 'Layar dapur: pesanan per tahap, meja/bungkus/antar, catatan menu, tombol tahap berikutnya'],
+  ['Dapur (Kuliner)', 'Layar dapur: filter tahap dan jenis pesanan, waktu tunggu, catatan menu, dan penyerahan'],
   ['Meja & reservasi (Kuliner)', 'Status tiap meja, tagihan per meja (bayar semua / bagi rata / per item), tutup meja, reservasi'],
 ];
 const MENUS = [
@@ -534,7 +534,7 @@ const PARTS = [
     ['Kuliner: menu, pesanan meja/bungkus & dapur', 'Pesanan › + Pesanan baru · Dapur', [
       <>Daftar di <b>/mulai</b> › kategori <b>Kuliner</b> (warung, kafe, katering). Di Pusat Konfirmasi isi alamat, WhatsApp, jam buka, cara bayar, <b>jumlah meja</b>, tahap dapur (awal: Dimasak → Siap saji), lalu <b>+ Menu</b> untuk tiap menu beserta harganya (per porsi/gelas/cup…). Aktifkan.</>,
       <>Saat pelanggan memesan: <b>Pesanan › + Pesanan baru</b> › pilih <b>Makan di tempat</b> (ketuk nomor meja), <b>Bungkus</b>, atau <b>Diantar</b> (bila pengantaran disetujui) › ketuk menu, isi jumlah dan catatan (mis. pedas, tanpa bawang) › bayar sekarang atau nanti › <b>Simpan pesanan</b>. Nama pelanggan boleh kosong untuk makan di tempat (tercatat "Meja 3").</>,
-      <>Di dapur buka menu <b>Dapur</b>: pesanan terlama paling atas, berwarna merah bila lebih dari 30 menit. Tekan tombol besar <b>→ Dimasak</b> / <b>→ Siap saji</b> / <b>→ Siap</b>. Layar memuat ulang sendiri tiap 20 detik.</>,
+      <>Buka <b>Dapur</b> dan gunakan filter <b>Makan di tempat</b>, <b>Bungkus</b>, <b>Antar</b>, atau pilih satu <b>Tahap</b>. Baca catatan menu dan pesanan sebelum menekan tombol tahap berikutnya. Tiap tahap menampilkan pesanan terlama di atas, dengan penanda setelah 30 menit. Layar diperbarui tiap 20 detik. Jika gagal, ketuk <b>Muat ulang</b> sebelum memindahkan tahap.</>,
       <>Kasir menyerahkan di <b>Pesanan</b>: <b>+ Bayar</b> bila belum, lalu <b>Sudah diserahkan</b> (atau <b>Sudah diantar</b>). Pesanan dari halaman bisnis masuk sebagai <b>Permintaan masuk</b> seperti Langkah 66 (tanpa jemput).</>,
       <><b>QR per meja</b>: isi <b>Jumlah meja</b> di <b>Menu & tahap</b>, terbitkan Halaman bisnis, lalu ketuk ikon <b>Bagikan</b> (pojok kanan atas) › <b>Cetak QR semua meja</b> (4 kartu per A4; bisa juga satu meja saja). Tempel di tiap meja. Tamu memindai, memilih menu, dan mengirim pesanan untuk mejanya (nama & WhatsApp boleh kosong). Pesanan muncul di Pesanan sebagai <b>Pesanan dari QR Meja N</b> dan di Dapur sebagai pemberitahuan; kasir <b>Konfirmasi</b> → masuk antrean Dapur.</>,
     ], <>Harga dihitung server dari daftar menu; kasir tidak bisa mengubah harga satuan (potongan lewat diskon yang tercatat). Pendapatan diakui saat pesanan diserahkan. Petugas dapur (peran Petugas proses) hanya melihat pesanan & tahap, tidak melihat uang. Bahan baku dicatat di <b>Bahan & stok</b>. Nomor meja dari QR dicek server (meja yang tidak ada ditolak); pesanan QR tetap menunggu konfirmasi kasir agar tidak ada pesanan iseng, dan tidak dikirim lewat email. Tagihan per meja, split bill &amp; reservasi: Langkah 69. <b>Dalam rencana</b>: pembayaran online dari meja, cetak ke printer dapur. Bukan sistem POS restoran besar — cocok untuk warung, kafe kecil, dan katering.</>, 'warn', <ScrDapur />],
