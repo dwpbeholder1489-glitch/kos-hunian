@@ -62,10 +62,7 @@ export default function Barang() {
   const [variant, setVariant] = useState(null);   // null | 'new' | grup (tambah varian)
   const [brk, setBrk] = useState(null);   // barang yang harga beli banyaknya diatur
   const [opr, setOpr] = useState(null);   // harga per outlet
-  const [hist, setHist] = useState(null);
-  const [corrected, setCorrected] = useState([]);
-  const [correction, setCorrection] = useState(null);
-  const [correctionReason, setCorrectionReason] = useState(''); // riwayat harga
+  const [hist, setHist] = useState(null); // riwayat harga
   const [brandSheet, setBrandSheet] = useState(false);
   const [brandF, setBrandF] = useState('');
   const [bcs, setBcs] = useState(null);    // barcode tambahan
@@ -358,6 +355,9 @@ function StockSheet({ p, units, loc, bahan, canCorrect, onClose, onSaved }) {
   const [note, setNote] = useState('');
   const [dir, setDir] = useState(1);
   const [hist, setHist] = useState(null);
+  const [corrected, setCorrected] = useState([]);
+  const [correction, setCorrection] = useState(null);
+  const [correctionReason, setCorrectionReason] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     supabase.from('stock_moves').select('id,kind,delta,stock_after,value,note,created_at,branch_id').eq('product_id', p.id).order('created_at', { ascending: false }).limit(15)
