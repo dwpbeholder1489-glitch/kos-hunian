@@ -5,7 +5,7 @@ import { withApproval } from '@/lib/approval';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
 import { moduleOn, multiLoc, canArea } from '@/lib/business';
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -21,6 +21,8 @@ import Kedaluwarsa from '@/components/Kedaluwarsa';
 import StokSehat, { availLine } from '@/components/StokSehat';
 import { CategoryBar, CategorySheet, VariantForm, PriceBreakSheet, OutletPriceSheet, PriceHistorySheet, groupOf } from '@/components/TokoLanjut';
 import { BrandSheet, BarcodeSheet, KitSheet, SerialSheet, SupplierPriceSheet } from '@/components/KatalogLanjut';
+import StockMinusList, { useStockMinus } from '@/components/StockMinus';
+import LocationStockCard from './LocationStockCard';
 
 // Muat barang + satuan untuk bisnis aktif
 function useProducts(kosId, ver, multi) {
@@ -51,6 +53,9 @@ export default function Barang() {
   const { kosId, ver, kos } = useKos();
   const multi = multiLoc(kos);
   const { d, err, reload } = useProducts(kosId, ver, multi);
+  const [stockVersion, setStockVersion] = useState(0);
+  const retail = kos?.business_type === 'retail';
+  const negative = useStockMinus(retail ? kosId : null, `${ver}:${stockVersion}`);
   const [q, setQ] = useState('');
   const [f, setF] = useState('aktif');
   useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['kedaluwarsa', 'kesehatan'].includes(t)) setF(t); } catch {} }, []);
@@ -119,6 +124,10 @@ export default function Barang() {
         desc={bahan ? 'Bahan operasional, stok, dan biaya pemakaian.' : 'Kelola barang, satuan & harga, persediaan, dan pergerakan stok.'}
         actions={<>{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}{!bahan && <button className="sm" onClick={() => setVariant('new')}>+ Varian</button>}{!bahan && <button className="sm" onClick={() => setKit('new')}>+ Paket</button>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></>} />
       <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
+      {retail && (negative.failed || negative.rows?.length > 0) && <div id="stok-minus" className="panel">
+        <StockMinusList key={kosId} rows={negative.rows || []} failed={negative.failed} />
+      </div>}
+      {retail && <Suspense fallback={null}><LocationStockCard kosId={kosId} version={ver} /></Suspense>}
       <div className="grid">
         <Tile label={bahan ? 'Bahan aktif' : 'Barang aktif'} value={angka(active.length)} />
         <Tile label="Nilai stok (harga modal)" value={rp(value)} sub={active.some((p) => !(p.cost > 0)) ? 'ada barang tanpa harga modal' : null} />
@@ -164,7 +173,7 @@ export default function Barang() {
       {brk && <PriceBreakSheet p={brk} units={unitsOf(brk, d.units)} breaks={d.breaks} onClose={() => setBrk(null)} onSaved={() => { setBrk(null); reload(); }} />}
       {edit && <ProductForm brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
         onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
-      {adj && <StockSheet canCorrect={canArea(kos, 'team')} bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
+      {adj && <StockSheet canCorrect={canArea(kos, 'team')} bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); setStockVersion((value) => value + 1); reload(); }} />}
     </div>
   );
 }

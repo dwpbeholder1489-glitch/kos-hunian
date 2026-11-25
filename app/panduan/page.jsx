@@ -306,7 +306,8 @@ const PARTS = [
       <>Pemilik melihat riwayat shift semua kasir beserta selisihnya.</>,
     ], <>Shift tidak wajib. Selisih hanya dicatat, tidak mengubah saldo Kas. Uang laci yang dipakai untuk biaya tetap dicatat di Kas & kasbon.</>, null, null],
     ['Pengingat toko', 'Lonceng di kanan atas (toko)', [
-      <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti: stok habis atau menipis, pesanan yang lewat perkiraan datang, kasbon pelanggan dan utang supplier yang jatuh tempo dalam 3 hari.</>,
+      <>Angka merah di <b>lonceng</b> = hal yang perlu ditindaklanjuti: stok minus, habis atau menipis, pesanan yang lewat perkiraan datang, serta kasbon pelanggan dan utang supplier yang jatuh tempo dalam 3 hari.</>,
+      <>Di <b>Stok minus per lokasi</b>, ketuk baris barang untuk membuka <b>Kartu stok</b> lokasi tersebut. Misalnya, outlet A minus 3 pcs dan outlet B punya 10 pcs. Outlet A tetap diperingatkan meski totalnya 7 pcs. Peringatan juga muncul di <b>Dashboard toko › Perlu perhatian</b> dan <b>Barang &amp; stok</b>.</>,
       <>Ketuk lonceng. Tekan <b>Ingatkan WA</b> untuk kasbon, atau <b>Pesan / belanja barang</b> untuk stok.</>,
       <>Pemilik bisa menyalakan <b>email pengingat setiap pagi</b> pukul 07.00 di halaman itu (paket Dasar ke atas).</>,
     ], <>Stok menipis memakai <b>peringatan stok minimum</b> yang diisi di setiap barang. Email hanya dikirim bila ada yang perlu ditindaklanjuti.</>, null, null],
@@ -358,6 +359,7 @@ const PARTS = [
       <>Begitu ada lebih dari satu lokasi, muncul kotak <b>📍 Lokasi kerja</b> di Kasir, Barang & stok, dan Belanja. Pilih lokasi tempat Anda bekerja: penjualan, belanja, hitung ulang stok, dan barang rusak tercatat di lokasi itu.</>,
       <>Barang & stok menampilkan stok <b>di sini</b> dan <b>total</b>; tombol <b>Stok</b> menunjukkan rincian per lokasi.</>,
       <>Memindahkan barang (mis. gudang → toko): buka <b>Mutasi stok</b>, pilih <b>Dari</b> dan <b>Ke</b>, cari barang, isi jumlah, lalu <b>Pindahkan</b>. Riwayat mutasi mencatat nomor, asal–tujuan, waktu, dan siapa.</>,
+      <>Jika ada <b>Stok minus per lokasi</b>, buka kartu stok dari peringatannya untuk memeriksa saldo dan mutasi lokasi tersebut sebelum melakukan koreksi. Membuka kartu tidak mengganti <b>Lokasi kerja</b>.</>,
       <>Pemilik bisa menetapkan lokasi kerja tiap karyawan di menu <b>Karyawan</b>; karyawan itu tidak bisa pindah lokasi sendiri dan hanya bisa mengirim barang dari lokasinya.</>,
       <>Uang kas juga per lokasi: <b>Kas & kasbon</b> menampilkan <b>Uang kas per lokasi</b>. Biaya, uang masuk/keluar lain, dan pembayaran kasbon/utang dicatat di lokasi kerja Anda. Setoran laci cabang ke toko utama: <b>Pindahkan uang kas</b>.</>,
       <>Laporan toko › <b>Per lokasi</b>: penjualan, laba kotor, biaya lokasi, dan <b>kontribusi</b> (laba kotor − biaya operasional lokasi itu).</>,

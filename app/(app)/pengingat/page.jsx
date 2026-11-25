@@ -9,6 +9,7 @@ import { Loading, Empty, run } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { alertCount } from '@/components/RetailBell';
+import StockMinusList from '@/components/StockMinus';
 
 const due = (d) => { const n = Math.round((Date.parse(d) - Date.parse(today())) / 864e5); return n < 0 ? `lewat ${-n} hari` : n === 0 ? 'hari ini' : `${n} hari lagi`; };
 
@@ -17,7 +18,17 @@ export default function Pengingat() {
   const { kosId, kos, user, ver, loadKos } = useKos();
   const [a, setA] = useState(null);
   const [err, setErr] = useState(null);
-  useEffect(() => { supabase.rpc('retail_alerts', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setA(data))); }, [kosId, ver]);
+  useEffect(() => {
+    const controller = new AbortController();
+    setA(null);
+    setErr(null);
+    if (kosId) supabase.rpc('retail_alerts', { p_kos: kosId }).abortSignal(controller.signal).then(({ data, error }) => {
+      if (controller.signal.aborted) return;
+      if (error) setErr(errMsg(error));
+      else setA(data);
+    });
+    return () => controller.abort();
+  }, [kosId, ver]);
   if (err) return <div className="notice bad">{/retail_alerts/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!a) return <Loading />;
   const isOwner = kos.owner_id === user?.id;
@@ -26,7 +37,8 @@ export default function Pengingat() {
   return (
     <div className="stack">
       <PageHeader title="Pengingat toko" help={<PageHelp page="pengingat" />} />
-      {alertCount(a) === 0 && <Empty title="Semua aman" text="Tidak ada stok menipis, pesanan terlambat, kasbon/utang jatuh tempo, transaksi offline, atau pesanan portal yang perlu dicek." />}
+      {alertCount(a) === 0 && <Empty title="Semua aman" text="Tidak ada stok minus atau menipis, pesanan terlambat, kasbon/utang jatuh tempo, transaksi offline, atau pesanan portal yang perlu dicek." />}
+      {!!a.stok_minus?.length && <div className="panel"><StockMinusList key={kosId} rows={a.stok_minus} canOpen={canArea(kos, 'stock')} /></div>}
       {a.offline?.length > 0 && <section className="panel"><h3>📶 Transaksi offline perlu dicek ({a.offline.length})</h3>
         <p className="small muted" style={{ margin: 0 }}>Penjualan saat internet putus yang terkirim dengan temuan (harga berubah, stok minus, diskon lewat batas) atau tidak bisa disimpan.</p>
         <Link href="/penjualan?tab=offline"><button style={{ width: '100%' }}>Periksa di Penjualan › Offline</button></Link></section>}
