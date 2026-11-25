@@ -1,0 +1,95 @@
+.home {
+  display: grid;
+  gap: var(--space-4);
+  container-type: inline-size;
+}
+
+.masthead {
+  padding: clamp(14px, 2.35vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(110deg, color-mix(in srgb, var(--gold-soft) 65%, var(--surface)), var(--surface) 74%);
+}
+
+.masthead :global(.pg-h) {
+  margin: 0;
+}
+
+.masthead :global(.pg-tt h2) {
+  font-size: clamp(23px, 3.2vw, 34px);
+  overflow-wrap: anywhere;
+}
+
+.home :global(.dash) {
+  grid-auto-flow: row;
+}
+
+.home :global(.dash-full > .grid) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.home :global(.dash-full > .grid > .tile) {
+  padding: clamp(10px, 1.4vw, 17px);
+}
+
+.home :global(.dash-full > .grid .tile .v) {
+  font-size: clamp(16px, 2vw, 24px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.home :global(.dash-full > .grid .tile .label) {
+  font-size: 12px;
+}
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  column-gap: 9px;
+  min-height: 54px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.shortcut:hover, .shortcut:focus-visible {
+  border-color: var(--gold-fg);
+  background: var(--gold-soft);
+}
+
+.shortcutIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--gold-soft);
+  color: var(--gold-fg);
+}
+
+@container (min-width: 560px) {
+  .shortcuts,
+  .home :global(.dash-full > .grid) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 820px) {
+  .shortcut {
+    min-height: 64px;
+    padding-inline: 12px;
+  }
+}
