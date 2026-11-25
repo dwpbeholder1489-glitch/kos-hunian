@@ -19,6 +19,7 @@ import { rp, angka, today, tgl, tglShort, bulan, thisMonth, monthEnd, addMonthsY
 import { isLow, payLabel, jam } from '@/lib/retail';
 import { canArea, tabsFor } from '@/lib/business';
 import { quickActions } from '@/lib/menu';
+import StockMinusList, { useStockMinus } from '@/components/StockMinus';
 
 const STORE_LINKS = [
   ['/kasir', 'Kasir'],
@@ -60,6 +61,7 @@ export default function Toko() {
   const name = user?.user_metadata?.name || user?.user_metadata?.full_name;
   const fin = canArea(kos, 'finance');
   const stockArea = canArea(kos, 'stock');
+  const negative = useStockMinus(stockArea || fin ? kosId : null, ver);
   const routes = new Set(tabsFor(kos).map(([href]) => href));
   const has = (href) => routes.has(href);
   const contactsArea = has('/kontak');
@@ -231,6 +233,7 @@ export default function Toko() {
       </Widget>
     ) },
     { id: 'perhatian', title: 'Perlu perhatian', size: 'normal', node: <Widget title="Perlu perhatian" action={has('/barang') && low.length > 0 && <Link href="/barang">Lihat stok →</Link>}>
+      <StockMinusList rows={negative.rows || []} failed={negative.failed} canOpen={has('/barang')} preview />
       {stockArea && low.length > 0 && <ul className="alerts">
         {low.slice(0, 3).map((product) => <li key={product.id}><Link href="/barang">
           <ProductThumb key={thumbs[product.id]} path={thumbs[product.id]} />
@@ -238,7 +241,7 @@ export default function Toko() {
           <span className={styles.stockLabel}>Stok {angka(product.stock)} {product.base_unit}</span>
         </Link></li>)}
       </ul>}
-      {(alerts.length > 0 || !stockArea || !low.length) && <Alerts items={alerts} />}
+      {(alerts.length > 0 || (!negative.failed && !negative.rows?.length && (!stockArea || !low.length))) && <Alerts items={alerts} />}
     </Widget> },
     { id: 'denyut', title: 'Denyut bisnis', size: 'normal', node: pulse.some(Boolean) && <Pulse items={pulse} /> },
     { id: 'terlaris', title: 'Barang terlaris', size: 'normal', node: pr?.r && (
