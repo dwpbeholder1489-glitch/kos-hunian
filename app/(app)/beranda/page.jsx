@@ -2,10 +2,12 @@
 import { invoiceTotals } from '@/lib/propertyTotals';
 import NavIcon from '@/components/NavIcon';
 import styles from './property.module.css';
+import Persiapan from '@/components/Persiapan';
+import { canArea } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
 import Link from 'next/link';
 import { useData } from '@/lib/useData';
-import { Loading, Empty, InvChip } from '@/components/ui';
+import { Loading, Empty, InvChip, Sheet } from '@/components/ui';
 import Checklist from '@/components/Checklist';
 import { useKos } from '@/components/KosProvider';
 import { RecHint } from '@/components/Rekomendasi';
@@ -30,6 +32,7 @@ function PropertyHome() {
   const d = useData();
   const { kos, kosId, ver } = useKos();
   const [tix, setTix] = useState(null); // keluhan belum selesai
+  const [group, setGroup] = useState(null);
   const act = useActivity(kosId, ver);
   const prefs = useDashPrefs('kos', 'bulan');
   useEffect(() => {
@@ -66,20 +69,24 @@ function PropertyHome() {
   for (const i of overdue) byOcc.set(i.occupant_id, (byOcc.get(i.occupant_id) || 0) + i.outstanding);
   const debtors = [...byOcc.entries()].sort((a, b) => b[1] - a[1]);
 
-  if (d.rooms.length === 0) {
-    return <Empty title="Belum ada kamar" text="Tambahkan kamar dulu supaya bisa mencatat penghuni dan tagihan."><Link href="/kamar"><button className="primary">Ke halaman Kamar</button></Link></Empty>;
-  }
-
   // tren 6 bulan: tagihan terbit (jatuh tempo di bulan itu) vs pembayaran terverifikasi di bulan itu — sumber sama dengan kotak Tagihan bulan ini
   const trend = Array.from({ length: 6 }, (_, i) => {
     const m = addMonthsYm(ym, i - 5);
     return { key: m, label: bulan(m), short: BLN[Number(m.slice(5, 7)) - 1], a: live.filter((x) => x.due_date.startsWith(m)).reduce((s2, x) => s2 + x.amount, 0), b: d.payments.filter((p) => p.status === 'terverifikasi' && p.paid_at.startsWith(m)).reduce((s2, p) => s2 + p.amount, 0) };
   });
-  const roomSt = [['terisi', 'Terisi'], ['tersedia', 'Kosong (siap disewa)'], ['perbaikan', 'Perbaikan'], ['tidak_disewakan', 'Tidak disewakan']].map(([k, l]) => [l, d.rooms.filter((r) => r.status === k).length, k]).filter(([, n]) => n > 0);
+  const rentPayments = d.payments.filter(p => p.status === 'terverifikasi' && d.invById.get(p.invoice_id)?.kind === 'sewa');
+  const rentTrend = trend.map(({key, short}) => ({key, short, value: rentPayments.filter(p => p.paid_at.startsWith(key)).reduce((sum,p) => sum + p.amount, 0)}));
+  const rentMonth = rentTrend.at(-1).value;
+  const extraIncome = paidMonth.filter(p => d.invById.get(p.invoice_id)?.kind === 'tambahan').reduce((sum,p) => sum + p.amount, 0);
+  const operatingIncome = rentMonth + extraIncome + d.entries.filter(x => x.date.startsWith(ym) && x.kind === 'pendapatan_lain').reduce((sum,x) => sum + x.amount, 0);
+  const repairs = d.rooms.filter(r => r.status === 'perbaikan');
+  const ending = d.leases.filter(l => l.status === 'aktif' && l.end_date?.startsWith(ym) && l.end_date >= t);
   const has = (h) => tabsFor(kos).some(([x]) => x === h);
   const highTix = (tix || []).some((x) => x.priority === 'tinggi');
   const newTix = (tix || []).filter((x) => x.status === 'baru' && x.source === 'penghuni').length;
   const alerts = [
+    repairs.length > 0 && { tone: 'warn', text: `${repairs.length} kamar dalam perbaikan`, href: '/kamar' },
+    ending.length > 0 && { tone: 'info', text: `${ending.length} sewa berakhir bulan ini`, href: '/penghuni' },
     overdue.length > 0 && { tone: 'bad', text: `${overdue.length} tagihan lewat jatuh tempo · ${rp(arrears)}`, href: '/tagihan' },
     pending.length > 0 && { tone: 'info', text: `${pending.length} pembayaran menunggu verifikasi`, href: '/pembayaran' },
     tix && tix.length > 0 && { tone: highTix ? 'bad' : 'warn', text: `${tix.length} keluhan/perbaikan belum selesai${newTix ? ` · ${newTix} baru dari penghuni` : ''}`, href: '/perbaikan' },
@@ -98,15 +105,16 @@ function PropertyHome() {
   const kosong = d.rooms.filter((r) => r.status === 'tersedia').length;
   const kpiItems = [
     { id: 'kas', label: 'Kas bersih bulan ini', value: rp(cashIn + entIn + depInCash + bkIn - cashOut - entOut - depOut - bkOut), tone: 'hero', sub: `Masuk ${rp(cashIn + entIn + depInCash + bkIn)} · keluar ${rp(cashOut + entOut + depOut + bkOut)}${depInCash || depOut || bkIn || bkOut ? ' (termasuk deposit/DP)' : ''}` },
-    { id: 'hunian', label: 'Hunian', value: `${occ}%`, sub: `${filled} dari ${rentable.length} kamar terisi` },
-    { id: 'total_kamar', label: 'Total kamar', value: String(d.rooms.length), sub: `${filled} terisi · ${kosong} kosong` },
+    { id: 'hunian', icon: <NavIcon name='/penghuni' />, label: 'Tingkat hunian', value: `${occ}%`, sub: `${filled} dari ${rentable.length} kamar terisi` },
+    { id: 'total_kamar', icon: <NavIcon name='/kamar' />, label: 'Total kamar', value: String(d.rooms.length), sub: `${filled} terisi · ${kosong} kosong` },
     { id: 'kosong', label: 'Kamar kosong', value: String(kosong), sub: 'siap disewa', tone: kosong > 0 && occ < 70 ? 'gold' : '' },
     { id: 'penghuni', label: 'Penghuni aktif', value: String(d.activeByOcc.size), sub: `${d.rooms.length} kamar terdaftar` },
     moduleOn(kos, 'p_booking') && { id: 'booking', label: 'Booking aktif', value: String(activeBk.length), sub: `${checkins.length} masuk ≤ 7 hari` },
     { id: 'tagihan', label: 'Tagihan bulan ini', value: rp(billedMonth), sub: `Sudah dibayar ${rp(paidAgainstMonth)}` },
     { id: 'terkumpul', label: `Pembayaran diterima ${per.label}`, value: rp(sumA(paidP)), sub: `${paidP.length} pembayaran terverifikasi` },
     { id: 'jatuh_tempo', label: 'Jatuh tempo 7 hari', value: rp(upcoming.reduce((s2, i) => s2 + i.outstanding, 0)), sub: `${upcoming.length} tagihan` },
-    { id: 'sisa', label: 'Sisa seluruh tagihan', value: rp(outstanding), sub: 'Termasuk pembayaran sebagian' },
+    { id: 'sewa', label: 'Pendapatan sewa bulan ini', value: rp(rentMonth), icon: <NavIcon name='/pembayaran' /> },
+    { id: 'sisa', icon: <NavIcon name='/tagihan' />, label: 'Tagihan belum lunas', value: rp(outstanding), sub: `${live.filter(i => i.outstanding > 0).length} tagihan` },
     { id: 'tunggakan', label: 'Tunggakan', value: rp(arrears), tone: arrears > 0 ? 'bad' : '', sub: `${overdue.length} tagihan lewat jatuh tempo` },
   ];
   const pulse = [
@@ -169,7 +177,10 @@ function PropertyHome() {
     ) },
     { id: 'kamar', title: 'Status kamar', size: 'normal', node: (
       <Widget title="Status kamar" action={has('/kamar') && <Link href="/kamar">Peta kamar</Link>}>
-        <div className="list">{roomSt.map(([l, n, k]) => <div className="li" key={k}><span className="small"><span className={'dot ' + k} style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 8 }} />{l}</span><b className="small">{n}</b></div>)}</div>
+        <div className={styles.rooms}>{d.rooms.slice(0, 10).map(r => {
+          const lease = d.activeByRoom.get(r.id);
+          return <article key={r.id}><b>{r.code}</b><span className="chip">{({ terisi: 'Terisi', tersedia: 'Tersedia', perbaikan: 'Perbaikan', tidak_disewakan: 'Tidak disewakan' })[r.status] || r.status}</span><small>{lease ? d.occName(lease.occupant_id) : '—'}</small><small>{rp(lease?.rent ?? r.rent)}</small></article>;
+        })}</div>
       </Widget>
     ) },
     { id: 'aktivitas', title: 'Aktivitas terbaru', size: 'normal', node: act !== null && (
@@ -178,17 +189,29 @@ function PropertyHome() {
     { id: 'aksi', title: 'Aksi cepat', size: 'normal', node: quickActions(kos).length > 0 && <Widget title="Aksi cepat"><QuickActions kos={kos} /></Widget> },
   ];
 
-  return (
-    <Dashboard id="kos" kosId={kosId} widgets={widgets} prefs={prefs} kpis={KPIS.kos.map(([id, label]) => ({ id, label }))} period header={(atur, periode) => <>
-      <Checklist d={d} kosId={kosId} />
-      <PageHeader title={kos.name} help={<PageHelp page="beranda" />} desc={`Kos & Properti · ${bulan(ym)}`} actions={<>{periode}{atur}</>} />
-      <nav className={styles.modules} aria-label="Operasional properti">
-        {tabsFor(kos).filter(([href]) => ['/kamar', '/penghuni', '/booking', '/tagihan', '/pembayaran', '/perbaikan', '/pengeluaran', '/laporan'].includes(href)).map(([href, label]) => (
-          <Link key={href} href={href}><NavIcon name={href} /><span>{label}</span></Link>
-        ))}
-      </nav>
-      <CrmHint />
-      <RecHint />
-    </>} />
+  const groups = [
+    ['Kamar / Unit', ['/kamar']], ['Penghuni', ['/penghuni']], ['Booking & Pendaftaran', ['/booking']],
+    ['Tagihan & Pembayaran', ['/tagihan', '/pembayaran']], ['Keuangan', ['/pembukuan', '/pengeluaran']],
+    ['Pemeliharaan', ['/perbaikan']], ['Aset & Inventaris', ['/aset']], ['Laporan & Analisis', ['/laporan', '/analisis']],
+  ];
+  const shortcuts = groups.map(([label, paths]) => ({label, path: paths.find(has), paths: paths.filter(has)})).filter(x => x.path);
+  widgets.push(
+    { id: 'operasional', title: 'Operasional', size: 'full', node: shortcuts.length > 0 && <nav className={styles.operations} aria-label="Operasional properti"><h3>Operasional</h3><div className={styles.modules}>{shortcuts.map(({label,path,paths}) => paths.length > 1 ? <button key={path} onClick={() => setGroup({label,paths})}><NavIcon name={path} /><span>{label}</span></button> : <Link key={path} href={path}><NavIcon name={path} /><span>{label}</span></Link>)}</div></nav> },
+    { id: 'sewa', title: 'Pendapatan sewa', size: 'wide', node: <Widget title="Pendapatan sewa" action={<span className="small muted">6 bulan terakhir</span>}><div className={styles.chart}>{rentTrend.map(m => <div key={m.key}><small>{rp(m.value)}</small><i style={{height: (m.value / Math.max(1, ...rentTrend.map(x => x.value)) * 90) + 'px'}} /><span>{m.short}</span></div>)}</div></Widget> },
+    { id: 'keuangan', title: 'Ringkasan keuangan', size: 'normal', node: has('/laporan') && <Widget title="Ringkasan keuangan bulan ini"><dl className={styles.finance}>{[['Pendapatan sewa', rentMonth], ['Pendapatan lain & tambahan', operatingIncome - rentMonth], ['Pengeluaran', cashOut], ['Surplus operasional', operatingIncome - cashOut]].map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{rp(value)}</dd></div>)}</dl></Widget> }
   );
+  const priority = ['kpi', 'operasional', 'sewa', 'perhatian', 'kamar', 'keuangan'];
+  const rank = w => priority.includes(w.id) ? priority.indexOf(w.id) : priority.length;
+  widgets.sort((a,b) => rank(a) - rank(b));
+  const hour = Number(new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', hour:'2-digit', hourCycle:'h23'}).format(new Date()));
+  const greeting = hour < 11 ? 'pagi' : hour < 15 ? 'siang' : hour < 18 ? 'sore' : 'malam';
+  return <div className={styles.home}><Dashboard id="kos" kosId={kosId} widgets={widgets} prefs={prefs} kpis={KPIS.kos.map(([id,label]) => ({id,label}))} period header={(atur,periode) => <header className={styles.hero}>
+    <div><h1>Selamat {greeting}</h1><strong>{kos.name}</strong></div>
+    <img src="/retail/prasara-maskot.webp" alt="Maskot PRASARA" />
+    <div className={styles.controls}>{periode}{atur}<PageHelp page="beranda" /></div>
+  </header>} />
+    {group && <Sheet title={group.label} onClose={() => setGroup(null)}><div className="list">{group.paths.map(path => <Link className="li" href={path} key={path}><NavIcon name={path} />{tabsFor(kos).find(([href]) => href === path)?.[1]}</Link>)}</div></Sheet>}
+    {!d.rooms.length && has('/kamar') && <Empty title="Belum ada kamar" text="Tambahkan kamar pertama untuk mulai mengelola hunian."><Link href="/kamar">Ke halaman Kamar</Link></Empty>}
+    <Checklist d={d} kosId={kosId} />{canArea(kos,'settings') && <Persiapan kos={kos} />}<CrmHint /><RecHint />
+  </div>;
 }
