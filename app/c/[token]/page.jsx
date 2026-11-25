@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { LogoMark } from '@/components/Logo';
+import NavIcon from '@/components/NavIcon';
+import styles from './portal.module.css';
 import { Sheet, Field, toast } from '@/components/ui';
 import { rp, angka, tgl, today, waLink } from '@/lib/format';
 import { logoUrl } from '@/lib/logo';
@@ -66,77 +68,156 @@ export default function CustomerPortal() {
   const openInv = p.invoices.filter((i) => Number(i.open) > 0);
   const waiting = p.orders.filter((o) => o.status === 'penawaran').length;
 
+  const navigate = (next) => {
+    setTab(next);
+    setSent(null);
+    window.scrollTo(0, 0);
+  };
+  const shopping = tab === 'pesan' || tab === 'hemat';
+  const links = [
+    ['pesan', 'Pesan barang', '/konsinyasi'],
+    ['pesanan', 'Pesanan', '/resep'],
+    ['tagihan', 'Tagihan', '/tagihan'],
+    ['hemat', 'Beli banyak', '/promo'],
+  ];
+
   return (
-    <>
-      <header className="top portal">
-        <div className="wrap" style={{ paddingBottom: 0, maxWidth: 760 }}>
-          <div className="brandrow">
-            <div className="brand">{logoUrl(b.logo) ? <img src={logoUrl(b.logo)} alt="" width={30} height={30} style={{ borderRadius: 8, objectFit: 'cover' }} /> : <LogoMark size={30} />}<div><h1>{b.name}</h1><small>Portal pelanggan</small></div></div>
-            {b.phone && <a className="helpbtn" style={{ width: 'auto', padding: '0 12px', borderRadius: 999, fontSize: 13 }} href={waOwner(`Halo ${b.name}, saya ${c.name}.`)} target="_blank" rel="noreferrer">Hubungi</a>}
-          </div>
-          <nav className="tabs ptabs">
-            {[['pesan', 'Pesan barang'], ['pesanan', `Pesanan${waiting ? ` (${waiting})` : ''}`], ['tagihan', 'Tagihan']].map(([k, l]) => (
-              <a key={k} href={'#' + k} className={tab === k ? 'on' : ''} onClick={(e) => { e.preventDefault(); setTab(k); setSent(null); }}>{l}</a>
-            ))}
-          </nav>
+    <div className={styles.portal}>
+      <header className={styles.header}>
+        <div className={styles.brand}>
+          {logoUrl(b.logo) ? <img src={logoUrl(b.logo)} alt="" width={38} height={38} /> : <LogoMark size={38} />}
+          <div><h1>{b.name}</h1><small>Portal pelanggan</small></div>
         </div>
+        {b.phone && <a className={styles.contact} href={waOwner(`Halo ${b.name}, saya ${c.name}.`)} target="_blank" rel="noreferrer"><NavIcon name="/crm" size={19} />Hubungi</a>}
       </header>
-      <main className="wrap stack" style={{ paddingBottom: lines.length && tab === 'pesan' ? 110 : 60, maxWidth: 760 }}>
-        <div><h2 style={{ marginBottom: 2 }}>Halo, {c.name}</h2>
-          <p className="muted small" style={{ margin: 0 }}>{[c.price_list ? `Harga khusus: ${c.price_list}` : 'Harga grosir untuk Anda', c.terms_days != null ? `tempo ${c.terms_days} hari` : null].filter(Boolean).join(' · ')}</p></div>
 
-        {sent && <SentPanel sent={sent} b={b} c={c} waOwner={waOwner} onSee={() => { setSent(null); setTab('pesanan'); }} onMore={() => setSent(null)} />}
+      <main className={`${styles.main} stack ${shopping && !sent && lines.length ? styles.hasCart : ''}`}>
+        {shopping && !sent && (
+          <section className={styles.hero}>
+            <h2>Belanja Grosir <em>Lebih Mudah &amp; Cepat</em></h2>
+            <p>Pesan kebutuhan toko Anda kapan saja, langsung di sini.</p>
+            <div className={styles.perks}>
+              <span><NavIcon name="/promo" size={15} />Harga grosir</span>
+              <span><NavIcon name="/grosir" size={15} />Pesanan terpantau</span>
+            </div>
+          </section>
+        )}
+        <nav className={styles.actions} aria-label="Menu portal">
+          {links.map(([key, label, icon]) => (
+            <button key={key} type="button" aria-current={tab === key ? 'page' : undefined} onClick={() => navigate(key)}>
+              <NavIcon name={icon} size={23} />{label}{key === 'pesanan' && waiting > 0 && <span className={styles.badge}>{waiting}</span>}
+            </button>
+          ))}
+        </nav>
 
-        {!sent && tab === 'pesan' && <Catalog p={p} q={q} setQ={setQ} cat={cat} setCat={setCat} qtyOf={qtyOf} setQty={setQty} />}
+        {sent && <SentPanel sent={sent} b={b} c={c} waOwner={waOwner} onSee={() => navigate('pesanan')} onMore={() => setSent(null)} />}
+        {!sent && shopping && <Catalog p={p} q={q} setQ={setQ} cat={cat} setCat={setCat} qtyOf={qtyOf} setQty={setQty} bulk={tab === 'hemat'} />}
         {!sent && tab === 'pesanan' && <Orders p={p} token={token} reorder={reorder} onChanged={load} waOwner={waOwner} />}
         {!sent && tab === 'tagihan' && <Bills p={p} openInv={openInv} waOwner={waOwner} />}
-        <footer className="small muted" style={{ textAlign: 'center' }}>Link ini pribadi untuk {c.name} — jangan dibagikan. Dikelola {b.name} dengan <a href="/">PRASARA</a></footer>
+        {!sent && tab === 'profil' && (
+          <section className="panel">
+            <h2>Profil pelanggan</h2>
+            <dl className="kv">
+              <dt>Nama</dt><dd>{c.name}</dd>
+              <dt>Daftar harga</dt><dd>{c.price_list || 'Grosir'}</dd>
+              {c.terms_days != null && <><dt>Tempo</dt><dd>{c.terms_days} hari</dd></>}
+              {c.address && <><dt>Alamat kirim</dt><dd>{c.address}</dd></>}
+            </dl>
+          </section>
+        )}
+        <footer className={styles.footer}>Link pribadi untuk {c.name}. Dikelola {b.name} dengan <a href="/">PRASARA</a>.</footer>
       </main>
-      {!sent && tab === 'pesan' && lines.length > 0 && (
-        <button className="cartbar" style={{ left: '50%', width: 'calc(100% - 32px)' }} onClick={() => setCheckout(true)}>
-          <span>{lines.length} barang · <b>{rp(total)}</b></span><b>Lanjut pesan ›</b>
-        </button>
-      )}
+
+      <div className={styles.dock}>
+        {!sent && shopping && lines.length > 0 && (
+          <div className={styles.cartbar}>
+            <div className={styles.cartCount}><NavIcon name="/penjualan" size={25} /><div><b>{lines.length} item</b><small>Total sementara</small></div></div>
+            <strong>{rp(total)}</strong>
+            <button type="button" onClick={() => setCheckout(true)}>Lihat keranjang <span aria-hidden="true">→</span></button>
+          </div>
+        )}
+        <nav className={styles.bottom} aria-label="Navigasi bawah">
+          {[['pesan', 'Beranda', '/kamar'], ['pesanan', 'Pesanan', '/konsinyasi'], ['tagihan', 'Tagihan', '/tagihan'], ['profil', 'Profil', '/penghuni']].map(([key, label, icon]) => (
+            <button key={key} type="button" aria-current={(tab === key || (key === 'pesan' && shopping)) ? 'page' : undefined} onClick={() => navigate(key)}>
+              <NavIcon name={icon} size={22} />{label}
+            </button>
+          ))}
+        </nav>
+      </div>
       {checkout && <Checkout p={p} token={token} lines={lines} total={total} setQty={setQty} onClose={() => setCheckout(false)}
-        onSent={(r) => { setCheckout(false); setCart([]); setSent(r); window.scrollTo(0, 0); load(); }} />}
+        onSent={(r) => { setCheckout(false); setCart([]); setTab('pesan'); setSent(r); window.scrollTo(0, 0); load(); }} />}
+    </div>
+  );
+}
+
+function Catalog({ p, q, setQ, cat, setCat, qtyOf, setQty, bulk }) {
+  const [sort, setSort] = useState('catalog');
+  const [layout, setLayout] = useState('grid');
+  const products = bulk ? p.catalog.filter((x) => x.units.some((u) => u.breaks.length)) : p.catalog;
+  const cats = [...new Set(products.map((x) => x.cat).filter(Boolean))];
+  const activeCat = cats.includes(cat) ? cat : '';
+  const s = q.trim().toLowerCase();
+  const list = products.filter((x) => (!activeCat || x.cat === activeCat) && (!s || [x.name, x.sku, x.brand].some((v) => String(v || '').toLowerCase().includes(s))));
+  if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name, 'id'));
+  if (sort === 'available') list.sort((a, b) => Number(b.avail) - Number(a.avail));
+  return (
+    <>
+      <label className={styles.search}>
+        <span aria-hidden="true" className={styles.searchIcon} />
+        <input aria-label="Cari barang" type="search" placeholder="Cari nama barang, kode, merek…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </label>
+      {cats.length > 0 && <div className={styles.categories} aria-label="Kategori barang">
+        {['', ...cats].map((key) => <button type="button" key={key || 'all'} aria-pressed={activeCat === key} onClick={() => setCat(key)}><NavIcon name={key ? '/konsinyasi' : '/toko'} size={18} />{key || 'Semua'}</button>)}
+      </div>}
+      <div className={styles.toolbar}>
+        <h2>{bulk ? 'Harga beli banyak' : 'Katalog barang'}</h2>
+        <div>
+          <select aria-label="Urutkan barang" value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="catalog">Urutan katalog</option><option value="name">Nama A–Z</option><option value="available">Tersedia dulu</option>
+          </select>
+          <button type="button" aria-label="Tampilan kisi" aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}><NavIcon name="/toko" size={17} /></button>
+          <button type="button" aria-label="Tampilan daftar" aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><NavIcon name="/layanan" size={17} /></button>
+        </div>
+      </div>
+      <div className={`${styles.products} ${layout === 'list' ? styles.list : ''}`}>
+        {list.slice(0, 300).map((product) => <ProductCard key={product.id} product={product} qtyOf={qtyOf} setQty={setQty} />)}
+      </div>
+      {list.length === 0 && <p className="panel muted small">{bulk && !products.length ? 'Belum ada harga beli banyak untuk katalog Anda.' : !products.length ? 'Belum ada barang yang bisa dipesan lewat portal.' : 'Tidak ada barang yang cocok.'}</p>}
+      {list.length > 300 && <p className="muted small">Menampilkan 300 dari {list.length} barang. Gunakan pencarian untuk barang lain.</p>}
     </>
   );
 }
 
-function Catalog({ p, q, setQ, cat, setCat, qtyOf, setQty }) {
-  const cats = [...new Set(p.catalog.map((x) => x.cat).filter(Boolean))];
-  const s = q.trim().toLowerCase();
-  const list = p.catalog.filter((x) => (!cat || x.cat === cat) && (!s || [x.name, x.sku, x.brand].some((v) => String(v || '').toLowerCase().includes(s))));
-  if (!p.catalog.length) return <section className="panel"><p className="muted" style={{ margin: 0 }}>Belum ada barang yang bisa dipesan lewat portal. Hubungi penjual.</p></section>;
+function ProductCard({ product, qtyOf, setQty }) {
+  const [selected, setSelected] = useState('');
+  const unit = product.units.find((u) => u.name === selected) || product.units[0];
+  if (!unit) return null;
+  const qty = qtyOf(product.id, unit.name);
   return (
-    <>
-      <input type="search" placeholder="Cari nama barang, kode, merek" value={q} onChange={(e) => setQ(e.target.value)} />
-      {cats.length > 1 && <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap', maxWidth: '100%' }}>{[['', 'Semua'], ...cats.map((x) => [x, x])].map(([k, l]) => <button key={k || 'all'} className={cat === k ? 'on' : ''} onClick={() => setCat(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>}
-      <section className="panel" style={{ padding: 0 }}>
-        <div className="list">{list.slice(0, 300).map((x) => (
-          <div className="li" key={x.id} style={{ alignItems: 'flex-start', gap: 10, padding: '12px 14px' }}>
-            {x.thumb ? <img src={mediaUrl(x.thumb)} alt="" width={56} height={56} loading="lazy" style={{ borderRadius: 10, objectFit: 'cover', flex: 'none', border: '1px solid var(--line)' }} />
-              : <div style={{ width: 56, height: 56, borderRadius: 10, background: 'var(--sunk)', flex: 'none' }} />}
-            <div className="main stack" style={{ flex: 1, gap: 6, minWidth: 0 }}>
-              <div><b style={{ overflowWrap: 'anywhere' }}>{x.name}</b>
-                <div className="small muted">{[x.brand, x.sku].filter(Boolean).join(' · ')}{x.brand || x.sku ? ' · ' : ''}<span style={{ color: x.avail ? 'var(--good)' : 'var(--att, #b45309)' }}>{x.avail ? 'Tersedia' : 'Stok terbatas — bisa dikirim menyusul'}</span></div></div>
-              {x.units.map((u) => { const n = qtyOf(x.id, u.name); return (
-                <div key={u.name} className="row between" style={{ gap: 8, flexWrap: 'wrap' }}>
-                  <div className="small"><b>{rp(n > 0 ? priceAt(u, n) : u.price)}</b> / {u.name}{Number(u.qty) !== 1 ? <span className="muted"> (isi {angka(u.qty)} {x.base_unit})</span> : null}
-                    {u.breaks.length > 0 && <div className="muted">{u.breaks.map((br) => `≥${angka(br.min_qty)} ${u.name}: ${rp(br.price)}`).join(' · ')}</div>}</div>
-                  {n > 0 ? <div className="qtybox"><button onClick={() => setQty(x.id, u.name, n - 1)} aria-label="Kurangi">−</button>
-                      <input inputMode="decimal" value={n} onChange={(e) => setQty(x.id, u.name, qtyNum(e.target.value))} aria-label={`Jumlah ${u.name}`} />
-                      <button onClick={() => setQty(x.id, u.name, n + 1)} aria-label="Tambah">+</button></div>
-                    : <button className="sm" onClick={() => setQty(x.id, u.name, 1)}>+ {u.name}</button>}
-                </div>); })}
-            </div>
-          </div>
-        ))}</div>
-        {list.length === 0 && <p className="muted small" style={{ padding: 14, margin: 0 }}>Tidak ada barang yang cocok.</p>}
-        {list.length > 300 && <p className="muted small" style={{ padding: 14, margin: 0 }}>Menampilkan 300 dari {list.length} barang — ketik nama untuk mencari.</p>}
-      </section>
-      <span className="small muted">Harga sesuai harga untuk akun Anda. Harga & ketersediaan final dikonfirmasi penjual; promo kasir toko tidak berlaku di portal.</span>
-    </>
+    <article className={styles.product}>
+      <div className={styles.productTop}>
+        <div className={styles.photo}>
+          {product.thumb ? <img src={mediaUrl(product.thumb)} alt="" loading="lazy" /> : <NavIcon name="/konsinyasi" size={28} />}
+        </div>
+        <div className={styles.productInfo}>
+          <h3>{product.name}</h3>
+          <span className={product.avail ? styles.available : styles.limited}>{product.avail ? '✓ Tersedia' : 'Stok terbatas'}</span>
+          <span className={styles.price}><b>{rp(priceAt(unit, qty))}</b> / {unit.name}</span>
+        </div>
+      </div>
+      {product.units.length > 1 && <select className={styles.unit} aria-label={`Satuan ${product.name}`} value={unit.name} onChange={(e) => setSelected(e.target.value)}>
+        {product.units.map((u) => <option key={u.name} value={u.name}>{u.name}{Number(u.qty) !== 1 ? ` (isi ${angka(u.qty)} ${product.base_unit})` : ''} · {rp(u.price)}</option>)}
+      </select>}
+      {unit.breaks.length > 0 && <div className={styles.breaks}>{unit.breaks.map((br) => <span key={br.min_qty}>≥{angka(br.min_qty)} {unit.name}: {rp(br.price)}</span>)}</div>}
+      <div className={styles.productFoot}>
+        <div className={styles.stepper}>
+          <button type="button" disabled={!qty} onClick={() => setQty(product.id, unit.name, qty - 1)} aria-label={`Kurangi ${product.name}`}>−</button>
+          <input inputMode="decimal" value={qty} onChange={(e) => setQty(product.id, unit.name, qtyNum(e.target.value))} aria-label={`Jumlah ${product.name} dalam ${unit.name}`} />
+          <button type="button" onClick={() => setQty(product.id, unit.name, qty + 1)} aria-label={`Tambah ${product.name}`}>+</button>
+        </div>
+        {qty === 0 && <button type="button" className={styles.add} onClick={() => setQty(product.id, unit.name, 1)} aria-label={`Tambahkan ${product.name} ke keranjang`}><NavIcon name="/penjualan" size={17} /></button>}
+      </div>
+    </article>
   );
 }
 
