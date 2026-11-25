@@ -13,6 +13,7 @@ import { rp, angka, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 import { canArea } from '@/lib/business';
 import FiturUpgrade from '@/components/FiturUpgrade';
+import OrderProcurement from './OrderProcurement';
 
 const SO_ST = { penawaran: ['Penawaran', 'gold'], dikonfirmasi: ['Pesanan · belum dikirim', 'info'], sebagian: ['Dikirim sebagian', 'info'], selesai: ['Selesai', 'good'], batal: ['Batal', 'void'] };
 const DV_ST = { dikirim: ['Dalam pengiriman', 'gold'], diterima: ['Diterima', 'good'], gagal: ['Gagal kirim', 'bad'] };
@@ -21,15 +22,27 @@ const LI = { background: 'none', border: 0, borderTop: '1px solid var(--line)', 
 
 export default function Grosir() {
   const { kosId, kos, ver } = useKos();
+  if (!kosId || !kos) return <Loading />;
+  return <GrosirWorkspace key={kosId} kosId={kosId} kos={kos} ver={ver} />;
+}
+
+function GrosirWorkspace({ kosId, kos, ver }) {
   const [tab, setTab] = useState('jalan');
   useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['harga', 'portal', 'penawaran'].includes(t)) setTab(t); } catch {} }, []);
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(null); // {order?} untuk baru/ubah
   const [open, setOpen] = useState(null);
+  const [linkedOrder, setLinkedOrder] = useState(undefined);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('pesanan');
+    const linked = id && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id) ? id : null;
+    setLinkedOrder(linked);
+    setOpen(linked);
+  }, []);
   useBaru(() => setForm({}));
   const load = async () => {
-    const [o, l, dv, p, u, c, pl, ro] = await Promise.all([
+    const [o, l, dv, p, u, c, pl, ro, linked, linkedLines, linkedDeliveries] = await Promise.all([
       supabase.from('so_orders').select('*').eq('kos_id', kosId).order('created_at', { ascending: false }).limit(200),
       supabase.from('so_lines').select('*').eq('kos_id', kosId).order('sort').limit(3000),
       supabase.from('so_deliveries').select('*').eq('kos_id', kosId).order('created_at', { ascending: false }).limit(500),
@@ -38,12 +51,20 @@ export default function Grosir() {
       supabase.from('contacts').select('*').eq('kos_id', kosId).eq('kind', 'pelanggan').is('archived_at', null).order('name'),
       supabase.from('price_lists').select('*').eq('kos_id', kosId).is('archived_at', null).order('name'),
       supabase.rpc('receivable_open', { p_kos: kosId, p_contact: null }),
+      linkedOrder ? supabase.from('so_orders').select('*').eq('kos_id', kosId).eq('id', linkedOrder).maybeSingle() : {},
+      linkedOrder ? supabase.from('so_lines').select('*').eq('kos_id', kosId).eq('order_id', linkedOrder).order('sort') : {},
+      linkedOrder ? supabase.from('so_deliveries').select('*').eq('kos_id', kosId).eq('order_id', linkedOrder).order('created_at', { ascending: false }) : {},
     ]);
     const e = o.error || l.error || dv.error || p.error || u.error || c.error;
     if (e) return setErr(errMsg(e));
-    setD({ orders: o.data, lines: l.data, deliveries: dv.data, products: p.data, units: u.data, customers: c.data, lists: pl.data || [], recv: ro.data || [] });
+    const orders = linked.data && !o.data.some((row) => row.id === linkedOrder) ? [...o.data, linked.data] : o.data;
+    setErr(null);
+    setD({ orders, lines: linkedLines.data ? [...l.data.filter((row) => row.order_id !== linkedOrder), ...linkedLines.data] : l.data,
+      deliveries: linkedDeliveries.data ? [...dv.data.filter((row) => row.order_id !== linkedOrder), ...linkedDeliveries.data] : dv.data,
+      products: p.data, units: u.data, customers: c.data, lists: pl.data || [], recv: ro.data || [],
+      unavailableLink: Boolean(linkedOrder && (!linked.data || linked.error || linkedLines.error || linkedDeliveries.error)) });
   };
-  useEffect(() => { load(); }, [kosId, ver]);
+  useEffect(() => { if (linkedOrder !== undefined) load(); }, [kosId, ver, linkedOrder]);
   if (err) return <div className="notice bad">{/so_orders|price_lists/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -63,6 +84,7 @@ export default function Grosir() {
   return (
     <div className="stack">
       <PageHeader title="Pesanan grosir" help={<PageHelp page="grosir" />} actions={<>{!['harga', 'portal'].includes(tab) && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</>} />
+      {open === linkedOrder && d.unavailableLink && <div className="notice bad">Pesanan rujukan tidak bisa dibuka di bisnis aktif.</div>}
       <div className="grid">
         <Tile label="Pesanan berjalan" value={angka(running.length)} sub={running.length ? `sisa kirim ${rp(running.reduce((a, o) => a + remainOf(o), 0))}` : 'tidak ada'} />
         <Tile label="Dalam pengiriman" value={angka(onRoad)} tone={onRoad ? 'gold' : ''} sub="surat jalan belum diterima" />
@@ -92,7 +114,7 @@ export default function Grosir() {
           </>; }} />
       )}
       {form && <OrderForm kosId={kosId} kos={kos} d={d} order={form.order} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); load(); setOpen(id); }} />}
-      {open && d.orders.find((o) => o.id === open) && <OrderDetail kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={load} />}
+      {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={load} />}
     </div>
   );
 }
@@ -228,18 +250,26 @@ function OrderForm({ kosId, kos, d, order, onClose, onSaved }) {
 }
 const plusD = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
 
-function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
+function OrderDetail({ kos, reloadKey, d, order: o, onClose, onEdit, onChanged }) {
   const c = d.customers.find((x) => x.id === o.contact_id);
   const lines = d.lines.filter((l) => l.order_id === o.id);
   const dvs = d.deliveries.filter((x) => x.order_id === o.id);
   const [cr, setCr] = useState(null);
-  const [mode, setMode] = useState(null); // kirim | konfirmasi | batal
+  const [mode, setMode] = useState(null); // kirim | konfirmasi | batal | supplier
+  const [procurement, setProcurement] = useState(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { supabase.rpc('customer_credit', { p_contact: o.contact_id }).then(({ data }) => setCr(data || null)); }, [o.id, o.status]);
   useEffect(() => { if (o.source === 'portal' && !o.reviewed_at) supabase.rpc('so_mark_reviewed', { p_order: o.id }).then(() => {}, () => {}); }, [o.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [sc, setSc] = useState(null);   // cek stok tersedia (so_stock_check): stok lokasi − ditahan − dipesan pesanan lain
-  useEffect(() => { if (['penawaran', 'dikonfirmasi', 'sebagian'].includes(o.status)) supabase.rpc('so_stock_check', { p_order: o.id }).then(({ data }) => setSc(data || [])); }, [o.id, o.status, o.updated_at]);
+  const [sc, setSc] = useState(null);
+  useEffect(() => {
+    if (o.status !== 'penawaran') return;
+    const controller = new AbortController();
+    supabase.rpc('so_stock_check', { p_order: o.id }).abortSignal(controller.signal).then(({ data }) => {
+      if (!controller.signal.aborted) setSc(data);
+    });
+    return () => controller.abort();
+  }, [o.id, o.status, o.updated_at]);
   const short = (sc || []).filter((x) => Number(x.need) > Number(x.available) + 0.0005);
   const remaining = lines.reduce((a, l) => a + (Number(l.qty) - Number(l.qty_sent)) * Number(l.price), 0);
   const owner = canArea(kos, 'settings');
@@ -277,14 +307,18 @@ function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
         ))}</div>
         <div className="row between"><b>Total</b><b>{rp(o.total)}</b></div>
         {['dikonfirmasi', 'sebagian'].includes(o.status) && <span className="small muted">Belum dikirim senilai {rp(remaining)}</span>}
-        {sc && (short.length ? <div className="notice small">{o.status === 'penawaran' ? 'Bila dikonfirmasi, stok belum cukup untuk:' : 'Stok tersedia belum cukup untuk:'} {short.map((x) => `${x.name} (perlu ${angka(Number(x.need) / Number(x.unit_qty))} ${x.unit}, tersedia ${angka(Math.max(0, Number(x.available)) / Number(x.unit_qty))}${Number(x.incoming) > 0 ? `, akan datang ${angka(Number(x.incoming) / Number(x.unit_qty))}` : ''})`).join('; ')}. Pesanan tetap bisa dikonfirmasi & dikirim bertahap.</div>
-          : <span className="small" style={{ color: 'var(--good)' }}>{o.status === 'penawaran' ? 'Stok tersedia cukup.' : 'Stok sisa pesanan sudah disisihkan (dipesan) — tidak terjual di Kasir bila aturan stok minus = Tolak.'}</span>)}
+        {o.status === 'penawaran' && sc && (short.length ? <div className="notice small">Bila dikonfirmasi, stok belum cukup untuk: {short.map((x) => `${x.name} (perlu ${angka(Number(x.need) / Number(x.unit_qty))} ${x.unit}, tersedia ${angka(Math.max(0, Number(x.available)) / Number(x.unit_qty))}${Number(x.incoming) > 0 ? `, akan datang ${angka(Number(x.incoming) / Number(x.unit_qty))}` : ''})`).join('; ')}. Pesanan tetap bisa dikonfirmasi & dikirim bertahap.</div>
+          : <span className="small" style={{ color: 'var(--good)' }}>Stok tersedia cukup.</span>)}
       </section>
+
+      {o.status !== 'penawaran' && <OrderProcurement order={o} reloadKey={reloadKey} editingPurchase={mode === 'supplier'}
+        onEditPurchase={(edit) => setMode(edit ? 'supplier' : null)} onSaved={onChanged} onProgress={setProcurement} />}
 
       {dvs.length > 0 && <section className="panel" style={{ gap: 6 }}><span className="label">Surat jalan & faktur</span>
         {dvs.map((x) => <DeliveryRow key={x.id} x={x} kos={kos} onChanged={onChanged} />)}</section>}
 
-      {mode === 'kirim' && <DeliverForm o={o} c={c} lines={lines} onDone={() => { setMode(null); onChanged(); }} />}
+      {mode === 'kirim' && <DeliverForm o={o} c={c} lines={lines}
+        readyLines={procurement?.purchases.length ? procurement.lines : null} onDone={() => { setMode(null); onChanged(); }} />}
       {mode === 'batal' && <div className="unitbox"><Field label={dvs.some((x) => x.status !== 'gagal') ? 'Alasan menutup sisa pesanan' : 'Alasan membatalkan'}><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. pelanggan tidak jadi, stok habis" /></Field>
         <button className="danger" disabled={busy} onClick={() => act('so_cancel', { p_order: o.id, p_reason: reason }, dvs.some((x) => x.status !== 'gagal') ? 'Sisa pesanan ditutup' : 'Pesanan dibatalkan')}>Ya, {dvs.some((x) => x.status !== 'gagal') ? 'tutup sisa' : 'batalkan'}</button></div>}
       {mode === 'konfirmasi' && <div className="unitbox">
@@ -294,19 +328,22 @@ function OrderDetail({ kos, d, order: o, onClose, onEdit, onChanged }) {
 
       <div className="row" style={{ flexWrap: 'wrap' }}>
         {o.status === 'penawaran' && mode !== 'konfirmasi' && <button className="primary" onClick={() => setMode('konfirmasi')}>{o.source === 'portal' && o.portal_kind !== 'penawaran' ? 'Konfirmasi pesanan pelanggan' : 'Pelanggan setuju → jadikan pesanan'}</button>}
-        {['dikonfirmasi', 'sebagian'].includes(o.status) && mode !== 'kirim' && <button className="primary" onClick={() => setMode('kirim')}>Buat surat jalan</button>}
-        {!['selesai', 'batal'].includes(o.status) && <button onClick={() => onEdit(o)}>Ubah</button>}
+        {['dikonfirmasi', 'sebagian'].includes(o.status) && mode !== 'kirim' && mode !== 'supplier' && <button className="primary" onClick={() => setMode('kirim')}>Buat surat jalan</button>}
+        {!['selesai', 'batal'].includes(o.status) && mode !== 'supplier' && <button onClick={() => onEdit(o)}>Ubah</button>}
         <Link href={`/dokumen/grosir/${o.id}`}><button>{o.status === 'penawaran' ? 'Cetak penawaran' : 'Cetak pesanan'}</button></Link>
         {c?.phone && <a href={waLink(c.phone, waText)} target="_blank" rel="noreferrer"><button>Kirim WA</button></a>}
-        {!['selesai', 'batal'].includes(o.status) && mode !== 'batal' && <button className="ghost danger" onClick={() => setMode('batal')}>{dvs.some((x) => x.status !== 'gagal') ? 'Tutup sisa' : 'Batalkan'}</button>}
+        {!['selesai', 'batal'].includes(o.status) && mode !== 'batal' && mode !== 'supplier' && <button className="ghost danger" onClick={() => setMode('batal')}>{dvs.some((x) => x.status !== 'gagal') ? 'Tutup sisa' : 'Batalkan'}</button>}
       </div>
     </Sheet>
   );
 }
 
-function DeliverForm({ o, c, lines, onDone }) {
+function DeliverForm({ o, c, lines, readyLines, onDone }) {
   const open = lines.filter((l) => Number(l.qty) > Number(l.qty_sent));
-  const [qty, setQty] = useState(Object.fromEntries(open.map((l) => [l.id, angka(Number(l.qty) - Number(l.qty_sent))])));
+  const [qty, setQty] = useState(() => Object.fromEntries(open.map((line) => {
+    const initial = readyLines ? readyLines.find((row) => row.id === line.id)?.ready ?? 0 : Number(line.qty) - Number(line.qty_sent);
+    return [line.id, String(initial).replace('.', ',')];
+  })));
   const [method, setMethod] = useState('kasbon');
   const [driver, setDriver] = useState('');
   const [vehicle, setVehicle] = useState('');
@@ -328,6 +365,7 @@ function DeliverForm({ o, c, lines, onDone }) {
   return (
     <div className="unitbox" style={{ gap: 8 }}>
       <b>Surat jalan baru</b>
+      {readyLines && <span className="small muted">Jumlah awal mengikuti stok yang siap diserahkan.</span>}
       {open.map((l) => (
         <div className="row between" key={l.id} style={{ flexWrap: 'nowrap', gap: 8 }}>
           <span className="small" style={{ minWidth: 0 }}>{l.name}<br /><span className="muted">sisa {angka(Number(l.qty) - Number(l.qty_sent))} {l.unit}</span></span>

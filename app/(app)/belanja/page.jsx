@@ -8,7 +8,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
-import { multiLoc } from '@/lib/business';
+import { canArea, multiLoc } from '@/lib/business';
 import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
@@ -23,15 +23,40 @@ const ST = { dipesan: ['Dipesan', 'gold'], sebagian: ['Diterima sebagian', 'info
 // Belanja ke supplier: menambah stok dan menghitung ulang harga modal rata-rata
 export default function Belanja() {
   const { kosId, ver, kos } = useKos();
+  if (!kosId || !kos) return <Loading />;
+  return <BelanjaWorkspace key={kosId} kosId={kosId} kos={kos} ver={ver} />;
+}
+
+function BelanjaWorkspace({ kosId, kos, ver }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(false); // false | true | {init}
   const [saran, setSaran] = useState(false);
   useBaru(() => setForm(true));
   const [open, setOpen] = useState(null);
+  const [linkedPurchase, setLinkedPurchase] = useState(null);
+  const [linkError, setLinkError] = useState(false);
   const [tab, setTab] = useState('belanja');
   const [fk, setFk] = useState(null);   // belanja yang fakturnya sedang dibuka
-  useEffect(() => { const t = new URLSearchParams(window.location.search).get('tab'); if (TABS.some(([k]) => k === t)) setTab(t); }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('tab');
+    const id = params.get('pesanan');
+    const linked = id && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id) ? id : null;
+    setLinkedPurchase(linked);
+    if (!linked && TABS.some(([k]) => k === t)) setTab(t);
+  }, []);
+  useEffect(() => {
+    if (!linkedPurchase) return;
+    const controller = new AbortController();
+    supabase.from('purchases').select('*').eq('kos_id', kosId).eq('id', linkedPurchase)
+      .abortSignal(controller.signal).maybeSingle().then(({ data, error }) => {
+        if (controller.signal.aborted) return;
+        if (error || !data) setLinkError(true);
+        else setOpen(data);
+      });
+    return () => controller.abort();
+  }, [kosId, linkedPurchase]);
   const load = async () => {
     const [b, p, u, c, pl, rt, si] = await Promise.all([
       supabase.from('purchases').select('*').eq('kos_id', kosId).order('purchase_date', { ascending: false }).order('created_at', { ascending: false }).limit(60),
@@ -62,6 +87,7 @@ export default function Belanja() {
   return (
     <div className="stack">
       <PageHeader title="Belanja" help={<PageHelp page="belanja" />} actions={<><div className="row"><button className="sm" onClick={() => setSaran(true)} disabled={!d.products.length}>Saran belanja</button><button className="primary" onClick={() => setForm(true)} disabled={!d.products.length}>+ Belanja</button></div></>} />
+      {linkError && <div className="notice bad">Pesanan supplier rujukan tidak bisa dibuka di bisnis aktif.</div>}
       <div className="seg" style={{ overflowX: 'auto' }}>{TABS.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)} aria-pressed={tab === k} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       {tab === 'permintaan' && <Permintaan kosId={kosId} d={d} onOrder={(init) => setForm({ init })} />}
       {tab === 'faktur' && <Faktur kosId={kosId} />}
@@ -95,7 +121,8 @@ export default function Belanja() {
       </>}
       {saran && <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={(init) => { setSaran(false); setForm({ init }); }} />}
       {form && <PurchaseForm kosId={kosId} d={d} init={form.init} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); if (r.request) setTab('belanja'); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
-      {open && <Detail tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} onFaktur={() => { setFk(open.id); setOpen(null); }} />}
+      {open && <Detail key={open.id} tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
+        canOpenOrder={canArea(kos, 'sell') || canArea(kos, 'finance')} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} onFaktur={() => { setFk(open.id); setOpen(null); }} />}
       {fk && <FakturSheet purchaseId={fk} onClose={() => { setFk(null); load(); }} />}
     </div>
   );
@@ -240,7 +267,7 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
   );
 }
 
-function Detail({ b, supplier, loc, tracked, onClose, onChanged, onFaktur }) {
+function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, onFaktur }) {
   const [lines, setLines] = useState(null);
   const [rets, setRets] = useState([]);   // retur ke supplier: [{...header, lines}]
   const [ret, setRet] = useState(null);   // form retur: {qty: {line_id: '...'}, refund, reason}
@@ -289,6 +316,7 @@ function Detail({ b, supplier, loc, tracked, onClose, onChanged, onFaktur }) {
       <span className="small muted">{tgl(b.purchase_date)} · {supplier || 'Tanpa supplier'} · {BUY[b.pay_method]}{b.due_date ? ` · jatuh tempo ${tgl(b.due_date)}` : ''}{b.expected_date && open ? ` · perkiraan datang ${tgl(b.expected_date)}` : ''}</span>
       {ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ alignSelf: 'flex-start' }}>{ST[b.status][0]}</span>}
       {b.note && <span className="small">Catatan: {b.note}</span>}
+      {b.so_order_id && canOpenOrder && <Link href={`/grosir?pesanan=${b.so_order_id}`} className="small">Buka pesanan pelanggan</Link>}
       {by && <span className="small muted">Dicatat oleh {by}{loc ? ` · ${loc}` : ''}</span>}
       {b.status === 'batal' && <div className="notice bad">Dibatalkan: {b.void_reason}</div>}
       {!lines ? <Loading /> : <div className="list">{lines.map((l) => (

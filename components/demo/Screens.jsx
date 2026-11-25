@@ -395,6 +395,16 @@ export function ScrGrosir() {
       <div className="row between small"><span>Beras 5kg · 10 karung × {rp(56000)} · terkirim 6</span><b>{rp(560000)}</b></div>
       <div className="row between small"><span>Minyak 1L · 5 dus × {rp(190000)} · terkirim 5</span><b>{rp(950000)}</b></div>
       <div className="row between"><b>Total</b><b>{rp(1510000)}</b></div>
+      <div className="unitbox small">
+        <b>Pemenuhan pesanan</b>
+        <span>Beras 5kg · 4 karung tersisa</span>
+        <div className="row">
+          <span className="chip good">Siap 1 karung</span>
+          <span className="chip info">Menunggu supplier 2 karung</span>
+          <span className="chip gold">Perlu dipesan 1 karung</span>
+        </div>
+        <span className="mini-btn">+ Pesanan supplier</span>
+      </div>
       <div className="row between small"><span><b>SJ-261114-001</b> · Ujang</span><span className="chip gold">Dalam pengiriman</span></div>
       <div className="row" style={{ gap: 6 }}><span className="mini-btn">Surat jalan</span><span className="mini-btn">Faktur</span><span className="mini-btn cta">Sudah diterima</span></div>
       <span className="mini-btn cta">Buat surat jalan</span>
