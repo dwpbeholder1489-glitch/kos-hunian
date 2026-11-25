@@ -214,7 +214,6 @@ export default function Mulai() {
     const next = () => {
       const e = check(); if (e) return setErr(e);
       setErr(null);
-      if (sub === LAST - 1 && !b.dna) setB(code, 'dna', dnaDefault(code));
       if (sub < LAST) return setSub(sub + 1);
       setSub(0); setStep(step + 1);
     };
@@ -285,15 +284,11 @@ export default function Mulai() {
       if (ans.room_count !== undefined) ans.room_count = ans.room_count === '' ? null : Number(ans.room_count);
       const ph = String(b.phone ?? meta.whatsapp ?? '').trim();
       const needs = Array.isArray(b.needs) ? b.needs : [];
-      const { data, error } = await supabase.rpc('setup_create', { p: { category: code, subcategory: b.subcategory || null, name: (b.name || '').trim(), location: b.location || '', stage: b.stage || 'berjalan', relation: b.relation || 'pemilik',
+      const { data, error } = await supabase.rpc('setup_create_with_dna', { p: { category: code, subcategory: b.subcategory || null, name: (b.name || '').trim(), location: b.location || '', stage: b.stage || 'berjalan', relation: b.relation || 'pemilik',
         branches: needs.includes('cabang') ? Number(b.branches || 0) : 0, answers: ans, description: (b.description || '').trim(), phone: ph && waOk(ph) ? waNorm(ph) : '', hours: (b.hours || '').trim(),
-        owner_name: String(b.owner_name ?? meta.name ?? '').trim(), managed: b.managed || 'sendiri', needs } });
+        owner_name: String(b.owner_name ?? meta.name ?? '').trim(), managed: b.managed || 'sendiri', needs }, p_dna: b.dna || dnaDefault(code) });
       if (error) bad[code] = errMsg(error);
-      else {
-        made[code] = data;
-        // Business DNA dari pendaftaran (berversi). Gagal = tidak menghalangi: pemilik bisa mengisinya di Pusat Pengalaman.
-        await supabase.rpc('dna_save', { p_kos: data, p_dna: b.dna || dnaDefault(code), p_reason: 'Pendaftaran bisnis', p_source: 'onboarding' }).then(() => {}, () => {});
-      }
+      else made[code] = data;
     }
     setDone(made); setErrs(bad); setBusy(false);
     if (Object.keys(bad).length) return setErr('Sebagian bisnis belum berhasil dibuat. Periksa pesan di bawah, perbaiki, lalu tekan lagi.');

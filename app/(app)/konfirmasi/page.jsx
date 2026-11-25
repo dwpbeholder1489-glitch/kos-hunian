@@ -15,7 +15,7 @@ import { rp, angka, errMsg } from '@/lib/format';
 import { waktu } from '@/lib/jasa';
 import { isiNum } from '@/lib/units';
 import { SETUP_STATUS, homeOf } from '@/lib/business';
-import { workspacePreview } from '@/lib/menu';
+import { setupWorkspacePreview } from '@/lib/menu';
 
 const ST = SETUP_STATUS;
 const ITEM_ST = { ...ST, draft: ['Disiapkan sistem', 'void'], active: ['Aktif', 'good'] };
@@ -277,9 +277,8 @@ export default function Konfirmasi() {
 // Pratinjau workspace (Adaptive Business Experience §22): menu, menu bawah, dan isi tombol (+) yang akan didapat
 // setelah aktif — dihitung dari jenis bisnis, Business DNA, dan modul yang SUDAH disetujui. Tidak mengubah apa pun.
 function WorkspacePreview({ kos, items }) {
-  const ok = (code) => { const it = items.find((x) => x.code === 'modul_' + code); return !it || ['approved', 'active'].includes(it.status); };
-  const pseudo = { ...kos, setup_status: 'active', my_role: 'pemilik', modules: Array.isArray(kos.modules) ? kos.modules.filter(ok) : kos.modules };
-  const p = workspacePreview(pseudo);
+  const p = setupWorkspacePreview(kos, items);
+  if (!p) return <section className="panel"><h3>Pratinjau workspace</h3><p className="small muted">Daftar modul belum tersedia. Muat ulang halaman untuk melihat pratinjau.</p></section>;
   return (
     <section className="panel">
       <h3>Pratinjau workspace</h3>

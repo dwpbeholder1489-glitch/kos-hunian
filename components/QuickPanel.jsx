@@ -21,7 +21,10 @@ export default function QuickPanel({ kos, path, onPick, menu = false }) {
     return (
       <div className="qp-empty" role={menu ? 'none' : undefined}>
         <NavIcon name="/layers" size={26} />
-        {isDraft(kos) ? <>
+        {kos.suspended_at || kos.closed_at ? <>
+          <b>Aksi cepat tidak tersedia</b>
+          <span className="small muted">{kos.suspended_at ? 'Bisnis ini sedang ditangguhkan.' : 'Bisnis ini sudah ditutup dan tersedia sebagai arsip.'}</span>
+        </> : isDraft(kos) ? <>
           <b>Aksi cepat siap setelah bisnis aktif</b>
           <span className="small muted">Selesaikan peninjauan di Pusat Konfirmasi. Setelah aktif, tombol ini berisi tindakan utama bisnis Anda.</span>
           {settings && <Link href="/konfirmasi" className="sm" onClick={onPick} role={menu ? 'menuitem' : undefined}>Buka Pusat Konfirmasi</Link>}
