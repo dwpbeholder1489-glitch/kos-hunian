@@ -1,4 +1,7 @@
 'use client';
+import { invoiceTotals } from '@/lib/propertyTotals';
+import NavIcon from '@/components/NavIcon';
+import styles from './property.module.css';
 import PageHelp from '@/components/PageHelp';
 import Link from 'next/link';
 import { useData } from '@/lib/useData';
@@ -19,6 +22,11 @@ import { quickActions } from '@/lib/menu';
 import { addMonthsYm, BLN } from '@/lib/format';
 
 export default function Beranda() {
+  const { kosId } = useKos();
+  return <PropertyHome key={kosId} />;
+}
+
+function PropertyHome() {
   const d = useData();
   const { kos, kosId, ver } = useKos();
   const [tix, setTix] = useState(null); // keluhan belum selesai
@@ -37,9 +45,8 @@ export default function Beranda() {
   const occ = rentable.length ? Math.round((filled / rentable.length) * 100) : 0;
 
   const live = d.invoices.filter((i) => i.status !== 'batal');
-  const billedMonth = live.filter((i) => i.due_date.startsWith(ym)).reduce((s, i) => s + i.amount, 0);
+  const { billedMonth, paidAgainstMonth, outstanding } = invoiceTotals(d.invoices, ym);
   const paidMonth = d.payments.filter((p) => p.status === 'terverifikasi' && p.paid_at.startsWith(ym));
-  const collected = paidMonth.reduce((s, p) => s + p.amount, 0);
   const cashIn = paidMonth.filter((p) => p.method !== 'deposit').reduce((s, p) => s + p.amount, 0); // dibayar dari deposit = bukan uang masuk baru
   const depM = (d.deposits || []).filter((x) => x.status === 'aktif' && x.date.startsWith(ym));
   const depOut = depM.filter((x) => x.kind === 'kembali').reduce((s, x) => s + x.amount, 0);
@@ -96,15 +103,16 @@ export default function Beranda() {
     { id: 'kosong', label: 'Kamar kosong', value: String(kosong), sub: 'siap disewa', tone: kosong > 0 && occ < 70 ? 'gold' : '' },
     { id: 'penghuni', label: 'Penghuni aktif', value: String(d.activeByOcc.size), sub: `${d.rooms.length} kamar terdaftar` },
     moduleOn(kos, 'p_booking') && { id: 'booking', label: 'Booking aktif', value: String(activeBk.length), sub: `${checkins.length} masuk ≤ 7 hari` },
-    { id: 'tagihan', label: 'Tagihan bulan ini', value: rp(billedMonth), sub: `Terkumpul ${rp(collected)}` },
+    { id: 'tagihan', label: 'Tagihan bulan ini', value: rp(billedMonth), sub: `Sudah dibayar ${rp(paidAgainstMonth)}` },
     { id: 'terkumpul', label: `Pembayaran diterima ${per.label}`, value: rp(sumA(paidP)), sub: `${paidP.length} pembayaran terverifikasi` },
     { id: 'jatuh_tempo', label: 'Jatuh tempo 7 hari', value: rp(upcoming.reduce((s2, i) => s2 + i.outstanding, 0)), sub: `${upcoming.length} tagihan` },
+    { id: 'sisa', label: 'Sisa seluruh tagihan', value: rp(outstanding), sub: 'Termasuk pembayaran sebagian' },
     { id: 'tunggakan', label: 'Tunggakan', value: rp(arrears), tone: arrears > 0 ? 'bad' : '', sub: `${overdue.length} tagihan lewat jatuh tempo` },
   ];
   const pulse = [
     pulseLine(`Pembayaran diterima ${per.label}`, sumA(paidP), sumA(paidB) / 30, per.days, rp),
     rentable.length > 0 && { tone: occ >= 90 ? 'good' : occ < 70 ? 'warn' : 'info', text: `Hunian ${occ}% (${filled}/${rentable.length} kamar)${occ < 70 ? ' — pertimbangkan promosi atau halaman bisnis untuk calon penghuni' : ''}`, href: occ < 70 ? '/kamar' : undefined },
-    billedMonth > 0 && { tone: collected >= billedMonth ? 'good' : arrears > 0 ? 'warn' : 'info', text: `Terkumpul ${Math.round((collected / billedMonth) * 100)}% dari tagihan ${bulan(ym)}` },
+    billedMonth > 0 && { tone: paidAgainstMonth >= billedMonth ? 'good' : arrears > 0 ? 'warn' : 'info', text: `Terkumpul ${Math.round((paidAgainstMonth / billedMonth) * 100)}% dari tagihan ${bulan(ym)}` },
   ];
 
   const widgets = [
@@ -140,10 +148,10 @@ export default function Beranda() {
         {upcoming.length === 0 ? <p className="muted small" style={{ margin: 0 }}>Tidak ada.</p> : (
           <div className="list">
             {upcoming.map((i) => (
-              <div className="li" key={i.id}>
+              <Link className="li" key={i.id} href={`/tagihan?invoice=${encodeURIComponent(i.id)}`}>
                 <div className="main"><b>{d.occName(i.occupant_id)} · {d.roomCode(i.room_id)}</b><span className="small muted">{invTitle(i)} · jatuh tempo {tgl(i.due_date)}</span></div>
                 <div style={{ textAlign: 'right' }}><div className="num">{rp(i.outstanding)}</div><InvChip inv={i} /></div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -173,7 +181,12 @@ export default function Beranda() {
   return (
     <Dashboard id="kos" kosId={kosId} widgets={widgets} prefs={prefs} kpis={KPIS.kos.map(([id, label]) => ({ id, label }))} period header={(atur, periode) => <>
       <Checklist d={d} kosId={kosId} />
-      <PageHeader title={`Ringkasan ${bulan(ym)}`} help={<PageHelp page="beranda" />} desc={`${kos.name} · kas, hunian, tagihan, dan tindak lanjut`} actions={<>{periode}{atur}</>} />
+      <PageHeader title={kos.name} help={<PageHelp page="beranda" />} desc={`Kos & Properti · ${bulan(ym)}`} actions={<>{periode}{atur}</>} />
+      <nav className={styles.modules} aria-label="Operasional properti">
+        {tabsFor(kos).filter(([href]) => ['/kamar', '/penghuni', '/booking', '/tagihan', '/pembayaran', '/perbaikan', '/pengeluaran', '/laporan'].includes(href)).map(([href, label]) => (
+          <Link key={href} href={href}><NavIcon name={href} /><span>{label}</span></Link>
+        ))}
+      </nav>
       <CrmHint />
       <RecHint />
     </>} />
