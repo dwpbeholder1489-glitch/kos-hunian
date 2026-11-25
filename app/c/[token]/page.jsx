@@ -74,6 +74,7 @@ export default function CustomerPortal() {
     window.scrollTo(0, 0);
   };
   const shopping = tab === 'pesan' || tab === 'hemat';
+  const showCart = !sent && shopping && lines.length > 0;
   const links = [
     ['pesan', 'Pesan barang', '/konsinyasi'],
     ['pesanan', 'Pesanan', '/resep'],
@@ -88,10 +89,17 @@ export default function CustomerPortal() {
           {logoUrl(b.logo) ? <img src={logoUrl(b.logo)} alt="" width={38} height={38} /> : <LogoMark size={38} />}
           <div><h1>{b.name}</h1><small>Portal pelanggan</small></div>
         </div>
+        <nav className={styles.desktopNav} aria-label="Navigasi utama">
+          {[...links, ['profil', 'Profil', '/penghuni']].map(([key, label, icon]) => (
+            <button key={key} type="button" aria-current={tab === key ? 'page' : undefined} onClick={() => navigate(key)}>
+              <NavIcon name={icon} size={19} />{label}{key === 'pesanan' && waiting > 0 && <span className={styles.badge}>{waiting}</span>}
+            </button>
+          ))}
+        </nav>
         {b.phone && <a className={styles.contact} href={waOwner(`Halo ${b.name}, saya ${c.name}.`)} target="_blank" rel="noreferrer"><NavIcon name="/crm" size={19} />Hubungi</a>}
       </header>
 
-      <main className={`${styles.main} stack ${shopping && !sent && lines.length ? styles.hasCart : ''}`}>
+      <main className={`${styles.main} stack ${showCart ? styles.hasCart : ''}`}>
         {shopping && !sent && (
           <section className={styles.hero}>
             <h2>Belanja Grosir <em>Lebih Mudah &amp; Cepat</em></h2>
@@ -111,7 +119,14 @@ export default function CustomerPortal() {
         </nav>
 
         {sent && <SentPanel sent={sent} b={b} c={c} waOwner={waOwner} onSee={() => navigate('pesanan')} onMore={() => setSent(null)} />}
-        {!sent && shopping && <Catalog p={p} q={q} setQ={setQ} cat={cat} setCat={setCat} qtyOf={qtyOf} setQty={setQty} bulk={tab === 'hemat'} />}
+        {!sent && shopping && (
+          <div className={showCart ? styles.catalogWithCart : undefined}>
+            <div className={`${styles.catalogBody} stack`}>
+              <Catalog p={p} q={q} setQ={setQ} cat={cat} setCat={setCat} qtyOf={qtyOf} setQty={setQty} bulk={tab === 'hemat'} />
+            </div>
+            {showCart && <CartSummary lines={lines} total={total} onCheckout={() => setCheckout(true)} />}
+          </div>
+        )}
         {!sent && tab === 'pesanan' && <Orders p={p} token={token} reorder={reorder} onChanged={load} waOwner={waOwner} />}
         {!sent && tab === 'tagihan' && <Bills p={p} openInv={openInv} waOwner={waOwner} />}
         {!sent && tab === 'profil' && (
@@ -129,7 +144,7 @@ export default function CustomerPortal() {
       </main>
 
       <div className={styles.dock}>
-        {!sent && shopping && lines.length > 0 && (
+        {showCart && (
           <div className={styles.cartbar}>
             <div className={styles.cartCount}><NavIcon name="/penjualan" size={25} /><div><b>{lines.length} item</b><small>Total sementara</small></div></div>
             <strong>{rp(total)}</strong>
@@ -147,6 +162,24 @@ export default function CustomerPortal() {
       {checkout && <Checkout p={p} token={token} lines={lines} total={total} setQty={setQty} onClose={() => setCheckout(false)}
         onSent={(r) => { setCheckout(false); setCart([]); setTab('pesan'); setSent(r); window.scrollTo(0, 0); load(); }} />}
     </div>
+  );
+}
+
+function CartSummary({ lines, total, onCheckout }) {
+  return (
+    <aside className={styles.cartSummary} aria-label="Ringkasan keranjang">
+      <h2><NavIcon name="/penjualan" size={22} />Keranjang <span>{lines.length}</span></h2>
+      <ul>
+        {lines.map((line) => (
+          <li key={JSON.stringify([line.product_id, line.unit])}>
+            <div><b>{line.pr.name}</b><small>{angka(line.qty)} {line.unit} × {rp(line.price)}</small></div>
+            <strong>{rp(line.total)}</strong>
+          </li>
+        ))}
+      </ul>
+      <div className={styles.cartTotal}><span>Total sementara</span><strong>{rp(total)}</strong></div>
+      <button type="button" onClick={onCheckout}>Lihat keranjang <span aria-hidden="true">→</span></button>
+    </aside>
   );
 }
 
