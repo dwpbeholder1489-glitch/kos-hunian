@@ -9,7 +9,8 @@ import { rp, angka, today, errMsg } from '@/lib/format';
 import { RecHint } from '@/components/Rekomendasi';
 import CrmHint from '@/components/CrmHint';
 import { sisa, late, jakartaDate, hari, stageLabel, STATUS, waitPickup, onTheWay, terms } from '@/lib/jasa';
-import { moduleOn, canArea, tabsFor } from '@/lib/business';
+import FnbHome from '@/components/FnbHome';
+import { isKuliner, moduleOn, canArea, tabsFor } from '@/lib/business';
 import { PageHeader } from '@/components/Page';
 import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity, useDashPrefs, KpiGrid, Pulse } from '@/components/Dashboard';
 import { KPIS, periodRange, baselineRange, pulseLine } from '@/lib/dashboards';
@@ -20,6 +21,12 @@ import { tgl, bulan, thisMonth } from '@/lib/format';
 
 // Dashboard bisnis jasa: antrean per tahap, yang harus dikerjakan hari ini, uang hari ini
 export default function JasaHome() {
+  const { kos, kosId } = useKos();
+  const [detail, setDetail] = useState(false);
+  if (!isKuliner(kos)) return <ServiceDashboard />;
+  return detail ? <><button onClick={() => setDetail(false)}>Kembali ke beranda kuliner</button><ServiceDashboard /></> : <FnbHome key={kosId} onDetail={() => setDetail(true)} />;
+}
+function ServiceDashboard() {
   const { kos, kosId, ver } = useKos();
   const [d, setD] = useState(null);
   const [r, setR] = useState(null);

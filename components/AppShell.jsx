@@ -13,7 +13,7 @@ import { useKos } from '@/components/KosProvider';
 import { supabase } from '@/lib/supabase';
 import { logoUrl } from '@/lib/logo';
 import { SIDE_KEY } from '@/lib/theme';
-import { typeOf, roleOf, ROLES, isDraft, homeOf } from '@/lib/business';
+import { isKuliner, typeOf, roleOf, ROLES, isDraft, homeOf } from '@/lib/business';
 import { sectionsFor, groupsFor, subOf, bizIcon, crumbsFor, groupIcon, pinsFor } from '@/lib/menu';
 import QuickPanel from '@/components/QuickPanel';
 
@@ -151,6 +151,7 @@ export function Sidebar({ kos, path, on, admin, onBiz }) {
         ))}
       </nav>
       <div className="side-foot">
+        {isKuliner(kos) && <img className="fnb-side-mascot" alt="Maskot PRASARA" src="/retail/prasara-maskot.webp" />}
         {admin && <Link href="/admin" className={'side-i' + (on('/admin') ? ' on' : '')} data-tip="Admin PRASARA"><NavIcon name="/admin" size={20} /><span className="side-t">Admin PRASARA</span></Link>}
         <Link href="/bantuan" className={'side-i' + (on('/bantuan') ? ' on' : '')} data-tip="Bantuan"><NavIcon name="/bantuan" size={20} /><span className="side-t">Bantuan</span></Link>
       </div>
