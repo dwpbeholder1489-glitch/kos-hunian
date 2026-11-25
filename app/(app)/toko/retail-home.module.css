@@ -5,91 +5,157 @@
 }
 
 .masthead {
-  padding: clamp(14px, 2.35vw, 28px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(82px, 25%, 280px);
+  align-items: center;
+  gap: 6px;
+  padding: clamp(12px, 1.4vw, 19px);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(110deg, color-mix(in srgb, var(--gold-soft) 65%, var(--surface)), var(--surface) 74%);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(110deg, var(--surface), color-mix(in srgb, var(--gold-soft) 75%, var(--surface)));
 }
 
-.masthead :global(.pg-h) {
-  margin: 0;
+.greeting { min-width: 0; }
+.controls {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
 }
-
-.masthead :global(.pg-tt h2) {
-  font-size: clamp(23px, 3.2vw, 34px);
+.masthead :global(.pg-h), .metrics :global(.pg-h) { margin: 0; }
+.masthead :global(.pg-tt h2), .metrics :global(.pg-tt h2) {
+  font-size: clamp(19px, 2.25vw, 30px);
+  line-height: 1.15;
   overflow-wrap: anywhere;
 }
 
-.home :global(.dash) {
-  grid-auto-flow: row;
+.mascot {
+  width: 100%;
+  height: auto;
+  max-height: 118px;
+  object-fit: contain;
+  justify-self: end;
 }
 
-.home :global(.dash-full > .grid) {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
+.metrics { display: grid; gap: 10px; min-width: 0; }
+.metrics :global(.grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.metrics :global(.tile) {
+  padding: clamp(10px, 1.25vw, 16px);
+  box-shadow: 0 2px 8px rgb(17 44 31 / 5%);
 }
-
-.home :global(.dash-full > .grid > .tile) {
-  padding: clamp(10px, 1.4vw, 17px);
+.metrics :global(.tile .v) { font-size: clamp(16px, 1.5vw, 22px); line-height: 1.18; overflow-wrap: anywhere; }
+.metrics :global(.tile .label) { font-size: 12px; }
+.metrics .salesTile {
+  background: linear-gradient(130deg, #064e3b, #087c41);
+  color: #fff;
+  border-color: transparent;
 }
-
-.home :global(.dash-full > .grid .tile .v) {
-  font-size: clamp(16px, 2vw, 24px);
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-.home :global(.dash-full > .grid .tile .label) {
-  font-size: 12px;
-}
+.metrics .salesTile :global(.label),
+.metrics .salesTile :global(.s) { color: #e4faec; }
+.kpiIcon { color: var(--gold-fg); display: inline-flex; }
+.salesTile .kpiIcon { color: #d1f8dc; }
 
 .shortcuts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(5px, 1vw, 10px);
 }
-
 .shortcut {
   display: flex;
   align-items: center;
-  column-gap: 9px;
-  min-height: 54px;
-  padding: 7px 9px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 60px;
+  min-width: 0;
+  padding: 5px 2px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--fg);
-  font-size: 13px;
+  font-size: clamp(10px, 1.3vw, 14px);
   font-weight: 650;
   text-decoration: none;
   overflow-wrap: anywhere;
 }
-
-.shortcut:hover, .shortcut:focus-visible {
-  border-color: var(--gold-fg);
-  background: var(--gold-soft);
-}
-
+.shortcut:hover, .shortcut:focus-visible { border-color: var(--gold-fg); background: var(--gold-soft); }
 .shortcutIcon {
   display: grid;
   place-items: center;
-  flex: 0 0 30px;
-  height: 30px;
+  width: 29px;
+  height: 29px;
   border-radius: 8px;
+  color: var(--gold-fg);
+  background: var(--gold-soft);
+}
+.thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--gold-fg);
+  background: var(--gold-soft);
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.rank {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   background: var(--gold-soft);
   color: var(--gold-fg);
+  font-size: 12px;
+  font-weight: 700;
 }
+.stockLabel { color: var(--bad); font-size: 12px; text-align: right; overflow-wrap: anywhere; }
 
+.home :global(.dash) { grid-auto-flow: row; }
+.home :global([data-widget="tren"] .chart-col > i) {
+  width: min(100%, 58px);
+  --chart-1: linear-gradient(to top, #b5efd0, #35a863);
+}
+.home :global([data-widget="tren"] .chart-col:last-child > i),
+.home :global([data-widget="tren"] .chart-col.on > i) {
+  --chart-1: linear-gradient(to top, #3cc77a, #087842);
+}
+.home :global([data-widget="denyut"] .pulse) { border-inline-start: 3px solid #249b5a; }
+
+@container (max-width: 559px) {
+  .metrics :global(.tile:last-child:nth-child(odd):not(:first-child)) { grid-column: 1 / -1; }
+}
 @container (min-width: 560px) {
-  .shortcuts,
-  .home :global(.dash-full > .grid) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  .mascot { grid-column: 2; grid-row: 1 / 3; }
+  .controls { grid-column: 1; }
+  .metrics :global(.grid) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-
 @container (min-width: 820px) {
-  .shortcut {
-    min-height: 64px;
-    padding-inline: 12px;
+  .shortcuts { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .shortcut { min-height: 68px; }
+}
+@container (min-width: 1010px) {
+  .defaultLayout :global(.dash) {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-flow: row dense;
   }
+  .defaultLayout :global(.dash > div) { grid-column: span 4; }
+  .defaultLayout :global(.dash > .dash-full) { grid-column: 1 / -1; }
+  .defaultLayout :global(.dash > .dash-wide),
+  .defaultLayout :global(.dash > [data-widget="kpi"]) { grid-column: span 8; }
+  .defaultLayout :global(.dash > [data-widget="tren"]) { grid-column: span 5; }
+  .defaultLayout :global(.dash > [data-widget="denyut"]) { grid-column: span 3; }
+  .metrics :global(.grid) { grid-template-columns: minmax(0, 1.35fr) repeat(4, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shortcutIcon { transition: transform 180ms ease; animation: icon-enter 300ms ease-out both; }
+  @keyframes icon-enter {
+    from { opacity: .55; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .shortcut:hover .shortcutIcon, .shortcut:focus-visible .shortcutIcon { transform: translateY(-3px) rotate(-6deg); }
 }

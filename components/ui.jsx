@@ -37,8 +37,8 @@ export function Field({ label, hint, children }) {
   return <label className="f">{label}{children}{hint && <span className="hint">{hint}</span>}</label>;
 }
 
-export function Tile({ label, value, sub, tone }) {
-  return <div className={'tile ' + (tone || '')}><span className="label">{label}</span><span className="v">{value}</span>{sub && <span className="s">{sub}</span>}</div>;
+export function Tile({ label, value, sub, tone, icon }) {
+  return <div className={'tile ' + (tone || '')}>{icon}<span className="label">{label}</span><span className="v">{value}</span>{sub && <span className="s">{sub}</span>}</div>;
 }
 
 // Tampilan kosong: ilustrasi kecil (dipilih dari judul, atau `art`), judul, penjelasan, dan tombol tindakan berikutnya.

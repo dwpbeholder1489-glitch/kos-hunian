@@ -114,7 +114,7 @@ export function KpiGrid({ items, prefs }) {
   if (!shown.length) shown = avail.filter((x) => (prefs?.kpiDefaults || []).includes(x.id)); // pilihan pemilik tidak tersedia untuk peran ini
   if (!shown.length) shown = avail.slice(0, 4);
   if (!shown.length) return <p className="small muted" style={{ margin: 0 }}>Belum ada angka yang bisa ditampilkan untuk peran Anda.</p>;
-  return <div className="grid">{shown.map((x) => <Tile key={x.id} label={x.label} value={x.value} sub={x.sub} tone={x.tone} />)}</div>;
+  return <div className="grid">{shown.map((x) => <Tile key={x.id} label={x.label} value={x.value} sub={x.sub} tone={x.tone} icon={x.icon} />)}</div>;
 }
 
 // Denyut bisnis: 1–4 kalimat perbandingan dengan kondisi normal (aturan tertulis, dari data yang sama dengan laporan)
@@ -175,7 +175,7 @@ export default function Dashboard({ id, kosId, header, widgets, prefs: given, kp
   return (
     <div className="stack">
       {header?.(<button className="sm ghost" onClick={() => setEdit(true)}><NavIcon name="/konfigurasi" size={18} />Atur dashboard</button>, withPeriod ? <PeriodPicker prefs={prefs} /> : null)}
-      <div className="dash">{shown.map((w) => <div key={w.id} className={'dash-' + (w.size || 'normal')}><WidgetBoundary name={w.title}>{w.node}</WidgetBoundary></div>)}</div>
+      <div className="dash">{shown.map((w) => <div key={w.id} data-widget={w.id} className={'dash-' + (w.size || 'normal')}><WidgetBoundary name={w.title}>{w.node}</WidgetBoundary></div>)}</div>
       {shown.length < avail.length && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setEdit(true)}>{avail.length - shown.length} bagian disembunyikan · tampilkan</button>}
       {edit && (
         <Sheet title="Atur dashboard" onClose={() => setEdit(false)}>
