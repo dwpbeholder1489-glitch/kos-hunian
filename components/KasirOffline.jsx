@@ -14,7 +14,19 @@ import { canArea } from '@/lib/business';
 import { online, onQueue, qAll, qDel, syncNow, pendingOf, adopt } from '@/lib/offline';
 
 export const waktu = (ts) => (ts ? new Date(ts).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) : '—');
-export const STATE = { antre: ['Menunggu dikirim', 'warn'], tersimpan: ['Terkirim', 'good'], perlu_cek: ['Terkirim · perlu dicek', 'info'], gagal: ['Tidak tersimpan', 'bad'] };
+export const STATE = { antre: ['Menunggu dikirim', 'warn'], tersimpan: ['Tersimpan', 'good'], perlu_cek: ['Tersimpan · perlu dicek', 'info'], gagal: ['Gagal dicatat', 'bad'] };
+
+function syncMessage(result, manual) {
+  const parts = [];
+  if (result.saved) parts.push(`${result.saved} tersimpan`);
+  if (result.review) parts.push(`${result.review} tersimpan, perlu dicek pemilik`);
+  if (result.failed) parts.push(`${result.failed} gagal dicatat`);
+  if (manual && result.pending) parts.push(`${result.pending} masih di HP karena kiriman ditolak`);
+  if ((manual || parts.length) && result.stop === 'net') parts.push('Sisa antrean menunggu internet');
+  if ((manual || parts.length) && result.stop === 'auth') parts.push('Masuk ulang untuk melanjutkan pengiriman');
+  if (parts.length) return parts.join(' · ') + '.';
+  return manual ? 'Tidak ada hasil pengiriman baru.' : null;
+}
 
 // Status jaringan (navigator.onLine + kejadian online/offline)
 export function useNet() {
@@ -44,7 +56,8 @@ export function OfflineSync() {
   const uid = session?.user?.id;
   const [stop, setStop] = useState(null);
   const mine = pendingOf(list).filter((e) => e.user === uid);
-  const others = pendingOf(list).filter((e) => e.user !== uid);
+  const others = uid && kos && (canArea(kos, 'finance') || canArea(kos, 'settings'))
+    ? pendingOf(list, kos.id).filter((e) => e.user !== uid) : [];
 
   // Penyimpan halaman (service worker): pasang sekali, lalu segarkan salinan Kasir paling sering tiap 6 jam saat online
   useEffect(() => {
@@ -61,15 +74,18 @@ export function OfflineSync() {
   const retry = useRef(0);
   const send = useCallback(async (manual) => {
     if (!uid) return;
-    const r = await syncNow(uid);
+    const r = await syncNow(uid).catch(() => null);
+    if (!r) {
+      if (manual) toast('Hasil pengiriman belum bisa dipastikan. Periksa Antrean HP sebelum mencatat ulang.');
+      return;
+    }
     setStop(r.stop);
     // HP merasa online tetapi server belum terjangkau (sinyal lemah): coba lagi lebih cepat — 5, 10, 20 detik, lalu ikut jadwal 30 detik
     clearTimeout(retry.t);
     if (r.stop === 'net' && online() && retry.current < 3) { retry.t = setTimeout(() => send(), 5000 * 2 ** retry.current); retry.current += 1; }
     if (!r.stop) retry.current = 0;
-    if (r.sent > 0) toast(`${r.sent} transaksi offline terkirim${r.issues ? ` · ${r.issues} ditandai untuk dicek pemilik` : ''}.`);
-    else if (manual && r.stop === 'net') toast('Masih offline. Antrean akan dikirim otomatis saat internet kembali.');
-    else if (manual && r.failed) toast('Sebagian transaksi ditolak server. Lihat antrean di Kasir.');
+    const message = syncMessage(r, manual);
+    if (message) toast(message);
   }, [uid]);
   // kirim saat aplikasi dibuka, saat internet kembali, saat aplikasi kembali dilihat, dan tiap 30 detik selama ada antrean
   useEffect(() => { if (net && mine.length) { retry.current = 0; send(); } }, [net, uid, mine.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -113,7 +129,7 @@ export function offlineStruk(kos, e) {
     paid_amount: p.paid, due_date: p.due, status: 'selesai', tax_amount: 0,
   };
   return strukText(kos, s, (v.lines || []).map((l) => ({ ...l, line_total: Math.round(l.qty * l.price), serials: l.serials })), v.contact ? { name: v.contact } : null)
-    + (e.result?.number ? '' : '\nNomor sementara · belum terkirim');
+    + (e.state === 'gagal' ? '\nGagal dicatat di PRASARA' : e.result?.number ? '' : '\nNomor sementara · belum terkirim');
 }
 
 // Cetak hanya teks struk (lembar ini ada di atas halaman Kasir, jadi tidak memakai window.print halaman)
@@ -130,15 +146,17 @@ export function printText(t) {
 }
 
 export function OfflineStrukSheet({ kos, entry, onClose }) {
+  const failed = entry.state === 'gagal';
   const text = offlineStruk(kos, entry);
   return (
-    <Sheet title="Struk" onClose={onClose}>
+    <Sheet title={failed ? 'Rincian transaksi yang gagal dicatat' : 'Struk'} onClose={onClose}>
+      {failed && <p className="notice bad">Penjualan belum tercatat di PRASARA.</p>}
       <pre className="struk">{text}</pre>
-      <div className="row">
+      {!failed && <div className="row">
         <button className="primary" onClick={() => printText(text)}>Cetak</button>
         <a href={entry.view?.phone ? waLink(entry.view.phone, '```\n' + text + '\n```') : `https://wa.me/?text=${encodeURIComponent('```\n' + text + '\n```')}`} target="_blank" rel="noreferrer"><button>Kirim via WhatsApp</button></a>
-      </div>
-      {!online() && <span className="small muted">Kirim via WhatsApp butuh internet. Cetak tetap bisa bila printer tersambung ke HP.</span>}
+      </div>}
+      {!failed && !online() && <span className="small muted">Kirim via WhatsApp butuh internet. Cetak tetap bisa bila printer tersambung ke HP.</span>}
     </Sheet>
   );
 }
@@ -147,20 +165,29 @@ export function OfflineStrukSheet({ kos, entry, onClose }) {
 export function AntreanSheet({ kos, onClose }) {
   const { session } = useKos();
   const uid = session?.user?.id;
-  const list = useQueue().filter((e) => e.kos === kos.id);
+  const manager = canArea(kos, 'finance') || canArea(kos, 'settings');
+  const list = useQueue().filter((e) => uid && e.kos === kos.id && (e.user === uid || (manager && e.state === 'antre')));
   const net = useNet();
   const [struk, setStruk] = useState(null);
   const [busy, setBusy] = useState(false);
-  const manager = canArea(kos, 'finance') || canArea(kos, 'settings');
-  const send = async () => { setBusy(true); const r = await syncNow(uid); setBusy(false); toast(r.stop === 'net' ? 'Masih offline.' : r.stop === 'auth' ? 'Sesi perlu diperbarui — masuk ulang lalu kirim lagi.' : `${r.sent} terkirim${r.failed ? `, ${r.failed} ditolak` : ''}.`); };
-  const pend = list.filter((e) => e.state === 'antre');
+  const send = async () => {
+    setBusy(true);
+    try {
+      toast(syncMessage(await syncNow(uid), true));
+    } catch {
+      toast('Hasil pengiriman belum bisa dipastikan. Periksa Antrean HP sebelum mencatat ulang.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const pend = list.filter((e) => e.state === 'antre' && e.user === uid);
   return (
     <Sheet title="Transaksi offline di HP ini" onClose={onClose}>
       <p className="small muted" style={{ margin: 0 }}>Penjualan saat offline disimpan di HP ini dan dikirim otomatis saat internet kembali (tidak tercatat dobel). Jangan hapus data browser/aplikasi sebelum semuanya terkirim.</p>
       {pend.length > 0 && <button className="primary" disabled={!net || busy} onClick={send}>{!net ? `${pend.length} menunggu internet` : busy ? 'Mengirim…' : `Kirim ${pend.length} transaksi sekarang`}</button>}
       {list.length === 0 ? <Empty title="Belum ada transaksi offline" text="Penjualan yang dicatat saat internet putus muncul di sini sampai terkirim." /> : (
         <div className="list">{list.map((e) => {
-          const st = STATE[e.state] || STATE.antre;
+          const st = e.state === 'antre' && e.err ? ['Kiriman ditolak · masih di HP', 'bad'] : STATE[e.state] || STATE.antre;
           const own = e.user === uid;
           return (
             <div className="li" key={e.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
@@ -175,14 +202,14 @@ export function AntreanSheet({ kos, onClose }) {
               {e.err && <span className="small" style={{ color: 'var(--bad)' }}>{e.err}</span>}
               {e.result?.error && <span className="small" style={{ color: 'var(--bad)' }}>{e.result.error}</span>}
               {(e.result?.issues || []).map((i, k) => <span key={k} className="small" style={{ color: 'var(--warn)' }}>• {i.text}</span>)}
+              {e.state === 'gagal' && <span className="small">Penjualan belum tercatat. Minta pemilik memeriksa transaksi ini di Penjualan › Offline.</span>}
+              {e.state === 'perlu_cek' && <span className="small">Penjualan sudah tercatat. Pemilik dapat menindaklanjuti temuan di Penjualan › Offline.</span>}
+              {e.state === 'antre' && e.err && <span className="small">Periksa alasan di atas sebelum mencoba kirim lagi dengan ID yang sama.</span>}
               <div className="row" style={{ gap: 6 }}>
-                <button className="sm" onClick={() => setStruk(e)}>Struk</button>
-                {e.state !== 'antre' && <button className="sm ghost" onClick={() => qDel(e.id)}>Hapus dari daftar</button>}
+                <button className="sm" onClick={() => setStruk(e)}>{e.state === 'gagal' ? 'Lihat rincian transaksi' : 'Struk'}</button>
+                {e.state === 'tersimpan' && <button className="sm ghost" onClick={() => qDel(e.id)}>Hapus dari daftar</button>}
                 {e.state === 'antre' && !own && manager && <button className="sm" onClick={() => adopt(e, uid, session?.user?.email).then(() => toast('Akan dikirim dengan akun Anda.'))}>Kirim dengan akun saya</button>}
-                {e.state === 'antre' && e.err && <button className="sm ghost" onClick={() => {
-                  // eslint-disable-next-line no-alert
-                  if (window.confirm('Hapus transaksi ini dari HP? Penjualan ini BELUM tercatat di PRASARA — catat ulang bila benar terjadi.')) qDel(e.id);
-                }}>Hapus</button>}
+
               </div>
             </div>
           );

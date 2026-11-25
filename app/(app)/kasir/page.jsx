@@ -40,6 +40,14 @@ const heldKey = (k) => 'prasara.held.' + k;   // transaksi ditahan (per perangka
 const lastKey = (k) => 'prasara.lastsale.' + k;
 
 export default function Kasir() {
+  const { kosId, session } = useKos();
+  const uid = session?.user?.id;
+  if (!uid || !kosId) return null;
+  const accountKey = uid + ':' + kosId;
+  return <KasirWorkspace key={accountKey} accountKey={accountKey} uid={uid} />;
+}
+
+function KasirWorkspace({ accountKey, uid: accountId }) {
   const { kos, kosId, ver, session } = useKos();
   const [raw, setD] = useState(null);
   const online = useNet();
@@ -76,7 +84,7 @@ export default function Kasir() {
     const { data, error } = await supabase.rpc('kasir_catalog', { p_kos: kosId });
     if (error) {
       if (isNetErr(error)) {
-        const c = await loadCatalog(kosId);
+        const c = await loadCatalog(accountId, kosId);
         if (c?.data) { setErr(null); return setD({ ...c.data, offline: true, cachedAt: c.at }); }
         return setErr('OFFLINE_KOSONG');
       }
@@ -86,7 +94,7 @@ export default function Kasir() {
     const next = { products: data.products, units: data.units, contacts: data.customers, cats: c.data || [], breaks: data.breaks || [], policy: data.stock_policy || 'izinkan',
       listItems: data.list_items || [], pricePolicy: data.price_policy || {} };
     setErr(null); setD(next);
-    saveCatalog(kosId, next);
+    saveCatalog(accountId, kosId, next);
   };
   useEffect(() => { load(); }, [kosId, ver]);
   // internet kembali / antrean terkirim → muat ulang katalog (stok terbaru dari server)
@@ -98,23 +106,26 @@ export default function Kasir() {
     if (!raw) return raw;
     const extra = [];
     for (const e of pendingOf(queue, kosId)) {
+      if (e.user !== accountId) continue;
       const nc = e.payload?.new_contact;
       if (nc?.key && !raw.contacts.some((x) => x.id === nc.key) && !extra.some((x) => x.id === nc.key)) extra.push({ id: nc.key, name: nc.name, phone: nc.phone, local: true });
     }
     return { ...raw, offline: raw.offline || !online, products: raw.products.map((p) => (pend[p.id] ? { ...p, stock: Number(p.stock) - pend[p.id] } : p)), contacts: [...raw.contacts, ...extra] };
-  }, [raw, pend, online, queue, kosId]);
-  const waiting = pendingOf(queue, kosId).length;
+  }, [raw, pend, online, queue, kosId, accountId]);
+  const ownQueue = queue.filter((e) => e.kos === kosId && e.user === accountId);
+  const waiting = pendingOf(ownQueue).length;
+  const needsAttention = ownQueue.some((e) => e.state === 'gagal' || e.state === 'perlu_cek' || e.err);
   // Keranjang (dan pelanggan/diskon/catatan) disimpan di perangkat ini supaya tidak hilang saat pindah menu
   useEffect(() => {
     try {
-      const s = JSON.parse(localStorage.getItem(cartKey(kosId)) || 'null');
+      const s = JSON.parse(localStorage.getItem(cartKey(accountKey)) || 'null');
       if (s) { setCart(s.cart || []); setTier(s.tier || 'ecer'); setLead(s.lead || null); setContact(s.contact || ''); setDiscount(s.discount || ''); setNote(s.note || ''); }
-      setHeld(JSON.parse(localStorage.getItem(heldKey(kosId)) || '[]'));
-      setLastSale(localStorage.getItem(lastKey(kosId)) || null);
+      setHeld(JSON.parse(localStorage.getItem(heldKey(accountKey)) || '[]'));
+      setLastSale(localStorage.getItem(lastKey(accountKey)) || null);
     } catch {}
-  }, [kosId]);
-  useEffect(() => { try { localStorage.setItem(cartKey(kosId), JSON.stringify({ cart, tier, lead, contact, discount, note })); } catch {} }, [cart, tier, lead, contact, discount, note, kosId]);
-  const saveHeld = (h) => { setHeld(h); try { localStorage.setItem(heldKey(kosId), JSON.stringify(h)); } catch {} };
+  }, [accountKey]);
+  useEffect(() => { try { localStorage.setItem(cartKey(accountKey), JSON.stringify({ cart, tier, lead, contact, discount, note })); } catch {} }, [cart, tier, lead, contact, discount, note, accountKey]);
+  const saveHeld = (h) => { setHeld(h); try { localStorage.setItem(heldKey(accountKey), JSON.stringify(h)); } catch {} };
 
   const shown = useMemo(() => {
     if (!d) return [];
@@ -211,7 +222,7 @@ export default function Kasir() {
       </>} />
       {d.offline ? <div className="offnote off"><span><b>Offline</b> · daftar barang & harga dari salinan di HP{raw.cachedAt ? ` (${waktu(raw.cachedAt)})` : ''}. Penjualan disimpan di HP dan dikirim otomatis saat internet kembali.</span>
         <button className="sm" onClick={() => setAntre(true)}>{waiting ? `${waiting} menunggu` : 'Antrean HP'}</button></div>
-        : waiting > 0 || queue.some((e) => e.kos === kosId) ? <div className="offnote"><span>{waiting ? <><b>{waiting} transaksi offline</b> sedang dikirim dari HP ini.</> : 'Transaksi offline di HP ini sudah terkirim.'}</span><button className="sm ghost" onClick={() => setAntre(true)}>Lihat</button></div> : null}
+        : ownQueue.length > 0 ? <div className="offnote"><span>{waiting ? <><b>{waiting} transaksi offline</b> masih di antrean HP ini.</> : needsAttention ? 'Ada transaksi offline yang perlu diperiksa.' : 'Transaksi offline di HP ini sudah tersimpan.'}</span><button className="sm ghost" onClick={() => setAntre(true)}>Lihat</button></div> : null}
       {antre && <AntreanSheet kos={kos} onClose={() => setAntre(false)} />}
       <LokasiBar note="Stok yang tampil dan berkurang adalah stok di lokasi ini." />
       {lead && <div className="notice small" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
@@ -256,7 +267,7 @@ export default function Kasir() {
   );
 
   const panelProps = { kos, kosId, d, tier, cart, setCart, lead, contact, setContact, discount, setDiscount, note, setNote, cmd, thumbs, onHold: hold, reloadContacts: load, offline: d.offline,
-    onDone: (r) => { clearAll(); setDone(r); setSeq((x) => x + 1); if (!r.offline) { setLastSale(r.id); try { localStorage.setItem(lastKey(kosId), r.id); } catch {} } load(); } };
+    onDone: (r) => { clearAll(); setDone(r); setSeq((x) => x + 1); if (!r.offline) { setLastSale(r.id); try { localStorage.setItem(lastKey(accountKey), r.id); } catch {} } load(); } };
   const emptyPanel = (
     <aside className="pos-cart panel" aria-label="Keranjang">
       <div className="pos-ch"><h3><PosIcon n="cart" /> Keranjang (0)</h3></div>

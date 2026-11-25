@@ -62,7 +62,10 @@ export default function Barang() {
   const [variant, setVariant] = useState(null);   // null | 'new' | grup (tambah varian)
   const [brk, setBrk] = useState(null);   // barang yang harga beli banyaknya diatur
   const [opr, setOpr] = useState(null);   // harga per outlet
-  const [hist, setHist] = useState(null); // riwayat harga
+  const [hist, setHist] = useState(null);
+  const [corrected, setCorrected] = useState([]);
+  const [correction, setCorrection] = useState(null);
+  const [correctionReason, setCorrectionReason] = useState(''); // riwayat harga
   const [brandSheet, setBrandSheet] = useState(false);
   const [brandF, setBrandF] = useState('');
   const [bcs, setBcs] = useState(null);    // barcode tambahan
@@ -164,7 +167,7 @@ export default function Barang() {
       {brk && <PriceBreakSheet p={brk} units={unitsOf(brk, d.units)} breaks={d.breaks} onClose={() => setBrk(null)} onSaved={() => { setBrk(null); reload(); }} />}
       {edit && <ProductForm brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
         onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
-      {adj && <StockSheet bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
+      {adj && <StockSheet canCorrect={canArea(kos, 'team')} bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); reload(); }} />}
     </div>
   );
 }
@@ -336,6 +339,8 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], brands = [], gr
   );
 }
 
+const stokDay = (at) => new Date(at).toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' });
+
 const PAKAI = ['pakai', 'Pemakaian bahan', 'Jumlah yang terpakai'];
 const REASONS = [
   ['opname', 'Stok opname (hitung ulang)', 'Jumlah fisik hasil hitung'],
@@ -345,7 +350,7 @@ const REASONS = [
   ['koreksi', 'Koreksi (tambah/kurang)', 'Jumlah'],
 ];
 
-function StockSheet({ p, units, loc, bahan, onClose, onSaved }) {
+function StockSheet({ p, units, loc, bahan, canCorrect, onClose, onSaved }) {
   const reasons = bahan ? [PAKAI, ...REASONS] : REASONS;
   const [reason, setReason] = useState(bahan ? 'pakai' : 'opname');
   const [unit, setUnit] = useState(units[0]?.name || p.base_unit);
@@ -355,9 +360,11 @@ function StockSheet({ p, units, loc, bahan, onClose, onSaved }) {
   const [hist, setHist] = useState(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    supabase.from('stock_moves').select('kind,delta,stock_after,note,created_at,branch_id').eq('product_id', p.id).order('created_at', { ascending: false }).limit(15)
+    supabase.from('stock_moves').select('id,kind,delta,stock_after,value,note,created_at,branch_id').eq('product_id', p.id).order('created_at', { ascending: false }).limit(15)
       .then(({ data }) => setHist(data || []));
-  }, [p.id]);
+    if (canCorrect) supabase.from('stock_opening_corrections').select('opname_id').eq('kos_id', p.kos_id)
+      .then(({ data }) => setCorrected((data || []).map((row) => row.opname_id)));
+  }, [p.id, p.kos_id, canCorrect]);
   const mult = Number(units.find((u) => u.name === unit)?.qty || 1);
   const r = reasons.find((x) => x[0] === reason);
   const n = qtyNum(qty);
@@ -382,6 +389,25 @@ function StockSheet({ p, units, loc, bahan, onClose, onSaved }) {
     if (ok) onSaved();
   };
 
+  const saveCorrection = async () => {
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('stock_correct_opening', {
+      p_opening: correction.opening.id, p_opname: correction.opname.id,
+      p_qty: correction.opname.stock_after, p_reason: correctionReason.trim(),
+    }), 'Salah input stok awal dikoreksi.', errMsg);
+    setBusy(false);
+    if (ok) onSaved();
+  };
+
+  if (correction) return (
+    <Sheet title="Koreksi salah input stok awal" onClose={() => setCorrection(null)}>
+      <p>{p.name} · stok awal {angka(correction.opening.delta)} → {angka(correction.opname.stock_after)} {p.base_unit}</p>
+      <p>Stok saat ini tetap <b>{angka(p.stock)} {p.base_unit}</b>. Dampak opname pada laba rugi sebesar <b>{rp(correction.opname.value)}</b> disesuaikan ke saldo awal.</p>
+      <Field label="Alasan koreksi"><input maxLength={500} value={correctionReason} onChange={(e) => setCorrectionReason(e.target.value)} placeholder="Misalnya salah ketik jumlah stok awal" /></Field>
+      <button className="cta" onClick={saveCorrection} disabled={busy || correctionReason.trim().length < 3}>{busy ? 'Menyimpan…' : 'Simpan koreksi'}</button>
+    </Sheet>
+  );
+
   return (
     <Sheet title={`Stok · ${p.name}`} onClose={onClose}>
       {loc ? <>
@@ -398,17 +424,25 @@ function StockSheet({ p, units, loc, bahan, onClose, onSaved }) {
         <Field label={r[2]}><input inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} /></Field>
         {units.length > 1 && <Field label="Satuan"><select value={unit} onChange={(e) => setUnit(e.target.value)}>{units.map((u) => <option key={u.name} value={u.name}>{u.name}</option>)}</select></Field>}
       </div>
-      {isFinite(base) && qty.trim() !== '' && reason !== 'tahan' && <p className="small" style={{ margin: 0 }}>Perubahan: <b>{delta > 0 ? '+' : ''}{angka(delta)} {p.base_unit}</b> → stok{loc ? ` di ${loc.name}` : ''} menjadi {stockText(cur + delta, units, p.base_unit)}{p.cost > 0 ? ` · nilai ${rp(delta * p.cost)}` : ''}</p>}
+      {isFinite(base) && qty.trim() !== '' && reason !== 'tahan' && <p className="small" style={{ margin: 0 }}>Perubahan: <b>{delta > 0 ? '+' : ''}{angka(delta)} {p.base_unit}</b> → stok{loc ? ` di ${loc.name}` : ''} menjadi {stockText(cur + delta, units, p.base_unit)}{p.cost > 0 ? ` · ${reason === 'pakai' ? 'nilai' : 'dampak laba rugi'} ${rp(delta * p.cost)}` : ''}</p>}
       <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. dimakan tikus, hitung ulang akhir bulan" /></Field>
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
       <span className="label">Riwayat stok</span>
       {hist === null ? <p className="small muted" style={{ margin: 0 }}>Memuat…</p> : hist.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Belum ada perubahan stok.</p> : (
-        <div className="list">{hist.map((h, i) => (
-          <div className="li" key={i}>
-            <div className="main"><b className="small">{MOVE[h.kind] || h.kind}</b><span className="small muted">{tgl(String(h.created_at).slice(0, 10))}{loc && h.branch_id ? ` · ${loc.names(h.branch_id)}` : ''}{h.note ? ` · ${h.note}` : ''}</span></div>
+        <div className="list">{hist.map((h, i) => {
+          const opening = hist[i + 1];
+          const done = corrected.includes(h.id);
+          const matches = h.kind === 'opname' && opening?.kind === 'awal' && h.branch_id === opening.branch_id
+            && stokDay(h.created_at) === stokDay(opening.created_at);
+          return <div className="li" key={h.id}>
+            <div className="main"><b className="small">{MOVE[h.kind] || h.kind}</b><span className="small muted">{tgl(String(h.created_at).slice(0, 10))}{loc && h.branch_id ? ` · ${loc.names(h.branch_id)}` : ''}{h.note ? ` · ${h.note}` : ''}</span>
+              {done ? <span className="small muted">Salah input stok awal sudah dikoreksi</span> : canCorrect && matches && (
+                <button className="sm ghost" onClick={() => { setCorrectionReason(''); setCorrection({ opening, opname: h }); }}>Koreksi salah input</button>
+              )}
+            </div>
             <span className="small" style={{ textAlign: 'right' }}><b style={{ color: Number(h.delta) < 0 ? 'var(--bad)' : 'var(--good)' }}>{Number(h.delta) > 0 ? '+' : ''}{angka(h.delta)}</b><br /><span className="muted">{h.kind === 'transfer' ? 'total tetap' : `total ${angka(h.stock_after)}`}</span></span>
-          </div>
-        ))}</div>
+          </div>;
+        })}</div>
       )}
     </Sheet>
   );
