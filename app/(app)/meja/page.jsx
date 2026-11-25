@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
+import { tableState } from '@/lib/tableState';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
@@ -16,11 +17,6 @@ const jam = (ts) => new Date(ts).toLocaleTimeString('id-ID', { ...tz, hour: '2-d
 const tglPanjang = (ts) => new Date(ts).toLocaleDateString('id-ID', { ...tz, weekday: 'long', day: 'numeric', month: 'long' });
 const todayJ = () => jakartaDate(Date.now());
 const RSTATUS = { permintaan: ['Menunggu konfirmasi', 'gold'], dipesan: ['Dipesan', 'info'], datang: ['Tamu datang', 'good'], selesai: ['Selesai', ''], batal: ['Batal', 'void'], tidak_datang: ['Tidak datang', 'bad'] };
-const ACTIVE = ['permintaan', 'diterima', 'proses', 'siap'];
-// tagihan terbuka meja: pesanan aktif, atau sudah diserahkan hari ini tapi belum lunas
-const openOf = (orders, t) => orders.filter((o) => o.dine === 'tempat' && o.table_no === String(t) && o.status !== 'batal'
-  && (ACTIVE.includes(o.status) || (o.status === 'selesai' && sisa(o) > 0 && jakartaDate(o.received_at) === todayJ())));
-
 // bagi uang ke beberapa pesanan: isi sisa pesanan terlama dulu
 function fill(orders, amount) {
   let left = Math.round(amount); const parts = [];
@@ -57,18 +53,6 @@ export default function Meja() {
       {open && <TableSheet t={open} d={d} rs={rs} kos={kos} onClose={() => setOpen(null)} onChanged={load} />}
     </div>
   );
-}
-
-function tableState(d, rs, t) {
-  const os = openOf(d.orders, t);
-  const now = Date.now();
-  const resv = rs.find((r) => r.table_no === String(t) && (r.status === 'datang' || (r.status === 'dipesan' && new Date(r.starts_at).getTime() - now < 3 * 36e5 && new Date(r.starts_at).getTime() + r.minutes * 6e4 > now)));
-  const due = os.reduce((a, o) => a + sisa(o), 0);
-  if (os.some((o) => o.status === 'siap')) return { os, resv, due, label: 'Siap saji', tone: 'good' };
-  if (os.some((o) => ACTIVE.includes(o.status))) return { os, resv, due, label: os.some((o) => o.status === 'permintaan') ? 'QR baru' : 'Terisi', tone: 'gold' };
-  if (due > 0) return { os, resv, due, label: 'Belum lunas', tone: 'bad' };
-  if (resv) return { os, resv, due, label: resv.status === 'datang' ? 'Tamu reservasi' : `Dipesan ${jam(resv.starts_at)}`, tone: 'info' };
-  return { os, resv, due, label: 'Kosong', tone: '' };
 }
 
 function TableGrid({ d, rs, tables, onOpen }) {
