@@ -12,7 +12,7 @@ insert into kos(id,name,owner_id,plan,paid_until,setup_status,business_type,cate
   ('a1a1a1a1-0000-0000-0000-00000000000d','Toko Uji','a1a1a1a1-0000-0000-0000-000000000001','pro',(now() at time zone 'Asia/Jakarta')::date + 30,'active','retail','retail',null,'toko'),
   ('a1a1a1a1-0000-0000-0000-00000000000e','Kos Uji','a1a1a1a1-0000-0000-0000-000000000001','pro',(now() at time zone 'Asia/Jakarta')::date + 30,'active','properti','properti',null,'kos'),
   ('a1a1a1a1-0000-0000-0000-00000000000f','Kontraktor Uji','a1a1a1a1-0000-0000-0000-000000000001','pro',(now() at time zone 'Asia/Jakarta')::date + 30,'active','kustom','konstruksi',null,'bb_proyek'),
-  ('a1a1a1a1-0000-0000-0000-000000000010','Event Draf','a1a1a1a1-0000-0000-0000-000000000001','pro',(now() at time zone 'Asia/Jakarta')::date + 30,'draft','kustom','event',null,'bb_event');
+  ('a1a1a1a1-0000-0000-0000-000000000010','Event Draf','a1a1a1a1-0000-0000-0000-000000000001','pro',(now() at time zone 'Asia/Jakarta')::date + 30,'active','kustom','event',null,'bb_event');
 insert into kos_members(kos_id,user_id,role)
 select k, 'a1a1a1a1-0000-0000-0000-000000000001', 'pemilik' from unnest(array['a1a1a1a1-0000-0000-0000-00000000000a','a1a1a1a1-0000-0000-0000-00000000000b','a1a1a1a1-0000-0000-0000-00000000000c',
   'a1a1a1a1-0000-0000-0000-00000000000d','a1a1a1a1-0000-0000-0000-00000000000e','a1a1a1a1-0000-0000-0000-00000000000f','a1a1a1a1-0000-0000-0000-000000000010']::uuid[]) k;
@@ -20,6 +20,8 @@ insert into kos_members(kos_id,user_id,role) values
   ('a1a1a1a1-0000-0000-0000-00000000000a','a1a1a1a1-0000-0000-0000-000000000002','kasir'),
   ('a1a1a1a1-0000-0000-0000-00000000000b','a1a1a1a1-0000-0000-0000-000000000002','kasir'),
   ('a1a1a1a1-0000-0000-0000-00000000000f','a1a1a1a1-0000-0000-0000-000000000003','operator');
+-- Fixture dibuat aktif agar trigger dapat menyiapkan modul, lalu dipindah ke draf untuk uji akses.
+update kos set setup_status = 'draft' where id = 'a1a1a1a1-0000-0000-0000-000000000010';
 insert into svc_stages(kos_id, name, sort) values ('a1a1a1a1-0000-0000-0000-00000000000a','Cuci',1), ('a1a1a1a1-0000-0000-0000-00000000000a','Setrika',2),
   ('a1a1a1a1-0000-0000-0000-00000000000b','Cuci',1), ('a1a1a1a1-0000-0000-0000-00000000000c','Dijadwalkan',1), ('a1a1a1a1-0000-0000-0000-00000000000c','Dikerjakan',2);
 select bb_seed_template('a1a1a1a1-0000-0000-0000-00000000000f', 'bb_proyek') \g /dev/null
