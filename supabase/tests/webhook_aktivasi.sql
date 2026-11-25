@@ -14,10 +14,10 @@ insert into kos_members(kos_id,user_id,role) values ('bbbbbbbb-0000-0000-0000-00
 \echo == A. Penyedia Lynk aktif
 select code, active from pay_providers where code = 'lynk';
 
-\echo == B. Tagihan 1 (dasar 1 bulan, QRIS) lalu pembayaran Lynk yang cocok
+\echo == B. Tagihan 1 (dasar 1 bulan, Lynk) lalu pembayaran Lynk yang cocok
 set role authenticated;
 select set_config('request.jwt.claim.sub',:'owner',false), set_config('request.jwt.claims','{"sub":"77777777-7777-7777-7777-777777777777","email":"bayar@x.com"}',false) \g /dev/null
-select request_plan(:'K','dasar',1,'qris') as inv1 \gset
+select request_plan(:'K','dasar',1,'gateway') as inv1 \gset
 reset role;
 select amount, status from plan_requests where id = :'inv1';
 
@@ -36,7 +36,7 @@ select count(*) jumlah_aktivasi from plan_activations where kos_id = :'K';
 \echo == D. Tagihan 2 untuk percobaan negatif
 set role authenticated;
 select set_config('request.jwt.claim.sub',:'owner',false), set_config('request.jwt.claims','{"sub":"77777777-7777-7777-7777-777777777777","email":"bayar@x.com"}',false) \g /dev/null
-select request_plan(:'K','dasar',1,'qris') as inv2 \gset
+select request_plan(:'K','dasar',1,'gateway') as inv2 \gset
 reset role;
 select amount, status from plan_requests where id = :'inv2';
 
@@ -66,10 +66,13 @@ select pay_event_ingest('lynk','uji-kunci-0006',true,'{}','{}',
 select status from plan_requests where id = :'inv2';
 select reason, status from pay_recon order by created_at;
 
-\echo == E. Pembayaran sah untuk tagihan 2 setelah semua percobaan negatif -> aktif (perpanjang)
-select pay_event_ingest('lynk','uji-kunci-0007',true,'{}','{}',
-  '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":49000,"email":"bayar@x.com","ref":"REF-UJI-0007"}'::jsonb)->>'status' as hasil_e;
+\echo == E. Kirim ulang peristiwa D1 dengan tanda tangan sah -> aktif (perpanjang)
+select pay_event_ingest('lynk','uji-kunci-0002',true,'{}','{}',
+  '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":49000,"email":"bayar@x.com","ref":"REF-UJI-0002"}'::jsonb)->>'status' as hasil_e;
 select status from plan_requests where id = :'inv2';
+select e.seen = 2 and e.signature_ok and c.status = 'diabaikan' as retry_sah_menutup_rekonsiliasi_tanda_tangan
+from pay_events e join pay_recon c on c.event_id = e.id
+where e.event_key = 'uji-kunci-0002' and c.reason = 'tanda_tangan';
 select count(*) jumlah_aktivasi from plan_activations where kos_id = :'K';
 select kos.plan, kos.paid_until - current_date as sisa_hari from kos where id = :'K';
 
@@ -81,17 +84,18 @@ select set_config('request.jwt.claim.sub',:'owner',false), set_config('request.j
 select request_plan(:'K','bisnis',1,'gateway') as inv3 \gset
 reset role;
 select r.amount, r.method, r.status, t.provider, t.method as metode_trx, t.status as status_trx from plan_requests r join pay_transactions t on t.invoice_id = r.id where r.id = :'inv3';
+select pay_event_catat('lynk','uji-kunci-0008','{}','{}',null,null) = 'dicatat' as tercatat_belum_verifikasi;
 select pay_event_ingest('lynk','uji-kunci-0008',true,'{}','{}',
   '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":99000,"email":"bayar@x.com","ref":"REF-UJI-0008"}'::jsonb)->>'status' as hasil_g;
 select r.status, kos.plan, kos.paid_until - current_date as sisa_hari from plan_requests r join kos on kos.id = r.kos_id where r.id = :'inv3';
 
-\echo == H. Rekonsiliasi admin: pembayaran tanpa tagihan dicocokkan manual ke tagihan yang menunggu
+\echo == H. Tagihan QRIS tidak dicocokkan otomatis meski email dan nominal sama; admin bisa merekonsiliasi manual
 set role authenticated;
 select set_config('request.jwt.claim.sub',:'owner',false), set_config('request.jwt.claims','{"sub":"77777777-7777-7777-7777-777777777777","email":"bayar@x.com"}',false) \g /dev/null
 select request_plan(:'K','pro',1,'qris') as inv4 \gset
 reset role;
 select pay_event_ingest('lynk','uji-kunci-0009',true,'{}','{}',
-  '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":149000,"email":"orang.lain@x.com","ref":"REF-UJI-0009"}'::jsonb)->>'status' as hasil_h;
+  '{"event":"payment.received","action":"SUCCESS","paid":true,"amount":149000,"email":"bayar@x.com","ref":"REF-UJI-0009"}'::jsonb)->>'status' as hasil_h;
 select id as rc from pay_recon where status = 'terbuka' and reason = 'tidak_ada_tagihan' order by created_at desc limit 1 \gset
 insert into auth.users(id,email) values ('88888888-8888-8888-8888-888888888888','adm@x.com') on conflict do nothing;
 insert into app_admins(email) values ('adm@x.com') on conflict do nothing;
