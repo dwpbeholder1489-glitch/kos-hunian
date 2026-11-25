@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ScanButton, cameraScanSupported } from '@/components/BarcodeScan';
+import { ScanButton } from '@/components/BarcodeScan';
 import { moduleOn, canArea } from '@/lib/business';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -75,7 +75,6 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
   const desk = useMedia('(min-width: 1180px)');
   const [seq, setSeq] = useState(0); // naik setiap transaksi tersimpan → panel bayar dibuat ulang (nomor transaksi baru)
   const thumbs = useThumbs(kosId, 'product', ver);
-  const searchRef = useRef(null);
   const cartRef = useRef(null);
   useEffect(() => { supabase.rpc('shift_current', { p_kos: kosId }).then(({ data, error }) => setShift(error ? undefined : data)); }, [kosId, ver, done]);
 
@@ -209,7 +208,6 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
         : <button key={a.k} type="button" className={'pos-actb' + (a.active ? ' on' : '')} onClick={a.on}>{inner}</button>;
     })}</div>
   );
-  const camOk = typeof window !== 'undefined' && cameraScanSupported();
 
   const catalog = (
     <div className="stack pos-left" style={{ minWidth: 0 }}>
@@ -234,9 +232,8 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
           <button key={id || 'all'} role="tab" aria-selected={catF === id} className={catF === id ? 'on' : ''} onClick={() => setCatF(id)}>{nm}</button>
         ))}</div>}
       <div className="pos-search">
-        <label className="pos-q"><PosIcon n="search" /><input ref={searchRef} type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari produk (nama, kode, atau barcode)…" aria-label="Cari barang" /></label>
-        {camOk ? <ScanButton onCode={byCode} label={desk ? 'Scan Barcode' : 'Scan'} className="pos-scan" />
-          : <button type="button" className="pos-scan" onClick={() => { searchRef.current?.focus(); toast('Arahkan scanner ke barcode — kode masuk ke kotak cari lalu otomatis ditambahkan.'); }}><PosIcon n="barcode" /> {desk ? 'Scan Barcode' : 'Scan'}</button>}
+        <label className="pos-q"><PosIcon n="search" /><input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari produk (nama, kode, atau barcode)…" aria-label="Cari barang" /></label>
+        <ScanButton onCode={byCode} label={desk ? 'Scan Barcode' : 'Scan'} className="pos-scan" />
       </div>
       {shown.length === 0 ? <Empty title="Barang tidak ditemukan" /> : (
         <div className={desk ? 'pos-grid' : 'pos-grid pos-slide'}>{shown.map((p) => {
