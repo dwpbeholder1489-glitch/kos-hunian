@@ -145,6 +145,10 @@ export default function Konfirmasi() {
   if (!d) return <Loading />;
   const b = d.business; const owner = b.is_owner; const active = b.status === 'active'; const kul = b.type === 'jasa' && b.category?.code === 'kuliner';
   const items = d.items;
+  const suggestionOf = (item) => d.module_suggestions?.[item.code];
+  const recommended = (item) => d.module_suggestions
+    ? suggestionOf(item)?.state === 'recommended'
+    : item.value?.recommended && !['approved', 'active', 'rejected', 'paused'].includes(item.status);
   if (!items.length) return <div className="stack"><h2>Pusat Konfirmasi</h2><div className="notice">{kos.name} dibuat sebelum Pusat Konfirmasi ada. Pengaturan modul & profilnya ada di <Link href="/konfigurasi">Konfigurasi</Link>.</div></div>;
 
   const act = async (it, value, action, note) => {
@@ -181,21 +185,26 @@ export default function Konfirmasi() {
 
   const decided = (it) => ['approved', 'active', 'rejected', 'paused'].includes(it.status);
   const Item = ({ it }) => {
+    const suggestion = suggestionOf(it);
+    const restricted = suggestion?.state === 'restricted';
     const [label, tone] = ITEM_ST[it.status] || ['—', 'void'];
     const editable = !['module', 'portal', 'pending', 'builder', 'logo'].includes(it.input);
     return (
       <div className="li" style={{ display: 'block' }}>
         <div className="row between" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
-          <span className="small" style={{ minWidth: 0 }}><b>{it.label}</b>{it.must === 'approve' && <span className="muted"> · wajib</span>}{it.kind === 'modul' && it.value?.recommended && <span style={{ color: 'var(--good)' }}> · disarankan</span>}<br />
+          <span className="small" style={{ minWidth: 0 }}><b>{it.label}</b>{it.must === 'approve' && <span className="muted"> · wajib</span>}{it.kind === 'modul' && recommended(it) && <span style={{ color: 'var(--good)' }}> · disarankan</span>}{restricted && <span className="muted"> · perlu paket lebih tinggi</span>}<br />
             <span className={it.complete ? '' : 'muted'} style={{ overflowWrap: 'anywhere' }}>{it.input === 'pending' ? it.help : it.input === 'logo' ? (it.complete ? 'Logo sudah diunggah' : it.help) : it.input === 'builder' ? (it.complete ? 'Sudah disiapkan sesuai jenis usaha: menu, formulir, status, laporan, dan dashboard. Tidak wajib diubah.' : 'Belum ada jenis data. Buka Business Builder dan pilih template siap pakai.') : it.kind === 'modul' || it.kind === 'portal' ? it.help : show(it)}</span></span>
           <span className={'chip ' + tone} style={{ flex: 'none' }}>{label}</span>
         </div>
+        {suggestion?.reasons?.length > 0 && <p className="small muted" style={{ margin: '6px 0' }}>
+          {suggestion.reasons.join('. ')}{suggestion.benefit ? `. ${suggestion.benefit}` : ''}
+        </p>}
         {it.note && <span className="small muted">Catatan: {it.note}</span>}
         <div className="row" style={{ marginTop: 6, gap: 6 }}>
           {editable && <button className="sm" onClick={() => setEdit(it)}>{it.complete ? 'Ubah' : 'Lengkapi'}</button>}
           {it.input === 'builder' && <Link href="/builder"><button className="sm">{it.complete ? 'Lihat / sesuaikan (opsional)' : 'Buka Business Builder'}</button></Link>}
           {it.input === 'logo' && <LogoUpload onChanged={load} />}
-          {owner && it.input !== 'builder' && it.input !== 'pending' && !['approved', 'active'].includes(it.status) && <button className="sm primary" disabled={!it.complete} onClick={() => act(it, null, 'setujui')}>Setujui</button>}
+          {owner && it.input !== 'builder' && it.input !== 'pending' && !['approved', 'active'].includes(it.status) && <button className="sm primary" disabled={!it.complete || restricted} onClick={() => act(it, null, 'setujui')}>Setujui</button>}
           {owner && it.must !== 'approve' && it.input !== 'pending' && !['rejected', 'paused'].includes(it.status) && <>
             <button className="sm ghost" onClick={() => act(it, null, 'tunda')}>Tunda</button>
             <button className="sm ghost danger" onClick={() => act(it, null, 'tolak')}>Tolak</button></>}
@@ -230,7 +239,7 @@ export default function Konfirmasi() {
         return (
           <section className="panel" key={k}>
             <div className="row between"><h3>{k === 'layanan' && kul ? 'Menu' : title}</h3>
-              {k === 'modul' && owner && xs.some((x) => x.value?.recommended && !['approved', 'active'].includes(x.status)) && <button className="sm" onClick={approveReco}>Setujui semua yang disarankan</button>}
+              {k === 'modul' && owner && xs.some(recommended) && <button className="sm" onClick={approveReco}>Setujui semua yang disarankan</button>}
               {k === 'layanan' && b.type === 'jasa' && b.status !== 'rejected' && b.status !== 'paused' && <button className="sm" onClick={() => setAdding(true)}>{kul ? '+ Menu' : '+ Layanan lain'}</button>}</div>
             {k === 'modul' && <span className="small muted">Modul yang tidak disetujui tidak diaktifkan (menunya tidak muncul). Bisa diubah kapan saja.</span>}
             {k === 'layanan' && b.type === 'jasa' && <span className="small muted">{kul ? 'Hanya menu yang disetujui yang aktif dan bisa dipesan. Minimal satu menu dengan harga.' : 'Hanya layanan yang disetujui yang aktif dan bisa dipesan. Minimal satu layanan dengan harga.'}</span>}
