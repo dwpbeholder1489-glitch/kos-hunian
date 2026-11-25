@@ -438,6 +438,67 @@ export function ScrAset() {
   );
 }
 
+export function ScrProyek() {
+  return (
+    <Phone bare>
+      <h3>Wedding Andi &amp; Sari</h3>
+      <span className="small muted">PRJ-2611-001 · Event / acara · DATA CONTOH</span>
+      <div className="row between small"><span className="chip good">Berjalan</span><span>14–15 Des · PIC Rani</span></div>
+      <div className="progress"><i style={{ width: '40%' }} /></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Milestone</b><span>☑ DP &amp; konsep · termin {rp(25000000)}</span><span>☐ Hari H · 14 Des</span><span>☐ Pelunasan · termin {rp(60000000)}</span></div>
+      <div className="row between small"><span><b>Survei venue</b><br />Rani · tenggat 2 Des</span><span className="chip good">Selesai</span></div>
+      <div className="row between small"><span><b>Booking dekorasi</b><br />Dimas · <span style={{ color: 'var(--bad)' }}>terlambat</span></span><span className="mini-btn">Selesai ✓</span></div>
+      <span className="mini-btn cta">+ Tugas</span>
+    </Phone>
+  );
+}
+
+export function ScrPenawaranProyek() {
+  return (
+    <Phone bare>
+      <h3>PENAWARAN · PNW-2611-001</h3>
+      <span className="small muted">Video profil PT Maju · DATA CONTOH</span>
+      <div className="row between small"><span>Produksi video 2 menit · 1 paket</span><b>{rp(9000000)}</b></div>
+      <div className="row between small"><span>Drone · 1 hari</span><b>{rp(1500000)}</b></div>
+      <div className="row between small"><b>Total</b><b>{rp(10500000)}</b></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Termin 30/40/30</b><span>DP {rp(3150000)} · Draft {rp(4200000)} · Final {rp(3150000)}</span><span>Termasuk 2 kali revisi · berlaku s.d. 5 Des</span></div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn">Kirim WA</span><span className="mini-btn cta">Klien setuju</span></div>
+    </Phone>
+  );
+}
+
+export function ScrBiayaProyek() {
+  return (
+    <Phone bare>
+      <h3>Anggaran, biaya &amp; laba</h3>
+      <span className="small muted">Konser Amal · DATA CONTOH</span>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Biaya nyata</span><span className="v">{rp(46000000)}</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Perkiraan laba</span><span className="v">{rp(19000000)}</span></div>
+      </div>
+      <div className="small"><b>Sound</b> · {rp(24000000)} / {rp(22000000)}<div className="progress"><i style={{ width: '100%', background: 'var(--bad)' }} /></div><span style={{ color: 'var(--bad)' }}>lewat {rp(2000000)}</span></div>
+      <div className="small"><b>Talent</b> · {rp(15000000)} / {rp(25000000)}<div className="progress"><i style={{ width: '60%' }} /></div>sisa {rp(10000000)}</div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn cta">+ Catat biaya</span><span className="mini-btn">Tandai biaya lama</span></div>
+    </Phone>
+  );
+}
+
+export function ScrTagihanProyek() {
+  return (
+    <Phone bare>
+      <h3>Tagihan &amp; pembayaran klien</h3>
+      <span className="small muted">Wedding Rina &amp; Bayu · DATA CONTOH</span>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Diterima</span><span className="v">{rp(30000000)}</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Diakui</span><span className="v">{rp(30000000)}</span></div>
+      </div>
+      <div className="row between small"><span><b>TGP-2611-001 · DP</b><br />jatuh tempo 1 Des</span><span className="chip good">Lunas</span></div>
+      <div className="row between small"><span><b>TGP-2611-002 · Pelunasan</b><br />{rp(70000000)}</span><span className="mini-btn cta">Catat bayar</span></div>
+      <span className="small muted">Uang sebelum diserahkan = uang muka → pendapatan saat milestone selesai</span>
+    </Phone>
+  );
+}
+
 export function ScrResep() {
   return (
     <Phone bare>
