@@ -9,7 +9,7 @@ import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
-import FinancialOverview, { ComparisonChart } from '@/components/FinancialOverview';
+import FinancialOverview, { ComparisonChart, income } from '@/components/FinancialOverview';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { NeracaSaldo, UmurPiutangUtang, NilaiPersediaan } from '@/components/AkuntansiDagang';
 
@@ -69,12 +69,13 @@ export default function Pembukuan() {
         <button className={entity ? 'on' : ''} onClick={() => setEntity(true)}>Seluruh badan usaha</button>
       </div>}
       <div className="seg">
-        {[['overview', 'Overview Keuangan'], ['laporan', 'Laporan'], ...(visibleDraft ? [['draf', 'Draf bulanan']] : []), ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={(tab === 'draf' && !visibleDraft ? 'overview' : tab) === k ? 'on' : ''} onClick={() => { if (k === 'buku') setLedgerCode(null); setTab(k); }}>{l}</button>)}
+        {[['overview', 'Overview Keuangan'], ['laporan', 'Laporan'], ...(!entity && !ytd ? [['pusat', 'Pusat Laporan Bulanan']] : []), ...(visibleDraft ? [['draf', 'Draf bulanan']] : []), ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={(tab === 'draf' && !visibleDraft || tab === 'pusat' && (entity || ytd) ? 'overview' : tab) === k ? 'on' : ''} onClick={() => { if (k === 'buku') setLedgerCode(null); setTab(k); }}>{l}</button>)}
       </div>
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
       {(!d || loaded !== reportKey) && !err ? <Loading /> : d && loaded === reportKey && <>
         <Meta d={d} entity={entity} />
-        {(tab === 'overview' || (tab === 'draf' && !visibleDraft)) && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
+        {(tab === 'overview' || ((tab === 'draf' && !visibleDraft) || (tab === 'pusat' && (entity || ytd)))) && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
+        {tab === 'pusat' && !entity && !ytd && <MonthlyReportCenter key={JSON.stringify([kosId, ym])} kosId={kosId} ym={ym} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'draf' && visibleDraft && <MonthlyDraft draft={visibleDraft} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'laporan' && !entity && <ArusKas kosId={kosId} from={from} to={to} period={period} owner={owner} ver={ver} />}
@@ -182,13 +183,84 @@ function Laporan({ d, period, kosId, owner, onAccount, snapshot = false }) {
   </>;
 }
 
-function MonthlyDraft({ draft, kosId, owner, onAccount }) {
+const DRAFT_STATUS = { draft: 'Draf', review: 'Dalam peninjauan', approved: 'Disetujui' };
+
+function MonthlyReportCenter({ kosId, ym, owner, onAccount }) {
+  const [versions, setVersions] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const month = ym + '-01';
+  const request = (p_action, p_id = null) => supabase.rpc('acct_monthly_draft', { p_kos: kosId, p_month: month, p_action, p_id });
+  const showError = (error) => setError(error.code === 'PGRST202'
+    ? 'Penyimpanan laporan menunggu pembaruan database. Pratinjau sementara tetap tersedia di Overview Keuangan.'
+    : errMsg(error));
+
+  useEffect(() => {
+    let active = true;
+    request('list').then(({ data, error }) => {
+      if (!active) return;
+      if (error) showError(error);
+      else setVersions(data);
+    });
+    return () => { active = false; };
+  }, [kosId, month]);
+
+  async function act(action, id) {
+    setBusy(true); setError(null);
+    try {
+      const result = await request(action, id);
+      if (result.error) return showError(result.error);
+      setSelected(result.data);
+      if (action !== 'read') {
+        const { data, error } = await request('list');
+        if (error) showError(error);
+        else setVersions(data);
+      }
+    } finally { setBusy(false); }
+  }
+
+  const snapshot = selected?.snapshot;
+  const draft = snapshot && {
+    report: snapshot.report, cash: snapshot.cash, current: income(snapshot.report),
+    previous: income(snapshot.previous), periodLabel: bulan(ym),
+    priorLabel: bulan(addMonthsYm(ym, -1)), createdAt: selected.created_at,
+  };
+  return <>
+    <section className="panel">
+      <h3>Pusat Laporan Bulanan · {bulan(ym)}</h3>
+      <p className="small muted">Simpan snapshot per versi. Ajukan untuk peninjauan, lalu minta persetujuan pemilik setelah buku ditutup.</p>
+      {error && <div className="notice bad" role="alert">{error}</div>}
+      {versions && <button className="sm" disabled={busy} onClick={() => act('create')}>Simpan Draf Baru</button>}
+      {!versions && !error && <Loading />}
+      {versions?.length === 0 && <p className="small muted">Belum ada versi tersimpan untuk bulan ini.</p>}
+      <div className="list">
+        {versions?.map((version) => <div className="li" key={version.id}>
+          <span>Versi {version.version} · {DRAFT_STATUS[version.status]}</span>
+          <button className="sm ghost" disabled={busy} onClick={() => act('read', version.id)}>Buka versi {version.version}</button>
+        </div>)}
+      </div>
+    </section>
+    {draft && <>
+      <section className="panel">
+        <b>Versi {selected.version} · {DRAFT_STATUS[selected.status]}</b>
+        <div className="row">
+          {selected.status === 'draft' && <button className="sm" disabled={busy} onClick={() => act('submit', selected.id)}>Ajukan Peninjauan</button>}
+          {selected.status === 'review' && owner && <button className="sm" disabled={busy} onClick={() => act('approve', selected.id)}>Setujui Laporan</button>}
+        </div>
+      </section>
+      <MonthlyDraft draft={draft} kosId={kosId} owner={owner} onAccount={onAccount} saved />
+    </>}
+  </>;
+}
+
+function MonthlyDraft({ draft, kosId, owner, onAccount, saved = false }) {
   const chartRows = draft.previous ? [[draft.priorLabel, draft.previous], [draft.periodLabel, draft.current]] : [[draft.periodLabel, draft.current]];
   return <>
     <section className="panel">
-      <h3>Draf Laporan Bulanan · {draft.periodLabel}</h3>
+      <h3>{saved ? 'Laporan Bulanan' : 'Draf Laporan Bulanan'} · {draft.periodLabel}</h3>
       <p>{draft.report.businesses?.[0]?.name} · {tgl(draft.report.from)} sampai {tgl(draft.report.to)}</p>
-      <p className="small muted">Snapshot dibuat {new Date(draft.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}. Draf tersedia selama halaman ini terbuka. Rincian akun membuka buku besar terkini untuk periode yang sama.</p>
+      <p className="small muted">Snapshot dibuat {new Date(draft.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}. {!saved && 'Draf tersedia selama halaman ini terbuka. '}Rincian akun membuka buku besar terkini untuk periode yang sama.</p>
       <Meta d={draft.report} entity={false} />
       <ComparisonChart rows={chartRows} />
     </section>

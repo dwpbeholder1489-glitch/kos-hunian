@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { addMonthsYm, bulan, errMsg, monthEnd, rp, thisMonth } from '@/lib/format';
 import styles from './FinancialOverview.module.css';
 
-function income(report) {
+export function income(report) {
   // Match Pembukuan: group account codes before excluding insignificant balances.
   const accounts = new Map();
   for (const account of report.accounts) {
