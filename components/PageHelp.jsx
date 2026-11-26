@@ -5,13 +5,13 @@ import { Sheet } from '@/components/ui';
 import { PAGE_HELP } from '@/lib/guide';
 
 // Tombol kecil "? Panduan" di samping judul menu
-export default function PageHelp({ page }) {
+export default function PageHelp({ page, label = '? Panduan' }) {
   const [open, setOpen] = useState(false);
   const h = PAGE_HELP[page];
   if (!h) return null;
   return (
     <>
-      <button className="helpchip noprint" style={{ minHeight: 30, cursor: 'pointer' }} onClick={() => setOpen(true)}>? Panduan</button>
+      <button className="helpchip noprint" style={{ minHeight: 30, cursor: 'pointer' }} onClick={() => setOpen(true)}>{label}</button>
       {open && (
         <Sheet title={`Panduan · ${h.title}`} onClose={() => setOpen(false)}>
           <span className="label">Cara pakai</span>

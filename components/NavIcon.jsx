@@ -58,6 +58,8 @@ const P = {
   '/halaman': <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18" /></>,
   '/crm': <><path d="M4 5h16v11H8l-4 4z" /><path d="M8 10h8" /></>,
   '/mutasi': <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
+  '/buku-besar': <><path d="M12 6a8 8 0 0 0-9-2v15a8 8 0 0 1 9 2 8 8 0 0 1 9-2V4a8 8 0 0 0-9 2z" /><path d="M12 6v15" /></>,
+  '/neraca-saldo': <><path d="M12 3v18M7 21h10M4 7h16M5 7l-3 7h6zm14 0-3 7h6z" /></>,
   '/pembukuan': <><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" /><path d="M9 8h5M9 12h5" /></>,
   '/aset': <><path d="M3 21h18M5 21V8l7-4 7 4v13" /><path d="M9 21v-5h6v5M9 11h.01M15 11h.01" /></>,
   '/anggaran': <><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" /></>,

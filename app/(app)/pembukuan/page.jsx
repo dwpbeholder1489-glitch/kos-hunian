@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import AccountingDashboard, { AccountingHeading, AccountingMenu } from '@/components/AccountingDashboard';
+import layout from '@/components/AccountingDashboard.module.css';
 import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -59,26 +60,37 @@ export default function Pembukuan() {
   const visibleDraft = draft?.kosId === kosId && !entity && !ytd && draft.month === ym ? draft : null;
   useEffect(() => { setDraft(null); setLedgerCode(null); }, [kosId]);
   const period = ytd ? `Jan–${bulan(ym)}` : bulan(ym);
+  const menus = [
+    ...(!entity && !ytd ? [['pusat', 'Pusat Laporan Bulanan', '/laporan']] : []),
+    ...(!entity ? [['saldo', 'Neraca Saldo', '/neraca-saldo']] : []),
+    ['buku', 'Buku Besar', '/buku-besar'], ['jurnal', 'Jurnal', '/pembukuan'],
+    ...(toko && !entity ? [['umur', 'Umur Piutang & Utang', '/kontak'], ['persediaan', 'Nilai Persediaan', '/barang']] : []),
+    ['bank', 'Rekonsiliasi Bank', '/aset'],
+    ...(owner ? [['periode', 'Periode & Manual', '/booking']] : []),
+    ...(visibleDraft ? [['draf', 'Draf Bulanan', '/laporan']] : []),
+  ];
+  const open = (id) => { if (id === 'buku') setLedgerCode(null); setTab(id); };
+  const active = (tab === 'draf' && !visibleDraft) || (tab === 'pusat' && (entity || ytd)) ? 'overview' : tab;
   return (
-    <div className="stack">
-      <PageHeader title="Pembukuan" help={<PageHelp page="pembukuan" />} desc={<>Jurnal dibuat otomatis dari transaksi yang sudah Anda catat (penjualan, belanja, kas, pembayaran, stok). Transaksi yang dibatalkan atau diubah tidak dihapus dari jurnal — sistem membuat jurnal pembalikan.</>} />
-      <div className="row">
-        <button className="sm ghost" onClick={() => setYm(addMonthsYm(ym, -1))}>‹</button>
-        <b>{period}</b>
-        <button className="sm ghost" disabled={ym >= today().slice(0, 7)} onClick={() => setYm(addMonthsYm(ym, 1))}>›</button>
-        <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={ytd} onChange={(e) => setYtd(e.target.checked)} />Sejak awal tahun</label>
+    <div className={layout.workspace}>
+      <AccountingHeading canWrite={owner} onWrite={() => setTab('manual')} help={<PageHelp page="pembukuan" label="Panduan Pembukuan" />} />
+      <div className={layout.filters}>
+        <label className={layout.month}><input type="month" aria-label="Periode pembukuan" value={ym} max={today().slice(0, 7)}
+          onChange={(e) => { if (e.target.validity.valid && /^\d{4}-\d{2}$/.test(e.target.value)) setYm(e.target.value); }} /></label>
+        <span className={layout.range}>Periode: {tgl(from)} – {tgl(to)}</span>
+        <label className={layout.checkbox}><input type="checkbox" checked={ytd} onChange={(e) => setYtd(e.target.checked)} />Sejak awal tahun</label>
       </div>
       {kos?.legal_entity_id && hasFeature(kos, 'laporan_lanjutan') && <div className="seg">
         <button className={!entity ? 'on' : ''} onClick={() => setEntity(false)}>Bisnis ini</button>
         <button className={entity ? 'on' : ''} onClick={() => setEntity(true)}>Seluruh badan usaha</button>
       </div>}
-      <div className="seg">
-        {[['overview', 'Overview Keuangan'], ['laporan', 'Laporan'], ...(!entity && !ytd ? [['pusat', 'Pusat Laporan Bulanan']] : []), ...(visibleDraft ? [['draf', 'Draf bulanan']] : []), ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={(tab === 'draf' && !visibleDraft || tab === 'pusat' && (entity || ytd) ? 'overview' : tab) === k ? 'on' : ''} onClick={() => { if (k === 'buku') setLedgerCode(null); setTab(k); }}>{l}</button>)}
-      </div>
+      {active !== 'overview' && <AccountingMenu active={active} menus={menus} onOpen={open} canConfigure={owner} />}
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
       {(!d || loaded !== reportKey) && !err ? <Loading /> : d && loaded === reportKey && <>
-        <Meta d={d} entity={entity} />
-        {(tab === 'overview' || ((tab === 'draf' && !visibleDraft) || (tab === 'pusat' && (entity || ytd)))) && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
+        {active !== 'overview' && <Meta d={d} entity={entity} />}
+        {active === 'overview' && <AccountingDashboard report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} menus={menus} onOpen={open} canConfigure={owner} />}
+        {active === 'command' && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
+        {active === 'manual' && owner && <Manual d={d} kosId={kosId} onDone={load} />}
         {tab === 'pusat' && !entity && !ytd && <MonthlyReportCenter key={JSON.stringify([kosId, ym])} kosId={kosId} ym={ym} periodClosed={d.closed?.includes(ym)} owner={owner} onClosePeriod={() => setTab('periode')} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'draf' && visibleDraft && <MonthlyDraft draft={visibleDraft} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}

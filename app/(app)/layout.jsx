@@ -125,7 +125,7 @@ export default function AppLayout({ children }) {
   const go = (k) => { setSheet(null); if (k === '+') return router.push('/mulai'); pickKos(k.id); router.push(homeOf(k)); };
 
   return (
-    <div className="shell" data-fnb={isKuliner(kos) || undefined}>
+    <div className="shell" data-accounting={path === '/pembukuan' || undefined} data-fnb={isKuliner(kos) || undefined}>
       {wide && <Sidebar kos={kos} path={path} on={on} admin={isAdmin} onBiz={() => setSheet('biz')} />}
       <div className="shell-main">
       {wide ? <Topbar kos={kos} path={path} bell={bell} share={!kos.closed_at ? <Bagikan /> : null} admin={isAdmin} onMenu={onMenu} onBiz={() => setSheet('biz')} /> : (
@@ -176,7 +176,7 @@ export default function AppLayout({ children }) {
         <Link href={home} className={on(home) ? 'on' : ''} aria-current={on(home) ? 'page' : undefined}><NavIcon name="/beranda" />Beranda</Link>
         <Link href={main[0]} className={mainOn ? 'on' : ''} aria-current={on(main[0]) ? 'page' : undefined}><NavIcon name={main[2]} />{main[1]}</Link>
         <button className="fab" onClick={() => setSheet('quick')} aria-label="Aksi cepat" aria-haspopup="dialog"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
-        {fourth ? <Link href={fourth[0]} className={on(fourth[0]) ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
+        {fourth ? <Link href={fourth[0]} className={on(fourth[0]) || path === '/pembukuan' ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
           : <Link href="/operasional" className={on('/operasional') ? 'on' : ''}><NavIcon name="/layers" />Menu</Link>}
         <Link href="/akun" className={on('/akun') ? 'on' : ''} aria-current={on('/akun') ? 'page' : undefined}><NavIcon name="/akun" />Akun</Link>
       </nav>}

@@ -1660,3 +1660,16 @@ button.wf-line{background:none;border-width:0 0 1px;border-radius:0;color:inheri
 .fnb-side-mascot{width:80px;height:65px;object-fit:contain;align-self:center}
 @media(max-width:1023px){.fnb-side-mascot{display:none}}
 :root[data-side=mini] .fnb-side-mascot{display:none}
+
+/* Pembukuan mengadopsi palet hijau pada navigasi halaman ini. */
+@media (min-width: 768px) {
+  .shell[data-accounting] .side {
+    --side-bg: linear-gradient(155deg, #06372e, #045241);
+    --side-fg: #f4fff8;
+    --side-muted: #b9ddcc;
+    --side-hover: #105d47;
+    --side-on: #107648;
+    background: var(--side-bg);
+  }
+  .shell[data-accounting] .side-sub a[aria-current="page"] { color: #084231; background: #d5f4e4; }
+}
