@@ -188,6 +188,7 @@ function Laporan({ d, period, kosId, owner, onAccount, snapshot = false }) {
 }
 
 const DRAFT_STATUS = { draft: 'Draf', review: 'Dalam peninjauan', approved: 'Disetujui' };
+const reportStatus = (version) => version.published_at ? 'Final' : DRAFT_STATUS[version.status];
 
 function MonthlyReportCenter({ kosId, ym, periodClosed, owner, onClosePeriod, onAccount }) {
   const [versions, setVersions] = useState(null);
@@ -195,7 +196,9 @@ function MonthlyReportCenter({ kosId, ym, periodClosed, owner, onClosePeriod, on
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const month = ym + '-01';
-  const request = (p_action, p_id = null) => supabase.rpc('acct_monthly_draft', { p_kos: kosId, p_month: month, p_action, p_id });
+  const request = (p_action, p_id = null) => p_action === 'publish'
+    ? supabase.rpc('acct_monthly_publish', { p_kos: kosId, p_month: month, p_id })
+    : supabase.rpc('acct_monthly_draft', { p_kos: kosId, p_month: month, p_action, p_id });
   const showError = (error) => setError(error.code === 'PGRST202'
     ? 'Penyimpanan laporan menunggu pembaruan database. Pratinjau sementara tetap tersedia di Overview Keuangan.'
     : /Setujui snapshot/.test(error.message || '')
@@ -235,7 +238,7 @@ function MonthlyReportCenter({ kosId, ym, periodClosed, owner, onClosePeriod, on
       const file = format === 'pdf' ? await makePdf(report) : makeXlsx(report.sheets);
       const { error: quotaError } = await supabase.rpc('export_take', { p_kos: kosId, p_kind: 'laporan_bulanan_' + format });
       if (quotaError) return showError(quotaError);
-      download(file, 'PRASARA-laporan-bulanan-' + ym + '-v' + version.version + (version.status === 'approved' ? '' : '-DRAF') + '.' + format);
+      download(file, 'PRASARA-laporan-bulanan-' + ym + '-v' + version.version + (version.published_at ? '-FINAL' : version.status === 'approved' ? '-DISETUJUI' : '-DRAF') + '.' + format);
     } catch (error) { showError(error); }
     finally { setBusy(false); }
   }
@@ -255,24 +258,27 @@ function MonthlyReportCenter({ kosId, ym, periodClosed, owner, onClosePeriod, on
   return <>
     <section className="panel">
       <h3>Pusat Laporan Bulanan · {bulan(ym)}</h3>
-      <p className="small muted">Simpan snapshot per versi. Ajukan untuk peninjauan, lalu minta persetujuan pemilik setelah buku ditutup.</p>
+      <p className="small muted">Simpan snapshot, ajukan peninjauan, lalu setujui dan terbitkan setelah tutup buku. Versi final tetap tersedia di arsip bulan ini.</p>
       {error && <div className="notice bad" role="alert">{error}</div>}
       {versions && <button className="sm" disabled={busy} onClick={() => act('create')}>Simpan Draf Baru</button>}
       {!versions && !error && <Loading />}
       {versions?.length === 0 && <p className="small muted">Belum ada versi tersimpan untuk bulan ini.</p>}
       <div className="list">
         {versions?.map((version) => <div className="li" key={version.id}>
-          <span>Versi {version.version} · {DRAFT_STATUS[version.status]}</span>
+          <span>Versi {version.version} · {reportStatus(version)}{version.published_at && ' · ' + tgl(version.published_at)}</span>
           <button className="sm ghost" disabled={busy} onClick={() => act('read', version.id)}>Buka versi {version.version}</button>
         </div>)}
       </div>
     </section>
     {draft && <>
       <section className="panel">
-        <b>Versi {selected.version} · {DRAFT_STATUS[selected.status]}</b>
+        <b>Versi {selected.version} · {reportStatus(selected)}</b>
+        {selected.published_at && <p className="small muted">Terbit {new Date(selected.published_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB. Versi ini tersimpan di arsip bulan tersebut.</p>}
         <div className="row">
           {selected.status === 'draft' && <button className="sm" disabled={busy} onClick={() => act('submit', selected.id)}>Ajukan Peninjauan</button>}
           {selected.status === 'review' && owner && <button className="sm" disabled={busy || Boolean(approvalBlock)} onClick={() => act('approve', selected.id)}>Setujui Laporan</button>}
+          {selected.status === 'approved' && !selected.published_at && owner && <button className="sm" disabled={busy || !periodClosed}
+            onClick={() => act('publish', selected.id)}>Terbitkan Final</button>}
           <button className="sm ghost" disabled={busy} onClick={() => exportVersion('pdf')}>Unduh PDF{selected.status !== 'approved' && ' Draf'}</button>
           <button className="sm ghost" disabled={busy} onClick={() => exportVersion('xlsx')}>Unduh Excel{selected.status !== 'approved' && ' Draf'}</button>
         </div>
