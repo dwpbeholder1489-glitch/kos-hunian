@@ -9,7 +9,7 @@ import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
-import FinancialOverview from '@/components/FinancialOverview';
+import FinancialOverview, { ComparisonChart } from '@/components/FinancialOverview';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { NeracaSaldo, UmurPiutangUtang, NilaiPersediaan } from '@/components/AkuntansiDagang';
 
@@ -29,6 +29,8 @@ export default function Pembukuan() {
   const [ym, setYm] = useState(today().slice(0, 7));
   const [ytd, setYtd] = useState(false);
   const [entity, setEntity] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [ledgerCode, setLedgerCode] = useState(null);
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [loaded, setLoaded] = useState(null);
@@ -49,6 +51,9 @@ export default function Pembukuan() {
     return () => { active = false; };
   }, [reportKey]);
 
+  const openAccount = (code) => { setLedgerCode(code); setTab('buku'); };
+  const visibleDraft = draft?.kosId === kosId && !entity && !ytd && draft.month === ym ? draft : null;
+  useEffect(() => { setDraft(null); setLedgerCode(null); }, [kosId]);
   const period = ytd ? `Jan–${bulan(ym)}` : bulan(ym);
   return (
     <div className="stack">
@@ -64,17 +69,18 @@ export default function Pembukuan() {
         <button className={entity ? 'on' : ''} onClick={() => setEntity(true)}>Seluruh badan usaha</button>
       </div>}
       <div className="seg">
-        {[['overview', 'Overview Keuangan'], ['laporan', 'Laporan'], ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['overview', 'Overview Keuangan'], ['laporan', 'Laporan'], ...(visibleDraft ? [['draf', 'Draf bulanan']] : []), ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={(tab === 'draf' && !visibleDraft ? 'overview' : tab) === k ? 'on' : ''} onClick={() => { if (k === 'buku') setLedgerCode(null); setTab(k); }}>{l}</button>)}
       </div>
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
       {(!d || loaded !== reportKey) && !err ? <Loading /> : d && loaded === reportKey && <>
         <Meta d={d} entity={entity} />
-        {tab === 'overview' && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} />}
-        {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} />}
+        {(tab === 'overview' || (tab === 'draf' && !visibleDraft)) && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
+        {tab === 'draf' && visibleDraft && <MonthlyDraft draft={visibleDraft} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
+        {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'laporan' && !entity && <ArusKas kosId={kosId} from={from} to={to} period={period} owner={owner} ver={ver} />}
         {tab === 'buku' && (d.ringkas
           ? <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Rincian buku besar tersedia mulai Paket Bisnis" text="Lihat setiap mutasi dan saldo per akun (mis. Kas, Bank, Piutang), lengkap dengan transaksi asalnya. Laba rugi dan neraca ringkas tetap ada di tab Laporan." />
-          : <BukuBesar d={d} kosId={kosId} entity={entity} from={from} to={to} retail={retail} />)}
+          : <BukuBesar key={JSON.stringify([reportKey, ledgerCode])} initialCode={ledgerCode} d={d} kosId={kosId} entity={entity} from={from} to={to} retail={retail} />)}
         {tab === 'jurnal' && <Jurnal kosId={kosId} from={from} to={to} retail={retail} ver={ver} />}
         {tab === 'periode' && owner && <Periode d={d} kosId={kosId} ym={ym} onDone={load} />}
         {tab === 'bank' && <RekonBank kosId={kosId} ym={ym} owner={owner} ver={ver} />}
@@ -102,16 +108,16 @@ function Meta({ d, entity }) {
   );
 }
 
-function Rows({ list, field, sign = 1, total }) {
+function Rows({ list, field, sign = 1, total, onAccount }) {
   return (
     <div className="list">
-      {list.map((a) => <div className="li" key={a.code}><span className="small">{a.name} {!a.ringkas && <span className="muted">{a.code}</span>}</span><b className="small">{rp(sign * a[field])}</b></div>)}
+      {list.map((a) => <div className="li" key={a.code}><span className="small">{onAccount ? <button className="sm ghost" onClick={() => onAccount(a.code)}>{a.name} · {a.code}</button> : <>{a.name} {!a.ringkas && <span className="muted">{a.code}</span>}</>}</span><b className="small">{rp(sign * a[field])}</b></div>)}
       {total != null && <div className="li"><b className="small">Total</b><b>{rp(total)}</b></div>}
     </div>
   );
 }
 
-function Laporan({ d, period, kosId, owner }) {
+function Laporan({ d, period, kosId, owner, onAccount, snapshot = false }) {
   // gabungkan akun dengan kode sama (lintas bisnis dalam satu badan usaha)
   const map = {};
   for (const a of d.accounts) { const m = (map[a.code] ||= { ...a, period: 0, balance: 0 }); m.period += Number(a.period); m.balance += Number(a.balance); }
@@ -132,9 +138,9 @@ function Laporan({ d, period, kosId, owner }) {
     <section className="panel">
       <h3>Laba rugi · {period}</h3>
       <span className="label">Pendapatan</span>
-      <Rows list={rev} field="period" sign={-1} total={revT} />
+      <Rows list={rev} field="period" sign={-1} total={revT} onAccount={onAccount} />
       <span className="label">HPP & beban</span>
-      <Rows list={exp} field="period" total={expT} />
+      <Rows list={exp} field="period" total={expT} onAccount={onAccount} />
       <div className="li"><b>Laba / rugi bersih</b><b>{rp(revT - expT)}</b></div>
     </section>
     <section className="panel">
@@ -150,7 +156,7 @@ function Laporan({ d, period, kosId, owner }) {
         <div className="li"><b className="small">Total kewajiban + ekuitas</b><b>{rp(kewT + ekuT + labaBerjalan)}</b></div>
       </div>
       {selisih === 0 ? <span className="chip good">Seimbang: aset = kewajiban + ekuitas</span> : <div className="notice bad">Tidak seimbang, selisih {rp(selisih)}. Hubungi bantuan.</div>}
-      {d.ringkas && <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Neraca rinci per akun tersedia mulai Paket Bisnis" text="Paket ini menampilkan neraca ringkas (total aset, kewajiban, dan modal). Paket Bisnis menampilkan setiap akun, laba rugi per lokasi, dan laporan gabungan badan usaha." />}
+      {!snapshot && d.ringkas && <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Neraca rinci per akun tersedia mulai Paket Bisnis" text="Paket ini menampilkan neraca ringkas (total aset, kewajiban, dan modal). Paket Bisnis menampilkan setiap akun, laba rugi per lokasi, dan laporan gabungan badan usaha." />}
     </section>
     {Array.isArray(d.per_lokasi) && d.per_lokasi.length > 0 && <section className="panel">
       <h3>Laba rugi per lokasi · {period}</h3>
@@ -162,7 +168,7 @@ function Laporan({ d, period, kosId, owner }) {
       ))}</div>
       <span className="small muted">Lokasi diambil dari transaksi asal tiap jurnal (penjualan, belanja, biaya, stok). "Bersama / tanpa lokasi" = jurnal manual, pembayaran sewa, dan transaksi tanpa lokasi; tidak dibagi otomatis.</span>
     </section>}
-    {d.recon?.length > 0 && <section className="panel">
+    {!snapshot && d.recon?.length > 0 && <section className="panel">
       <h3>Cek kecocokan dengan catatan toko</h3>
       <span className="small muted">Saldo buku besar dibandingkan dengan angka di menu Kas, kasbon/utang, dan nilai stok saat ini. Selisih tidak diubah otomatis.</span>
       <div className="list">{d.recon.map((r) => (
@@ -176,13 +182,36 @@ function Laporan({ d, period, kosId, owner }) {
   </>;
 }
 
-function BukuBesar({ d, kosId, entity, from, to, retail }) {
+function MonthlyDraft({ draft, kosId, owner, onAccount }) {
+  const chartRows = draft.previous ? [[draft.priorLabel, draft.previous], [draft.periodLabel, draft.current]] : [[draft.periodLabel, draft.current]];
+  return <>
+    <section className="panel">
+      <h3>Draf Laporan Bulanan · {draft.periodLabel}</h3>
+      <p>{draft.report.businesses?.[0]?.name} · {tgl(draft.report.from)} sampai {tgl(draft.report.to)}</p>
+      <p className="small muted">Snapshot dibuat {new Date(draft.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}. Draf tersedia selama halaman ini terbuka. Rincian akun membuka buku besar terkini untuk periode yang sama.</p>
+      <Meta d={draft.report} entity={false} />
+      <ComparisonChart rows={chartRows} />
+    </section>
+    <CashFlowReport c={draft.cash} period={draft.periodLabel} />
+    <Laporan d={draft.report} period={draft.periodLabel} kosId={kosId} owner={owner} onAccount={onAccount} snapshot />
+  </>;
+}
+
+function BukuBesar({ d, kosId, entity, from, to, retail, initialCode }) {
   const codes = [...new Map(d.accounts.map((a) => [a.code, a])).values()].sort((a, b) => a.code.localeCompare(b.code));
-  const [code, setCode] = useState('1-1100');
+  const [code, setCode] = useState(initialCode || (codes.some((a) => a.code === '1-1100') ? '1-1100' : codes[0]?.code));
   const [l, setL] = useState(null);
+  const [error, setError] = useState(null);
   useEffect(() => {
-    setL(null);
-    supabase.rpc('acct_ledger', { p_kos: kosId, p_entity: entity, p_code: code, p_from: from, p_to: to }).then(({ data, error }) => (error ? toast(errMsg(error)) : setL(data)));
+    if (!code) return;
+    let active = true;
+    setL(null); setError(null);
+    supabase.rpc('acct_ledger', { p_kos: kosId, p_entity: entity, p_code: code, p_from: from, p_to: to }).then(({ data, error }) => {
+      if (!active) return;
+      if (error) setError(errMsg(error));
+      else setL(data);
+    });
+    return () => { active = false; };
   }, [code, from, to, entity, kosId]);
   const a = codes.find((x) => x.code === code);
   const normal = a && ['kewajiban', 'ekuitas', 'pendapatan'].includes(a.type) ? -1 : 1;
@@ -190,7 +219,7 @@ function BukuBesar({ d, kosId, entity, from, to, retail }) {
   return (
     <section className="panel">
       <Field label="Akun"><select value={code} onChange={(e) => setCode(e.target.value)}>{codes.map((x) => <option key={x.code} value={x.code}>{x.code} · {x.name} ({TYPE[x.type]})</option>)}</select></Field>
-      {!l ? <Loading /> : <>
+      {!code ? <Empty title="Belum ada akun" /> : error ? <div className="notice bad">{error}</div> : !l ? <Loading /> : <>
         <div className="li"><span className="small">Saldo awal {tgl(from)}</span><b className="small">{rp(normal * bal)}</b></div>
         {l.lines.length === 0 ? <span className="small muted">Tidak ada mutasi pada periode ini.</span> : <div className="list">{l.lines.map((x, i) => {
           bal += Number(x.debit) - Number(x.credit);
@@ -382,6 +411,10 @@ function ArusKas({ kosId, from, to, period, owner, ver }) {
   }, [kosId, from, to, ver]);
   if (err) return <div className="notice bad">{/acct_cashflow/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!c) return <Loading />;
+  return <CashFlowReport c={c} period={period} kosId={kosId} owner={owner} />;
+}
+
+function CashFlowReport({ c, period, kosId, owner }) {
   return (
     <section className="panel">
       <h3>Arus kas · {period}</h3>
@@ -404,7 +437,7 @@ function ArusKas({ kosId, from, to, period, owner, ver }) {
         ))}
         <span className="small muted">Dikelompokkan menurut akun lawan di setiap jurnal: modal, prive & pinjaman = pendanaan; aset tetap = investasi; sisanya operasi.</span>
       </>}
-      {!c.lengkap && <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Arus kas per aktivitas tersedia mulai Paket Bisnis" text="Lihat dari mana uang masuk dan ke mana keluar: operasi, investasi, dan pendanaan, sampai per akun." />}
+      {!c.lengkap && kosId && <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Arus kas per aktivitas tersedia mulai Paket Bisnis" text="Lihat dari mana uang masuk dan ke mana keluar: operasi, investasi, dan pendanaan, sampai per akun." />}
     </section>
   );
 }

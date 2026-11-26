@@ -32,7 +32,7 @@ function compare(value, previous, ratio) {
   return ratio ? signed(value - previous) + ' pp' : signed((value - previous) / Math.abs(previous) * 100) + '%';
 }
 
-export default function FinancialOverview({ report, kosId, entity, from, to, ym, ytd, onPeriod, onReport }) {
+export default function FinancialOverview({ report, kosId, entity, from, to, ym, ytd, onPeriod, onReport, onDraft }) {
   const [details, setDetails] = useState(null);
   const priorMonth = addMonthsYm(ym, ytd ? -12 : -1);
   const priorFrom = ytd ? priorMonth.slice(0, 4) + '-01-01' : priorMonth + '-01';
@@ -71,7 +71,10 @@ export default function FinancialOverview({ report, kosId, entity, from, to, ym,
   return <section className={styles.shell} aria-label="Financial Command Center">
     <header className={styles.heading}>
       <div><span className={styles.eyebrow}>FINANCIAL COMMAND CENTER</span><h2>Ringkasan Keuangan</h2><p>{entity ? report.entity?.name : report.businesses?.[0]?.name} · {periodLabel}</p></div>
-      <button className="sm ghost" onClick={() => onReport('laporan')}>Buka Laporan Keuangan</button>
+      <div className={styles.actions}>
+        <button className="sm ghost" onClick={() => onReport('laporan')}>Buka Laporan Keuangan</button>
+        {!entity && !ytd && <button className="sm ghost" disabled={!cash} onClick={() => onDraft({ report, cash, current, previous, periodLabel, priorLabel, createdAt: new Date().toISOString() })}>Buat Draf Laporan Bulanan</button>}
+      </div>
     </header>
     <div className={styles.filters}>
       <label htmlFor="finance-month">Periode</label>
@@ -109,7 +112,7 @@ export default function FinancialOverview({ report, kosId, entity, from, to, ym,
   </section>;
 }
 
-function ComparisonChart({ rows }) {
+export function ComparisonChart({ rows }) {
   const values = rows.flatMap(([, data]) => [data.revenue, data.profit]);
   const min = Math.min(0, ...values);
   const max = Math.max(0, ...values);
