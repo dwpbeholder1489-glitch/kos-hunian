@@ -9,7 +9,11 @@ import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
-import FinancialOverview, { ComparisonChart, income } from '@/components/FinancialOverview';
+import FinancialOverview, { ComparisonChart } from '@/components/FinancialOverview';
+import { income, monthlyReportExport } from '@/lib/monthlyReport';
+import { makeXlsx } from '@/lib/xlsx';
+import { makePdf } from '@/lib/pdfExport';
+import { download } from '@/lib/zip';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { NeracaSaldo, UmurPiutangUtang, NilaiPersediaan } from '@/components/AkuntansiDagang';
 
@@ -220,6 +224,20 @@ function MonthlyReportCenter({ kosId, ym, owner, onAccount }) {
     } finally { setBusy(false); }
   }
 
+  async function exportVersion(format) {
+    setBusy(true); setError(null);
+    try {
+      const { data: version, error } = await request('read', selected.id);
+      if (error) return showError(error);
+      const report = monthlyReportExport(version);
+      const file = format === 'pdf' ? await makePdf(report) : makeXlsx(report.sheets);
+      const { error: quotaError } = await supabase.rpc('export_take', { p_kos: kosId, p_kind: 'laporan_bulanan_' + format });
+      if (quotaError) return showError(quotaError);
+      download(file, 'PRASARA-laporan-bulanan-' + ym + '-v' + version.version + '.' + format);
+    } catch (error) { showError(error); }
+    finally { setBusy(false); }
+  }
+
   const snapshot = selected?.snapshot;
   const draft = snapshot && {
     report: snapshot.report, cash: snapshot.cash, current: income(snapshot.report),
@@ -247,6 +265,10 @@ function MonthlyReportCenter({ kosId, ym, owner, onAccount }) {
         <div className="row">
           {selected.status === 'draft' && <button className="sm" disabled={busy} onClick={() => act('submit', selected.id)}>Ajukan Peninjauan</button>}
           {selected.status === 'review' && owner && <button className="sm" disabled={busy} onClick={() => act('approve', selected.id)}>Setujui Laporan</button>}
+          {selected.status === 'approved' && <>
+            <button className="sm ghost" disabled={busy} onClick={() => exportVersion('pdf')}>Unduh PDF</button>
+            <button className="sm ghost" disabled={busy} onClick={() => exportVersion('xlsx')}>Unduh Excel</button>
+          </>}
         </div>
       </section>
       <MonthlyDraft draft={draft} kosId={kosId} owner={owner} onAccount={onAccount} saved />

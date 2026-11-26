@@ -3,24 +3,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { addMonthsYm, bulan, errMsg, monthEnd, rp, thisMonth } from '@/lib/format';
+import { income } from '@/lib/monthlyReport';
 import styles from './FinancialOverview.module.css';
-
-export function income(report) {
-  // Match Pembukuan: group account codes before excluding insignificant balances.
-  const accounts = new Map();
-  for (const account of report.accounts) {
-    const previous = accounts.get(account.code);
-    accounts.set(account.code, { type: previous?.type ?? account.type, amount: (previous?.amount ?? 0) + Number(account.period) });
-  }
-  let revenue = 0;
-  let expense = 0;
-  for (const { type, amount } of accounts.values()) {
-    if (Math.abs(amount) < 0.005) continue;
-    if (type === 'pendapatan') revenue -= amount;
-    if (type === 'beban') expense += amount;
-  }
-  return { revenue, profit: revenue - expense, margin: revenue > 0 ? (revenue - expense) / revenue * 100 : null };
-}
 
 const percent = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 const signed = (value) => (value > 0 ? '+' : '') + percent.format(value);
