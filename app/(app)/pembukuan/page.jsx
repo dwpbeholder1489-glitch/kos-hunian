@@ -10,6 +10,7 @@ import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
+import InvestmentSimulation from '@/components/InvestmentSimulation';
 import CashForecast from '@/components/CashForecast';
 import FinancialOverview, { ComparisonChart } from '@/components/FinancialOverview';
 import { income, monthlyReportExport } from '@/lib/monthlyReport';
@@ -91,6 +92,7 @@ export default function Pembukuan() {
         {active !== 'overview' && <Meta d={d} entity={entity} />}
         {active === 'overview' && <AccountingDashboard report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} menus={menus} onOpen={open} canConfigure={owner} canForecast={toko && !entity} />}
         {active === 'command' && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
+        {active === 'investment' && <InvestmentSimulation key={kosId} />}
         {active === 'forecast' && toko && !entity && <CashForecast key={kosId} kosId={kosId} ver={ver} onAging={() => setTab('umur')} />}
         {active === 'manual' && owner && <Manual d={d} kosId={kosId} onDone={load} />}
         {tab === 'pusat' && !entity && !ytd && <MonthlyReportCenter key={JSON.stringify([kosId, ym])} kosId={kosId} ym={ym} periodClosed={d.closed?.includes(ym)} owner={owner} onClosePeriod={() => setTab('periode')} onAccount={!d.ringkas ? openAccount : undefined} />}
