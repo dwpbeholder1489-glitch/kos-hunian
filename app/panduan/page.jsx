@@ -619,10 +619,11 @@ const PARTS = [
       <>Ketuk batch untuk <b>Ubah tanggal</b>, <b>Pisahkan sebagian</b> (stok lama berisi dua tanggal), atau <b>Buang</b> (kedaluwarsa/rusak) — stok berkurang dan kerugiannya tercatat.</>,
     ], <>Barang yang sudah lewat tetap bisa terjual di Kasir — singkirkan dari rak lalu tekan Buang. Membuang bisa perlu persetujuan pemilik sesuai pengaturan Persetujuan.</>, 'warn', null],
     ['Saran belanja ulang', 'Belanja › Saran belanja', [
-      <>Tekan <b>Saran belanja</b>. Barang yang perlu dibeli muncul dengan alasannya: <b>habis</b>, <b>di bawah stok minimum</b>, atau <b>akan habis dalam … hari</b>, plus rata-rata keluar per hari dan pesanan yang belum datang.</>,
-      <>Pilih <b>Cukup 1 minggu / 2 minggu / 1 bulan</b>. Jumlah saran memakai satuan beli terakhir (mis. dus) dan dikelompokkan per supplier terakhir.</>,
-      <>Centang dan ubah jumlah bila perlu, lalu <b>Buat pesanan ke …</b>: formulir pesanan ke supplier terbuka dengan barang, jumlah, dan harga beli terakhir sudah terisi.</>,
-    ], <>Atur <b>Waktu tunggu dari supplier</b> per barang di Barang › Ubah (kosong = 3 hari) dan <b>stok minimum</b> agar saran pas. Barang tanpa penjualan dan tanpa stok minimum tidak disarankan.</>, null, null],
+      <>Tekan <b>Saran belanja</b> dan cek lokasi kerja. Untuk toko retail, pilih target stok <b>1 minggu / 2 minggu / 1 bulan</b> setelah barang datang. <b>Pesan sekarang</b> memuat kebutuhan yang mendesak. <b>Terjadwal</b> menampilkan perkiraan tanggal pesan.</>,
+      <>Buka <b>Dasar saran belanja</b> untuk melihat pemakaian bersih 30 hari, stok fisik, barang yang dipesan pelanggan atau ditahan, perkiraan kedatangan PO, dan waktu tunggu supplier. Perkiraan waktu pesan memakai cadangan 2 hari.</>,
+      <>Buka <b>Perlu dicek</b> untuk pesanan dengan jadwal yang belum pasti atau batas stok yang bentrok dengan minimal pesan. Ketuk <b>Buka PO</b> lalu isi atau ubah perkiraan datang supaya pesanan yang sama ikut dihitung dengan tanggal yang benar.</>,
+      <>Centang dan ubah jumlah bila perlu, lalu pilih <b>Siapkan pesanan</b>. Formulir PO terbuka dengan barang dan jumlah sudah terisi. Cek kembali supplier, harga, dan tanggal sebelum menyimpan.</>,
+    ], <>Atur waktu tunggu di <b>Barang › Ubah › Harga dari supplier</b> atau pada barang. Perkiraan standar 3 hari dipakai jika keduanya kosong. Pesanan tanpa tanggal atau yang terlambat perlu dicek sebelum membuat pesanan tambahan.</>, null, null],
   ]],
   ['T', 'SDM: absensi, jadwal shift & gaji', [
     ['Data karyawan & jadwal shift', 'Menu ☰ › SDM & gaji › Karyawan · Jadwal', [

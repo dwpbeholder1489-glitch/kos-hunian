@@ -14,6 +14,7 @@ import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 import { toBase } from '@/lib/units';
 import { Permintaan, Faktur, FakturSheet, KinerjaSupplier } from '@/components/Pengadaan';
+import RestockGuidance from './RestockGuidance';
 
 const BUY = { tunai: 'Tunai', transfer: 'Transfer', utang: 'Utang ke supplier' };
 const REFUND = { potong_utang: 'Potong utang ke supplier', tunai: 'Uang kembali tunai', transfer: 'Uang kembali transfer' };
@@ -83,6 +84,14 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
   const retOf = (id) => d.returns.filter((r) => r.purchase_id === id).reduce((a, r) => a + Number(r.total), 0);
   const retMonth = d.returns.filter((r) => r.return_date.startsWith(month)).reduce((a, r) => a + Number(r.total), 0);
   const locName = (id) => kos.locs?.list?.find((x) => x.id === id)?.name;
+  const fromSuggestion = (init) => { setSaran(false); setForm({ init }); };
+  const reviewPurchase = async (id) => {
+    const { data, error } = await supabase.from('purchases').select('*').eq('kos_id', kosId).eq('id', id).maybeSingle();
+    if (error || !data) return toast(error ? errMsg(error) : 'Pesanan supplier tidak ditemukan.');
+    setSaran(false);
+    setTab('belanja');
+    setOpen(data);
+  };
 
   return (
     <div className="stack">
@@ -119,7 +128,9 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
           </>} />
       )}
       </>}
-      {saran && <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={(init) => { setSaran(false); setForm({ init }); }} />}
+      {saran && (kos.business_type === 'retail'
+        ? <RestockGuidance kosId={kosId} version={ver} onClose={() => setSaran(false)} onPick={fromSuggestion} onReview={reviewPurchase} />
+        : <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={fromSuggestion} />)}
       {form && <PurchaseForm kosId={kosId} d={d} init={form.init} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); if (r.request) setTab('belanja'); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); load(); }} />}
       {open && <Detail key={open.id} tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
         canOpenOrder={canArea(kos, 'sell') || canArea(kos, 'finance')} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} onFaktur={() => { setFk(open.id); setOpen(null); }} />}
@@ -268,6 +279,8 @@ function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
 }
 
 function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, onFaktur }) {
+  const [editingExpected, setEditingExpected] = useState(false);
+  const [expected, setExpected] = useState(b.expected_date || '');
   const [lines, setLines] = useState(null);
   const [rets, setRets] = useState([]);   // retur ke supplier: [{...header, lines}]
   const [ret, setRet] = useState(null);   // form retur: {qty: {line_id: '...'}, refund, reason}
@@ -297,6 +310,12 @@ function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, o
   };
   useEffect(() => { if (b.created_by) supabase.rpc('member_names', { p_kos: b.kos_id }).then(({ data }) => setBy(data?.[b.created_by] || 'karyawan lama')); }, [b.id]);
   const open = b.status === 'dipesan' || b.status === 'sebagian';
+  const saveExpected = async () => {
+    setBusy(true);
+    const ok = await run(() => supabase.rpc('purchase_expected_set', { p_purchase: b.id, p_expected: expected || null }), 'Jadwal kedatangan diperbarui', errMsg);
+    setBusy(false);
+    if (ok) onChanged();
+  };
   const left = (l) => Math.max(0, Number(l.qty) - Number(l.qty_received));
   const startRecv = () => setRecv(Object.fromEntries(lines.map((l) => [l.id, { qty: String(left(l)).replace('.', ','), price: angka(l.price), expiry: l.expiry || '', lot: l.lot || '' }])));
   const doVoid = async () => {
@@ -316,6 +335,16 @@ function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, o
       <span className="small muted">{tgl(b.purchase_date)} · {supplier || 'Tanpa supplier'} · {BUY[b.pay_method]}{b.due_date ? ` · jatuh tempo ${tgl(b.due_date)}` : ''}{b.expected_date && open ? ` · perkiraan datang ${tgl(b.expected_date)}` : ''}</span>
       {ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ alignSelf: 'flex-start' }}>{ST[b.status][0]}</span>}
       {b.note && <span className="small">Catatan: {b.note}</span>}
+      {open && !editingExpected && <button type="button" className="sm ghost" onClick={() => setEditingExpected(true)}>
+        {b.expected_date ? 'Ubah perkiraan datang' : 'Isi perkiraan datang'}
+      </button>}
+      {open && editingExpected && <div className="stack">
+        <Field label="Perkiraan datang"><input type="date" min={today()} value={expected} onChange={(event) => setExpected(event.target.value)} /></Field>
+        <div className="row">
+          <button type="button" className="sm primary" disabled={busy || Boolean(expected && expected < today())} onClick={saveExpected}>Simpan jadwal</button>
+          <button type="button" className="sm ghost" disabled={busy} onClick={() => setEditingExpected(false)}>Batal</button>
+        </div>
+      </div>}
       {b.so_order_id && canOpenOrder && <Link href={`/grosir?pesanan=${b.so_order_id}`} className="small">Buka pesanan pelanggan</Link>}
       {by && <span className="small muted">Dicatat oleh {by}{loc ? ` · ${loc}` : ''}</span>}
       {b.status === 'batal' && <div className="notice bad">Dibatalkan: {b.void_reason}</div>}
