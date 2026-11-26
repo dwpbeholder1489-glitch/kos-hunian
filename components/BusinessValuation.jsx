@@ -1,21 +1,49 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { valuationCashHistory } from '@/lib/valuationCashHistory';
 import { valueBusiness, valuationSensitivity } from '@/lib/businessValuation';
-import { rp, today, tgl } from '@/lib/format';
+import { addMonthsYm, monthEnd, rp, today, tgl } from '@/lib/format';
 import { Tile } from '@/components/ui';
 
 const initial = { firstCashFlow: '', growth: '5', years: '5', discount: '15', terminalGrowth: '2', excessCash: '0', debt: '0' };
 const percentage = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 const pct = (number) => percentage.format(number) + '%';
 
-export default function BusinessValuation() {
+export default function BusinessValuation({ kosId, ver, closedMonths, onOpenCash }) {
   const [values, setValues] = useState(initial);
   const [calculation, setCalculation] = useState(null);
   const [choice, setChoice] = useState([1, 1]);
   const [error, setError] = useState('');
+  const [history, setHistory] = useState(null);
+  const [usingHistory, setUsingHistory] = useState(false);
+  const currentMonth = today().slice(0, 7);
+  const from = addMonthsYm(currentMonth, -12) + '-01';
+  const to = monthEnd(addMonthsYm(currentMonth, -1));
+  const closedCount = new Set(closedMonths || []);
+  const reviewed = Array.from({ length: 12 }, (_, index) => addMonthsYm(currentMonth, -1 - index))
+    .filter((month) => closedCount.has(month)).length;
+  useEffect(() => {
+    let active = true;
+    setHistory(null);
+    supabase.rpc('acct_cashflow', { p_kos: kosId, p_from: from, p_to: to }).then(({ data, error }) => {
+      if (!active) return;
+      if (error) setHistory({ message: 'Arus kas historis belum bisa dimuat.' });
+      else if (!data?.lengkap) setHistory({ message: 'Rincian kas operasi dan investasi mengikuti akses Laporan Arus Kas sesuai paket.' });
+      else if (!data.cocok) setHistory({ message: 'Arus kas belum cocok dengan perubahan saldo kas dan bank. Periksa pembukuan sebelum mengisi valuasi.' });
+      else setHistory({ baseline: valuationCashHistory(data) });
+    }).catch(() => { if (active) setHistory({ message: 'Arus kas historis belum bisa dimuat.' }); });
+    return () => { active = false; };
+  }, [kosId, ver, from, to]);
+  const baseline = history?.baseline;
+  const useBaseline = () => {
+    setValues((current) => ({ ...current, firstCashFlow: String(baseline.reference) }));
+    setUsingHistory(true); setCalculation(null); setError('');
+  };
   const field = (key, name, options) => <label>{name}
     <input {...options} required value={values[key]} onChange={(e) => {
       setValues((current) => ({ ...current, [key]: e.target.value }));
+      if (key === 'firstCashFlow') setUsingHistory(false);
       setCalculation(null); setError('');
     }} />
   </label>;
@@ -41,6 +69,24 @@ export default function BusinessValuation() {
   const result = selectedCell?.result;
   return <div className="stack">
     <section className="panel">
+      <h3>Arus Kas dari Pembukuan</h3>
+      <p className="small muted">{tgl(from)} – {tgl(to)} · 12 bulan kalender yang sudah lewat · {reviewed}/12 bulan ditutup di Pembukuan.</p>
+      {!history && <p className="small muted" role="status">Memuat arus kas historis…</p>}
+      {history && !baseline && <p className="small muted">{history.message || 'Rincian arus kas historis belum cukup untuk membuat angka acuan.'}</p>}
+      {baseline && <>
+        <div className="grid">
+          <Tile label="Arus Kas Operasi Aktual" value={rp(baseline.operationCash)} />
+          <Tile label="Kas Keluar Investasi Aset Tetap" value={rp(baseline.assetSpend)} />
+          <Tile label="Acuan Arus Kas Tahun Pertama" value={rp(baseline.reference)} sub="Arus kas operasi − kas keluar investasi" />
+        </div>
+        <p className="small muted">Periksa kelengkapan transaksi, biaya bunga, dan pengeluaran satu kali. Sesuaikan angka acuan untuk kebutuhan usaha tahun depan.</p>
+        {baseline.reference > 1e12 ? <p className="small muted">Angka acuan melampaui batas input kalkulator (Rp1 triliun).</p>
+          : baseline.reference > 0 ? <button type="button" className="sm" onClick={useBaseline}>Gunakan Angka dari Pembukuan</button>
+          : <p className="small muted">Acuan nol atau negatif. Model ini membutuhkan proyeksi arus kas tahun pertama yang positif.</p>}
+      </>}
+      <button type="button" className="sm ghost" onClick={onOpenCash}>Buka Laporan Arus Kas</button>
+    </section>
+    <section className="panel">
       <h3>Valuasi Bisnis (DCF)</h3>
       <p className="small muted">Estimasi nilai dari arus kas bebas usaha yang diproyeksikan. Masukkan kas setelah pajak operasi, belanja modal, dan perubahan modal kerja, sebelum bunga atau pembayaran pokok utang.</p>
       <form className="stack" onSubmit={calculate}>
@@ -53,7 +99,8 @@ export default function BusinessValuation() {
           {field('excessCash', 'Kas berlebih di luar kebutuhan operasi (Rp)', {inputMode:'numeric'})}
           {field('debt', 'Utang berbunga (Rp)', {inputMode:'numeric'})}
         </div>
-        <p className="small muted">Model memakai arus kas akhir tahun. Tingkat diskonto harus lebih tinggi dari pertumbuhan terminal. Asumsi diisi manual.</p>
+        <p className="small muted">Model memakai arus kas akhir tahun. Tingkat diskonto harus lebih tinggi dari pertumbuhan terminal. Pertumbuhan, diskonto, kas berlebih, dan utang tetap mengikuti asumsi yang kamu tinjau.</p>
+        {usingHistory && <p className="small muted">Arus kas tahun pertama diisi dari angka acuan historis dan bisa disesuaikan.</p>}
         {error && <div className="notice bad" role="alert">{error}</div>}
         <button className="primary">Hitung Valuasi</button>
       </form>

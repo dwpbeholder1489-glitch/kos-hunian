@@ -50,7 +50,7 @@ export function AccountingMenu({ active, menus, onOpen, canConfigure }) {
   </div>;
 }
 
-export default function AccountingDashboard({ report, kosId, entity, from, to, ym, ytd, menus, onOpen, canConfigure, canForecast }) {
+export default function AccountingDashboard({ report, kosId, entity, from, to, ym, ytd, menus, onOpen, canConfigure, canForecast, canValue }) {
   const [extra, setExtra] = useState(null);
   useEffect(() => {
     let active = true;
@@ -123,7 +123,7 @@ export default function AccountingDashboard({ report, kosId, entity, from, to, y
     <section className={styles.planning}>
       <Link href="/anggaran"><strong>Selisih Anggaran Bulan Ini</strong><small>Lihat realisasi dan transaksi biaya ›</small></Link>
       <button type="button" onClick={() => onOpen('investment')}><strong>Simulasi Kelayakan Investasi</strong><small>Bandingkan ROI, NPV, dan balik modal ›</small></button>
-      <button type="button" onClick={() => onOpen('valuation')}><strong>Valuasi Bisnis (DCF)</strong><small>Estimasi nilai dan sensitivitas ›</small></button>
+      {canValue && <button type="button" onClick={() => onOpen('valuation')}><strong>Valuasi Bisnis (DCF)</strong><small>Estimasi nilai dan sensitivitas ›</small></button>}
       {canForecast && <button type="button" onClick={() => onOpen('forecast')}><strong>Proyeksi Kas 30 Hari</strong><small>Lihat jadwal dan simulasi ›</small></button>}
     </section>
     <section className={styles.status} data-warning={warnings.length > 0 || undefined}>

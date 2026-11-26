@@ -73,7 +73,7 @@ export default function Pembukuan() {
     ...(visibleDraft ? [['draf', 'Draf Bulanan', '/laporan']] : []),
   ];
   const open = (id) => { if (id === 'buku') setLedgerCode(null); setTab(id); };
-  const active = (tab === 'draf' && !visibleDraft) || (tab === 'pusat' && (entity || ytd)) || (tab === 'forecast' && (!toko || entity)) ? 'overview' : tab;
+  const active = (tab === 'draf' && !visibleDraft) || (tab === 'pusat' && (entity || ytd)) || (tab === 'forecast' && (!toko || entity)) || (tab === 'valuation' && entity) ? 'overview' : tab;
   return (
     <div className={layout.workspace}>
       <AccountingHeading canWrite={owner} onWrite={() => setTab('manual')} help={<PageHelp page="pembukuan" label="Panduan Pembukuan" />} />
@@ -91,9 +91,9 @@ export default function Pembukuan() {
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
       {(!d || loaded !== reportKey) && !err ? <Loading /> : d && loaded === reportKey && <>
         {active !== 'overview' && <Meta d={d} entity={entity} />}
-        {active === 'overview' && <AccountingDashboard report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} menus={menus} onOpen={open} canConfigure={owner} canForecast={toko && !entity} />}
+        {active === 'overview' && <AccountingDashboard report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} menus={menus} onOpen={open} canConfigure={owner} canForecast={toko && !entity} canValue={!entity} />}
         {active === 'command' && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
-        {active === 'valuation' && <BusinessValuation key={kosId} />}
+        {active === 'valuation' && <BusinessValuation key={kosId} kosId={kosId} ver={ver} closedMonths={d.closed} onOpenCash={() => setTab('laporan')} />}
         {active === 'investment' && <InvestmentSimulation key={kosId} />}
         {active === 'forecast' && toko && !entity && <CashForecast key={kosId} kosId={kosId} ver={ver} onAging={() => setTab('umur')} />}
         {active === 'manual' && owner && <Manual d={d} kosId={kosId} onDone={load} />}
