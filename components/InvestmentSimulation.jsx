@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { estimateMonthlyCash, investmentScenarios, savedInvestmentInputs, INITIAL_INVESTMENT, INVESTMENT_DRIVERS } from '@/lib/investmentSimulation';
 import { errMsg, rp, tgl } from '@/lib/format';
+import InvestmentActualTracking from './InvestmentActualTracking';
 import InvestmentComparison from './InvestmentComparison';
 import { Tile } from '@/components/ui';
 
@@ -85,6 +86,11 @@ export default function InvestmentSimulation({ kosId }) {
   }
 
   const result = scenarios?.[selected];
+  const baseline = saved?.find((version) => version.id === opened);
+  let trackingPlan = null;
+  if (baseline) {
+    try { trackingPlan = investmentScenarios(savedInvestmentInputs(baseline), baseline.mode)[1]; } catch { /* Invalid historical inputs cannot serve as a baseline. */ }
+  }
   return <div className="stack">
     <section className="panel">
       <h3>Simulasi Tersimpan</h3>
@@ -97,6 +103,7 @@ export default function InvestmentSimulation({ kosId }) {
       </div>)}</div>
     </section>
     {saved?.length >= 2 && <InvestmentComparison versions={saved} />}
+    {trackingPlan && <InvestmentActualTracking key={opened} kosId={kosId} versionId={opened} plan={trackingPlan} />}
     <section className="panel">
       <h3>Simulasi Kelayakan Investasi</h3>
       <p className="small muted">Uji ekspansi, pembelian alat, atau proyek baru dari perkiraan kas tambahan. Simulasi ini tidak mengubah pembukuan.</p>
