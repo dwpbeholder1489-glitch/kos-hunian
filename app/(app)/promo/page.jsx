@@ -66,15 +66,17 @@ export default function Promo() {
         </div>
         <span className={styles.heroArt}><Image src="/promo-banner.webp" alt="" fill priority sizes="(max-width: 600px) 36vw, 280px" /></span>
       </section>
-      <div className={styles.actions}>
-        <button className={styles.primary} onClick={() => setForm({})}>＋ Buat Promo</button>
-        <button onClick={() => setForm({ kind: 'paket' })}><NavIcon name="/layers" />Buat Bundling</button>
-        <button onClick={() => setForm({ kind: 'gratis' })}><NavIcon name="gift" />Beli X Gratis Y</button>
-        <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
-      </div>
-      <div className={styles.metrics}>
-        <PromoMetric icon="/promo" label="Promo Berjalan" value={angka(jalan)} caption="Promo aktif" />
-        <PromoMetric icon="coins" label="Potongan Promo Bulan Ini" value={rp(d.month_given)} caption={`${angka(d.month_sales)} transaksi`} />
+      <div className={styles.overview}>
+        <div className={styles.actions}>
+          <button className={styles.primary} onClick={() => setForm({})}>＋ Buat Promo</button>
+          <button onClick={() => setForm({ kind: 'paket' })}><NavIcon name="/layers" />Buat Bundling</button>
+          <button onClick={() => setForm({ kind: 'gratis' })}><NavIcon name="gift" />Beli X Gratis Y</button>
+          <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
+        </div>
+        <div className={styles.metrics}>
+          <PromoMetric icon="/promo" label="Promo Berjalan" value={angka(jalan)} caption="Promo aktif" />
+          <PromoMetric icon="coins" label="Potongan Promo Bulan Ini" value={rp(d.month_given)} caption={`${angka(d.month_sales)} transaksi`} />
+        </div>
       </div>
       <div className={styles.filters}>
         <div className={styles.categories} aria-label="Kategori promo">
@@ -87,28 +89,32 @@ export default function Promo() {
           </select></label>
         </div>}
       </div>
-      {d.promos.length === 0 ? (
-        <section className={styles.empty}>
-          <div className={styles.emptyArt}><Image src="/promo-kosong.webp" alt="" fill sizes="(max-width: 600px) 40vw, 240px" /></div>
-          <h2>Belum ada promo</h2>
-          <p>Buat diskon, beli X gratis Y, paket bundling, atau potongan minimal belanja. Promo akan otomatis berlaku di kasir sesuai periode yang Anda tentukan.</p>
-          <button className={styles.primary} onClick={() => setForm(kind === 'semua' ? {} : { kind })}>＋ Buat Promo Pertama</button>
-        </section>
-      ) : rows.length === 0 ? <section className={styles.empty}><h2>Promo tidak ditemukan</h2><p>Ubah kategori atau status untuk melihat promo lainnya.</p></section> :
-      <DataTable rows={rows} caption="Daftar promo" onRow={setForm} rowLabel={(p) => p.name}
-        columns={[
-          { key: 'name', label: 'Promo', sort: (p) => p.name.toLowerCase(), render: (p) => <><b>{p.name}</b><div className="small">{promoText(p)}</div></> },
-          { key: 'when', label: 'Jadwal', render: (p) => <span className="small">{jadwal(p)}</span> },
-          { key: 'used', label: 'Dipakai', align: 'right', sort: (p) => Number(p.used) || 0, render: (p) => (p.used > 0 ? `${angka(p.used)}×` : <span className="muted">—</span>) },
-          { key: 'given', label: 'Total potongan', align: 'right', hide: 'tablet', sort: (p) => Number(p.given) || 0, render: (p) => (p.used > 0 ? rp(p.given) : <span className="muted">—</span>) },
-          { key: 'st', label: 'Status', render: (p) => <span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span> },
-        ]}
-        card={(p) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{p.name}</b><span className="small">{promoText(p)}</span><span className="small muted">{jadwal(p)}</span>
-            {p.used > 0 && <span className="small muted">Dipakai {angka(p.used)}× · total potongan {rp(p.given)}</span>}</div><span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span></div>} />}
-      <aside className={styles.notice}>
-        <NavIcon name="info" />
-        <p><b>Cara kerja promo</b>. Promo dihitung otomatis saat bayar di kasir. Satu barang hanya dapat satu promo (urutan: paket → beli X gratis Y → diskon barang → minimal belanja). Barang yang harganya diubah manual di kasir tidak ikut promo.</p>
-      </aside>
+      <div className={styles.promoContent}>
+        <div className={styles.results}>
+          {d.promos.length === 0 ? (
+            <section className={styles.empty}>
+              <div className={styles.emptyArt}><Image src="/promo-kosong.webp" alt="" fill sizes="(max-width: 600px) 40vw, 240px" /></div>
+              <h2>Belum ada promo</h2>
+              <p>Buat diskon, beli X gratis Y, paket bundling, atau potongan minimal belanja. Promo akan otomatis berlaku di kasir sesuai periode yang Anda tentukan.</p>
+              <button className={styles.primary} onClick={() => setForm(kind === 'semua' ? {} : { kind })}>＋ Buat Promo Pertama</button>
+            </section>
+          ) : rows.length === 0 ? <section className={styles.empty}><h2>Promo tidak ditemukan</h2><p>Ubah kategori atau status untuk melihat promo lainnya.</p></section> :
+          <DataTable rows={rows} caption="Daftar promo" onRow={setForm} rowLabel={(p) => p.name}
+            columns={[
+              { key: 'name', label: 'Promo', sort: (p) => p.name.toLowerCase(), render: (p) => <><b>{p.name}</b><div className="small">{promoText(p)}</div></> },
+              { key: 'when', label: 'Jadwal', render: (p) => <span className="small">{jadwal(p)}</span> },
+              { key: 'used', label: 'Dipakai', align: 'right', sort: (p) => Number(p.used) || 0, render: (p) => (p.used > 0 ? `${angka(p.used)}×` : <span className="muted">—</span>) },
+              { key: 'given', label: 'Total potongan', align: 'right', hide: 'tablet', sort: (p) => Number(p.given) || 0, render: (p) => (p.used > 0 ? rp(p.given) : <span className="muted">—</span>) },
+              { key: 'st', label: 'Status', render: (p) => <span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span> },
+            ]}
+            card={(p) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{p.name}</b><span className="small">{promoText(p)}</span><span className="small muted">{jadwal(p)}</span>
+                {p.used > 0 && <span className="small muted">Dipakai {angka(p.used)}× · total potongan {rp(p.given)}</span>}</div><span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span></div>} />}
+        </div>
+        <aside className={styles.notice}>
+          <NavIcon name="info" />
+          <p><b>Cara kerja promo</b>. Promo dihitung otomatis saat bayar di kasir. Satu barang hanya dapat satu promo (urutan: paket → beli X gratis Y → diskon barang → minimal belanja). Barang yang harganya diubah manual di kasir tidak ikut promo.</p>
+        </aside>
+      </div>
       {menu === 'more' && <Sheet title="Lainnya" onClose={() => setMenu(null)}>
         <button onClick={() => setMenu('simulation')}>Simulasi Keuntungan</button>
         <button onClick={() => { setKind('belanja'); setMenu(null); }}>Lihat Promo Minimal Belanja</button>

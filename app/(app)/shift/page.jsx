@@ -116,78 +116,82 @@ function ShiftWorkspace({ kosId, kos, ver, user, finance, sell }) {
         <span className={styles.heroArt}><Image src="/shift-kasir.webp" alt="" fill priority sizes="(max-width: 600px) 38vw, 290px" /></span>
       </section>
       {result && <div role="status" className={'notice ' + (Math.abs(result.diff) < 1 ? 'good' : 'bad')}>Shift ditutup. Seharusnya {rp(result.expected)}, dihitung {rp(result.counted)}. <b>{diffText(Number(result.diff))}</b>.</div>}
-      {sell && <>
-        <section className={`${styles.panel} ${styles.statusPanel}`} data-open={Boolean(cur)}>
-          <span className={styles.statusIcon}><NavIcon name={cur ? 'done' : 'lock'} /></span>
-          <div>
-            <div className={styles.statusTitle}><h2>Status Shift</h2><span>{cur ? 'Sedang Buka' : 'Belum Buka'}</span></div>
-            <p>{cur ? `Dibuka ${tgl(shiftDate.format(new Date(cur.opened_at)))} pukul ${jam(cur.opened_at)} WIB.` : 'Tidak ada shift yang sedang berjalan.'}</p>
-            <p className={styles.identity}>Kasir <b>{name}</b></p>
-          </div>
-        </section>
+      <div className={styles.shiftContent}>
+        <div className={styles.shiftControls}>
+          {sell && <>
+            <section className={`${styles.panel} ${styles.statusPanel}`} data-open={Boolean(cur)}>
+              <span className={styles.statusIcon}><NavIcon name={cur ? 'done' : 'lock'} /></span>
+              <div>
+                <div className={styles.statusTitle}><h2>Status Shift</h2><span>{cur ? 'Sedang Buka' : 'Belum Buka'}</span></div>
+                <p>{cur ? `Dibuka ${tgl(shiftDate.format(new Date(cur.opened_at)))} pukul ${jam(cur.opened_at)} WIB.` : 'Tidak ada shift yang sedang berjalan.'}</p>
+                <p className={styles.identity}>Kasir <b>{name}</b></p>
+              </div>
+            </section>
 
-        <section className={styles.panel}>
-          <div className={styles.panelHead}>
-            <span><NavIcon name={cur ? 'wallet' : 'play'} /></span>
-            <div><h2>{cur ? 'Ringkasan Uang Laci' : 'Buka Shift'}</h2>
-              <p>{cur ? 'Perkiraan uang fisik berdasarkan transaksi tunai shift ini.' : 'Mulai sesi kasir untuk mencatat transaksi, pembayaran, dan pergerakan kas.'}</p>
-            </div>
-          </div>
-          {cur ? <dl className={styles.summary}>
-            <dt>Uang awal</dt><dd>{rp(cur.opening_cash)}</dd>
-            <dt>Penjualan tunai ({angka(sm.trx)} transaksi)</dt><dd>{rp(sm.tunai)}</dd>
-            {Number(sm.retur_tunai) > 0 && <><dt>Retur dibayar tunai</dt><dd>−{rp(sm.retur_tunai)}</dd></>}
-            <dt>Seharusnya di laci</dt><dd><b>{rp(sm.expected)}</b></dd>
-            <dt>Transfer / kasbon (di luar laci)</dt><dd>{rp(sm.transfer)} / {rp(sm.kasbon)}</dd>
-          </dl> : <>
-            <label className={styles.cashLabel} htmlFor="opening-cash">Uang Awal di Laci <NavIcon name="info" size={17} /></label>
-            <span className={styles.cashInput}><NavIcon name="coins" /><span>Rp</span>
-              <input id="opening-cash" inputMode="numeric" value={cash} onChange={(event) => setCash(money(event.target.value))} placeholder="0" />
-            </span>
-            <div className={styles.presets} aria-label="Pilihan cepat uang awal">
-              {presets.map((amount) => <button key={amount} aria-pressed={cash !== '' && parseRp(cash) === amount} onClick={() => setCash(angka(amount))}>{rp(amount)}</button>)}
-            </div>
-            <button className={styles.primary} onClick={open} disabled={busy || cash === ''}><NavIcon name="play" size={19} />{busy ? 'Membuka…' : 'Buka Shift'}</button>
+            <section className={styles.panel}>
+              <div className={styles.panelHead}>
+                <span><NavIcon name={cur ? 'wallet' : 'play'} /></span>
+                <div><h2>{cur ? 'Ringkasan Uang Laci' : 'Buka Shift'}</h2>
+                  <p>{cur ? 'Perkiraan uang fisik berdasarkan transaksi tunai shift ini.' : 'Mulai sesi kasir untuk mencatat transaksi, pembayaran, dan pergerakan kas.'}</p>
+                </div>
+              </div>
+              {cur ? <dl className={styles.summary}>
+                <dt>Uang awal</dt><dd>{rp(cur.opening_cash)}</dd>
+                <dt>Penjualan tunai ({angka(sm.trx)} transaksi)</dt><dd>{rp(sm.tunai)}</dd>
+                {Number(sm.retur_tunai) > 0 && <><dt>Retur dibayar tunai</dt><dd>−{rp(sm.retur_tunai)}</dd></>}
+                <dt>Seharusnya di laci</dt><dd><b>{rp(sm.expected)}</b></dd>
+                <dt>Transfer / kasbon (di luar laci)</dt><dd>{rp(sm.transfer)} / {rp(sm.kasbon)}</dd>
+              </dl> : <>
+                <label className={styles.cashLabel} htmlFor="opening-cash">Uang Awal di Laci <NavIcon name="info" size={17} /></label>
+                <span className={styles.cashInput}><NavIcon name="coins" /><span>Rp</span>
+                  <input id="opening-cash" inputMode="numeric" value={cash} onChange={(event) => setCash(money(event.target.value))} placeholder="0" />
+                </span>
+                <div className={styles.presets} aria-label="Pilihan cepat uang awal">
+                  {presets.map((amount) => <button key={amount} aria-pressed={cash !== '' && parseRp(cash) === amount} onClick={() => setCash(angka(amount))}>{rp(amount)}</button>)}
+                </div>
+                <button className={styles.primary} onClick={open} disabled={busy || cash === ''}><NavIcon name="play" size={19} />{busy ? 'Membuka…' : 'Buka Shift'}</button>
+              </>}
+            </section>
           </>}
-        </section>
-      </>}
 
-      <div className={styles.actions}>
-        <button disabled={!cur || busy} onClick={() => setSheet('close')}><NavIcon name="return" />Tutup<br />Shift</button>
-        <button onClick={showHistory}><NavIcon name="/laporan" />Laporan<br />Shift</button>
-        <button disabled={!cur || !canDeposit || busy} onClick={() => setSheet('deposit')}><NavIcon name="wallet" />Setor<br />Uang</button>
-        <button onClick={() => setSheet('settings')}><NavIcon name="/pengaturan" />Pengaturan<br />Shift</button>
-      </div>
+          <div className={styles.actions}>
+            <button disabled={!cur || busy} onClick={() => setSheet('close')}><NavIcon name="return" /><span>Tutup <br />Shift</span></button>
+            <button onClick={showHistory}><NavIcon name="/laporan" /><span>Laporan <br />Shift</span></button>
+            <button disabled={!cur || !canDeposit || busy} onClick={() => setSheet('deposit')}><NavIcon name="wallet" /><span>Setor <br />Uang</span></button>
+            <button onClick={() => setSheet('settings')}><NavIcon name="/pengaturan" /><span>Pengaturan <br />Shift</span></button>
+          </div>
 
-      <section className={styles.panel} ref={history}>
-        <div className={styles.historyHead}>
-          <h2>{finance ? 'Riwayat Shift Semua Kasir' : 'Riwayat Shift Anda'}</h2>
-          <button aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? 'Ringkas' : 'Lihat Semua'}<NavIcon name={expanded ? 'prev' : 'next'} size={15} /></button>
         </div>
-        {expanded && <div className={styles.filters}>
-          <Field label="Status shift"><select value={state} onChange={(event) => setState(event.target.value)}>
-            <option value="semua">Semua</option><option value="buka">Buka</option><option value="tutup">Tutup</option>
-          </select></Field>
-          <Field label="Tanggal buka"><input type="date" max={today()} value={date} onChange={(event) => setDate(event.target.value)} /></Field>
-          {finance && cashiers.length > 0 && <Field label="Kasir"><select value={cashier} onChange={(event) => setCashier(event.target.value)}>
-            <option value="">Semua kasir</option>{cashiers.map((email) => <option value={email} key={email}>{email}</option>)}
-          </select></Field>}
-        </div>}
-        {list.length === 0 || (expanded && filtered.length === 0) ? <div className={styles.empty}>
-          <NavIcon name="calendar" size={34} />
-          <b>{list.length ? 'Tidak ada shift yang cocok' : 'Belum ada riwayat shift'}</b>
-          <p>{list.length ? 'Ubah filter untuk melihat riwayat lainnya.' : 'Riwayat buka dan tutup shift kasir akan tampil di sini.'}</p>
-        </div> : <div className="list">{(expanded ? filtered : list.slice(0, 4)).map((item) => {
-          const diff = item.closed_at ? Number(item.counted_cash) - Number(item.expected_cash) : null;
-          return <div className="li" key={item.id} style={{ alignItems: 'flex-start' }}>
-            <div className="main"><b className="small">{tgl(shiftDate.format(new Date(item.opened_at)))} {jam(item.opened_at)}–{item.closed_at ? jam(item.closed_at) : 'sekarang'}</b>
-              <span className="small muted">{finance && item.cashier ? `${item.cashier.split('@')[0]} · ` : ''}{item.summary?.trx || 0} transaksi · seharusnya {rp(item.expected_cash)}{item.closed_at ? ` · dihitung ${rp(item.counted_cash)}` : ''}</span>
-              {item.note && <span className="small">“{item.note}”</span>}
-            </div>
-            {diff == null ? <span className="chip gold">Buka</span> : <span className={'chip ' + (Math.abs(diff) < 1 ? 'good' : 'bad')}>{diffText(diff)}</span>}
-          </div>;
-        })}</div>}
-      </section>
+        <section className={styles.panel} ref={history}>
+          <div className={styles.historyHead}>
+            <h2>{finance ? 'Riwayat Shift Semua Kasir' : 'Riwayat Shift Anda'}</h2>
+            <button aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? 'Ringkas' : 'Lihat Semua'}<NavIcon name={expanded ? 'prev' : 'next'} size={15} /></button>
+          </div>
+          {expanded && <div className={styles.filters}>
+            <Field label="Status shift"><select value={state} onChange={(event) => setState(event.target.value)}>
+              <option value="semua">Semua</option><option value="buka">Buka</option><option value="tutup">Tutup</option>
+            </select></Field>
+            <Field label="Tanggal buka"><input type="date" max={today()} value={date} onChange={(event) => setDate(event.target.value)} /></Field>
+            {finance && cashiers.length > 0 && <Field label="Kasir"><select value={cashier} onChange={(event) => setCashier(event.target.value)}>
+              <option value="">Semua kasir</option>{cashiers.map((email) => <option value={email} key={email}>{email}</option>)}
+            </select></Field>}
+          </div>}
+          {list.length === 0 || (expanded && filtered.length === 0) ? <div className={styles.empty}>
+            <NavIcon name="calendar" size={34} />
+            <b>{list.length ? 'Tidak ada shift yang cocok' : 'Belum ada riwayat shift'}</b>
+            <p>{list.length ? 'Ubah filter untuk melihat riwayat lainnya.' : 'Riwayat buka dan tutup shift kasir akan tampil di sini.'}</p>
+          </div> : <div className="list">{(expanded ? filtered : list.slice(0, 4)).map((item) => {
+            const diff = item.closed_at ? Number(item.counted_cash) - Number(item.expected_cash) : null;
+            return <div className="li" key={item.id} style={{ alignItems: 'flex-start' }}>
+              <div className="main"><b className="small">{tgl(shiftDate.format(new Date(item.opened_at)))} {jam(item.opened_at)}–{item.closed_at ? jam(item.closed_at) : 'sekarang'}</b>
+                <span className="small muted">{finance && item.cashier ? `${item.cashier.split('@')[0]} · ` : ''}{item.summary?.trx || 0} transaksi · seharusnya {rp(item.expected_cash)}{item.closed_at ? ` · dihitung ${rp(item.counted_cash)}` : ''}</span>
+                {item.note && <span className="small">“{item.note}”</span>}
+              </div>
+              {diff == null ? <span className="chip gold">Buka</span> : <span className={'chip ' + (Math.abs(diff) < 1 ? 'good' : 'bad')}>{diffText(diff)}</span>}
+            </div>;
+          })}</div>}
+        </section>
+      </div>
       <aside className={styles.notice}><NavIcon name="info" /><p><b>Catatan.</b> Selisih hanya dicatat, tidak otomatis masuk Kas. Uang laci yang dipakai untuk biaya tetap dicatat di Kas &amp; kasbon.</p></aside>
 
       {sheet === 'close' && cur && <Sheet title="Tutup Shift" onClose={() => setSheet(null)}>

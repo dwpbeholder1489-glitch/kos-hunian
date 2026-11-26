@@ -143,3 +143,20 @@
 .payrollActions { display: flex; flex-wrap: wrap; gap: 6px; }
 .payrollActions a { display: inline-grid; align-items: center; text-decoration: none; }
 .approvalRow { display: contents; }
+
+.overview, .commissionContent, .results { display: grid; gap: inherit; min-width: 0; }
+
+@media screen and (min-width: 1024px) {
+  .page { container-type: inline-size; gap: 18px; }
+}
+
+@container (min-width: 700px) {
+  .hero { min-height: 170px; display: flex; align-items: center; }
+  .heroArt { width: min(35%, 300px); }
+  .period { max-width: 460px; }
+  .overview { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: stretch; }
+  .metric { align-content: center; }
+  .commissionContent:has(> :nth-child(2)) { grid-template-columns: minmax(0, 3fr) minmax(0, 1.35fr); }
+  .search { max-width: 420px; }
+}
+.commissionContent { align-items: start; }

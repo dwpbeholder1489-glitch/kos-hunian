@@ -100,52 +100,58 @@ function CommissionWorkspace({ kosId, kos, user, ver }) {
         <input type="month" aria-label="Periode komisi" value={month} max={bulanIni()} onChange={(event) => chooseMonth(event.target.value)} disabled={busy} />
       </label>
       {err ? <div className="notice bad">{err.includes('commission') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div> : !r ? <Loading /> : <>
-        <section className={styles.panel}>
-          <div className={styles.panelHead}><span className={styles.icon}><NavIcon name="/pengaturan" /></span><h2>Aturan Komisi</h2><button onClick={() => setRule({})}>＋ Aturan</button></div>
-          {r.rules.length === 0 ? <p className={styles.muted}>Belum ada aturan. Contoh: semua kasir 1% dari penjualan, atau kategori Rokok 0,5%.</p> : (
-            <div className="list">{r.rules.map((item) => <div className="li" key={item.id}>
-              <div className="main"><b>{angka(item.rate)}%</b><span className="small muted">{who(item.user_id)} · {catName(item.category_id)}</span></div>
-              <button className="sm ghost" onClick={() => setRule(item)}>Ubah</button>
-            </div>)}</div>
-          )}
-          <aside className={styles.notice}><NavIcon name="info" /><p><b>Bila beberapa aturan cocok, yang paling khusus dipakai.</b><br />Orang + kategori › orang › kategori › semua.</p></aside>
-        </section>
-        <div className={styles.metrics}>
-          <CommissionMetric icon="coins" label="Total Komisi" value={rp(total)} />
-          <CommissionMetric icon="/penghuni" label="Jumlah Kasir" value={angka(rows.length)} />
-          <CommissionMetric icon="/laporan" label="Total Penjualan" value={rp(sales)} />
-        </div>
-        <div className={styles.tabs} aria-label="Laporan komisi">
-          {[['list', `Daftar Kasir (${rows.length})`, '/komisi'], ['performance', 'Performa', '/laporan'], ['history', 'Riwayat', '/shift']].map(([key, label, icon]) => (
-            <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}><NavIcon name={icon} />{label}</button>
-          ))}
-        </div>
-        <label className={styles.search}><NavIcon name="search" size={18} /><input aria-label="Cari kasir" type="search" placeholder="Cari kasir…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-        {tab === 'performance' && <p className={styles.caption}>Peringkat berdasarkan penjualan bersih pada periode ini.</p>}
-        {tab === 'history' && <p className={styles.caption}>Komisi yang sudah dimasukkan ke penggajian pada periode ini.</p>}
-        {visible.length === 0 ? <section className={styles.empty}>
-          <h2>{needle ? 'Kasir tidak ditemukan' : tab === 'history' ? 'Belum ada komisi di penggajian' : 'Belum ada penjualan'}</h2>
-          <p>{needle ? 'Coba nama atau akun kasir yang lain.' : tab === 'history' ? 'Pilih periode lain untuk memeriksa riwayat.' : 'Komisi dihitung dari penjualan selesai yang dicatat tiap kasir.'}</p>
-        </section> : <div className={styles.cashiers}>{visible.map((item) => (
-          <button key={item.user_id} className={styles.cashier} onClick={() => setSelected(item)}>
-            <span className={styles.icon}>{tab === 'performance' ? item.rank : <NavIcon name="/akun" />}</span>
-            <span className={styles.cashierCopy}>
-              <b>{who(item.user_id)}</b><small>Penjualan bersih {rp(item.basis)}</small>
-              {item.dibayar != null ? <small className={styles.tag}>Masuk penggajian · {rp(item.dibayar)}</small> :
-                !item.staff_id && <small className={styles.tag}>Belum ditautkan ke data karyawan <NavIcon name="info" size={13} /></small>}
-            </span>
-            <strong>{rp(tab === 'history' ? item.dibayar : item.komisi)}</strong><NavIcon name="next" size={16} />
-          </button>
-        ))}</div>}
-        <aside className={styles.notice}><NavIcon name="info" /><p><b>Dasar perhitungan.</b> Penjualan selesai tanpa PPN, setelah diskon dan promo, dikurangi retur yang dicatat kasir itu. Penjualan batal tidak dilibatkan.</p></aside>
-        {(sdm || pending.length > 0) && <section className={styles.panel}>
-          <div className={styles.panelHead}><span className={styles.icon}><NavIcon name="/sdm" /></span><h2>Penggajian</h2></div>
-          <p className={styles.muted}>{pending.length ? `${angka(pending.length)} komisi belum dimasukkan. Pemilik meninjau dan menyetujui komisi sebelum ditambahkan ke draf gaji.` : 'Komisi yang dimasukkan akan tercatat di penggajian periode terkait.'}</p>
-          <div className={styles.payrollActions}>
-            {sdm && <Link href={`/sdm?tab=gaji&periode=${month}`}>Buka SDM &amp; Gaji</Link>}
-            {owner && sdm && pending.length > 0 && <button onClick={() => setPayroll(true)}>Tinjau Komisi</button>}
+        <div className={styles.overview}>
+          <section className={styles.panel}>
+            <div className={styles.panelHead}><span className={styles.icon}><NavIcon name="/pengaturan" /></span><h2>Aturan Komisi</h2><button onClick={() => setRule({})}>＋ Aturan</button></div>
+            {r.rules.length === 0 ? <p className={styles.muted}>Belum ada aturan. Contoh: semua kasir 1% dari penjualan, atau kategori Rokok 0,5%.</p> : (
+              <div className="list">{r.rules.map((item) => <div className="li" key={item.id}>
+                <div className="main"><b>{angka(item.rate)}%</b><span className="small muted">{who(item.user_id)} · {catName(item.category_id)}</span></div>
+                <button className="sm ghost" onClick={() => setRule(item)}>Ubah</button>
+              </div>)}</div>
+            )}
+            <aside className={styles.notice}><NavIcon name="info" /><p><b>Bila beberapa aturan cocok, yang paling khusus dipakai.</b><br />Orang + kategori › orang › kategori › semua.</p></aside>
+          </section>
+          <div className={styles.metrics}>
+            <CommissionMetric icon="coins" label="Total Komisi" value={rp(total)} />
+            <CommissionMetric icon="/penghuni" label="Jumlah Kasir" value={angka(rows.length)} />
+            <CommissionMetric icon="/laporan" label="Total Penjualan" value={rp(sales)} />
           </div>
-        </section>}
+        </div>
+        <div className={styles.commissionContent}>
+          <div className={styles.results}>
+            <div className={styles.tabs} aria-label="Laporan komisi">
+              {[['list', `Daftar Kasir (${rows.length})`, '/komisi'], ['performance', 'Performa', '/laporan'], ['history', 'Riwayat', '/shift']].map(([key, label, icon]) => (
+                <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}><NavIcon name={icon} />{label}</button>
+              ))}
+            </div>
+            <label className={styles.search}><NavIcon name="search" size={18} /><input aria-label="Cari kasir" type="search" placeholder="Cari kasir…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+            {tab === 'performance' && <p className={styles.caption}>Peringkat berdasarkan penjualan bersih pada periode ini.</p>}
+            {tab === 'history' && <p className={styles.caption}>Komisi yang sudah dimasukkan ke penggajian pada periode ini.</p>}
+            {visible.length === 0 ? <section className={styles.empty}>
+              <h2>{needle ? 'Kasir tidak ditemukan' : tab === 'history' ? 'Belum ada komisi di penggajian' : 'Belum ada penjualan'}</h2>
+              <p>{needle ? 'Coba nama atau akun kasir yang lain.' : tab === 'history' ? 'Pilih periode lain untuk memeriksa riwayat.' : 'Komisi dihitung dari penjualan selesai yang dicatat tiap kasir.'}</p>
+            </section> : <div className={styles.cashiers}>{visible.map((item) => (
+              <button key={item.user_id} className={styles.cashier} onClick={() => setSelected(item)}>
+                <span className={styles.icon}>{tab === 'performance' ? item.rank : <NavIcon name="/akun" />}</span>
+                <span className={styles.cashierCopy}>
+                  <b>{who(item.user_id)}</b><small>Penjualan bersih {rp(item.basis)}</small>
+                  {item.dibayar != null ? <small className={styles.tag}>Masuk penggajian · {rp(item.dibayar)}</small> :
+                    !item.staff_id && <small className={styles.tag}>Belum ditautkan ke data karyawan <NavIcon name="info" size={13} /></small>}
+                </span>
+                <strong>{rp(tab === 'history' ? item.dibayar : item.komisi)}</strong><NavIcon name="next" size={16} />
+              </button>
+            ))}</div>}
+            <aside className={styles.notice}><NavIcon name="info" /><p><b>Dasar perhitungan.</b> Penjualan selesai tanpa PPN, setelah diskon dan promo, dikurangi retur yang dicatat kasir itu. Penjualan batal tidak dilibatkan.</p></aside>
+          </div>
+          {(sdm || pending.length > 0) && <section className={styles.panel}>
+            <div className={styles.panelHead}><span className={styles.icon}><NavIcon name="/sdm" /></span><h2>Penggajian</h2></div>
+            <p className={styles.muted}>{pending.length ? `${angka(pending.length)} komisi belum dimasukkan. Pemilik meninjau dan menyetujui komisi sebelum ditambahkan ke draf gaji.` : 'Komisi yang dimasukkan akan tercatat di penggajian periode terkait.'}</p>
+            <div className={styles.payrollActions}>
+              {sdm && <Link href={`/sdm?tab=gaji&periode=${month}`}>Buka SDM &amp; Gaji</Link>}
+              {owner && sdm && pending.length > 0 && <button onClick={() => setPayroll(true)}>Tinjau Komisi</button>}
+            </div>
+          </section>}
+        </div>
         {selected && <Sheet title={who(selected.user_id)} onClose={() => setSelected(null)}>
           <dl className="kv"><dt>Periode</dt><dd>{bulan(month)}</dd><dt>Penjualan bersih</dt><dd>{rp(selected.basis)}</dd><dt>Komisi terhitung</dt><dd>{rp(selected.komisi)}</dd>
             {selected.dibayar != null && <><dt>Masuk penggajian</dt><dd>{rp(selected.dibayar)}</dd></>}</dl>

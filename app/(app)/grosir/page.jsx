@@ -143,33 +143,37 @@ function GrosirWorkspace({ kosId, kos, ver }) {
         {pathAllowed(kos, '/laporan-toko') && <Link href="/laporan-toko"><NavIcon name="/laporan" />Laporan Pesanan</Link>}
       </div>
 
-      {tab === 'portal' ? <PortalLinks kos={kos} kosId={kosId} /> : tab === 'harga' ? <PriceLists d={d} kosId={kosId} canEdit={finance} onChanged={load} /> : list.length === 0 ? (
-        <section className={styles.empty}>
-          <div className={styles.emptyArt}><Image src="/grosir-kosong.webp" alt="" fill sizes="(max-width: 600px) 42vw, 240px" /></div>
-          <h2>{tab === 'penawaran' ? 'Belum ada penawaran' : tab === 'jalan' ? 'Tidak ada pesanan berjalan' : 'Belum ada pesanan selesai'}</h2>
-          <p>{!d.products.length ? 'Tambahkan barang untuk mulai membuat penawaran grosir.' : tab === 'selesai' ? 'Pesanan yang semua barangnya sudah dikirim atau dibatalkan tampil di sini.' : 'Buat penawaran harga untuk pelanggan grosir/toko, lalu konfirmasi menjadi pesanan saat disetujui.'}</p>
-          {d.products.length ? <button className={styles.primary} onClick={() => setForm({})}>＋ Buat Penawaran Sekarang</button> : canStock && <Link className={styles.primary} href="/barang">Buka Barang &amp; Stok</Link>}
-        </section>
-      ) : (
-        <DataTable rows={list} caption="Pesanan grosir" onRow={(o) => selectOrder(o.id)} rowLabel={(o) => `${o.number} ${cust.get(o.contact_id)?.name || ''}`} pageSize={50}
-          columns={[
-            { key: 'date', label: 'Tanggal', sort: (o) => o.order_date, render: (o) => tgl(o.order_date) },
-            { key: 'no', label: 'Nomor', sort: (o) => o.number, render: (o) => <span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> },
-            { key: 'cust', label: 'Pelanggan', sort: (o) => (cust.get(o.contact_id)?.name || '').toLowerCase(), render: (o) => <><b>{cust.get(o.contact_id)?.name || '—'}</b>{o.customer_ref && <div className="small muted">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</div>}</> },
-            { key: 'need', label: 'Perlu', hide: 'tablet', sort: (o) => o.need_date || '', render: (o) => (o.need_date ? tgl(o.need_date) : <span className="muted">—</span>) },
-            { key: 'sj', label: 'Surat jalan', hide: 'tablet', align: 'right', render: (o) => d.deliveries.filter((x) => x.order_id === o.id).length || <span className="muted">—</span> },
-            { key: 'st', label: 'Status', render: (o) => <><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.status === 'penawaran' && o.valid_until && o.valid_until < t0 && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}{srcChip(o)}</> },
-            { key: 'tot', label: 'Total', align: 'right', sort: (o) => Number(o.total), render: (o) => <><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</> },
-          ]}
-          card={(o) => { const dvs = d.deliveries.filter((x) => x.order_id === o.id); const expired = o.status === 'penawaran' && o.valid_until && o.valid_until < t0; return <>
-            <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{cust.get(o.contact_id)?.name || '—'} <span className={'chip ' + SO_ST[o.status][1]} style={{ marginLeft: 4 }}>{SO_ST[o.status][0]}</span>{expired && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}{srcChip(o)}</b>
-                <span className="small muted">{o.number} · {tgl(o.order_date)}{o.customer_ref ? ` · ${/^po/i.test(o.customer_ref) ? '' : 'PO '}${o.customer_ref}` : ''}{o.need_date ? ` · perlu ${tgl(o.need_date)}` : ''}{dvs.length ? ` · ${dvs.length} surat jalan` : ''}</span></div><div style={{ textAlign: 'right' }}><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</div></div>
-          </>; }} />
-      )}
-      {contentTab && <section className={styles.workflow}>
-        <h2>Alur Pesanan Grosir</h2>
-        <WholesaleFlow />
-      </section>}
+      <div className={styles.orderContent}>
+        <div className={styles.orderResults}>
+          {tab === 'portal' ? <PortalLinks kos={kos} kosId={kosId} /> : tab === 'harga' ? <PriceLists d={d} kosId={kosId} canEdit={finance} onChanged={load} /> : list.length === 0 ? (
+            <section className={styles.empty}>
+              <div className={styles.emptyArt}><Image src="/grosir-kosong.webp" alt="" fill sizes="(max-width: 600px) 42vw, 240px" /></div>
+              <h2>{tab === 'penawaran' ? 'Belum ada penawaran' : tab === 'jalan' ? 'Tidak ada pesanan berjalan' : 'Belum ada pesanan selesai'}</h2>
+              <p>{!d.products.length ? 'Tambahkan barang untuk mulai membuat penawaran grosir.' : tab === 'selesai' ? 'Pesanan yang semua barangnya sudah dikirim atau dibatalkan tampil di sini.' : 'Buat penawaran harga untuk pelanggan grosir/toko, lalu konfirmasi menjadi pesanan saat disetujui.'}</p>
+              {d.products.length ? <button className={styles.primary} onClick={() => setForm({})}>＋ Buat Penawaran Sekarang</button> : canStock && <Link className={styles.primary} href="/barang">Buka Barang &amp; Stok</Link>}
+            </section>
+          ) : (
+            <DataTable rows={list} caption="Pesanan grosir" onRow={(o) => selectOrder(o.id)} rowLabel={(o) => `${o.number} ${cust.get(o.contact_id)?.name || ''}`} pageSize={50}
+              columns={[
+                { key: 'date', label: 'Tanggal', sort: (o) => o.order_date, render: (o) => tgl(o.order_date) },
+                { key: 'no', label: 'Nomor', sort: (o) => o.number, render: (o) => <span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> },
+                { key: 'cust', label: 'Pelanggan', sort: (o) => (cust.get(o.contact_id)?.name || '').toLowerCase(), render: (o) => <><b>{cust.get(o.contact_id)?.name || '—'}</b>{o.customer_ref && <div className="small muted">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</div>}</> },
+                { key: 'need', label: 'Perlu', hide: 'tablet', sort: (o) => o.need_date || '', render: (o) => (o.need_date ? tgl(o.need_date) : <span className="muted">—</span>) },
+                { key: 'sj', label: 'Surat jalan', hide: 'tablet', align: 'right', render: (o) => d.deliveries.filter((x) => x.order_id === o.id).length || <span className="muted">—</span> },
+                { key: 'st', label: 'Status', render: (o) => <><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.status === 'penawaran' && o.valid_until && o.valid_until < t0 && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}{srcChip(o)}</> },
+                { key: 'tot', label: 'Total', align: 'right', sort: (o) => Number(o.total), render: (o) => <><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</> },
+              ]}
+              card={(o) => { const dvs = d.deliveries.filter((x) => x.order_id === o.id); const expired = o.status === 'penawaran' && o.valid_until && o.valid_until < t0; return <>
+                <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{cust.get(o.contact_id)?.name || '—'} <span className={'chip ' + SO_ST[o.status][1]} style={{ marginLeft: 4 }}>{SO_ST[o.status][0]}</span>{expired && <span className="chip bad" style={{ marginLeft: 4 }}>Lewat masa berlaku</span>}{srcChip(o)}</b>
+                    <span className="small muted">{o.number} · {tgl(o.order_date)}{o.customer_ref ? ` · ${/^po/i.test(o.customer_ref) ? '' : 'PO '}${o.customer_ref}` : ''}{o.need_date ? ` · perlu ${tgl(o.need_date)}` : ''}{dvs.length ? ` · ${dvs.length} surat jalan` : ''}</span></div><div style={{ textAlign: 'right' }}><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</div></div>
+              </>; }} />
+          )}
+        </div>
+        {contentTab && <section className={styles.workflow}>
+          <h2>Alur Pesanan Grosir</h2>
+          <WholesaleFlow />
+        </section>}
+      </div>
       {shortcut === 'more' && <Sheet title="Lainnya" onClose={() => setShortcut(null)}>
         <WholesaleFlow />
         <button onClick={() => { setShortcut(null); setTab('harga'); }}>Daftar Harga</button>

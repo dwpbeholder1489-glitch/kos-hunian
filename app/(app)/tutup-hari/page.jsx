@@ -144,42 +144,44 @@ function ClosingWorkspace({ kos, kosId, ver, branch }) {
           <button onClick={() => window.print()}><NavIcon name="print" />Cetak Rekap</button>
           <button onClick={share}><NavIcon name="share" />Bagikan</button>
         </div>
-        <section className={styles.panel}>
-          <div className={styles.panelHead}><h2>Rincian {tgl(day)}</h2>
-            {(s.kasir.length > 0 || s.shift.length > 0) && <button aria-expanded={detail} onClick={() => setDetail(!detail)}>{detail ? 'Ringkas' : 'Lihat Detail'}<NavIcon name={detail ? 'prev' : 'next'} size={15} /></button>}
-          </div>
-          <dl className={styles.lines}>
-            <ClosingLine icon="/penjualan" label="Penjualan kotor">{rp(s.subtotal)}</ClosingLine>
-            {Number(s.promo) > 0 && <ClosingLine icon="/promo" label="Potongan promo">−{rp(s.promo)}</ClosingLine>}
-            {Number(s.diskon) > 0 && <ClosingLine icon="/promo" label="Diskon manual">−{rp(s.diskon)}</ClosingLine>}
-            {Number(s.retur) > 0 && <ClosingLine icon="return" label={`Retur (${s.retur_n})`}>−{rp(s.retur)}</ClosingLine>}
-            {Number(s.ppn) !== 0 && <ClosingLine icon="/resep" label="PPN dipungut">{rp(s.ppn)}</ClosingLine>}
-            <ClosingLine icon="wallet" label="Tunai">{rp(s.bayar.tunai)}</ClosingLine>
-            <ClosingLine icon="/pembayaran" label="Transfer / QRIS">{rp(s.bayar.transfer)}</ClosingLine>
-            <ClosingLine icon="/kontak" label="Kasbon baru">{rp(s.bayar.kasbon)}</ClosingLine>
-            {Number(s.kasbon_diterima) > 0 && <ClosingLine icon="coins" label="Kasbon dibayar">{rp(s.kasbon_diterima)}</ClosingLine>}
-            {Number(s.batal_n) > 0 && <ClosingLine icon="return" label="Dibatalkan">{s.batal_n} · {rp(s.batal)}</ClosingLine>}
-            {Number(s.susut) !== 0 && <ClosingLine icon="/barang" label="Selisih/rusak stok">{Number(s.susut) > 0 ? '−' : '+'}{rp(Math.abs(s.susut))}</ClosingLine>}
-            {s.jam?.pertama && <ClosingLine icon="/shift" label="Transaksi pertama – terakhir">{jam(s.jam.pertama)}–{jam(s.jam.terakhir)}</ClosingLine>}
-          </dl>
-        </section>
-        <div className={styles.details} data-expanded={detail}>
-        {s.kasir.length > 0 && <section className="panel">
-          <h3>Per kasir</h3>
-          <div className="list">{s.kasir.map((k) => (
-            <div className="li" key={k.user_id || 'x'} style={{ alignItems: 'flex-start' }}>
-              <div className="main"><b className="small">{who(k.user_id)}</b><span className="small muted">{angka(k.trx)} transaksi · tunai {rp(k.tunai)}{Number(k.retur_n) ? ` · retur ${k.retur_n}` : ''}{Number(k.batal_n) ? ` · batal ${k.batal_n}` : ''}</span></div>
-              <b className="small" style={{ flex: 'none' }}>{rp(k.omzet)}</b>
+        <div className={styles.report}>
+          <section className={styles.panel}>
+            <div className={styles.panelHead}><h2>Rincian {tgl(day)}</h2>
+              {(s.kasir.length > 0 || s.shift.length > 0) && <button aria-expanded={detail} onClick={() => setDetail(!detail)}>{detail ? 'Ringkas' : 'Lihat Detail'}<NavIcon name={detail ? 'prev' : 'next'} size={15} /></button>}
             </div>
-          ))}</div>
-        </section>}
-        {s.shift.length > 0 && <section className="panel">
-          <h3>Shift hari ini</h3>
-          <div className="list">{s.shift.map((x, i) => (
-            <div className="li" key={i}><div className="main"><b className="small">{who(x.user_id)}</b><span className="small muted">{jam(x.opened_at)}–{x.closed_at ? jam(x.closed_at) : 'belum ditutup'}</span></div>
-              <span className="small" style={{ flex: 'none', color: x.closed_at && Math.abs(Number(x.diff)) >= 1 ? 'var(--bad)' : 'var(--muted)' }}>{x.closed_at ? selisih(Number(x.diff)) : '—'}</span></div>
-          ))}</div>
-        </section>}
+            <dl className={styles.lines}>
+              <ClosingLine icon="/penjualan" label="Penjualan kotor">{rp(s.subtotal)}</ClosingLine>
+              {Number(s.promo) > 0 && <ClosingLine icon="/promo" label="Potongan promo">−{rp(s.promo)}</ClosingLine>}
+              {Number(s.diskon) > 0 && <ClosingLine icon="/promo" label="Diskon manual">−{rp(s.diskon)}</ClosingLine>}
+              {Number(s.retur) > 0 && <ClosingLine icon="return" label={`Retur (${s.retur_n})`}>−{rp(s.retur)}</ClosingLine>}
+              {Number(s.ppn) !== 0 && <ClosingLine icon="/resep" label="PPN dipungut">{rp(s.ppn)}</ClosingLine>}
+              <ClosingLine icon="wallet" label="Tunai">{rp(s.bayar.tunai)}</ClosingLine>
+              <ClosingLine icon="/pembayaran" label="Transfer / QRIS">{rp(s.bayar.transfer)}</ClosingLine>
+              <ClosingLine icon="/kontak" label="Kasbon baru">{rp(s.bayar.kasbon)}</ClosingLine>
+              {Number(s.kasbon_diterima) > 0 && <ClosingLine icon="coins" label="Kasbon dibayar">{rp(s.kasbon_diterima)}</ClosingLine>}
+              {Number(s.batal_n) > 0 && <ClosingLine icon="return" label="Dibatalkan">{s.batal_n} · {rp(s.batal)}</ClosingLine>}
+              {Number(s.susut) !== 0 && <ClosingLine icon="/barang" label="Selisih/rusak stok">{Number(s.susut) > 0 ? '−' : '+'}{rp(Math.abs(s.susut))}</ClosingLine>}
+              {s.jam?.pertama && <ClosingLine icon="/shift" label="Transaksi pertama – terakhir">{jam(s.jam.pertama)}–{jam(s.jam.terakhir)}</ClosingLine>}
+            </dl>
+          </section>
+          <div className={styles.details} data-expanded={detail}>
+          {s.kasir.length > 0 && <section className="panel">
+            <h3>Per kasir</h3>
+            <div className="list">{s.kasir.map((k) => (
+              <div className="li" key={k.user_id || 'x'} style={{ alignItems: 'flex-start' }}>
+                <div className="main"><b className="small">{who(k.user_id)}</b><span className="small muted">{angka(k.trx)} transaksi · tunai {rp(k.tunai)}{Number(k.retur_n) ? ` · retur ${k.retur_n}` : ''}{Number(k.batal_n) ? ` · batal ${k.batal_n}` : ''}</span></div>
+                <b className="small" style={{ flex: 'none' }}>{rp(k.omzet)}</b>
+              </div>
+            ))}</div>
+          </section>}
+          {s.shift.length > 0 && <section className="panel">
+            <h3>Shift hari ini</h3>
+            <div className="list">{s.shift.map((x, i) => (
+              <div className="li" key={i}><div className="main"><b className="small">{who(x.user_id)}</b><span className="small muted">{jam(x.opened_at)}–{x.closed_at ? jam(x.closed_at) : 'belum ditutup'}</span></div>
+                <span className="small" style={{ flex: 'none', color: x.closed_at && Math.abs(Number(x.diff)) >= 1 ? 'var(--bad)' : 'var(--muted)' }}>{x.closed_at ? selisih(Number(x.diff)) : '—'}</span></div>
+            ))}</div>
+          </section>}
+          </div>
         </div>
         <aside className={styles.notice}><NavIcon name="info" /><p><b>Catatan.</b> Saldo kas mengikuti catatan harian. Koreksi transaksi tetap dapat dilakukan dan perubahan rekap dapat diperiksa lewat Riwayat.</p></aside>
         {sheet === 'confirm' && <Sheet title={done ? 'Konfirmasi Tutup Ulang' : 'Konfirmasi Tutup Hari'} onClose={() => { if (!busy) setSheet(null); }}>

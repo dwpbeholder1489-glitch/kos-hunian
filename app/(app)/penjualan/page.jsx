@@ -123,50 +123,54 @@ export default function Penjualan() {
           </label>
           <button onClick={() => setDay(shift(day, 1))} disabled={day >= today()} aria-label="Hari berikutnya"><NavIcon name="next" size={18} /></button>
         </div>
-        {err ? <div className="notice bad">{err.includes('sales_day') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div> : !rows ? <Loading /> : <>
+        {err ? <div className="notice bad">{err.includes('sales_day') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div> : !rows ? <Loading /> : (
           <div className={styles.metrics}>
             <SalesMetric tone="green" icon="coins" label="Omzet" value={rp(omzet)} trend={omzetTrend} compare={compare} caption={fin ? 'Total penjualan' : 'Penjualan Anda'} />
             {fin && <SalesMetric tone="blue" icon="/laporan" label="Laba Kotor" value={rp(laba)} trend={labaTrend} compare={compare} caption={noCost ? 'Ada barang tanpa harga modal' : 'Omzet − modal barang'} />}
             <SalesMetric tone="gold" icon="/penjualan" label="Jumlah Transaksi" value={angka(ok.length)} caption={day === today() ? 'Transaksi hari ini' : 'Pada tanggal ini'} />
             <SalesMetric tone="red" icon="wallet" label="Kasbon" value={rp(kasbon)} caption="Belum diterima" />
           </div>
+        )}
+        <div className={styles.salesContent} data-history={history}>
+          {rows && !err && (
+            <section className={styles.panel}>
+              <div className={styles.sectionHead}>
+                <h2>{history ? 'Semua Transaksi' : 'Transaksi Terbaru'}</h2>
+                {latest && <button onClick={() => setHistory(!history)}>{history ? 'Ringkas' : 'Lihat Semua'}<NavIcon name={history ? 'prev' : 'next'} size={14} /></button>}
+              </div>
+              {!latest ? <Empty title="Belum ada penjualan" text="Transaksi dari menu Kasir muncul di sini." /> : !history ? (
+                <button className={styles.recent} onClick={() => setOpen(latest)}>
+                  <span className={styles.recentIcon}><NavIcon name="/penjualan" /></span>
+                  <span className={styles.recentCopy}><b>{latest.number}{latest.status === 'batal' && <span className="chip void">Batal</span>}</b><small>{[jam(latest.sold_at), payLabel(latest), contacts.get(latest.contact_id)].filter(Boolean).join(' · ')}</small></span>
+                  <b className={latest.status === 'batal' ? styles.voidTotal : undefined}>{rp(latest.total)}</b><NavIcon name="next" size={16} />
+                </button>
+              ) : (
+                <DataTable rows={rows} caption={`Penjualan ${tgl(day)}`} onRow={setOpen} rowLabel={(s) => `${s.number}, ${rp(s.total)}`} rowClass={(s) => (s.status === 'batal' ? 'void' : undefined)}
+                  initialSort={{ key: 'jam', dir: -1 }}
+                  columns={[
+                    { key: 'number', label: 'No. transaksi', sort: (s) => s.number, render: (s) => <b>{s.number}</b> },
+                    { key: 'jam', label: 'Waktu', sort: (s) => s.sold_at, render: (s) => jam(s.sold_at) },
+                    { key: 'bayar', label: 'Pembayaran', render: (s) => payLabel(s) },
+                    { key: 'pelanggan', label: 'Pelanggan', hide: 'tablet', sort: (s) => contacts.get(s.contact_id) || '', render: (s) => (s.contact_id ? contacts.get(s.contact_id) || '—' : '—') },
+                    ...(fin ? [{ key: 'kasir', label: 'Kasir', hide: 'tablet', render: (s) => (s.cashier ? s.cashier.split('@')[0] : '—') }] : []),
+                    { key: 'status', label: 'Status', render: (s) => (s.status === 'batal' ? <span className="chip void">Batal</span> : <span className="chip good">Selesai</span>) },
+                    { key: 'total', label: 'Total', align: 'right', sort: (s) => Number(s.total), render: (s) => <b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b> },
+                  ]}
+                  card={(s) => <>
+                    <div className="dt-row"><b>{s.number}{s.status === 'batal' && <span className="chip void" style={{ marginLeft: 6 }}>Batal</span>}</b><b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b></div>
+                    <span className="small muted">{jam(s.sold_at)} · {payLabel(s)}{s.contact_id ? ` · ${contacts.get(s.contact_id) || ''}` : ''}{fin && s.cashier ? ` · ${s.cashier.split('@')[0]}` : ''}</span>
+                  </>} />
+              )}
+            </section>
+          )}
           <section className={styles.panel}>
-            <div className={styles.sectionHead}>
-              <h2>{history ? 'Semua Transaksi' : 'Transaksi Terbaru'}</h2>
-              {latest && <button onClick={() => setHistory(!history)}>{history ? 'Ringkas' : 'Lihat Semua'}<NavIcon name={history ? 'prev' : 'next'} size={14} /></button>}
+            <h2>Quick Action</h2>
+            <div className={styles.quick}>
+              <button onClick={() => setMenu('return')}><NavIcon name="return" />Retur Penjualan</button>
+              {quickLinks.map(([href, icon, label]) => <Link key={href} href={href}><NavIcon name={icon} />{label}</Link>)}
             </div>
-            {!latest ? <Empty title="Belum ada penjualan" text="Transaksi dari menu Kasir muncul di sini." /> : !history ? (
-              <button className={styles.recent} onClick={() => setOpen(latest)}>
-                <span className={styles.recentIcon}><NavIcon name="/penjualan" /></span>
-                <span className={styles.recentCopy}><b>{latest.number}{latest.status === 'batal' && <span className="chip void">Batal</span>}</b><small>{[jam(latest.sold_at), payLabel(latest), contacts.get(latest.contact_id)].filter(Boolean).join(' · ')}</small></span>
-                <b className={latest.status === 'batal' ? styles.voidTotal : undefined}>{rp(latest.total)}</b><NavIcon name="next" size={16} />
-              </button>
-            ) : (
-          <DataTable rows={rows} caption={`Penjualan ${tgl(day)}`} onRow={setOpen} rowLabel={(s) => `${s.number}, ${rp(s.total)}`} rowClass={(s) => (s.status === 'batal' ? 'void' : undefined)}
-            initialSort={{ key: 'jam', dir: -1 }}
-            columns={[
-              { key: 'number', label: 'No. transaksi', sort: (s) => s.number, render: (s) => <b>{s.number}</b> },
-              { key: 'jam', label: 'Waktu', sort: (s) => s.sold_at, render: (s) => jam(s.sold_at) },
-              { key: 'bayar', label: 'Pembayaran', render: (s) => payLabel(s) },
-              { key: 'pelanggan', label: 'Pelanggan', hide: 'tablet', sort: (s) => contacts.get(s.contact_id) || '', render: (s) => (s.contact_id ? contacts.get(s.contact_id) || '—' : '—') },
-              ...(fin ? [{ key: 'kasir', label: 'Kasir', hide: 'tablet', render: (s) => (s.cashier ? s.cashier.split('@')[0] : '—') }] : []),
-              { key: 'status', label: 'Status', render: (s) => (s.status === 'batal' ? <span className="chip void">Batal</span> : <span className="chip good">Selesai</span>) },
-              { key: 'total', label: 'Total', align: 'right', sort: (s) => Number(s.total), render: (s) => <b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b> },
-            ]}
-            card={(s) => <>
-              <div className="dt-row"><b>{s.number}{s.status === 'batal' && <span className="chip void" style={{ marginLeft: 6 }}>Batal</span>}</b><b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b></div>
-              <span className="small muted">{jam(s.sold_at)} · {payLabel(s)}{s.contact_id ? ` · ${contacts.get(s.contact_id) || ''}` : ''}{fin && s.cashier ? ` · ${s.cashier.split('@')[0]}` : ''}</span>
-            </>} />
-            )}
           </section>
-        </>}
-        <section className={styles.panel}>
-          <h2>Quick Action</h2>
-          <div className={styles.quick}>
-            <button onClick={() => setMenu('return')}><NavIcon name="return" />Retur Penjualan</button>
-            {quickLinks.map(([href, icon, label]) => <Link key={href} href={href}><NavIcon name={icon} />{label}</Link>)}
-          </div>
-        </section>
+        </div>
       </>}
       {menu === 'menu' && <Sheet title="Lainnya" onClose={() => setMenu(null)}>
         {pathAllowed(kos, '/grosir') && <Link href="/grosir">Pesanan Grosir</Link>}

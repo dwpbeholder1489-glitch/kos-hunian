@@ -99,3 +99,24 @@
   .actions .primary span { display: none; }
   .quick { gap: 3px; }
 }
+
+.salesContent { display: grid; gap: inherit; min-width: 0; }
+
+@media screen and (min-width: 1024px) {
+  .page { container-type: inline-size; gap: 18px; }
+}
+
+@container (min-width: 700px) {
+  .hero { min-height: 170px; display: flex; align-items: center; }
+  .heroArt { width: min(35%, 300px); }
+  .actions { grid-template-columns: 1.25fr repeat(3, 1fr); }
+  .actions > *, .actions .primary { flex-direction: row; gap: 8px; min-height: 48px; }
+  .tabs { max-width: 600px; }
+  .dateRow { max-width: 375px; }
+  .metrics { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .salesContent:has(> :nth-child(2)):not([data-history=true]) { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .salesContent[data-history=false] .quick { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .salesContent[data-history=false] .quick > * { min-height: 52px; }
+  .recent { min-height: 68px; }
+}
+.salesContent { align-items: start; }
