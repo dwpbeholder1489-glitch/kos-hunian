@@ -3,17 +3,18 @@
 // Server: so_save / so_confirm / so_deliver / so_delivery_status / so_cancel, price_list_*, customer_credit, receivable_open.
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useBaru } from '@/lib/useBaru';
 import NavIcon from '@/components/NavIcon';
 import styles from './grosir.module.css';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable } from '@/components/Page';
-import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
+import { DataTable } from '@/components/Page';
+import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
-import { canArea } from '@/lib/business';
+import { canArea, pathAllowed } from '@/lib/business';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import OrderProcurement from './OrderProcurement';
 
@@ -37,6 +38,8 @@ function GrosirWorkspace({ kosId, kos, ver }) {
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(null); // {order?} untuk baru/ubah
   const [open, setOpen] = useState(null);
+  const [shortcut, setShortcut] = useState(null);
+  const [detailMode, setDetailMode] = useState(null);
   const [linkedOrder, setLinkedOrder] = useState(undefined);
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('pesanan');
@@ -65,7 +68,7 @@ function GrosirWorkspace({ kosId, kos, ver }) {
     setErr(null);
     setD({ orders, lines: linkedLines.data ? [...l.data.filter((row) => row.order_id !== linkedOrder), ...linkedLines.data] : l.data,
       deliveries: linkedDeliveries.data ? [...dv.data.filter((row) => row.order_id !== linkedOrder), ...linkedDeliveries.data] : dv.data,
-      products: p.data, units: u.data, customers: c.data, lists: pl.data || [], recv: ro.data || [],
+      products: p.data, units: u.data, customers: c.data, lists: pl.data || [], recv: ro.error ? null : ro.data || [],
       unavailableLink: Boolean(linkedOrder && (!linked.data || linked.error || linkedLines.error || linkedDeliveries.error)) });
   };
   useEffect(() => { if (linkedOrder !== undefined) load(); }, [kosId, ver, linkedOrder]);
@@ -78,36 +81,77 @@ function GrosirWorkspace({ kosId, kos, ver }) {
   const quotes = d.orders.filter((o) => o.status === 'penawaran');
   const done = d.orders.filter((o) => ['selesai', 'batal'].includes(o.status));
   const remainOf = (o) => d.lines.filter((l) => l.order_id === o.id).reduce((a, l) => a + (Number(l.qty) - Number(l.qty_sent)) * Number(l.price), 0);
-  const overdue = d.recv.filter((r) => r.due_date < t0).reduce((a, r) => a + Number(r.open_amount), 0);
+  const overdue = d.recv?.filter((r) => r.due_date < t0).reduce((a, r) => a + Number(r.open_amount), 0);
   const onRoad = d.deliveries.filter((x) => x.status === 'dikirim').length;
   const list = tab === 'jalan' ? running : tab === 'penawaran' ? quotes : done;
   const finance = canArea(kos, 'finance');
   const newPortal = d.orders.filter((o) => o.source === 'portal' && o.status === 'penawaran').length;
   const srcChip = (o) => (o.source === 'portal' ? <span className={'chip ' + (o.status === 'penawaran' ? 'gold' : '')} style={{ marginLeft: 4 }}>{o.status === 'penawaran' ? 'Baru dari portal' : 'Dari portal'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span> : null);
 
-  return (
-    <div className="stack">
-      <PageHeader title="Pesanan Grosir" desc="Wholesale Management Center" help={<PageHelp page="grosir" />} actions={<>{!['harga', 'portal'].includes(tab) && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</>} />
-      <ol className={styles.flow} aria-label="Alur pesanan grosir">
-        {[['/resep', 'Penawaran'], ['/konfirmasi', 'Konfirmasi Pesanan'], ['/grosir', 'Pengiriman'], ['/pembayaran', 'Pembayaran']].map(([icon, label]) => (
-          <li key={label}><NavIcon name={icon} /><span>{label}</span></li>
-        ))}
-      </ol>
-      {open === linkedOrder && d.unavailableLink && <div className="notice bad">Pesanan rujukan tidak bisa dibuka di bisnis aktif.</div>}
-      <div className="grid">
-        <Tile label="Pesanan berjalan" value={angka(running.length)} sub={running.length ? `sisa kirim ${rp(running.reduce((a, o) => a + remainOf(o), 0))}` : 'tidak ada'} />
-        <Tile label="Dalam pengiriman" value={angka(onRoad)} tone={onRoad ? 'gold' : ''} sub="surat jalan belum diterima" />
-        <Tile label="Piutang lewat tempo" value={rp(overdue)} tone={overdue ? 'bad' : ''} sub={overdue ? 'tagih lewat WhatsApp' : 'aman'} />
-      </div>
-      <div className="seg">{[['jalan', `Berjalan (${running.length})`], ['penawaran', `Penawaran (${quotes.length})${newPortal ? ` · ${newPortal} baru` : ''}`], ['selesai', 'Selesai'], ['harga', 'Daftar harga'], ['portal', 'Portal pelanggan']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
+  const canStock = pathAllowed(kos, '/barang');
+  const contentTab = !['harga', 'portal'].includes(tab);
+  const documents = d.deliveries.filter((delivery) => delivery.status !== 'gagal');
+  const selectOrder = (id, mode = null) => {
+    setShortcut(null);
+    setDetailMode(mode);
+    setOpen(id);
+  };
 
-      {tab === 'portal' ? <PortalLinks kos={kos} kosId={kosId} /> : tab === 'harga' ? <PriceLists d={d} kosId={kosId} canEdit={finance} onChanged={load} /> : !d.products.length ? (
-        <Empty title="Belum ada barang" text="Tambahkan barang dulu di Barang & stok."><Link href="/barang"><button className="primary">Buka Barang & stok</button></Link></Empty>
-      ) : list.length === 0 ? (
-        <Empty title={tab === 'penawaran' ? 'Belum ada penawaran' : tab === 'jalan' ? 'Tidak ada pesanan berjalan' : 'Belum ada pesanan selesai'}
-          text={tab === 'selesai' ? 'Pesanan yang semua barangnya sudah dikirim atau dibatalkan tampil di sini.' : 'Buat penawaran harga untuk pelanggan grosir/toko, lalu konfirmasi jadi pesanan saat disetujui. Barang dikirim dengan surat jalan (boleh bertahap); fakturnya terbit otomatis.'} />
+  return (
+    <div className={styles.page}>
+      <section className={styles.hero} aria-label="Wholesale Management Center">
+        <div className={styles.heroCopy}>
+          <h1>Pesanan Grosir</h1>
+          <p>Kelola penawaran, pesanan, surat jalan, faktur, dan penagihan grosir dengan mudah.</p>
+          <PageHelp page="grosir" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Pesanan Grosir <NavIcon name="next" size={14} /></>} />
+        </div>
+        <span className={styles.heroArt}><Image src="/grosir-pesanan.webp" alt="" fill priority sizes="(max-width: 600px) 35vw, 280px" /></span>
+      </section>
+
+      <div className={styles.actions}>
+        <button className={styles.primary} onClick={() => setForm({})} disabled={!d.products.length}><span aria-hidden="true">+</span> Penawaran</button>
+        <button onClick={() => setShortcut('order')}><NavIcon name="/penjualan" />Buat Pesanan</button>
+        <button onClick={() => setShortcut('delivery')}><NavIcon name="/grosir" />Buat Surat Jalan</button>
+        <button onClick={() => setShortcut('more')}><NavIcon name="/beranda" />Lainnya</button>
+      </div>
+
+      {open === linkedOrder && d.unavailableLink && <div className="notice bad">Pesanan rujukan tidak bisa dibuka di bisnis aktif.</div>}
+
+      <div className={styles.metrics}>
+        <GrosirMetric tone="green" icon="/penjualan" label="Pesanan Berjalan" value={angka(running.length)} note={running.length ? `Sisa kirim ${rp(running.reduce((a, o) => a + remainOf(o), 0))}` : 'Tidak ada'} />
+        <GrosirMetric tone="blue" icon="/grosir" label="Dalam Pengiriman" value={angka(onRoad)} note="Surat jalan belum diterima" />
+        <GrosirMetric tone="gold" icon="/shift" label="Piutang Lewat Tempo" value={overdue == null ? '—' : rp(overdue)} note={overdue == null ? 'Data belum tersedia' : overdue ? 'Jatuh tempo terlewati' : 'Aman'} badge={overdue === 0} />
+      </div>
+
+      <div className={styles.tabs} aria-label="Status pesanan">
+        {[
+          ['jalan', `Berjalan (${running.length})`, '/penjualan'],
+          ['penawaran', `Penawaran (${quotes.length})`, '/promo'],
+          ['selesai', 'Selesai', 'done'],
+        ].map(([key, label, icon]) => (
+          <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}>
+            <NavIcon name={icon} /><span>{label}{key === 'penawaran' && newPortal > 0 && <small className={styles.newPortal}> · {newPortal} baru</small>}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.quick} aria-label="Menu grosir">
+        <button aria-pressed={tab === 'harga'} onClick={() => setTab('harga')}><NavIcon name="/promo" />Daftar Harga</button>
+        <button aria-pressed={tab === 'portal'} onClick={() => setTab('portal')}><NavIcon name="/penghuni" />Portal Pelanggan</button>
+        <button onClick={() => setShortcut('invoice')}><NavIcon name="/resep" />Faktur Grosir</button>
+        {pathAllowed(kos, '/kontak') && <Link href="/kontak"><NavIcon name="/kontak" />Pelanggan Grosir</Link>}
+        {pathAllowed(kos, '/laporan-toko') && <Link href="/laporan-toko"><NavIcon name="/laporan" />Laporan Pesanan</Link>}
+      </div>
+
+      {tab === 'portal' ? <PortalLinks kos={kos} kosId={kosId} /> : tab === 'harga' ? <PriceLists d={d} kosId={kosId} canEdit={finance} onChanged={load} /> : list.length === 0 ? (
+        <section className={styles.empty}>
+          <div className={styles.emptyArt}><Image src="/grosir-kosong.webp" alt="" fill sizes="(max-width: 600px) 42vw, 240px" /></div>
+          <h2>{tab === 'penawaran' ? 'Belum ada penawaran' : tab === 'jalan' ? 'Tidak ada pesanan berjalan' : 'Belum ada pesanan selesai'}</h2>
+          <p>{!d.products.length ? 'Tambahkan barang untuk mulai membuat penawaran grosir.' : tab === 'selesai' ? 'Pesanan yang semua barangnya sudah dikirim atau dibatalkan tampil di sini.' : 'Buat penawaran harga untuk pelanggan grosir/toko, lalu konfirmasi menjadi pesanan saat disetujui.'}</p>
+          {d.products.length ? <button className={styles.primary} onClick={() => setForm({})}>＋ Buat Penawaran Sekarang</button> : canStock && <Link className={styles.primary} href="/barang">Buka Barang &amp; Stok</Link>}
+        </section>
       ) : (
-        <DataTable rows={list} caption="Pesanan grosir" onRow={(o) => setOpen(o.id)} rowLabel={(o) => `${o.number} ${cust.get(o.contact_id)?.name || ''}`} pageSize={50}
+        <DataTable rows={list} caption="Pesanan grosir" onRow={(o) => selectOrder(o.id)} rowLabel={(o) => `${o.number} ${cust.get(o.contact_id)?.name || ''}`} pageSize={50}
           columns={[
             { key: 'date', label: 'Tanggal', sort: (o) => o.order_date, render: (o) => tgl(o.order_date) },
             { key: 'no', label: 'Nomor', sort: (o) => o.number, render: (o) => <span style={{ whiteSpace: 'nowrap' }}>{o.number}</span> },
@@ -122,10 +166,49 @@ function GrosirWorkspace({ kosId, kos, ver }) {
                 <span className="small muted">{o.number} · {tgl(o.order_date)}{o.customer_ref ? ` · ${/^po/i.test(o.customer_ref) ? '' : 'PO '}${o.customer_ref}` : ''}{o.need_date ? ` · perlu ${tgl(o.need_date)}` : ''}{dvs.length ? ` · ${dvs.length} surat jalan` : ''}</span></div><div style={{ textAlign: 'right' }}><b>{rp(o.total)}</b>{['dikonfirmasi', 'sebagian'].includes(o.status) && <div className="small muted">sisa {rp(remainOf(o))}</div>}</div></div>
           </>; }} />
       )}
-      {form && <OrderForm kosId={kosId} kos={kos} d={d} order={form.order} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); load(); setOpen(id); }} />}
-      {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={bump} />}
+      {contentTab && <section className={styles.workflow}>
+        <h2>Alur Pesanan Grosir</h2>
+        <WholesaleFlow />
+      </section>}
+      {shortcut === 'more' && <Sheet title="Lainnya" onClose={() => setShortcut(null)}>
+        <WholesaleFlow />
+        <button onClick={() => { setShortcut(null); setTab('harga'); }}>Daftar Harga</button>
+        <button onClick={() => { setShortcut(null); setTab('portal'); }}>Portal Pelanggan</button>
+      </Sheet>}
+      {['order', 'delivery'].includes(shortcut) && <Sheet title={shortcut === 'order' ? 'Buat Pesanan' : 'Buat Surat Jalan'} onClose={() => setShortcut(null)}>
+        <p>{shortcut === 'order' ? 'Pilih penawaran yang sudah disetujui pelanggan.' : 'Pilih pesanan yang akan dikirim.'}</p>
+        {(shortcut === 'order' ? quotes : running).map((order) => <button key={order.id} onClick={() => selectOrder(order.id, shortcut === 'order' ? 'konfirmasi' : 'kirim')}>
+          {order.number} · {cust.get(order.contact_id)?.name || 'Pelanggan'}
+        </button>)}
+        {shortcut === 'order' && !quotes.length && <p>Belum ada penawaran untuk dikonfirmasi.</p>}
+        {shortcut === 'delivery' && !running.length && <p>Belum ada pesanan yang siap dikirim.</p>}
+      </Sheet>}
+      {shortcut === 'invoice' && <Sheet title="Faktur Grosir" onClose={() => setShortcut(null)}>
+        {documents.length ? documents.map((delivery) => <Link key={delivery.id} href={`/dokumen/grosir/${delivery.order_id}?faktur=${delivery.id}`}>
+          Faktur · {delivery.number} · {tgl(delivery.ship_date)}
+        </Link>) : <p>Faktur terbit setelah surat jalan dibuat.</p>}
+      </Sheet>}
+      {form && <OrderForm kosId={kosId} kos={kos} d={d} order={form.order} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); load(); selectOrder(id); }} />}
+      {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} initialMode={detailMode} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={bump} />}
     </div>
   );
+}
+
+function GrosirMetric({ tone, icon, label, value, note, badge }) {
+  return <article className={styles.metric} data-tone={tone}>
+    <span className={styles.metricIcon}><NavIcon name={icon} /></span>
+    <div><span>{label}</span><strong>{value}</strong>
+      {badge ? <small className={styles.safe}><NavIcon name="done" size={13} />{note}</small> : <small>{note}</small>}
+    </div>
+  </article>;
+}
+
+function WholesaleFlow() {
+  return <ol className={styles.flow} aria-label="Tahapan pesanan grosir">
+    {[['/resep', 'Penawaran'], ['/konfirmasi', 'Konfirmasi Pesanan'], ['/grosir', 'Pengiriman'], ['/pembayaran', 'Pembayaran']].map(([icon, label]) => (
+      <li key={label}><NavIcon name={icon} /><span>{label}</span></li>
+    ))}
+  </ol>;
 }
 
 // Ringkasan kredit pelanggan (batas, piutang, terlambat)
@@ -259,12 +342,12 @@ function OrderForm({ kosId, kos, d, order, onClose, onSaved }) {
 }
 const plusD = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
 
-function OrderDetail({ kos, reloadKey, d, order: o, onClose, onEdit, onChanged }) {
+function OrderDetail({ initialMode, kos, reloadKey, d, order: o, onClose, onEdit, onChanged }) {
   const c = d.customers.find((x) => x.id === o.contact_id);
   const lines = d.lines.filter((l) => l.order_id === o.id);
   const dvs = d.deliveries.filter((x) => x.order_id === o.id);
   const [cr, setCr] = useState(null);
-  const [mode, setMode] = useState(null); // kirim | konfirmasi | batal | supplier
+  const [mode, setMode] = useState(initialMode); // kirim | konfirmasi | batal | supplier
   const [procurement, setProcurement] = useState(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
