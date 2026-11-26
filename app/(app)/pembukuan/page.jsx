@@ -9,6 +9,7 @@ import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
 import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
+import FinancialOverview from '@/components/FinancialOverview';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { NeracaSaldo, UmurPiutangUtang, NilaiPersediaan } from '@/components/AkuntansiDagang';
 
@@ -24,21 +25,29 @@ export default function Pembukuan() {
   const owner = canArea(kos, 'team');
   const retail = ['retail', 'jasa', 'kustom'].includes(kos?.business_type); // biaya dicatat di Kas
   const toko = kos?.business_type === 'retail'; // umur piutang/utang & nilai persediaan (Tahap 2 Retail)
-  const [tab, setTab] = useState('laporan');
+  const [tab, setTab] = useState('overview');
   const [ym, setYm] = useState(today().slice(0, 7));
   const [ytd, setYtd] = useState(false);
   const [entity, setEntity] = useState(false);
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
+  const [loaded, setLoaded] = useState(null);
   const from = ytd ? ym.slice(0, 4) + '-01-01' : ym + '-01';
   const to = monthEnd(ym);
-  const load = async () => {
-    setD(null); setErr(null);
+  const reportKey = JSON.stringify([kosId, ver, entity, from, to]);
+  const load = async (isActive = () => true) => {
+    setD(null); setErr(null); setLoaded(null);
     const { data, error } = await supabase.rpc('acct_report', { p_kos: kosId, p_entity: entity, p_from: from, p_to: to });
+    if (!isActive()) return;
     if (error) { if (entity) setEntity(false); return setErr(errMsg(error)); }
     setD(data);
+    setLoaded(reportKey);
   };
-  useEffect(() => { load(); }, [kosId, ver, ym, ytd, entity]);
+  useEffect(() => {
+    let active = true;
+    load(() => active);
+    return () => { active = false; };
+  }, [reportKey]);
 
   const period = ytd ? `Jan–${bulan(ym)}` : bulan(ym);
   return (
@@ -55,11 +64,12 @@ export default function Pembukuan() {
         <button className={entity ? 'on' : ''} onClick={() => setEntity(true)}>Seluruh badan usaha</button>
       </div>}
       <div className="seg">
-        {[['laporan', 'Laporan'], ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['overview', 'Overview Keuangan'], ['laporan', 'Laporan'], ...(!entity ? [['saldo', 'Neraca saldo']] : []), ['buku', 'Buku besar'], ['jurnal', 'Jurnal'], ...(toko && !entity ? [['umur', 'Umur piutang & utang'], ['persediaan', 'Nilai persediaan']] : []), ['bank', 'Rekonsiliasi bank'], ...(owner ? [['periode', 'Periode & manual']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
       {err && <div className="notice bad">{/acct_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>}
-      {!d && !err ? <Loading /> : d && <>
+      {(!d || loaded !== reportKey) && !err ? <Loading /> : d && loaded === reportKey && <>
         <Meta d={d} entity={entity} />
+        {tab === 'overview' && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} />}
         {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} />}
         {tab === 'laporan' && !entity && <ArusKas kosId={kosId} from={from} to={to} period={period} owner={owner} ver={ver} />}
         {tab === 'buku' && (d.ringkas

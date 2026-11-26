@@ -1,0 +1,30 @@
+.shell{display:grid;gap:12px}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-radius:12px;background:#142b45;color:white}
+.heading h2,.heading p,.card h3{margin:0}
+.heading button{color:white;border-color:#b89954}
+.eyebrow{color:#f4d78d;font-size:.72rem;font-weight:750;letter-spacing:.12em}
+.filters,.actions,.legend{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.filters input{width:auto}
+.kpis,.panels{display:grid;gap:10px}
+.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.panels{grid-template-columns:3fr 2fr}
+.card{min-width:0;padding:12px;text-align:left;background:var(--surface,#fff);color:var(--fg,#142b45);border:1px solid var(--line,#e2e6eb);border-radius:10px}
+button.card{display:grid;gap:3px;align-content:start;text-align:left}
+button.card strong{font-size:clamp(.95rem,1.5vw,1.25rem);overflow-wrap:anywhere}
+.icon{font-size:1.25rem;color:var(--gold,#a17a28)}
+.legend{font-size:.8rem;margin:8px 0}
+.legend span::before{content:'';display:inline-block;width:.7em;height:.7em;border-radius:2px;background:#235479;margin-inline-end:4px}
+.legend span+span::before{background:#b48c39}
+.chart{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px}
+.bucket{display:grid;gap:4px;text-align:center;overflow-wrap:anywhere}
+.plot{display:flex;justify-content:center;gap:6px;height:108px;position:relative}
+.plot::before{content:'';position:absolute;bottom:var(--zero);width:100%;border-bottom:1px solid var(--line,#8998a9)}
+.track{position:relative;width:22%;max-width:48px}
+.bar{position:absolute;inset-inline:0;background:#235479;border-radius:3px 3px 0 0}
+.track+.track .bar{background:#b48c39}
+.ledger{margin:6px 0}
+.ledger div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line,#e2e6eb);padding:7px 0}
+.ledger dd{margin:0;font-weight:700;text-align:right}
+.actions{margin-top:8px}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.panels{grid-template-columns:1fr}.heading{flex-wrap:wrap}}
