@@ -27,6 +27,7 @@ declare
   guest constant text := repeat('a', 64);
   device constant text := repeat('b', 64);
   guest_id uuid := gen_random_uuid();
+  lead_id uuid := gen_random_uuid();
   private_id uuid := gen_random_uuid();
   pr uuid; pr_hidden uuid; pr_other uuid; contact uuid; private_token text; sl uuid; delivery uuid := gen_random_uuid();
   units constant jsonb := '[{"name":"pcs","qty":1,"price_retail":3200,"price_wholesale":3000},{"name":"pak","qty":10,"price_retail":31000,"price_wholesale":29000}]';
@@ -84,7 +85,18 @@ begin
   assert jsonb_array_length(portal_shop_orders(slug, guest)) = 1, 'Riwayat tamu tidak memuat pesanan privat';
 
   perform set_config('request.jwt.claim.sub', owner_a, true);
+  assert jsonb_array_length(retail_portal_inbox(a)) = 2, 'Pesanan dan penawaran menunggu tampil';
+  assert retail_portal_inbox(b) = '[]'::jsonb, 'Pemberitahuan dibatasi akses bisnis';
+  perform so_mark_reviewed(guest_id);
+  assert jsonb_array_length(retail_portal_inbox(a)) = 2, 'Dibaca tetap menunggu';
+  perform so_cancel(private_id, 'Batal uji pemberitahuan');
+  assert jsonb_array_length(retail_portal_inbox(a)) = 1, 'Pesanan dibatalkan keluar dari antrean';
   perform so_confirm(guest_id);
+  assert retail_portal_inbox(a) = '[]'::jsonb, 'Pesanan dikonfirmasi keluar dari antrean';
+  insert into crm_leads(id, kos_id, name, source) values (lead_id, a, 'Permintaan portal uji', 'halaman');
+  assert retail_portal_inbox(a) #>> '{0,target}' = 'lead', 'Permintaan dari formulir portal mengarah ke prospek';
+  update crm_leads set stage = 'batal' where id = lead_id;
+  assert retail_portal_inbox(a) = '[]'::jsonb, 'Permintaan yang dibatalkan keluar dari antrean';
   select id into sl from so_lines where order_id = guest_id;
   result := so_deliver(delivery, guest_id, jsonb_build_object('method', 'transfer', 'lines', jsonb_build_array(jsonb_build_object('line_id', sl, 'qty', 5))));
   assert result->>'sale_id' is not null, 'Faktur dari mesin transaksi';

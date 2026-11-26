@@ -28,6 +28,7 @@ export default function Grosir() {
 }
 
 function GrosirWorkspace({ kosId, kos, ver }) {
+  const { bump } = useKos();
   const [tab, setTab] = useState('jalan');
   useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['harga', 'portal', 'penawaran'].includes(t)) setTab(t); } catch {} }, []);
   const [d, setD] = useState(null);
@@ -79,8 +80,8 @@ function GrosirWorkspace({ kosId, kos, ver }) {
   const onRoad = d.deliveries.filter((x) => x.status === 'dikirim').length;
   const list = tab === 'jalan' ? running : tab === 'penawaran' ? quotes : done;
   const finance = canArea(kos, 'finance');
-  const newPortal = d.orders.filter((o) => o.source === 'portal' && !o.reviewed_at && o.status === 'penawaran').length;
-  const srcChip = (o) => (o.source === 'portal' ? <span className={'chip ' + (o.reviewed_at ? '' : 'gold')} style={{ marginLeft: 4 }}>{o.reviewed_at ? 'Dari portal' : 'Baru dari portal'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span> : null);
+  const newPortal = d.orders.filter((o) => o.source === 'portal' && o.status === 'penawaran').length;
+  const srcChip = (o) => (o.source === 'portal' ? <span className={'chip ' + (o.status === 'penawaran' ? 'gold' : '')} style={{ marginLeft: 4 }}>{o.status === 'penawaran' ? 'Baru dari portal' : 'Dari portal'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span> : null);
 
   return (
     <div className="stack">
@@ -115,7 +116,7 @@ function GrosirWorkspace({ kosId, kos, ver }) {
           </>; }} />
       )}
       {form && <OrderForm kosId={kosId} kos={kos} d={d} order={form.order} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); load(); setOpen(id); }} />}
-      {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={load} />}
+      {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={bump} />}
     </div>
   );
 }
@@ -261,7 +262,6 @@ function OrderDetail({ kos, reloadKey, d, order: o, onClose, onEdit, onChanged }
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { supabase.rpc('customer_credit', { p_contact: o.contact_id }).then(({ data }) => setCr(data || null)); }, [o.id, o.status]);
-  useEffect(() => { if (o.source === 'portal' && !o.reviewed_at) supabase.rpc('so_mark_reviewed', { p_order: o.id }).then(() => {}, () => {}); }, [o.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [sc, setSc] = useState(null);
   useEffect(() => {
     if (o.status !== 'penawaran') return;
