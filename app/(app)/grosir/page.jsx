@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useBaru } from '@/lib/useBaru';
+import NavIcon from '@/components/NavIcon';
+import styles from './grosir.module.css';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, Tile, toast } from '@/components/ui';
@@ -85,7 +87,12 @@ function GrosirWorkspace({ kosId, kos, ver }) {
 
   return (
     <div className="stack">
-      <PageHeader title="Pesanan grosir" help={<PageHelp page="grosir" />} actions={<>{!['harga', 'portal'].includes(tab) && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</>} />
+      <PageHeader title="Pesanan Grosir" desc="Wholesale Management Center" help={<PageHelp page="grosir" />} actions={<>{!['harga', 'portal'].includes(tab) && <button className="primary" onClick={() => setForm({})} disabled={!d.products.length}>+ Penawaran</button>}</>} />
+      <ol className={styles.flow} aria-label="Alur pesanan grosir">
+        {[['/resep', 'Penawaran'], ['/konfirmasi', 'Konfirmasi Pesanan'], ['/grosir', 'Pengiriman'], ['/pembayaran', 'Pembayaran']].map(([icon, label]) => (
+          <li key={label}><NavIcon name={icon} /><span>{label}</span></li>
+        ))}
+      </ol>
       {open === linkedOrder && d.unavailableLink && <div className="notice bad">Pesanan rujukan tidak bisa dibuka di bisnis aktif.</div>}
       <div className="grid">
         <Tile label="Pesanan berjalan" value={angka(running.length)} sub={running.length ? `sisa kirim ${rp(running.reduce((a, o) => a + remainOf(o), 0))}` : 'tidak ada'} />

@@ -1,19 +1,35 @@
 'use client';
 import { withApproval, requestApproval } from '@/lib/approval';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import NavIcon from '@/components/NavIcon';
+import { ScanButton } from '@/components/BarcodeScan';
+import styles from './penjualan.module.css';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable } from '@/components/Page';
-import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
+import { DataTable } from '@/components/Page';
+import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg } from '@/lib/format';
 import { PAY, jam, qtyNum, uid, payLabel, splitSerials, unitPrice } from '@/lib/retail';
-import { canArea } from '@/lib/business';
+import { canArea, pathAllowed } from '@/lib/business';
 import { CreditNotes } from '@/components/KatalogLanjut';
 import { OfflineReview } from '@/components/KasirOffline';
 
 const REFUND = { tunai: 'Uang tunai dari laci', transfer: 'Transfer balik', kasbon: 'Potong kasbon', nota: 'Nota kredit (saldo belanja)' };
+
+const sumSales = (sales) => sales.reduce((totals, sale) => {
+  if (sale.status === 'selesai') {
+    const amount = Number(sale.total);
+    totals.revenue += amount;
+    totals.profit += amount - Number(sale.cost_total);
+    totals.noCost ||= Number(sale.cost_total) === 0 && amount > 0;
+  }
+  return totals;
+}, { revenue: 0, profit: 0, noCost: false });
+const percent = new Intl.NumberFormat('id-ID', { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' });
 
 const shift = (k, n) => { const d = new Date(k + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
@@ -21,8 +37,14 @@ const shift = (k, n) => { const d = new Date(k + 'T00:00:00Z'); d.setUTCDate(d.g
 export default function Penjualan() {
   const { kosId, ver, kos } = useKos();
   const fin = canArea(kos, 'finance');
+  const router = useRouter();
+  const canSell = pathAllowed(kos, '/kasir');
+  const [menu, setMenu] = useState(null);
+  const [history, setHistory] = useState(false);
   const [day, setDay] = useState(today());
   const [rows, setRows] = useState(null);
+  const [previous, setPrevious] = useState(null);
+  const request = useRef(0);
   const [contacts, setContacts] = useState(new Map());
   const [err, setErr] = useState(null);
   const [open, setOpen] = useState(null);
@@ -32,37 +54,94 @@ export default function Penjualan() {
   const openSale = async (id) => { const { data, error } = await supabase.rpc('sale_detail', { p_sale: id }); if (error) return toast(errMsg(error)); if (data?.sale) setOpen({ ...data.sale, contact_name: data.contact?.name }); };
   const load = async () => {
     // kasir hanya menerima penjualannya sendiri, tanpa harga modal (diatur database)
-    const { data, error } = await supabase.rpc('sales_day', { p_kos: kosId, p_date: day });
-    if (error) return setErr(errMsg(error));
-    setContacts(new Map(data.filter((x) => x.contact_id).map((x) => [x.contact_id, x.contact_name])));
-    setRows(data);
+    const id = ++request.current;
+    const [result, yesterday] = await Promise.all([
+      supabase.rpc('sales_day', { p_kos: kosId, p_date: day }),
+      supabase.rpc('sales_day', { p_kos: kosId, p_date: shift(day, -1) }),
+    ]);
+    if (id !== request.current) return;
+    if (result.error) return setErr(errMsg(result.error));
+    setErr(null);
+    setPrevious(yesterday.error ? null : sumSales(yesterday.data));
+    setContacts(new Map(result.data.filter((x) => x.contact_id).map((x) => [x.contact_id, x.contact_name])));
+    setRows(result.data);
   };
-  useEffect(() => { setRows(null); load(); }, [kosId, ver, day]);
-  if (err) return <div className="notice bad">{err.includes('sales_day') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
+  useEffect(() => {
+    setRows(null);
+    setErr(null);
+    load();
+    return () => { request.current++; };
+  }, [kosId, ver, day]);
 
   const ok = (rows || []).filter((s) => s.status === 'selesai');
-  const omzet = ok.reduce((a, s) => a + Number(s.total), 0);
-  const laba = ok.reduce((a, s) => a + Number(s.total) - Number(s.cost_total), 0);
-  const kasbon = ok.reduce((a, s) => a + Number(s.amt_kasbon ?? (s.pay_method === 'kasbon' ? s.total : 0)), 0);   // termasuk bagian kasbon dari bayar campuran
-  const noCost = ok.some((s) => Number(s.cost_total) === 0 && Number(s.total) > 0);
+  const { revenue: omzet, profit: laba, noCost } = sumSales(ok);
+  const kasbon = ok.reduce((a, s) => a + Number(s.amt_kasbon ?? (s.pay_method === 'kasbon' ? s.total : 0)), 0);
+  const compare = day === today() ? 'vs kemarin' : 'vs hari sebelumnya';
+  const omzetTrend = previous?.revenue > 0 ? (omzet - previous.revenue) / previous.revenue : null;
+  const labaTrend = !noCost && !previous?.noCost && previous?.profit > 0 ? (laba - previous.profit) / previous.profit : null;
+
+  const latest = [...(rows || [])].sort((a, b) => Date.parse(b.sold_at) - Date.parse(a.sold_at))[0];
+  const quickLinks = [
+    ['/promo', '/promo', 'Diskon & Promo'],
+    ['/kontak', '/penghuni', 'Pelanggan'],
+    ['/laporan-toko#produk', 'trophy', 'Produk Terlaris'],
+    ['/laporan-toko', '/laporan', 'Laporan Penjualan'],
+  ].filter(([href]) => pathAllowed(kos, href.split('#')[0]));
 
   return (
-    <div className="stack">
-      <PageHeader title="Penjualan" help={<PageHelp page="penjualan" />} desc="Riwayat transaksi per hari — ketuk transaksi untuk detail, struk, retur, atau pembatalan." actions={<Link href="/kasir"><button className="primary">+ Transaksi</button></Link>} />
-      <div className="seg">{[['jual', 'Penjualan'], ['nota', 'Nota kredit'], ...(fin ? [['offline', 'Offline']] : [])].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)} aria-pressed={tab === k}>{l}</button>)}</div>
-      {tab === 'offline' && fin ? <OfflineReview kosId={kosId} ver={ver} onOpen={openSale} /> : tab === 'nota' ? <CreditNotes kos={kos} kosId={kosId} ver={ver} finance={fin} settings={canArea(kos, 'settings')} /> : <>
-      <div className="daynav">
-        <button className="sm" onClick={() => setDay(shift(day, -1))} aria-label="Hari sebelumnya">‹</button>
-        <b style={{ flex: 1, textAlign: 'center' }}>{day === today() ? 'Hari ini, ' : ''}{tgl(day)}</b>
-        <button className="sm" onClick={() => setDay(shift(day, 1))} disabled={day >= today()} aria-label="Hari berikutnya">›</button>
-      </div>
-      {!rows ? <Loading /> : <>
-        <div className="grid">
-          <Tile label="Omzet" value={rp(omzet)} sub={`${ok.length} transaksi`} />
-          {fin ? <Tile label="Laba kotor" value={rp(laba)} sub={noCost ? 'ada barang tanpa harga modal' : 'omzet − modal barang'} /> : <span className="small muted">Hanya penjualan Anda sendiri.</span>}
-          <Tile label="Kasbon" value={rp(kasbon)} sub="belum diterima" />
+    <div className={styles.page}>
+      <section className={styles.hero}>
+        <div>
+          <h1>Penjualan</h1>
+          <p>Kelola transaksi penjualan, retur,<br className={styles.heroBreak} /> dan pembatalan dengan mudah.</p>
+          <PageHelp page="penjualan" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Penjualan <NavIcon name="next" size={14} /></>} />
         </div>
-        {rows.length === 0 ? <Empty title="Belum ada penjualan" text="Transaksi dari menu Kasir muncul di sini." /> : (
+        <span className={styles.heroArt}><Image src="/penjualan-kasir.webp" alt="" fill sizes="(max-width: 600px) 36vw, 300px" priority /></span>
+      </section>
+      <div className={styles.actions}>
+        {canSell && <>
+          <Link href="/kasir" className={styles.primary}><span aria-hidden="true">+</span><NavIcon name="/penjualan" />Transaksi Baru</Link>
+          <ScanButton className={styles.action} icon={<NavIcon name="barcode" />} label="Scan Barcode" onCode={(code) => { router.push('/kasir?barcode=' + encodeURIComponent(code)); return true; }} />
+        </>}
+        <button className={styles.action} onClick={() => setMenu('import')}><NavIcon name="upload" />Import</button>
+        <button className={styles.action} onClick={() => setMenu('menu')}><NavIcon name="more" />Lainnya</button>
+      </div>
+      <div className={styles.tabs} aria-label="Jenis transaksi">
+        {[['jual', 'Penjualan', '/penjualan'], ['nota', 'Nota Kredit', 'credit'], ...(fin ? [['offline', 'Offline', 'offline']] : [])].map(([key, label, icon]) => (
+          <button key={key} onClick={() => setTab(key)} aria-pressed={tab === key}><NavIcon name={icon} />{label}</button>
+        ))}
+      </div>
+      {tab === 'offline' && fin ? <OfflineReview kosId={kosId} ver={ver} onOpen={openSale} /> : tab === 'nota' ? <CreditNotes kos={kos} kosId={kosId} ver={ver} finance={fin} settings={canArea(kos, 'settings')} /> : <>
+        <div className={styles.dateRow}>
+          <button onClick={() => setDay(shift(day, -1))} aria-label="Hari sebelumnya"><NavIcon name="prev" size={18} /></button>
+          <label className={styles.date}>
+            <NavIcon name="calendar" /><b>{day === today() ? 'Hari ini, ' : ''}{tgl(day)}</b><NavIcon name="down" size={16} />
+            <input type="date" value={day} max={today()} aria-label="Tanggal penjualan" onChange={(event) => {
+              const date = event.target.value;
+              if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date <= today()) setDay(date);
+            }} />
+          </label>
+          <button onClick={() => setDay(shift(day, 1))} disabled={day >= today()} aria-label="Hari berikutnya"><NavIcon name="next" size={18} /></button>
+        </div>
+        {err ? <div className="notice bad">{err.includes('sales_day') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div> : !rows ? <Loading /> : <>
+          <div className={styles.metrics}>
+            <SalesMetric tone="green" icon="coins" label="Omzet" value={rp(omzet)} trend={omzetTrend} compare={compare} caption={fin ? 'Total penjualan' : 'Penjualan Anda'} />
+            {fin && <SalesMetric tone="blue" icon="/laporan" label="Laba Kotor" value={rp(laba)} trend={labaTrend} compare={compare} caption={noCost ? 'Ada barang tanpa harga modal' : 'Omzet − modal barang'} />}
+            <SalesMetric tone="gold" icon="/penjualan" label="Jumlah Transaksi" value={angka(ok.length)} caption={day === today() ? 'Transaksi hari ini' : 'Pada tanggal ini'} />
+            <SalesMetric tone="red" icon="wallet" label="Kasbon" value={rp(kasbon)} caption="Belum diterima" />
+          </div>
+          <section className={styles.panel}>
+            <div className={styles.sectionHead}>
+              <h2>{history ? 'Semua Transaksi' : 'Transaksi Terbaru'}</h2>
+              {latest && <button onClick={() => setHistory(!history)}>{history ? 'Ringkas' : 'Lihat Semua'}<NavIcon name={history ? 'prev' : 'next'} size={14} /></button>}
+            </div>
+            {!latest ? <Empty title="Belum ada penjualan" text="Transaksi dari menu Kasir muncul di sini." /> : !history ? (
+              <button className={styles.recent} onClick={() => setOpen(latest)}>
+                <span className={styles.recentIcon}><NavIcon name="/penjualan" /></span>
+                <span className={styles.recentCopy}><b>{latest.number}{latest.status === 'batal' && <span className="chip void">Batal</span>}</b><small>{[jam(latest.sold_at), payLabel(latest), contacts.get(latest.contact_id)].filter(Boolean).join(' · ')}</small></span>
+                <b className={latest.status === 'batal' ? styles.voidTotal : undefined}>{rp(latest.total)}</b><NavIcon name="next" size={16} />
+              </button>
+            ) : (
           <DataTable rows={rows} caption={`Penjualan ${tgl(day)}`} onRow={setOpen} rowLabel={(s) => `${s.number}, ${rp(s.total)}`} rowClass={(s) => (s.status === 'batal' ? 'void' : undefined)}
             initialSort={{ key: 'jam', dir: -1 }}
             columns={[
@@ -78,12 +157,42 @@ export default function Penjualan() {
               <div className="dt-row"><b>{s.number}{s.status === 'batal' && <span className="chip void" style={{ marginLeft: 6 }}>Batal</span>}</b><b style={{ textDecoration: s.status === 'batal' ? 'line-through' : 'none' }}>{rp(s.total)}</b></div>
               <span className="small muted">{jam(s.sold_at)} · {payLabel(s)}{s.contact_id ? ` · ${contacts.get(s.contact_id) || ''}` : ''}{fin && s.cashier ? ` · ${s.cashier.split('@')[0]}` : ''}</span>
             </>} />
-        )}
+            )}
+          </section>
+        </>}
+        <section className={styles.panel}>
+          <h2>Quick Action</h2>
+          <div className={styles.quick}>
+            <button onClick={() => setMenu('return')}><NavIcon name="return" />Retur Penjualan</button>
+            {quickLinks.map(([href, icon, label]) => <Link key={href} href={href}><NavIcon name={icon} />{label}</Link>)}
+          </div>
+        </section>
       </>}
-      </>}
+      {menu === 'menu' && <Sheet title="Lainnya" onClose={() => setMenu(null)}>
+        {pathAllowed(kos, '/grosir') && <Link href="/grosir">Pesanan Grosir</Link>}
+        <button onClick={() => { setMenu(null); setTab('nota'); }}>Nota Kredit</button>
+        {fin && <button onClick={() => { setMenu(null); setTab('offline'); }}>Transaksi Offline</button>}
+      </Sheet>}
+      {menu === 'import' && <Sheet title="Import Penjualan" onClose={() => setMenu(null)}><p>Import penjualan masih dalam usulan pengembangan.</p></Sheet>}
+      {menu === 'return' && <Sheet title="Retur Penjualan" onClose={() => setMenu(null)}>
+        <p>Pilih transaksi pada tanggal {tgl(day)}, lalu buka pilihan retur di detail transaksi.</p>
+        {ok.length ? ok.map((sale) => <button key={sale.id} onClick={() => { setMenu(null); setOpen(sale); }}>{sale.number} · {rp(sale.total)}</button>) : <p>Belum ada transaksi selesai pada tanggal ini.</p>}
+      </Sheet>}
       {open && <Detail fin={fin} onReturned={load} s={open} contact={contacts.get(open.contact_id) || open.contact_name} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
     </div>
   );
+}
+
+function SalesMetric({ tone, icon, label, value, caption, trend, compare }) {
+  return <article className={styles.metric} data-tone={tone}>
+    <span className={styles.metricIcon}><NavIcon name={icon} /></span>
+    <div>
+      <span>{label}</span><strong>{value}</strong>
+      {trend == null ? <small>{caption}</small> : <small data-trend={trend > 0 ? 'up' : trend < 0 ? 'down' : undefined}>
+        {trend !== 0 && <span aria-hidden="true">{trend > 0 ? '▲ ' : '▼ '}</span>}{percent.format(trend)} {compare}
+      </small>}
+    </div>
+  </article>;
 }
 
 function Detail({ s, contact, onClose, onChanged, onReturned, fin }) {

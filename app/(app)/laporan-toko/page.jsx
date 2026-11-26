@@ -173,7 +173,7 @@ export default function LaporanToko() {
           </section>
         )}
 
-        <section className="panel">
+        <section className="panel" id="produk" style={{ scrollMarginTop: 90 }}>
           <div className="row between"><h3>Produk</h3>
             <div className="seg">{[['omzet', 'Terlaris'], ['laba', 'Paling untung']].map(([k, l]) => <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}</div></div>
           {prods.length === 0 ? <span className="small muted">Belum ada penjualan.</span> : <div className="list">{prods.map((p) => (

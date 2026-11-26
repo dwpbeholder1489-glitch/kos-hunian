@@ -1,5 +1,18 @@
 // Ikon garis sederhana untuk navigasi aplikasi (tanpa pustaka luar)
 const P = {
+  barcode: <path d="M3 4v16m4-16v16m5-16v16m4-16v16m5-16v16" />,
+  upload: <path d="M12 16V3m-5 5 5-5 5 5M3 13v7a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-7" />,
+  credit: <path d="M11 21H5V3h9l5 5v4M14 3v5h5M8 9h3m-3 4h3m4 3h6m-3-3 3 3-3 3" />,
+  offline: <path d="m3 3 18 18M3 9a15 15 0 0 1 4-2m4-1c4-.2 7.5 1 10 3M6 13a10 10 0 0 1 4-2m7 1 1 1m-9 4a5 5 0 0 1 6 0m-3 4h.01" />,
+  calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4m8-4v4M3 10h18M8 14h.01m4 0h.01m4 0h.01m-8 3h.01m4 0h.01" /></>,
+  coins: <><ellipse cx="10" cy="6" rx="7" ry="3" /><path d="M3 6v11c0 2 4 3 7 3l2-.2M3 11c0 2 4 3 7 3h2M17 6v4" /><ellipse cx="16" cy="13" rx="5" ry="2.5" /><path d="M11 13v5c0 3 10 3 10 0v-5" /></>,
+  wallet: <path d="M20 9V5H5a2 2 0 0 0 0 4h16v11H5a2 2 0 0 1-2-2V7m18 5h-5a2 2 0 0 0 0 4h5" />,
+  return: <path d="m8 4-5 5 5 5M3 9h11a5 5 0 0 1 0 10h-3" />,
+  trophy: <path d="M7 3h10v8a5 5 0 0 1-10 0zM7 5H3v2a5 5 0 0 0 4 5m10-7h4v2a5 5 0 0 1-4 5m-5 4v5m-4 0h8" />,
+  next: <path d="m9 5 7 7-7 7" />,
+  prev: <path d="m15 5-7 7 7 7" />,
+  down: <path d="m5 9 7 7 7-7" />,
+
   '/beranda': <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,
   '/toko': <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,
   '/jasa': <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,

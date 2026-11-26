@@ -9,10 +9,10 @@ import styles from './barcode-scan.module.css';
 const NO_READ_MS = 8000;
 const READ_INTERVAL_MS = 220;
 
-export function ScanButton({ onCode, label = 'Pindai', className = 'sm', productUnit }) {
+export function ScanButton({ onCode, label = 'Pindai', icon = '📷', className = 'sm', productUnit }) {
   const [open, setOpen] = useState(false);
   return <>
-    <button type="button" className={className} onClick={() => { prepareScanSound(); setOpen(true); }} aria-label="Pindai barcode atau ketik kodenya">📷 {label}</button>
+    <button type="button" className={className} onClick={() => { prepareScanSound(); setOpen(true); }} aria-label="Pindai barcode atau ketik kodenya">{icon} {label}</button>
     {open && <Scanner onClose={() => setOpen(false)} onCode={onCode} productUnit={productUnit} />}
   </>;
 }

@@ -56,6 +56,10 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
   const [antre, setAntre] = useState(false);
   const [err, setErr] = useState(null);
   const [q, setQ] = useState('');
+  useEffect(() => {
+    const barcode = new URLSearchParams(window.location.search).get('barcode');
+    if (barcode) setQ(barcode);
+  }, []);
   const [tier, setTier] = useState('ecer');
   const [cart, setCart] = useState([]);
   const [lead, setLead] = useState(null); // permintaan halaman bisnis yang sedang diproses {id, number, name, phone}

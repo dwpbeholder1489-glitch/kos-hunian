@@ -1,0 +1,39 @@
+.flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.flow li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding: 4px 0;
+  color: var(--fg);
+  text-align: center;
+  font-size: clamp(11px, 2.5vw, 14px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.flow li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 23px;
+  left: calc(50% + 23px);
+  width: max(0px, calc(100% - 38px));
+  border-top: 1px solid var(--line);
+}
+.flow svg {
+  box-sizing: content-box;
+  border-radius: 10px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--brand-2) 12%, var(--surface));
+  color: var(--brand-2);
+}
