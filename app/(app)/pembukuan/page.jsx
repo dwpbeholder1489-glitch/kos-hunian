@@ -94,7 +94,7 @@ export default function Pembukuan() {
         {active === 'overview' && <AccountingDashboard report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} menus={menus} onOpen={open} canConfigure={owner} canForecast={toko && !entity} canValue={!entity} />}
         {active === 'command' && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
         {active === 'valuation' && <BusinessValuation key={kosId} kosId={kosId} ver={ver} closedMonths={d.closed} onOpenCash={() => setTab('laporan')} />}
-        {active === 'investment' && <InvestmentSimulation key={kosId} />}
+        {active === 'investment' && <InvestmentSimulation key={kosId} kosId={kosId} />}
         {active === 'forecast' && toko && !entity && <CashForecast key={kosId} kosId={kosId} ver={ver} onAging={() => setTab('umur')} />}
         {active === 'manual' && owner && <Manual d={d} kosId={kosId} onDone={load} />}
         {tab === 'pusat' && !entity && !ytd && <MonthlyReportCenter key={JSON.stringify([kosId, ym])} kosId={kosId} ym={ym} periodClosed={d.closed?.includes(ym)} owner={owner} onClosePeriod={() => setTab('periode')} onAccount={!d.ringkas ? openAccount : undefined} />}
