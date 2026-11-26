@@ -1,17 +1,16 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { estimateMonthlyCash, simulateInvestment } from '@/lib/investmentSimulation';
+import { estimateMonthlyCash, investmentScenarios, savedInvestmentInputs, INITIAL_INVESTMENT, INVESTMENT_DRIVERS } from '@/lib/investmentSimulation';
 import { errMsg, rp, tgl } from '@/lib/format';
+import InvestmentComparison from './InvestmentComparison';
 import { Tile } from '@/components/ui';
 
-const INITIAL = { capital: '', revenue: '', cost: '', months: '12', annualDiscount: '12', residual: '', change: '20', units: '', price: '', unitCost: '', fixedCost: '', savings: '' };
-const DRIVERS = ['units', 'price', 'unitCost', 'fixedCost', 'savings'];
 const pct = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 
 export default function InvestmentSimulation({ kosId }) {
   const [mode, setMode] = useState('plan');
-  const [values, setValues] = useState(INITIAL);
+  const [values, setValues] = useState(INITIAL_INVESTMENT);
   const [selected, setSelected] = useState(1);
   const [scenarios, setScenarios] = useState(null);
   const [error, setError] = useState('');
@@ -43,36 +42,17 @@ export default function InvestmentSimulation({ kosId }) {
 
   const changeMode = (next) => { setMode(next); setScenarios(null); setError(''); setFeedback(''); requestId.current = null; };
   const guided = mode === 'plan';
-  const driverInputs = Object.fromEntries(DRIVERS.map((key) => [key, Number(values[key])]));
+  const driverInputs = Object.fromEntries(INVESTMENT_DRIVERS.map((key) => [key, Number(values[key])]));
   let preview = null;
-  if (guided && DRIVERS.some((key) => values[key]) && DRIVERS.every((key) => /^\d*$/.test(values[key]))) {
+  if (guided && INVESTMENT_DRIVERS.some((key) => values[key]) && INVESTMENT_DRIVERS.every((key) => /^\d*$/.test(values[key]))) {
     try { preview = estimateMonthlyCash(driverInputs); } catch { /* Show the validation message on submit. */ }
   }
 
   function calculate(event, inputs = values, inputMode = mode) {
     event?.preventDefault();
-    const guided = inputMode === 'plan';
-    const drivers = Object.fromEntries(DRIVERS.map((key) => [key, Number(inputs[key])]));
     setError(''); setScenarios(null);
     try {
-      const moneyKeys = ['capital', 'residual', ...(guided ? DRIVERS : ['revenue', 'cost'])];
-      const capital = Number(inputs.capital), residual = Number(inputs.residual);
-      const months = Number(inputs.months), annualDiscount = Number(inputs.annualDiscount);
-      const change = Number(inputs.change) / 100;
-      if (moneyKeys.some((key) => !/^\d*$/.test(inputs[key]) || Number(inputs[key]) > 1e12) ||
-          !Number.isFinite(change) || change < 0 || change > 1 || annualDiscount > 1000) {
-        throw new Error('Masukkan nominal dalam angka bulat hingga Rp1 triliun. Perubahan skenario maksimal 100%.');
-      }
-      if (guided && !(drivers.units > 0 || drivers.savings > 0)) {
-        throw new Error('Isi perkiraan volume penjualan atau penghematan kas bulanan.');
-      }
-      const variants = [['Lesu', 1 - change], ['Dasar', 1], ['Optimistis', 1 + change]];
-      setScenarios(variants.map(([name, factor]) => {
-        const cash = guided ? estimateMonthlyCash(drivers, factor) : {
-          revenue: Math.round(Number(inputs.revenue) * factor), cost: Number(inputs.cost),
-        };
-        return { name, cash, ...simulateInvestment({ capital, revenue: cash.revenue, cost: cash.cost, residual, months, annualDiscount }) };
-      }));
+      setScenarios(investmentScenarios(inputs, inputMode));
       setSelected(1);
     } catch (err) {
       setError(err.message);
@@ -97,9 +77,7 @@ export default function InvestmentSimulation({ kosId }) {
   }
 
   function open(version) {
-    const assumptions = Object.fromEntries(Object.entries(INITIAL).map(([key, value]) => [
-      key, typeof version.assumptions?.[key] === 'string' ? version.assumptions[key] : value,
-    ]));
+    const assumptions = savedInvestmentInputs(version);
     setOpened(version.id); setName(version.name); setMode(version.mode); setValues(assumptions);
     setFeedback('Versi dibuka. Hasil dihitung ulang dari asumsi tersimpan.');
     requestId.current = null;
@@ -118,6 +96,7 @@ export default function InvestmentSimulation({ kosId }) {
         <button className="sm ghost" type="button" disabled={saving} onClick={() => open(version)}>Buka</button>
       </div>)}</div>
     </section>
+    {saved?.length >= 2 && <InvestmentComparison versions={saved} />}
     <section className="panel">
       <h3>Simulasi Kelayakan Investasi</h3>
       <p className="small muted">Uji ekspansi, pembelian alat, atau proyek baru dari perkiraan kas tambahan. Simulasi ini tidak mengubah pembukuan.</p>
