@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { valuationCashHistory } from '@/lib/valuationCashHistory';
+import { annualizeCashReference, valuationCashHistory } from '@/lib/valuationCashHistory';
 import { valueBusiness, valuationSensitivity } from '@/lib/businessValuation';
 import { addMonthsYm, monthEnd, rp, today, tgl } from '@/lib/format';
 import { Tile } from '@/components/ui';
@@ -17,9 +17,12 @@ export default function BusinessValuation({ kosId, ver, closedMonths, onOpenCash
   const [error, setError] = useState('');
   const [history, setHistory] = useState(null);
   const [usingHistory, setUsingHistory] = useState(false);
-  const currentMonth = today().slice(0, 7);
-  const from = addMonthsYm(currentMonth, -12) + '-01';
-  const to = monthEnd(addMonthsYm(currentMonth, -1));
+  const [period, setPeriod] = useState('history');
+  const asOf = today();
+  const currentMonth = asOf.slice(0, 7);
+  const current = period === 'current';
+  const from = (current ? currentMonth : addMonthsYm(currentMonth, -12)) + '-01';
+  const to = current ? asOf : monthEnd(addMonthsYm(currentMonth, -1));
   const closedCount = new Set(closedMonths || []);
   const reviewed = Array.from({ length: 12 }, (_, index) => addMonthsYm(currentMonth, -1 - index))
     .filter((month) => closedCount.has(month)).length;
@@ -28,16 +31,29 @@ export default function BusinessValuation({ kosId, ver, closedMonths, onOpenCash
     setHistory(null);
     supabase.rpc('acct_cashflow', { p_kos: kosId, p_from: from, p_to: to }).then(({ data, error }) => {
       if (!active) return;
-      if (error) setHistory({ message: 'Arus kas historis belum bisa dimuat.' });
-      else if (!data?.lengkap) setHistory({ message: 'Rincian kas operasi dan investasi mengikuti akses Laporan Arus Kas sesuai paket.' });
-      else if (!data.cocok) setHistory({ message: 'Arus kas belum cocok dengan perubahan saldo kas dan bank. Periksa pembukuan sebelum mengisi valuasi.' });
-      else setHistory({ baseline: valuationCashHistory(data) });
-    }).catch(() => { if (active) setHistory({ message: 'Arus kas historis belum bisa dimuat.' }); });
+      if (error) setHistory({ from, to, message: 'Arus kas historis belum bisa dimuat.' });
+      else if (!data?.lengkap) setHistory({ from, to, message: 'Rincian kas operasi dan investasi mengikuti akses Laporan Arus Kas sesuai paket.' });
+      else if (!data.cocok) setHistory({ from, to, message: 'Arus kas belum cocok dengan perubahan saldo kas dan bank. Periksa pembukuan sebelum mengisi valuasi.' });
+      else setHistory({ from, to, baseline: valuationCashHistory(data) });
+    }).catch(() => { if (active) setHistory({ from, to, message: 'Arus kas historis belum bisa dimuat.' }); });
     return () => { active = false; };
   }, [kosId, ver, from, to]);
-  const baseline = history?.baseline;
+  const activeHistory = history?.from === from && history?.to === to ? history : null;
+  const baseline = activeHistory?.baseline;
+  const annualized = current && baseline ? annualizeCashReference(baseline.reference, from, to) : null;
+  const reference = current ? annualized?.value : baseline?.reference;
+  const canApply = reference > 0 && reference <= 1e12;
+  const choosePeriod = (next) => {
+    if (next === period) return;
+    setPeriod(next);
+    if (usingHistory) {
+      setValues((values) => ({ ...values, firstCashFlow: '' }));
+      setUsingHistory(false); setCalculation(null); setError('');
+    }
+  };
   const useBaseline = () => {
-    setValues((current) => ({ ...current, firstCashFlow: String(baseline.reference) }));
+    if (!canApply) return;
+    setValues((values) => ({ ...values, firstCashFlow: String(reference) }));
     setUsingHistory(true); setCalculation(null); setError('');
   };
   const field = (key, name, options) => <label>{name}
@@ -70,19 +86,29 @@ export default function BusinessValuation({ kosId, ver, closedMonths, onOpenCash
   return <div className="stack">
     <section className="panel">
       <h3>Arus Kas dari Pembukuan</h3>
-      <p className="small muted">{tgl(from)} – {tgl(to)} · 12 bulan kalender yang sudah lewat · {reviewed}/12 bulan ditutup di Pembukuan.</p>
-      {!history && <p className="small muted" role="status">Memuat arus kas historis…</p>}
-      {history && !baseline && <p className="small muted">{history.message || 'Rincian arus kas historis belum cukup untuk membuat angka acuan.'}</p>}
+      <label>Periode acuan<select value={period} onChange={(event) => choosePeriod(event.target.value)}>
+        <option value="history">12 Bulan Terakhir (Bulan Lengkap)</option>
+        <option value="current">Bulan Berjalan (hingga hari ini)</option>
+      </select></label>
+      <p className="small muted">{tgl(from)} – {tgl(to)} · {current
+        ? 'Data aktual sampai hari ini'
+        : reviewed + '/12 bulan ditutup di Pembukuan'}</p>
+      {!activeHistory && <p className="small muted" role="status">Memuat arus kas dari Pembukuan…</p>}
+      {activeHistory && !baseline && <p className="small muted">{activeHistory.message || 'Rincian arus kas belum cukup untuk membuat angka acuan.'}</p>}
       {baseline && <>
         <div className="grid">
           <Tile label="Arus Kas Operasi Aktual" value={rp(baseline.operationCash)} />
           <Tile label="Kas Keluar Investasi Aset Tetap" value={rp(baseline.assetSpend)} />
-          <Tile label="Acuan Arus Kas Tahun Pertama" value={rp(baseline.reference)} sub="Arus kas operasi − kas keluar investasi" />
+          <Tile label={current ? 'Arus Kas Bersih Periode Ini' : 'Acuan Arus Kas Tahun Pertama'} value={rp(baseline.reference)} sub="Arus kas operasi − kas keluar investasi" />
+          {annualized && <Tile label="Estimasi Tahunan Sementara" value={rp(annualized.value)} sub={'Arus kas ÷ ' + annualized.days + ' hari × 365'} />}
         </div>
-        <p className="small muted">Periksa kelengkapan transaksi, biaya bunga, dan pengeluaran satu kali. Sesuaikan angka acuan untuk kebutuhan usaha tahun depan.</p>
-        {baseline.reference > 1e12 ? <p className="small muted">Angka acuan melampaui batas input kalkulator (Rp1 triliun).</p>
-          : baseline.reference > 0 ? <button type="button" className="sm" onClick={useBaseline}>Gunakan Angka dari Pembukuan</button>
-          : <p className="small muted">Acuan nol atau negatif. Model ini membutuhkan proyeksi arus kas tahun pertama yang positif.</p>}
+        <p className="small muted">{current
+          ? 'Estimasi ini mengasumsikan laju kas bulan berjalan berulang sepanjang tahun. Tinjau musim penjualan, biaya bunga, dan pengeluaran satu kali sebelum memakainya.'
+          : 'Periksa kelengkapan transaksi, biaya bunga, dan pengeluaran satu kali. Sesuaikan angka acuan untuk kebutuhan usaha tahun depan.'}</p>
+        {reference > 1e12 ? <p className="small muted">Angka acuan melampaui batas input kalkulator (Rp1 triliun).</p>
+          : canApply ? <button type="button" className="sm" onClick={useBaseline}>{current ? 'Gunakan Estimasi Tahunan' : 'Gunakan Angka dari Pembukuan'}</button>
+          : <p className="small muted">Acuan periode ini nol atau negatif. Model ini membutuhkan proyeksi arus kas tahun pertama yang positif.</p>}
+        {!current && baseline.reference <= 0 && <button type="button" className="sm" onClick={() => choosePeriod('current')}>Cek Arus Kas Bulan Berjalan</button>}
       </>}
       <button type="button" className="sm ghost" onClick={onOpenCash}>Buka Laporan Arus Kas</button>
     </section>
@@ -100,7 +126,7 @@ export default function BusinessValuation({ kosId, ver, closedMonths, onOpenCash
           {field('debt', 'Utang berbunga (Rp)', {inputMode:'numeric'})}
         </div>
         <p className="small muted">Model memakai arus kas akhir tahun. Tingkat diskonto harus lebih tinggi dari pertumbuhan terminal. Pertumbuhan, diskonto, kas berlebih, dan utang tetap mengikuti asumsi yang kamu tinjau.</p>
-        {usingHistory && <p className="small muted">Arus kas tahun pertama diisi dari angka acuan historis dan bisa disesuaikan.</p>}
+        {usingHistory && <p className="small muted">{current ? 'Arus kas tahun pertama diisi dari estimasi sementara bulan berjalan.' : 'Arus kas tahun pertama diisi dari angka acuan historis.'} Kamu bisa menyesuaikannya.</p>}
         {error && <div className="notice bad" role="alert">{error}</div>}
         <button className="primary">Hitung Valuasi</button>
       </form>
