@@ -5,6 +5,7 @@
   --book-line: var(--line, #e7eae8);
   --book-shadow: 0 2px 5px #132a1910;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   min-width: 0;
 }
@@ -19,7 +20,7 @@
 .mobileText, .heading > .art { display: none; }
 .filters { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; padding: 6px 0; border-block: 1px solid var(--book-line); }
 .filters .month { flex: 0 1 187px; min-width: 0; }
-.month input { width: 100%; min-height: 35px; border-radius: 11px; box-shadow: var(--book-shadow); font-weight: 700; }
+.month input { width: 100%; min-width: 0; min-height: 35px; border-radius: 11px; box-shadow: var(--book-shadow); font-weight: 700; }
 .range { color: var(--muted); font-size: .76rem; }
 .checkbox { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
 .checkbox input { width: 18px; height: 18px; min-height: 0; accent-color: var(--book-green); }
@@ -28,7 +29,8 @@
 .summary, .trend, .menuPanel, .recent { padding: 12px; }
 .summary { grid-area: summary; }
 .trend { grid-area: trend; }
-.menu { grid-area: menu; display: grid; gap: 6px; min-width: 0; }
+.dashboard > .menu { grid-area: menu; }
+.menu { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
 .recent { grid-area: recent; overflow-x: auto; }
 .status { grid-area: status; }
 .command { grid-area: command; }
@@ -119,6 +121,8 @@
   .filters { border: 0; gap: 5px 9px; }
   .filters .month { flex: 1 1 40%; }
   .checkbox { font-size: .72rem; }
+  .segment button { gap: 4px; font-size: clamp(.72rem, 3.35vw, .9rem); }
+  .segment svg { flex: none; width: 16px; height: 16px; }
   .dashboard { grid-template-columns: 1fr; gap: 10px; grid-template-areas: 'summary' 'menu' 'status' 'command' 'trend' 'recent'; }
   .cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .cards button { gap: 6px; min-height: 73px; }
