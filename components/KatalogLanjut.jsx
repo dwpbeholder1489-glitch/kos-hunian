@@ -91,11 +91,11 @@ export function BarcodeSheet({ p, units, onClose }) {
     if (ok) { setInput({ ...input, [unit]: '' }); load(); }
     return ok;
   };
-  const add = (unit, c) => {
+  const add = async (unit, c) => {
     const v = String(c || input[unit] || '').trim();
-    if (!v) return toast('Ketik atau scan barcodenya.');
-    if ((codes[unit] || []).some((x) => x.toLowerCase() === v.toLowerCase())) return toast('Barcode itu sudah ada.');
-    save(unit, [...(codes[unit] || []), v]);
+    if (!v) { toast('Ketik atau scan barcodenya.'); return null; }
+    if ((codes[unit] || []).some((x) => x.toLowerCase() === v.toLowerCase())) { toast('Barcode itu sudah ada.'); return null; }
+    return await save(unit, [...(codes[unit] || []), v]) ? true : null;
   };
   return (
     <Sheet title={`Barcode · ${p.name}`} onClose={onClose}>
@@ -110,7 +110,7 @@ export function BarcodeSheet({ p, units, onClose }) {
           ))}</div>}
           <div className="row" style={{ flexWrap: 'nowrap', alignItems: 'flex-end' }}>
             <Field label="Barcode tambahan"><input inputMode="numeric" maxLength={40} value={input[u.name] || ''} onChange={(e) => setInput({ ...input, [u.name]: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(u.name); } }} placeholder="scan / ketik" /></Field>
-            <ScanButton productUnit={u.name} onCode={(c) => { add(u.name, c); return true; }} />
+            <ScanButton productUnit={u.name} onCode={(c) => add(u.name, c)} />
             <button className="sm primary" style={{ flex: 'none' }} disabled={busy} onClick={() => add(u.name)}>Tambah</button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
+import ProductPhotoButton from '@/components/ProductPhotoScan';
 import { moduleOn, multiLoc, canArea } from '@/lib/business';
 import { Suspense, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -135,6 +136,9 @@ export default function Barang() {
       </div>
       {d.products.length > 0 && <>
         <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama, kode, atau barcode" />
+        {retail && active.some((product) => product.kos_id === kosId) && <div className="row"><ProductPhotoButton key={kosId}
+          products={active.filter((product) => product.kos_id === kosId).map((product) => ({ ...product, brand: brandName(product.brand_id) }))}
+          thumbs={thumbs} onPick={(product) => setEdit(product)} /></div>}
         <div className="seg">
           {[['aktif', `Aktif (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['kesehatan', 'Kesehatan stok'], ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
         </div>
@@ -171,7 +175,7 @@ export default function Barang() {
       {opr && <OutletPriceSheet p={opr} units={unitsOf(opr, d.units)} locs={kos.locs?.list} kosId={kosId} onClose={() => setOpr(null)} />}
       {hist && <PriceHistorySheet p={hist} kosId={kosId} onClose={() => setHist(null)} />}
       {brk && <PriceBreakSheet p={brk} units={unitsOf(brk, d.units)} breaks={d.breaks} onClose={() => setBrk(null)} onSaved={() => { setBrk(null); reload(); }} />}
-      {edit && <ProductForm brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
+      {edit && <ProductForm retail={retail} brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
         onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
       {adj && <StockSheet canCorrect={canArea(kos, 'team')} bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); setStockVersion((value) => value + 1); reload(); }} />}
     </div>
@@ -182,10 +186,11 @@ const blankUnit = () => ({ name: '', content_qty: '', content_unit: '', price_re
 const money = (v) => (Number(v) > 0 ? angka(v) : '');
 const kgText = (v) => (Number(v) > 0 ? String(Number(v)).replace('.', ',') : '');
 
-function ProductForm({ kosId, p, units, bahan, batch, cats = [], brands = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onBarcodes, onSupplier, onSerial, onKit, onClose, onSaved }) {
+function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onBarcodes, onSupplier, onSerial, onKit, onClose, onSaved }) {
   const [catId, setCatId] = useState(p?.category_id || '');
   const [brandId, setBrandId] = useState(p?.brand_id || '');
   const [name, setName] = useState(p?.name || '');
+  const [packaging, setPackaging] = useState((p?.packaging_aliases || []).join('\n'));
   const [base, setBaseRaw] = useState(p?.base_unit || '');
   const [cost, setCost] = useState(money(p?.cost));
   const [min, setMin] = useState(p && Number(p.min_stock) > 0 ? String(Number(p.min_stock)) : '');
@@ -231,9 +236,19 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], brands = [], gr
       .filter((u, i) => i === 0 || !calc[i].empty);
     const st = stock.trim() ? qtyNum(stock) : 0;
     if (!p && !(st >= 0)) return toast('Stok awal tidak valid.');
+    const aliases = [...new Set(packaging.split('\n').map((value) => value.trim()).filter(Boolean))];
+    if (retail && (aliases.length > 10 || aliases.some((alias) => alias.length > 100))) return toast('Maksimal 10 nama kemasan, hingga 100 karakter per nama.');
     setBusy(true);
     let pid = p?.id || null;
-    const ok = await run(async () => { const r = await supabase.rpc('product_save', { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null, p_density: densN }); if (r.data) pid = r.data; return r; }, p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
+    const args = { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null, p_density: densN };
+    const hasPackaging = retail && (aliases.length > 0 || p?.packaging_aliases?.length > 0);
+    const ok = await run(async () => {
+      const result = hasPackaging
+        ? await supabase.rpc('product_save_with_packaging', { ...args, p_packaging_aliases: aliases })
+        : await supabase.rpc('product_save', args);
+      if (result.data) pid = result.data;
+      return result;
+    }, p ? 'Barang diperbarui' : 'Barang ditambahkan', errMsg);
     const leadN = lead.trim() === '' ? null : parseInt(lead, 10);
     const maxN = max.trim() ? qtyNum(max) : null;
     if (ok && pid && (maxN || null) !== (Number(p?.max_stock) || null)) await run(() => supabase.rpc('product_set_max', { p_product: pid, p_max: maxN || null }), null, errMsg);
@@ -255,6 +270,9 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], brands = [], gr
       {group && <div className="notice small">Varian dari <b>{group.name}</b> ({group.count} varian). Mengganti nama di sini hanya untuk varian ini.
         <button className="sm" style={{ marginTop: 6 }} onClick={() => onAddVariant(group)}>+ Tambah varian lain</button></div>}
       <Field label={bahan ? 'Nama bahan' : 'Nama barang'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={bahan ? 'mis. Deterjen cair' : 'mis. Gula pasir'} /></Field>
+      {retail && <Field label="Nama lain di kemasan (opsional)" hint="Satu nama per baris. Gunakan untuk tulisan di kemasan lama atau baru milik barang ini.">
+        <textarea rows={2} maxLength={1010} value={packaging} onChange={(event) => setPackaging(event.target.value)} />
+      </Field>}
       {!bahan && brands.length > 0 && <Field label="Merek"><select value={brandId} onChange={(e) => setBrandId(e.target.value)}><option value="">— tanpa merek —</option>{brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>}
       {!bahan && cats.length > 0 && <Field label="Kategori"><select value={catId} onChange={(e) => setCatId(e.target.value)}><option value="">— tanpa kategori —</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
       {p && !bahan && <EntityPhotos kosId={kosId} entity="product" entityId={p.id} category="produk" title="Foto barang" max={6} hint="Opsional. Foto utama tampil di katalog halaman bisnis." />}

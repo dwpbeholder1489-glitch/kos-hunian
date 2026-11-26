@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { playScanSuccess, prepareScanSound } from '@/lib/scan-sound';
 import { createBarcodeReader, loadFallbackDecoder, openBarcodeCamera, previewBarcodeCamera, readBarcodePhoto, stopCamera } from '@/lib/barcode-scanner.mjs';
 import styles from './barcode-scan.module.css';
 
@@ -11,7 +12,7 @@ const READ_INTERVAL_MS = 220;
 export function ScanButton({ onCode, label = 'Pindai', className = 'sm', productUnit }) {
   const [open, setOpen] = useState(false);
   return <>
-    <button type="button" className={className} onClick={() => setOpen(true)} aria-label="Pindai barcode atau ketik kodenya">📷 {label}</button>
+    <button type="button" className={className} onClick={() => { prepareScanSound(); setOpen(true); }} aria-label="Pindai barcode atau ketik kodenya">📷 {label}</button>
     {open && <Scanner onClose={() => setOpen(false)} onCode={onCode} productUnit={productUnit} />}
   </>;
 }
@@ -75,6 +76,7 @@ function Scanner({ onCode, onClose, productUnit }) {
         setUnknown(code);
         if (source !== 'manual') setTyped((value) => value || code);
       } else {
+        if (source !== 'manual' && result !== null) playScanSuccess();
         onClose();
       }
     } catch {

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
+import ProductPhotoButton from '@/components/ProductPhotoScan';
 import { moduleOn, canArea } from '@/lib/business';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
@@ -233,7 +234,20 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
         ))}</div>}
       <div className="pos-search">
         <label className="pos-q"><PosIcon n="search" /><input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari produk (nama, kode, atau barcode)…" aria-label="Cari barang" /></label>
-        <ScanButton onCode={byCode} label={desk ? 'Scan Barcode' : 'Scan'} className="pos-scan" />
+        <div className="pos-scan-actions">
+          <ScanButton onCode={byCode} label={desk ? 'Scan Barcode' : 'Barcode'} className="pos-scan" />
+          <ProductPhotoButton className="pos-scan" purpose="cart" products={d.products} thumbs={thumbs}
+            unitsFor={(product) => unitsOf(product, d.units).map((unit) => ({ ...unit, displayPrice: basePrice(d, unit, tier, contact) }))}
+            onPick={(product, unit) => {
+              if (!(basePrice(d, unit, tier, contact) > 0)) {
+                toast(`Harga ${unit.name} ${product.name} belum diisi.`);
+                return false;
+              }
+              add(product, unit);
+              setQ('');
+              return true;
+            }} />
+        </div>
       </div>
       {shown.length === 0 ? <Empty title="Barang tidak ditemukan" /> : (
         <div className={desk ? 'pos-grid' : 'pos-grid pos-slide'}>{shown.map((p) => {
