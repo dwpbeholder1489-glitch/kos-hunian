@@ -6,7 +6,8 @@ import PublicPay from '@/components/PublicPay';
 import Linkify from '@/components/Linkify';
 import { logoUrl } from '@/lib/logo';
 import { PublicCover, PublicGallery, ItemThumb } from '@/components/media/PublicPics';
-import { getPublicPage as getPage } from '@/lib/publicPage';
+import { getPublicPage as getPage, getPublicShop } from '@/lib/publicPage';
+import PublicShop from '@/components/commerce/PublicShop';
 
 export const revalidate = 60;
 
@@ -30,6 +31,14 @@ export default async function PublicPage({ params }) {
   const p = await getPage(slug);
   if (!p) notFound();
   const retail = p.type === 'retail';
+  const shop = retail ? await getPublicShop(slug) : null;
+  if (shop) {
+    const media = p.media && {
+      ...p.media,
+      items: Object.fromEntries(p.items.map(({ id }) => [id, p.media.items?.[id] || []])),
+    };
+    return <PublicShop key={p.slug} page={{ ...p, media }} shop={shop} />;
+  }
   return (
     <main className="wrap stack" style={{ maxWidth: 640, paddingTop: 20, paddingBottom: 40 }}>
       <PublicCover cover={p.media?.cover} name={p.name} />

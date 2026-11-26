@@ -13,11 +13,11 @@ import { rp, angka, tgl, today, waLink } from '@/lib/format';
 import { logoUrl } from '@/lib/logo';
 import { mediaUrl } from '@/lib/media';
 import { qtyNum, uid } from '@/lib/retail';
+import { cartLines, priceAt, updateCart } from '@/lib/commerce.mjs';
 
 const ST = { penawaran: ['Menunggu konfirmasi', 'gold'], dikonfirmasi: ['Dikonfirmasi · disiapkan', 'info'], sebagian: ['Dikirim sebagian', 'info'], selesai: ['Selesai', 'good'], batal: ['Batal', 'void'] };
 const DV = { dikirim: 'Dalam pengiriman', diterima: 'Diterima', gagal: 'Gagal kirim' };
 // harga per satuan untuk jumlah ini: harga pelanggan, lalu harga beli banyak yang terpenuhi (termurah). Pratinjau — angka final dihitung server.
-const priceAt = (u, qty) => (u.breaks || []).filter((b) => Number(qty) >= Number(b.min_qty)).reduce((m, b) => Math.min(m, Number(b.price)), Number(u.price));
 const cartKey = (t) => `prasara.cportal.${String(t).slice(-12)}`;
 
 export default function CustomerPortal() {
@@ -25,6 +25,7 @@ export default function CustomerPortal() {
   const [p, setP] = useState(undefined);
   const [tab, setTab] = useState('pesan');
   const [cart, setCart] = useState([]); // [{product_id, unit, qty}]
+  const [loadedCart, setLoadedCart] = useState(null);
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('');
   const [checkout, setCheckout] = useState(false);
@@ -34,12 +35,24 @@ export default function CustomerPortal() {
     const { data, error } = await supabase.rpc('cportal_get', { p_token: token });
     setP(error ? null : data);
   };
-  useEffect(() => { load(); try { const c = JSON.parse(localStorage.getItem(cartKey(token)) || '[]'); if (Array.isArray(c)) setCart(c); } catch {} }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { try { localStorage.setItem(cartKey(token), JSON.stringify(cart)); } catch {} }, [cart, token]);
+  useEffect(() => {
+    load();
+    let saved = [];
+    try {
+      const value = JSON.parse(localStorage.getItem(cartKey(token)) || '[]');
+      if (Array.isArray(value)) saved = value;
+    } catch {}
+    setCart(saved);
+    setLoadedCart(token);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (loadedCart !== token) return;
+    try { localStorage.setItem(cartKey(token), JSON.stringify(cart)); } catch {}
+  }, [cart, token, loadedCart]);
 
   const byId = useMemo(() => new Map((p?.catalog || []).map((x) => [x.id, x])), [p]);
   // keranjang hanya berisi barang & satuan yang masih ada di katalog
-  const lines = cart.map((c) => { const pr = byId.get(c.product_id); const u = pr?.units.find((x) => x.name === c.unit); return pr && u ? { ...c, pr, u, price: priceAt(u, c.qty), total: priceAt(u, c.qty) * Number(c.qty) } : null; }).filter(Boolean);
+  const lines = cartLines(cart, byId);
   const total = lines.reduce((a, l) => a + l.total, 0);
 
   if (p === undefined) return <main className="auth"><p className="muted">Membuka portal…</p></main>;
@@ -51,11 +64,7 @@ export default function CustomerPortal() {
     </main>
   );
   const b = p.business, c = p.customer;
-  const setQty = (pid, unit, qty) => setCart((cs) => {
-    const n = Math.max(0, Math.round(Number(qty) * 1000) / 1000 || 0);
-    const rest = cs.filter((x) => !(x.product_id === pid && x.unit === unit));
-    return n > 0 ? [...rest, { product_id: pid, unit, qty: n }].sort((a, z) => cs.findIndex((x) => x.product_id === a.product_id) - cs.findIndex((x) => x.product_id === z.product_id)) : rest;
-  });
+  const setQty = (pid, unit, qty) => setCart((cs) => updateCart(cs, pid, unit, qty));
   const qtyOf = (pid, unit) => cart.find((x) => x.product_id === pid && x.unit === unit)?.qty || 0;
   const reorder = (o) => {
     const ok = o.lines.filter((l) => byId.get(l.product_id)?.units.some((u) => u.name === l.unit));
