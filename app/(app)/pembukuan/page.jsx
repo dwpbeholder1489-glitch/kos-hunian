@@ -79,7 +79,7 @@ export default function Pembukuan() {
       {(!d || loaded !== reportKey) && !err ? <Loading /> : d && loaded === reportKey && <>
         <Meta d={d} entity={entity} />
         {(tab === 'overview' || ((tab === 'draf' && !visibleDraft) || (tab === 'pusat' && (entity || ytd)))) && <FinancialOverview report={d} kosId={kosId} entity={entity} from={from} to={to} ym={ym} ytd={ytd} onPeriod={setYm} onReport={setTab} onDraft={(snapshot) => { setDraft({ ...snapshot, kosId, month: ym }); setTab('draf'); }} />}
-        {tab === 'pusat' && !entity && !ytd && <MonthlyReportCenter key={JSON.stringify([kosId, ym])} kosId={kosId} ym={ym} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
+        {tab === 'pusat' && !entity && !ytd && <MonthlyReportCenter key={JSON.stringify([kosId, ym])} kosId={kosId} ym={ym} periodClosed={d.closed?.includes(ym)} owner={owner} onClosePeriod={() => setTab('periode')} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'draf' && visibleDraft && <MonthlyDraft draft={visibleDraft} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'laporan' && <Laporan d={d} period={period} kosId={kosId} owner={owner} onAccount={!d.ringkas ? openAccount : undefined} />}
         {tab === 'laporan' && !entity && <ArusKas kosId={kosId} from={from} to={to} period={period} owner={owner} ver={ver} />}
@@ -189,7 +189,7 @@ function Laporan({ d, period, kosId, owner, onAccount, snapshot = false }) {
 
 const DRAFT_STATUS = { draft: 'Draf', review: 'Dalam peninjauan', approved: 'Disetujui' };
 
-function MonthlyReportCenter({ kosId, ym, owner, onAccount }) {
+function MonthlyReportCenter({ kosId, ym, periodClosed, owner, onClosePeriod, onAccount }) {
   const [versions, setVersions] = useState(null);
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -198,7 +198,9 @@ function MonthlyReportCenter({ kosId, ym, owner, onAccount }) {
   const request = (p_action, p_id = null) => supabase.rpc('acct_monthly_draft', { p_kos: kosId, p_month: month, p_action, p_id });
   const showError = (error) => setError(error.code === 'PGRST202'
     ? 'Penyimpanan laporan menunggu pembaruan database. Pratinjau sementara tetap tersedia di Overview Keuangan.'
-    : errMsg(error));
+    : /Setujui snapshot/.test(error.message || '')
+      ? 'Versi ini belum memenuhi syarat persetujuan. Jika periode dibuka lalu ditutup kembali, simpan draf baru dan ajukan versi baru.'
+      : errMsg(error));
 
   useEffect(() => {
     let active = true;
@@ -233,12 +235,18 @@ function MonthlyReportCenter({ kosId, ym, owner, onAccount }) {
       const file = format === 'pdf' ? await makePdf(report) : makeXlsx(report.sheets);
       const { error: quotaError } = await supabase.rpc('export_take', { p_kos: kosId, p_kind: 'laporan_bulanan_' + format });
       if (quotaError) return showError(quotaError);
-      download(file, 'PRASARA-laporan-bulanan-' + ym + '-v' + version.version + '.' + format);
+      download(file, 'PRASARA-laporan-bulanan-' + ym + '-v' + version.version + (version.status === 'approved' ? '' : '-DRAF') + '.' + format);
     } catch (error) { showError(error); }
     finally { setBusy(false); }
   }
 
   const snapshot = selected?.snapshot;
+  const checks = snapshot?.report?.checks;
+  const approvalBlock = !periodClosed ? 'Periode pembukuan masih terbuka.'
+    : !snapshot?.closed_at ? 'Versi ini dibuat sebelum tutup buku. Simpan draf baru setelah periode ditutup.'
+      : !checks?.balanced || !snapshot?.cash?.cocok || Number(checks.no_cost_sales) > 0 || Number(checks.pending_payments) > 0
+        ? 'Snapshot masih memiliki masalah pemeriksaan pembukuan. Periksa rincian di bawah.'
+        : null;
   const draft = snapshot && {
     report: snapshot.report, cash: snapshot.cash, current: income(snapshot.report),
     previous: income(snapshot.previous), periodLabel: bulan(ym),
@@ -264,12 +272,14 @@ function MonthlyReportCenter({ kosId, ym, owner, onAccount }) {
         <b>Versi {selected.version} · {DRAFT_STATUS[selected.status]}</b>
         <div className="row">
           {selected.status === 'draft' && <button className="sm" disabled={busy} onClick={() => act('submit', selected.id)}>Ajukan Peninjauan</button>}
-          {selected.status === 'review' && owner && <button className="sm" disabled={busy} onClick={() => act('approve', selected.id)}>Setujui Laporan</button>}
-          {selected.status === 'approved' && <>
-            <button className="sm ghost" disabled={busy} onClick={() => exportVersion('pdf')}>Unduh PDF</button>
-            <button className="sm ghost" disabled={busy} onClick={() => exportVersion('xlsx')}>Unduh Excel</button>
-          </>}
+          {selected.status === 'review' && owner && <button className="sm" disabled={busy || Boolean(approvalBlock)} onClick={() => act('approve', selected.id)}>Setujui Laporan</button>}
+          <button className="sm ghost" disabled={busy} onClick={() => exportVersion('pdf')}>Unduh PDF{selected.status !== 'approved' && ' Draf'}</button>
+          <button className="sm ghost" disabled={busy} onClick={() => exportVersion('xlsx')}>Unduh Excel{selected.status !== 'approved' && ' Draf'}</button>
         </div>
+        {selected.status !== 'approved' && <p className="small muted">File diberi label DRAF sampai versi ini disetujui.</p>}
+        {selected.status === 'review' && approvalBlock && <div className="notice">
+          {approvalBlock} {!periodClosed && owner && <button className="sm ghost" onClick={onClosePeriod}>Buka Periode &amp; manual</button>}
+        </div>}
       </section>
       <MonthlyDraft draft={draft} kosId={kosId} owner={owner} onAccount={onAccount} saved />
     </>}
