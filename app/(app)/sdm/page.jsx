@@ -24,13 +24,21 @@ export default function SDM() {
   const { kosId, kos, ver } = useKos();
   const admin = canArea(kos, 'team') || canArea(kos, 'finance');
   const [tab, setTab] = useState('hari');
+  const [payrollPeriod, setPayrollPeriod] = useState(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') !== 'gaji') return;
+    const period = params.get('periode');
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(period || '') && period <= today().slice(0, 7)) setPayrollPeriod(period + '-01');
+    setTab('gaji');
+  }, []);
   return (
     <div className="stack">
       <PageHeader title="SDM & gaji" help={<PageHelp page="sdm" />} />
       <AbsenSaya kosId={kosId} ver={ver} admin={admin} />
       {admin && <>
         <div className="seg">{[['hari', 'Absensi'], ['jadwal', 'Jadwal'], ['karyawan', 'Karyawan'], ['gaji', 'Gaji']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
-        <Admin kosId={kosId} kos={kos} ver={ver} tab={tab} />
+        <Admin kosId={kosId} kos={kos} ver={ver} tab={tab} payrollPeriod={payrollPeriod} />
       </>}
     </div>
   );
@@ -73,7 +81,7 @@ function AbsenSaya({ kosId, ver, admin }) {
 }
 
 // ===== Pengelola =====
-function Admin({ kosId, kos, ver, tab }) {
+function Admin({ kosId, kos, ver, tab, payrollPeriod }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [day, setDay] = useState(today());
@@ -95,7 +103,7 @@ function Admin({ kosId, kos, ver, tab }) {
   if (tab === 'karyawan') return <Karyawan kosId={kosId} d={d} onChanged={load} />;
   if (!d.staff.some((s) => s.active)) return <Empty title="Belum ada data karyawan" text="Tambahkan karyawan di tab Karyawan (boleh tanpa akun aplikasi). Setelah itu absensi, jadwal, dan gaji bisa dicatat." />;
   if (tab === 'jadwal') return <Jadwal kosId={kosId} d={d} onChanged={load} />;
-  if (tab === 'gaji') return <Gaji kosId={kosId} kos={kos} d={d} onChanged={load} />;
+  if (tab === 'gaji') return <Gaji kosId={kosId} kos={kos} d={d} onChanged={load} initialPeriod={payrollPeriod} />;
   return <Absensi kosId={kosId} d={d} day={day} setDay={setDay} onChanged={load} />;
 }
 
@@ -266,9 +274,9 @@ function StaffForm({ kosId, s, names, taken, onClose, onDone }) {
   );
 }
 
-function Gaji({ kosId, kos, d, onChanged }) {
+function Gaji({ kosId, kos, d, onChanged, initialPeriod }) {
   const thisMonth = today().slice(0, 7) + '-01';
-  const [month, setMonth] = useState(thisMonth);
+  const [month, setMonth] = useState(initialPeriod || thisMonth);
   const [runRow, setRunRow] = useState(undefined);
   const [lines, setLines] = useState([]);
   const [edit, setEdit] = useState(null);
@@ -300,6 +308,7 @@ function Gaji({ kosId, kos, d, onChanged }) {
     if (await run(() => supabase.rpc('payroll_void', { p_run: runRow.id, p_reason: reason }), 'Penggajian dibatalkan', errMsg)) { load(); onChanged(); }
   };
   const months = Array.from({ length: 6 }, (_, i) => { const x = new Date(thisMonth + 'T00:00:00Z'); x.setUTCMonth(x.getUTCMonth() - i); return x.toISOString().slice(0, 10); });
+  if (initialPeriod && !months.includes(initialPeriod)) months.push(initialPeriod);
   const totalAdv = Object.values(bal).reduce((a, b) => a + b, 0);
   return (
     <div className="stack">
