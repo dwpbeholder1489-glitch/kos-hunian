@@ -12,6 +12,8 @@ import { rp, bulan, today, errMsg, tgl } from '@/lib/format';
 import { typeOf, homeOf, ROLES, isDraft, SETUP_STATUS, canArea } from '@/lib/business';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { useKuotaEkspor } from '@/lib/ekspor';
+import { portfolioReport } from '@/lib/portfolioReport';
+import { makePdf } from '@/lib/pdfExport';
 import { makeXlsx } from '@/lib/xlsx';
 import { download } from '@/lib/zip';
 import { LEGAL_KIND } from '@/lib/modules';
@@ -47,6 +49,7 @@ export default function Bisnis() {
   const [pick, setPick] = useState(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
+  const [exporting, setExporting] = useState(false);
   useEffect(() => {
     supabase.rpc('portfolio_get').then(({ data, error }) => { setInc(error ? [] : data?.include || []); setPro(error ? [] : data?.pro || []); });
   }, [ver]);
@@ -54,8 +57,12 @@ export default function Bisnis() {
   const exKos = (inc || []).find((id) => pro.includes(id)) || null;
   const ek = useKuotaEkspor(exKos);
   useEffect(() => {
+    let active = true;
     setPrev(null);
-    supabase.rpc('owner_overview2', { p_month: shift(ym, -1) + '-01' }).then(({ data, error }) => setPrev(error ? false : data));
+    supabase.rpc('owner_overview2', { p_month: shift(ym, -1) + '-01' }).then(({ data, error }) => {
+      if (active) setPrev(error ? null : data);
+    });
+    return () => { active = false; };
   }, [ver, ym]);
   if (err) return <div className="notice bad">{/owner_overview2/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
@@ -80,23 +87,21 @@ export default function Bisnis() {
   const proSet = new Set(pro);
   const anyPro = money.some((b) => proSet.has(b.id));
   const gabOk = sel.some((b) => proSet.has(b.id));
-  const exportGab = () => {
-    const prevOf = (b) => prev?.businesses?.find((x) => x.id === b.id);
-    const cols = ['Bisnis', 'Jenis', 'Badan usaha', 'Pencatatan pendapatan', 'Status angka', 'Pendapatan', 'Modal barang / bahan', 'Biaya operasional', 'Laba operasional', 'Belum diterima', 'Kas', 'Bank', `Pendapatan ${bulan(shift(ym, -1))}`];
-    const types = ['t', 't', 't', 't', 't', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r'];
-    const row = (b) => [b.name, typeOf(b).name, b.legal_entity?.name || '—', BASIS[b.basis] || b.basis, b.complete ? 'Lengkap' : 'Perkiraan',
-      Number(b.revenue) || 0, Number(b.cogs) || 0, Number(b.ops) || 0, Number(b.profit) || 0, Number(b.receivables) || 0, b.cash ?? null, b.bank ?? null, prevOf(b)?.revenue ?? null];
-    const tot = ['JUMLAH GABUNGAN', `${sel.length} bisnis`, '', gabMixed ? 'Basis berbeda — indikasi' : '', gabIncomplete ? 'Ada angka belum final' : 'Lengkap',
-      sum(sel, 'revenue'), sum(sel, 'cogs'), sum(sel, 'ops'), sum(sel, 'profit'), sum(sel, 'receivables'), sum(sel, 'cash'), sum(sel, 'bank'), havePrev ? sum(selPrev, 'revenue') : null];
-    const sheets = [{ name: `Gabungan ${bulan(ym)}`, cols, types, rows: [...sel.map(row), tot] }];
-    if (entitiesOf(sel).length > 1) sheets.push({ name: 'Per badan usaha', cols: ['Badan usaha', 'Jumlah bisnis', 'Pendapatan', 'Laba operasional', 'Belum diterima'], types: ['t', 'n', 'r', 'r', 'r'],
-      rows: entitiesOf(sel).map((g) => [g.le ? `${g.le.name} (${LEGAL_KIND[g.le.kind] || g.le.kind})` : 'Badan usaha belum diatur', g.items.length, sum(g.items, 'revenue'), sum(g.items, 'profit'), sum(g.items, 'receivables')]) });
-    sheets.push({ name: 'Catatan', cols: ['Catatan'], types: ['t'], rows: [
-      [`Periode ${tgl(d.from)}–${tgl(d.to)}, diunduh ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}.`],
-      ['Angka tiap bisnis sama dengan menu Laporan bisnis itu. Bukan laporan konsolidasi resmi: transaksi antarbisnis tidak dieliminasi.'],
-      ...(gabMixed ? [['Basis pencatatan berbeda (kos saat uang diterima, toko saat penjualan), jadi jumlahnya hanya indikasi.']] : []),
-      ['Kas & bank dan "Belum diterima" = saldo saat ini, bukan per akhir bulan.']] });
-    download(makeXlsx(sheets), `Gabungan bisnis - ${bulan(ym)}.xlsx`);
+  const reportData = () => portfolioReport({
+    selected: sel, previous: prev?.from === shift(ym, -1) + '-01' ? prev.businesses : [], from: d.from, to: d.to, sourceAt: d.generated_at,
+    priorLabel: bulan(shift(ym, -1)), basisLabels: BASIS, typeLabel: (business) => typeOf(business).name,
+  });
+  const exportGab = async (format) => {
+    if (!exKos || !gabOk || sel.length < 2 || exporting) return;
+    setExporting(true); setNote(null);
+    try {
+      const data = reportData();
+      const file = format === 'pdf' ? await makePdf(data) : makeXlsx(data.sheets);
+      const { error } = await supabase.rpc('export_take', { p_kos: exKos, p_kind: 'gabungan_bisnis_' + format });
+      if (error) { setNote(errMsg(error)); return; }
+      download(file, `PRASARA-portofolio-${ym}.${format}`);
+    } catch (error) { setNote(errMsg(error)); }
+    finally { setExporting(false); ek.muat(); }
   };
   const gabIncomplete = sel.some((b) => !b.complete);
   const saveInc = async (ids) => {
@@ -249,8 +254,17 @@ export default function Bisnis() {
                 <span className="small muted">Bukan laporan konsolidasi resmi: transaksi antarbisnis tidak dieliminasi.{gabMixed ? ' Basis pencatatannya berbeda (kos dicatat saat uang diterima, toko saat penjualan), jadi jumlahnya hanya indikasi.' : ''}{gabIncomplete ? ' Sebagian angka belum final (lihat tanda di tiap bisnis).' : ''}{sel.some((b) => !b.legal_entity) ? ' Atur badan usaha tiap bisnis di Operasional › Konfigurasi › Profil agar gabungan bisa dipisah per badan usaha.' : ''}</span>
                 <div className="row">
                   <button className="sm" onClick={() => setPick(inc)}>Ubah pilihan</button>
-                  <button className="sm" disabled={ek.habis || !exKos} onClick={() => ek.jalankan('gabungan_bisnis', exportGab)}>Unduh Excel</button>
+                  <button className="sm" disabled={ek.habis || !exKos || exporting} onClick={() => exportGab('pdf')}>Unduh PDF</button>
+                  <button className="sm" disabled={ek.habis || !exKos || exporting} onClick={() => exportGab('xlsx')}>Unduh Excel</button>
+                  {exporting && <span className="small muted" role="status">Menyiapkan laporan…</span>}
                 </div>
+                <details className="small">
+                  <summary>Pratinjau ringkasan laporan</summary>
+                  <div className="list">{reportData().sheets[0].rows.map(([basis, count, revenue, profit, completeness]) => (
+                    <div className="li" key={basis}><span>{basis} · {count} bisnis · {completeness}</span>
+                      <span>Pendapatan {revenue == null ? '—' : rp(revenue)} · Laba {profit == null ? '—' : rp(profit)}</span></div>
+                  ))}</div>
+                </details>
                 {ek.info && <span className="small muted">{ek.info} (dihitung di {money.find((b) => b.id === exKos)?.name})</span>}
               </>
             ) : (
