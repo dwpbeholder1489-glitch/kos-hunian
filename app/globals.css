@@ -1437,6 +1437,8 @@ li.void .dt-card{opacity:.7}
 .pos-tabs button{flex:none;min-height:40px;padding:0 18px;border:0;border-radius:10px;background:transparent;color:var(--fg);font-weight:600;font-size:14px;box-shadow:none}
 .pos-tabs button.on{background:var(--brand);color:#fff}
 .pos-search{display:flex;gap:10px;align-items:stretch}
+.pos-scan-actions{display:flex;gap:6px;flex-shrink:0}
+@media(max-width:600px){.pos-search{flex-wrap:wrap}.pos-search .pos-q{flex-basis:100%}}
 .pos-q{flex:1;min-width:0;position:relative;display:flex;align-items:center}
 .pos-q .pos-ic{position:absolute;left:14px;color:var(--muted);pointer-events:none}
 .pos-q input{width:100%;min-height:48px;padding-left:44px}
