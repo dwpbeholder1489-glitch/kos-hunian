@@ -1,5 +1,8 @@
 // Ikon garis sederhana untuk navigasi aplikasi (tanpa pustaka luar)
 const P = {
+  plus: <path d="M12 5v14M5 12h14" />,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></>,
+  gift: <path d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12m0-12H8a2.5 2.5 0 1 1 2.4-3.3L12 9Zm0 0h4a2.5 2.5 0 1 0-2.4-3.3L12 9Z" />,
   done: <><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></>,
   barcode: <path d="M3 4v16m4-16v16m5-16v16m4-16v16m5-16v16" />,
   upload: <path d="M12 16V3m-5 5 5-5 5 5M3 13v7a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-7" />,

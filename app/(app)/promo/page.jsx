@@ -1,16 +1,18 @@
 'use client';
 // Promosi & bundling Kasir. Server: promo_list, promo_save, promo_set_active, promo_delete. Promo dihitung server saat transaksi.
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import NavIcon from '@/components/NavIcon';
+import styles from './promo.module.css';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable } from '@/components/Page';
+import { DataTable } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
-import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
+import { Sheet, Field, Loading, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { qtyNum } from '@/lib/retail';
 
-const LI = { background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' };
 const KIND = { diskon: 'Diskon barang', gratis: 'Beli X gratis Y', paket: 'Paket bundling', belanja: 'Minimal belanja' };
 const KIND_HINT = { diskon: 'Potongan persen untuk barang tertentu atau semua barang.', gratis: 'Mis. beli 2 gratis 1 untuk barang & satuan yang sama. Pembeli memasukkan 3, membayar 2.',
   paket: 'Beberapa barang dijual bersama dengan harga paket yang lebih murah.', belanja: 'Potongan bila total belanja mencapai jumlah tertentu.' };
@@ -31,6 +33,9 @@ export default function Promo() {
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(null);
   const [prods, setProds] = useState([]);
+  const [kind, setKind] = useState('semua');
+  const [status, setStatus] = useState('semua');
+  const [menu, setMenu] = useState(null);
   useBaru(() => setForm({}));
   const load = async () => {
     const [a, b, c] = await Promise.all([supabase.rpc('promo_list', { p_kos: kosId }),
@@ -43,18 +48,54 @@ export default function Promo() {
   if (err) return <div className="notice bad">{/promo_list/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
   const jalan = d.promos.filter((p) => p.state === 'berjalan').length;
+  const rows = d.promos.filter((p) => (kind === 'semua' || p.kind === kind) && (status === 'semua' || p.state === status));
+  const categories = [
+    ['semua', `Semua (${d.promos.length})`, 'plus'],
+    ['diskon', 'Diskon', '/promo'],
+    ['paket', 'Bundling', '/layers'],
+    ['gratis', 'Beli X Gratis Y', 'gift'],
+    ...(kind === 'belanja' || d.promos.some((p) => p.kind === 'belanja') ? [['belanja', 'Minimal Belanja', '/penjualan']] : []),
+  ];
   return (
-    <div className="stack">
-      <PageHeader title="Promo & bundling" help={<PageHelp page="promo" />} actions={<><button className="primary" onClick={() => setForm({})}>+ Promo</button></>} />
-      <div className="grid">
-        <Tile label="Promo berjalan" value={angka(jalan)} sub={`${d.promos.length} promo tersimpan`} tone={jalan ? 'good' : ''} />
-        <Tile label="Potongan promo bulan ini" value={rp(d.month_given)} sub={`${angka(d.month_sales)} transaksi`} />
+    <div className={styles.page}>
+      <section className={styles.hero} aria-label="Promotion Management Center">
+        <div className={styles.heroCopy}>
+          <h1>Promo &amp; Bundling</h1>
+          <p>Kelola diskon, beli X gratis Y, paket bundling, dan promo lainnya.</p>
+          <PageHelp page="promo" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Promo &amp; Bundling <NavIcon name="next" size={14} /></>} />
+        </div>
+        <span className={styles.heroArt}><Image src="/promo-banner.webp" alt="" fill priority sizes="(max-width: 600px) 36vw, 280px" /></span>
+      </section>
+      <div className={styles.actions}>
+        <button className={styles.primary} onClick={() => setForm({})}>＋ Buat Promo</button>
+        <button onClick={() => setForm({ kind: 'paket' })}><NavIcon name="/layers" />Buat Bundling</button>
+        <button onClick={() => setForm({ kind: 'gratis' })}><NavIcon name="gift" />Beli X Gratis Y</button>
+        <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
+      </div>
+      <div className={styles.metrics}>
+        <PromoMetric icon="/promo" label="Promo Berjalan" value={angka(jalan)} caption="Promo aktif" />
+        <PromoMetric icon="coins" label="Potongan Promo Bulan Ini" value={rp(d.month_given)} caption={`${angka(d.month_sales)} transaksi`} />
+      </div>
+      <div className={styles.filters}>
+        <div className={styles.categories} aria-label="Kategori promo">
+          {categories.map(([key, label, icon]) => <button key={key} aria-pressed={kind === key} onClick={() => setKind(key)}><NavIcon name={icon} />{label}</button>)}
+        </div>
+        {d.promos.length > 0 && <div className={styles.status}>
+          <label>Status promo <select value={status} onChange={(event) => setStatus(event.target.value)}>
+            <option value="semua">Semua status</option><option value="berjalan">Aktif</option><option value="terjadwal">Terjadwal</option>
+            <option value="berakhir">Berakhir</option><option value="nonaktif">Dimatikan</option>
+          </select></label>
+        </div>}
       </div>
       {d.promos.length === 0 ? (
-        <Empty title="Belum ada promo" text="Buat diskon, beli X gratis Y, paket bundling, atau potongan minimal belanja. Promo terpasang otomatis di Kasir pada tanggal yang Anda tentukan dan tercetak di struk.">
-          <button className="primary" onClick={() => setForm({})}>+ Buat promo pertama</button>
-        </Empty>
-      ) : <DataTable rows={d.promos} caption="Daftar promo" onRow={setForm} rowLabel={(p) => p.name}
+        <section className={styles.empty}>
+          <div className={styles.emptyArt}><Image src="/promo-kosong.webp" alt="" fill sizes="(max-width: 600px) 40vw, 240px" /></div>
+          <h2>Belum ada promo</h2>
+          <p>Buat diskon, beli X gratis Y, paket bundling, atau potongan minimal belanja. Promo akan otomatis berlaku di kasir sesuai periode yang Anda tentukan.</p>
+          <button className={styles.primary} onClick={() => setForm(kind === 'semua' ? {} : { kind })}>＋ Buat Promo Pertama</button>
+        </section>
+      ) : rows.length === 0 ? <section className={styles.empty}><h2>Promo tidak ditemukan</h2><p>Ubah kategori atau status untuk melihat promo lainnya.</p></section> :
+      <DataTable rows={rows} caption="Daftar promo" onRow={setForm} rowLabel={(p) => p.name}
         columns={[
           { key: 'name', label: 'Promo', sort: (p) => p.name.toLowerCase(), render: (p) => <><b>{p.name}</b><div className="small">{promoText(p)}</div></> },
           { key: 'when', label: 'Jadwal', render: (p) => <span className="small">{jadwal(p)}</span> },
@@ -64,19 +105,60 @@ export default function Promo() {
         ]}
         card={(p) => <div className="dt-row"><div className="stack" style={{ gap: 2 }}><b>{p.name}</b><span className="small">{promoText(p)}</span><span className="small muted">{jadwal(p)}</span>
             {p.used > 0 && <span className="small muted">Dipakai {angka(p.used)}× · total potongan {rp(p.given)}</span>}</div><span className={'chip ' + STATE[p.state][1]} style={{ flex: 'none' }}>{STATE[p.state][0]}</span></div>} />}
-      <span className="small muted">Promo dihitung otomatis saat Bayar di Kasir. Satu barang hanya kena satu promo (urutan: paket → beli X gratis Y → diskon barang → minimal belanja). Barang yang harganya diubah manual di kasir tidak ikut promo. Potongan promo mengurangi penjualan di laporan, sama seperti diskon.</span>
-      {form && <PromoForm kosId={kosId} p={form.id ? form : null} prods={prods} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}
+      <aside className={styles.notice}>
+        <NavIcon name="info" />
+        <p><b>Cara kerja promo</b>. Promo dihitung otomatis saat bayar di kasir. Satu barang hanya dapat satu promo (urutan: paket → beli X gratis Y → diskon barang → minimal belanja). Barang yang harganya diubah manual di kasir tidak ikut promo.</p>
+      </aside>
+      {menu === 'more' && <Sheet title="Lainnya" onClose={() => setMenu(null)}>
+        <button onClick={() => setMenu('simulation')}>Simulasi Keuntungan</button>
+        <button onClick={() => { setKind('belanja'); setMenu(null); }}>Lihat Promo Minimal Belanja</button>
+        <button onClick={() => { setForm({ kind: 'belanja' }); setMenu(null); }}>Buat Promo Minimal Belanja</button>
+      </Sheet>}
+      {menu === 'simulation' && <Sheet title="Simulasi Keuntungan" onClose={() => setMenu(null)}><ProfitSimulation /></Sheet>}
+      {form && <PromoForm kosId={kosId} p={form.id ? form : null} initialKind={form.kind} prods={prods} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}
     </div>
   );
 }
 
-function PromoForm({ kosId, p, prods, onClose, onDone }) {
-  const [f, setF] = useState({ name: p?.name || '', kind: p?.kind || 'diskon', percent: p?.percent != null ? String(Number(p.percent)).replace('.', ',') : '', amount: p?.amount ? angka(p.amount) : '',
+function PromoMetric({ icon, label, value, caption }) {
+  return <article className={styles.metric}><span><NavIcon name={icon} /></span>
+    <div><b>{label}</b><strong>{value}</strong><small>{caption}</small></div>
+  </article>;
+}
+
+function ProfitSimulation({ normalPrice, promoPrice }) {
+  const [normal, setNormal] = useState(normalPrice == null ? '' : String(normalPrice));
+  const [promoted, setPromoted] = useState(promoPrice == null ? '' : String(promoPrice));
+  const [cost, setCost] = useState('');
+  const ready = normal !== '' && promoted !== '' && cost !== '';
+  const regular = Number(normal.replace(/\D/g, ''));
+  const revenue = Number(promoted.replace(/\D/g, ''));
+  const costTotal = Number(cost.replace(/\D/g, ''));
+  const profit = revenue - costTotal;
+  const margin = revenue > 0 ? `${angka(Math.round(profit / revenue * 1000) / 10)}%` : '—';
+  return <div className="stack">
+    <p className="small muted">Masukkan total untuk barang yang sama, termasuk barang gratis atau isi paket. Simulasi ini hanya menghitung laba kotor.</p>
+    <Field label="Harga jual normal (Rp)"><input inputMode="numeric" maxLength={16} value={normal} onChange={(event) => setNormal(event.target.value.replace(/\D/g, ''))} /></Field>
+    <Field label="Harga jual setelah promo (Rp)"><input inputMode="numeric" maxLength={16} value={promoted} onChange={(event) => setPromoted(event.target.value.replace(/\D/g, ''))} /></Field>
+    <Field label="Total modal barang (Rp)"><input inputMode="numeric" maxLength={16} value={cost} onChange={(event) => setCost(event.target.value.replace(/\D/g, ''))} /></Field>
+    {ready && (revenue > regular ? <p className="notice">Harga promo melebihi harga normal.</p> :
+      <dl className="kv" aria-live="polite">
+        <dt>Potongan untuk pelanggan</dt><dd>{rp(regular - revenue)}</dd>
+        <dt>Laba kotor tanpa promo</dt><dd>{rp(regular - costTotal)}</dd>
+        <dt>Laba kotor dengan promo</dt><dd style={{ color: profit < 0 ? 'var(--bad)' : undefined }}><b>{rp(profit)}</b></dd>
+        <dt>Margin setelah promo</dt><dd>{margin}</dd>
+      </dl>)}
+  </div>;
+}
+
+function PromoForm({ kosId, p, initialKind, prods, onClose, onDone }) {
+  const [f, setF] = useState({ name: p?.name || '', kind: p?.kind || initialKind || 'diskon', percent: p?.percent != null ? String(Number(p.percent)).replace('.', ',') : '', amount: p?.amount ? angka(p.amount) : '',
     min_spend: p?.min_spend ? angka(p.min_spend) : '', all: p ? !p.product_ids : true, product_ids: p?.product_ids || [], product_id: p?.product_id || '', unit: p?.unit || '',
     buy_qty: p?.buy_qty ? String(Number(p.buy_qty)) : '', free_qty: p?.free_qty ? String(Number(p.free_qty)) : '',
     items: (p?.items || []).map((i) => ({ product_id: i.product_id, unit: i.unit, qty: String(Number(i.qty)) })), bundle_price: p?.bundle_price != null ? angka(p.bundle_price) : '',
     mode: p?.kind === 'belanja' && p.amount ? 'rp' : 'pct', tier: p?.tier || 'semua', start_date: p?.start_date || today(), end_date: p?.end_date || '', days: p?.days || [], active: p ? p.active : true });
   const [busy, setBusy] = useState(false);
+  const [simulating, setSimulating] = useState(false);
   const [q, setQ] = useState('');
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const prod = (id) => prods.find((x) => x.id === id);
@@ -153,6 +235,11 @@ function PromoForm({ kosId, p, prods, onClose, onDone }) {
       <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{HARI.map((h, i) => { const on = f.days.includes(i + 1); return <button key={h} className={'sm' + (on ? ' primary' : '')} onClick={() => set('days', on ? f.days.filter((x) => x !== i + 1) : [...f.days, i + 1])}>{h}</button>; })}</div>
       <Field label="Untuk harga"><select value={f.tier} onChange={(e) => set('tier', e.target.value)}><option value="semua">Eceran & grosir</option><option value="ecer">Eceran saja</option><option value="grosir">Grosir saja</option></select></Field>
       {p && <label className="row small" style={{ flexWrap: 'nowrap', fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={f.active} onChange={(e) => set('active', e.target.checked)} />Promo aktif</label>}
+      <button aria-expanded={simulating} onClick={() => setSimulating(!simulating)}>Simulasi Keuntungan</button>
+      {simulating && <ProfitSimulation
+        normalPrice={f.kind === 'paket' && normal > 0 ? Math.round(normal) : undefined}
+        promoPrice={f.kind === 'paket' && f.bundle_price !== '' ? bp : undefined}
+      />}
       <button className="cta" disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan promo'}</button>
       {p && <button className="ghost danger" onClick={hapus}>Hapus promo</button>}
     </Sheet>
