@@ -191,6 +191,8 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
   const [brandId, setBrandId] = useState(p?.brand_id || '');
   const [name, setName] = useState(p?.name || '');
   const [packaging, setPackaging] = useState((p?.packaging_aliases || []).join('\n'));
+  const [description, setDescription] = useState(p?.portal_description || '');
+  const [composition, setComposition] = useState(p?.portal_composition || '');
   const [base, setBaseRaw] = useState(p?.base_unit || '');
   const [cost, setCost] = useState(money(p?.cost));
   const [min, setMin] = useState(p && Number(p.min_stock) > 0 ? String(Number(p.min_stock)) : '');
@@ -242,8 +244,11 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
     let pid = p?.id || null;
     const args = { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null, p_density: densN };
     const hasPackaging = retail && (aliases.length > 0 || p?.packaging_aliases?.length > 0);
+    const hasPortalDetails = retail && (description.trim() || composition.trim() || p?.portal_description || p?.portal_composition);
     const ok = await run(async () => {
-      const result = hasPackaging
+      const result = hasPortalDetails
+        ? await supabase.rpc('product_save_for_portal', { ...args, p_packaging_aliases: aliases, p_description: description, p_composition: composition })
+        : hasPackaging
         ? await supabase.rpc('product_save_with_packaging', { ...args, p_packaging_aliases: aliases })
         : await supabase.rpc('product_save', args);
       if (result.data) pid = result.data;
@@ -273,6 +278,11 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
       {retail && <Field label="Nama lain di kemasan (opsional)" hint="Satu nama per baris. Gunakan untuk tulisan di kemasan lama atau baru milik barang ini.">
         <textarea rows={2} maxLength={1010} value={packaging} onChange={(event) => setPackaging(event.target.value)} />
       </Field>}
+      {retail && <details>
+        <summary>Informasi untuk portal bisnis</summary>
+        <Field label="Deskripsi produk (opsional)"><textarea rows={3} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+        <Field label="Komposisi produk (opsional)"><textarea rows={2} maxLength={1000} value={composition} onChange={(e) => setComposition(e.target.value)} /></Field>
+      </details>}
       {!bahan && brands.length > 0 && <Field label="Merek"><select value={brandId} onChange={(e) => setBrandId(e.target.value)}><option value="">— tanpa merek —</option>{brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>}
       {!bahan && cats.length > 0 && <Field label="Kategori"><select value={catId} onChange={(e) => setCatId(e.target.value)}><option value="">— tanpa kategori —</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
       {p && !bahan && <EntityPhotos kosId={kosId} entity="product" entityId={p.id} category="produk" title="Foto barang" max={6} hint="Opsional. Foto utama tampil di katalog halaman bisnis." />}

@@ -18,6 +18,7 @@ import OrderProcurement from './OrderProcurement';
 const SO_ST = { penawaran: ['Penawaran', 'gold'], dikonfirmasi: ['Pesanan · belum dikirim', 'info'], sebagian: ['Dikirim sebagian', 'info'], selesai: ['Selesai', 'good'], batal: ['Batal', 'void'] };
 const DV_ST = { dikirim: ['Dalam pengiriman', 'gold'], diterima: ['Diterima', 'good'], gagal: ['Gagal kirim', 'bad'] };
 const PAY = { kasbon: 'Piutang (tempo)', tunai: 'Tunai', transfer: 'Transfer' };
+const PORTAL_PAY = { tunai: 'Tunai saat menerima barang', transfer: 'Transfer Bank', qris: 'QRIS' };
 const LI = { background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' };
 
 export default function Grosir() {
@@ -289,7 +290,11 @@ function OrderDetail({ kos, reloadKey, d, order: o, onClose, onEdit, onChanged }
     `\n\nTotal ${rp(o.total)}${o.terms_days ? `\nPembayaran tempo ${o.terms_days} hari setelah barang dikirim` : ''}${o.status === 'penawaran' && o.valid_until ? `\nBerlaku sampai ${tgl(o.valid_until)}` : ''}${o.note ? `\n${o.note}` : ''}\n\nBalas pesan ini untuk konfirmasi. Terima kasih.`;
   return (
     <Sheet title={`${o.number} · ${c?.name || ''}`} onClose={onClose}>
-      <div className="row" style={{ gap: 6 }}><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.source === 'portal' && <span className="chip">Dari portal pelanggan{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span>}{o.customer_ref && <span className="chip">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</span>}</div>
+      <div className="row" style={{ gap: 6 }}><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.source === 'portal' && <span className="chip">{o.portal_guest_hash ? 'Dari portal bisnis publik' : 'Dari portal pelanggan'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span>}{o.customer_ref && <span className="chip">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</span>}</div>
+      {o.portal_fulfillment && <div className="unitbox small">
+        <b>{o.portal_fulfillment === 'antar' ? 'Kirim ke alamat' : 'Ambil di toko'}</b>
+        {o.portal_payment && <span>{PORTAL_PAY[o.portal_payment]} · pilihan pembeli</span>}
+      </div>}
       <dl className="kv">
         <dt>Tanggal</dt><dd>{tgl(o.order_date)}</dd>
         {o.status === 'penawaran' && o.valid_until && <><dt>Berlaku sampai</dt><dd>{tgl(o.valid_until)}</dd></>}
@@ -365,6 +370,7 @@ function DeliverForm({ o, c, lines, readyLines, onDone }) {
   return (
     <div className="unitbox" style={{ gap: 8 }}>
       <b>Surat jalan baru</b>
+      {o.portal_payment && <span className="small muted">Pembeli memilih {PORTAL_PAY[o.portal_payment]}. Catat pembayaran sesuai dana yang sudah diterima.</span>}
       {readyLines && <span className="small muted">Jumlah awal mengikuti stok yang siap diserahkan.</span>}
       {open.map((l) => (
         <div className="row between" key={l.id} style={{ flexWrap: 'nowrap', gap: 8 }}>
