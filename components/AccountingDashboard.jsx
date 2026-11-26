@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { income } from '@/lib/monthlyReport';
@@ -130,7 +131,7 @@ export default function AccountingDashboard({ report, kosId, entity, from, to, y
     <section className={styles.command}>
       <span>Financial Command Center</span><h2><span className={styles.desktopText}>Analisis Keuangan Bisnis Anda</span><span className={styles.mobileText}>Ringkasan Keuangan</span></h2>
       <p>{business} · {bulan(ym)}</p>
-      <button onClick={() => onOpen('command')}>Lihat Dashboard Analisis ›</button><Art />
+      <div className={styles.commandActions}><button onClick={() => onOpen('command')}>Lihat Dashboard Analisis ›</button><Link href="/bisnis">Portofolio Bisnis ›</Link></div><Art />
     </section>
     {!entity && <section className={styles.recent}>
       <div className={styles.sectionHeader}><h2>Jurnal Terbaru</h2><button onClick={() => onOpen('jurnal')}>Lihat Semua ›</button></div>

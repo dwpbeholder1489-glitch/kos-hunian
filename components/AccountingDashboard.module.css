@@ -139,3 +139,7 @@
   .tiles span { font-size: .67rem; }
   .cards button { padding: 6px; }
 }
+
+.commandActions { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; margin-top: 6px; }
+.commandActions button { margin: 0; }
+.commandActions a { color: #e2f8eb; font-size: .76rem; font-weight: 750; }

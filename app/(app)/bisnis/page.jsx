@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
+import PortfolioContribution from '@/components/PortfolioContribution';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { Loading, Tile } from '@/components/ui';
@@ -30,8 +31,14 @@ export default function Bisnis() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   useEffect(() => {
-    setD(null);
-    supabase.rpc('owner_overview2', { p_month: ym + '-01' }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
+    let active = true;
+    setD(null); setErr(null);
+    supabase.rpc('owner_overview2', { p_month: ym + '-01' }).then(({ data, error }) => {
+      if (!active) return;
+      if (error) setErr(errMsg(error));
+      else setD(data);
+    });
+    return () => { active = false; };
   }, [ver, ym]);
   // Gabungan bisnis (Fase 5): pilihan akun disimpan di server; angka tetap dari owner_overview2 (sumber yang sama)
   const [inc, setInc] = useState(null);
@@ -111,6 +118,10 @@ export default function Bisnis() {
         </div>
         <span className="small muted">Diperbarui {jam(d.generated_at)} · {tgl(d.from)}–{tgl(d.to)}</span>
       </div>
+
+      <PortfolioContribution businesses={money.filter((business) => !isDraft(list?.find((item) => item.id === business.id)))}
+        basisLabels={BASIS} period={bulan(ym)}
+        onOpen={(business) => go(business, { retail: '/laporan-toko', jasa: '/laporan-jasa', kustom: '/laporan-kustom' }[business.business_type] || '/laporan')} />
 
       {att.length > 0 && isNow && (
         <section className="panel">
