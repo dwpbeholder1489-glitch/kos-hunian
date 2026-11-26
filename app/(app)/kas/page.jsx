@@ -32,7 +32,12 @@ export default function Kas() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sheet, setSheet] = useState(null);
-  useBaru((v) => setSheet(v === 'masuk' ? { t: 'cash', kind: 'pendapatan_lain' } : { t: 'exp' })); // (+) › Catat pemasukan / pengeluaran
+  useBaru((v) => {
+    if (v === 'setor_bank') {
+      setTab('kas');
+      setSheet({ t: 'cash', kind: 'setor_bank' });
+    } else setSheet(v === 'masuk' ? { t: 'cash', kind: 'pendapatan_lain' } : { t: 'exp' });
+  }); // (+) › Catat pemasukan / pengeluaran
   const load = async () => {
     const multi = multiLoc(kos);
     const [l, e, c, p, cat, loc] = await Promise.all([

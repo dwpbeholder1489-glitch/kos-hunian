@@ -1,5 +1,8 @@
 // Ikon garis sederhana untuk navigasi aplikasi (tanpa pustaka luar)
 const P = {
+  lock: <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
+  play: <path d="M6 4.5v15a.5.5 0 0 0 .8.4l12-7.5a.5.5 0 0 0 0-.8l-12-7.5a.5.5 0 0 0-.8.4Z" />,
+
   plus: <path d="M12 5v14M5 12h14" />,
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></>,
   gift: <path d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12m0-12H8a2.5 2.5 0 1 1 2.4-3.3L12 9Zm0 0h4a2.5 2.5 0 1 0-2.4-3.3L12 9Z" />,
