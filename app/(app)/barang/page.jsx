@@ -280,7 +280,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], brands = [], gr
         {p && onKit && (p.is_kit || Number(p.stock) === 0) && !p.consign_contact_id && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onKit(p)}>{p.is_kit ? 'Isi paket ›' : 'Jadikan barang paket (isi dari barang lain) ›'}</button>}
         {!bahan && <div className="row" style={{ alignItems: 'flex-end' }}>
           <Field label={`Barcode ${b || 'satuan'} (opsional)`}><input inputMode="numeric" value={rows[0].barcode || ''} maxLength={40} onChange={(e) => set(0, { barcode: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} placeholder="scan / ketik angka" /></Field>
-          <ScanButton onCode={(c) => set(0, { barcode: c })} />
+          <ScanButton productUnit={b || 'utama'} onCode={(c) => set(0, { barcode: c })} />
         </div>}
       </div>
 
@@ -311,7 +311,7 @@ function ProductForm({ kosId, p, units, bahan, batch, cats = [], brands = [], gr
             </div>}
             {!bahan && <div className="row" style={{ alignItems: 'flex-end' }}>
               <Field label={`Barcode ${nm} (opsional)`}><input inputMode="numeric" value={r.barcode || ''} maxLength={40} onChange={(e) => set(i, { barcode: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} placeholder="scan / ketik angka" /></Field>
-              <ScanButton onCode={(code) => set(i, { barcode: code })} />
+              <ScanButton productUnit={nm} onCode={(code) => set(i, { barcode: code })} />
             </div>}
             <button className="sm ghost" onClick={() => setRows(rows.filter((_, j) => j !== i))}>Hapus satuan ini</button>
           </div>

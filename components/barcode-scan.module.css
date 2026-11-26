@@ -16,6 +16,10 @@
 .preview { position: relative; overflow: hidden; border-radius: 10px; background: #111916; }
 .preview video { display: block; width: 100%; max-height: 42dvh; min-height: 124px; object-fit: contain; }
 .guide { position: absolute; inset: 50% 10% auto; height: 2px; background: #ff625b; box-shadow: 0 0 8px #ff625b; }
+.frame { position: absolute; inset: 34% 13%; border: 2px solid #70ecac; border-radius: 6px; pointer-events: none; }
+.photo { position: relative; display: flex; align-items: center; justify-content: center; min-height: 42px; border: 1px solid var(--line); border-radius: 8px; font-weight: 650; }
+.photo:focus-within { outline: 2px solid var(--good); outline-offset: 2px; }
+.photo input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
 .manual { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
 .manual input { min-width: 0; font-size: 16px; }
 .manual button { min-height: 44px; }

@@ -2,17 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { createBarcodeReader, loadFallbackDecoder, openBarcodeCamera, previewBarcodeCamera, stopCamera } from '@/lib/barcode-scanner.mjs';
+import { createBarcodeReader, loadFallbackDecoder, openBarcodeCamera, previewBarcodeCamera, readBarcodePhoto, stopCamera } from '@/lib/barcode-scanner.mjs';
 import styles from './barcode-scan.module.css';
 
 const NO_READ_MS = 8000;
 const READ_INTERVAL_MS = 220;
 
-export function ScanButton({ onCode, label = 'Pindai', className = 'sm' }) {
+export function ScanButton({ onCode, label = 'Pindai', className = 'sm', productUnit }) {
   const [open, setOpen] = useState(false);
   return <>
     <button type="button" className={className} onClick={() => setOpen(true)} aria-label="Pindai barcode atau ketik kodenya">📷 {label}</button>
-    {open && <Scanner onClose={() => setOpen(false)} onCode={onCode} />}
+    {open && <Scanner onClose={() => setOpen(false)} onCode={onCode} productUnit={productUnit} />}
   </>;
 }
 
@@ -27,18 +27,21 @@ function cameraMessage(error) {
   return 'Tampilan kamera tidak bisa dimulai. Coba buka kamera lagi atau ketik kode di bawah.';
 }
 
-function Scanner({ onCode, onClose }) {
+function Scanner({ onCode, onClose, productUnit }) {
   const dialog = useRef(null);
   const video = useRef(null);
   const switchDecoder = useRef(null);
   const lastCameraCode = useRef({ code: null, at: 0 });
   const busy = useRef(false);
+  const readingPhoto = useRef(false);
   const active = useRef(false);
   const [attempt, setAttempt] = useState(0);
   const [typed, setTyped] = useState('');
   const [unknown, setUnknown] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [checking, setChecking] = useState(false);
+  const [photoPending, setPhotoPending] = useState(false);
+  const [format, setFormat] = useState(productUnit ? 'linear' : undefined);
   const [camera, setCamera] = useState({ mode: 'loading', message: 'Membuka kamera…' });
   const [preview, setPreview] = useState(false);
 
@@ -70,7 +73,7 @@ function Scanner({ onCode, onClose }) {
       if (!active.current) return;
       if (result === false) {
         setUnknown(code);
-        if (source === 'camera') setTyped((value) => value || code);
+        if (source !== 'manual') setTyped((value) => value || code);
       } else {
         onClose();
       }
@@ -84,6 +87,29 @@ function Scanner({ onCode, onClose }) {
 
   const handleLatest = useRef(handle);
   handleLatest.current = handle;
+
+  async function fromPhoto(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || busy.current || readingPhoto.current) return;
+    readingPhoto.current = true;
+    setPhotoPending(true);
+    setSubmitError(null);
+    try {
+      const code = await readBarcodePhoto(file, format);
+      if (!active.current) return;
+      if (!code) {
+        setSubmitError('Kode di foto belum terbaca. Coba foto lebih dekat, ratakan kemasan, dan hindari pantulan.');
+        return;
+      }
+      await handleLatest.current(code, 'photo');
+    } catch {
+      if (active.current) setSubmitError('Foto gagal dibuka. Pilih foto lain atau ketik kodenya.');
+    } finally {
+      readingPhoto.current = false;
+      if (active.current) setPhotoPending(false);
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -119,11 +145,11 @@ function Scanner({ onCode, onClose }) {
     async function tick() {
       if (signal.aborted) return;
       try {
-        if (!busy.current && element.readyState >= 2 && element.videoWidth > 0) {
+        if (!busy.current && !readingPhoto.current && element.readyState >= 2 && element.videoWidth > 0) {
           if (reader.usingNative && Date.now() - lastNativeRead >= NO_READ_MS) await reader.useFallback();
           const code = await reader.read(element);
           if (signal.aborted) return;
-          if (code) {
+          if (code && !readingPhoto.current) {
             lastNativeRead = Date.now();
             await handleLatest.current(code, 'camera');
           }
@@ -138,10 +164,13 @@ function Scanner({ onCode, onClose }) {
       setPreview(false);
       setCamera({ mode: 'loading', message: 'Membuka kamera…' });
       try {
-        stream = await openBarcodeCamera(navigator.mediaDevices, signal);
+        stream = await openBarcodeCamera(navigator.mediaDevices, signal, { detailed: format === 'linear' });
         if (signal.aborted) { stopCamera(stream); return; }
         track = stream.getVideoTracks()[0];
         track?.addEventListener('ended', ended);
+        if (format === 'linear' && track?.getCapabilities?.().focusMode?.includes('continuous')) {
+          track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        }
         await previewBarcodeCamera(element, stream, signal);
         if (signal.aborted) return;
         setPreview(true);
@@ -153,7 +182,8 @@ function Scanner({ onCode, onClose }) {
       try {
         reader = await createBarcodeReader({
           Detector: window.BarcodeDetector,
-          loadFallback: loadFallbackDecoder,
+          loadFallback: () => loadFallbackDecoder({ format }),
+          format,
           onFallback: (state) => {
             if (signal.aborted) return;
             setCamera(state === 'loading'
@@ -175,7 +205,7 @@ function Scanner({ onCode, onClose }) {
 
     start();
     return release;
-  }, [attempt]);
+  }, [attempt, format]);
 
   return createPortal(
     <dialog ref={dialog} className={styles.dialog} aria-label="Pindai barcode"
@@ -188,15 +218,27 @@ function Scanner({ onCode, onClose }) {
         <h2>Pindai barcode</h2>
         <button type="button" className="sm ghost" onClick={onClose}>Tutup</button>
       </div>
+      {productUnit && <div className="row between">
+        <span className="small muted">Satuan {productUnit}</span>
+        <div className="seg" role="group" aria-label="Jenis kode">
+          <button type="button" aria-pressed={format === 'linear'} disabled={photoPending || checking} className={format === 'linear' ? 'on' : ''} onClick={() => setFormat('linear')}>Barcode garis</button>
+          <button type="button" aria-pressed={format === 'qr'} disabled={photoPending || checking} className={format === 'qr' ? 'on' : ''} onClick={() => setFormat('qr')}>QR</button>
+        </div>
+      </div>}
       <div className={styles.preview} hidden={!preview && camera.mode === 'error'}>
         <video ref={video} muted autoPlay playsInline aria-label="Pratinjau kamera" />
-        {preview && <span className={styles.guide} aria-hidden="true" />}
+        {preview && <span className={format === 'linear' ? styles.frame : styles.guide} aria-hidden="true" />}
       </div>
       <div className={camera.mode === 'error' ? 'notice bad' : 'small muted'} role="status">{camera.message}</div>
+      {productUnit && format === 'linear' && <p className="small muted" style={{ margin: 0 }}>Penuhi kotak dengan barcode garis. Ratakan kemasan dan miringkan sedikit jika ada pantulan.</p>}
       {camera.mode === 'native' && <button type="button" className="sm ghost" onClick={() => switchDecoder.current?.()}>Pakai pemindai cadangan</button>}
       {camera.mode === 'error' && <button type="button" className="sm ghost" onClick={() => setAttempt((value) => value + 1)}>Coba kamera lagi</button>}
       {unknown && <div className="notice" role="status"><b>{unknown}</b> belum terdaftar. Periksa kodenya atau daftarkan melalui Barang &amp; stok.</div>}
       {submitError && <div className="notice bad" role="alert">{submitError}</div>}
+      {productUnit && <label className={styles.photo}>
+        <span>{photoPending ? 'Membaca foto…' : 'Pindai dari foto'}</span>
+        <input type="file" accept="image/*" disabled={photoPending || checking} onChange={fromPhoto} />
+      </label>}
       <form className={styles.manual} onSubmit={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -206,7 +248,7 @@ function Scanner({ onCode, onClose }) {
           <input value={typed} onChange={(event) => setTyped(event.target.value)} autoCapitalize="none"
             autoCorrect="off" spellCheck={false} autoComplete="off" enterKeyHint="done" placeholder="Masukkan atau pindai kode" />
         </label>
-        <button type="submit" className="primary" disabled={checking || !typed.trim()}>{checking ? 'Memeriksa…' : 'Gunakan kode'}</button>
+        <button type="submit" className="primary" disabled={checking || photoPending || !typed.trim()}>{checking ? 'Memeriksa…' : 'Gunakan kode'}</button>
       </form>
     </dialog>,
     document.body,
