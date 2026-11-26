@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createBarcodeReader, loadFallbackDecoder, openBarcodeCamera, previewBarcodeCamera } from '../lib/barcode-scanner.mjs';
+import { barcodeFrame, createBarcodeReader, loadFallbackDecoder, openBarcodeCamera, previewBarcodeCamera } from '../lib/barcode-scanner.mjs';
 
 test('camera retries flexible constraints when the preferred camera is unavailable', async () => {
   const requests = [];
@@ -60,6 +60,21 @@ test('fallback handles missing and broken native detector startup', async () => 
   }
 });
 
+test('product barcode mode excludes the QR printed alongside the barcode', async () => {
+  class Detector {
+    static async getSupportedFormats() { return ['ean_13', 'qr_code']; }
+    constructor(options) { assert.deepEqual(options.formats, ['ean_13']); }
+    async detect() { return [{ rawValue: '5901234123457' }]; }
+  }
+  const reader = await createBarcodeReader({ Detector, format: 'linear' });
+  assert.equal(await reader.read({}), '5901234123457');
+});
+
+test('product frame targets the center and still checks the full image', () => {
+  assert.deepEqual(barcodeFrame(1000, 1800, 'linear', 0), { x: 60, y: 612, width: 880, height: 576 });
+  assert.deepEqual(barcodeFrame(1000, 1800, 'linear', 3), { x: 0, y: 0, width: 1000, height: 1800 });
+});
+
 test('native failure during scan switches once and decodes the current frame', async () => {
   let reads = 0;
   let fallbackStarts = 0;
@@ -97,7 +112,7 @@ test('the bundled fallback reads EAN-13 from camera pixels', async () => {
   }
   const documentBefore = globalThis.document;
   globalThis.document = {
-    createElement: () => ({ getContext: () => ({ drawImage() {}, getImageData: () => ({ data: image }) }) }),
+    createElement: () => ({ getContext: () => ({ drawImage() {}, save() {}, restore() {}, getImageData: () => ({ data: image }) }) }),
   };
   try {
     const read = await loadFallbackDecoder();

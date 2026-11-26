@@ -110,7 +110,7 @@ export function BarcodeSheet({ p, units, onClose }) {
           ))}</div>}
           <div className="row" style={{ flexWrap: 'nowrap', alignItems: 'flex-end' }}>
             <Field label="Barcode tambahan"><input inputMode="numeric" maxLength={40} value={input[u.name] || ''} onChange={(e) => setInput({ ...input, [u.name]: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(u.name); } }} placeholder="scan / ketik" /></Field>
-            <ScanButton onCode={(c) => { add(u.name, c); return true; }} />
+            <ScanButton productUnit={u.name} onCode={(c) => { add(u.name, c); return true; }} />
             <button className="sm primary" style={{ flex: 'none' }} disabled={busy} onClick={() => add(u.name)}>Tambah</button>
           </div>
         </div>
