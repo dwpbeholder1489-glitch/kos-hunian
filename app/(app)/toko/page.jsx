@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { RecHint } from '@/components/Rekomendasi';
+import PortalInbox from '@/components/PortalInbox';
 import CrmHint from '@/components/CrmHint';
 import PageHelp from '@/components/PageHelp';
 import Persiapan from '@/components/Persiapan';
@@ -316,6 +317,7 @@ export default function Toko() {
           <img className={styles.mascot} src="/retail/prasara-maskot.webp" width="600" height="400" alt="" />
           <div className={styles.controls}>{periode}{atur}</div>
         </section>
+        <PortalInbox />
         <CrmHint />
         <RecHint />
       </>} />

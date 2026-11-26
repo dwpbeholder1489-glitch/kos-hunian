@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -17,7 +17,7 @@ const SOURCE = { wa: 'WhatsApp', datang: 'Datang langsung', telepon: 'Telepon', 
 
 // CRM sederhana (blueprint 5.4): prospek & tahapannya, catatan komunikasi, tindak lanjut terjadwal
 export default function Crm() {
-  const { kos, kosId, ver } = useKos();
+  const { kos, kosId, ver, bump } = useKos();
   const jasa = kos?.business_type === 'jasa';
   const retail = kos?.business_type === 'retail' || jasa; // prospek jadi → pelanggan (toko & jasa)
   const [d, setD] = useState(null);
@@ -25,8 +25,18 @@ export default function Crm() {
   const [tab, setTab] = useState('prospek');
   const [stage, setStage] = useState('aktif');
   const [open, setOpen] = useState(null);
+  const openedLink = useRef(null);
   const load = () => supabase.rpc('crm_overview', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
   useEffect(() => { load(); }, [kosId, ver]);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('prospek');
+    if (!d || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id || '')) return;
+    const lead = d.leads.find((item) => item.id === id && item.kos_id === kosId);
+    if (lead && openedLink.current !== id) {
+      openedLink.current = id;
+      setOpen(lead);
+    }
+  }, [d, kosId]);
   if (err) return <div className="notice bad">{/crm_overview/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
   const active = d.leads.filter((l) => !['jadi', 'batal'].includes(l.stage));
@@ -81,7 +91,7 @@ export default function Crm() {
         ))}</div></section>
       ))}
       <span className="small muted">Simpan seperlunya saja: nama, No. HP, dan kebutuhan. Jangan mencatat data pribadi sensitif (KTP, kesehatan, dll.).</span>
-      {open && <LeadSheet l={open} kosId={kosId} retail={retail} jasa={jasa} onClose={() => setOpen(null)} onSaved={() => { load(); }} />}
+      {open && (!open.id || open.kos_id === kosId) && <LeadSheet key={open.id || kosId} l={open} kosId={kosId} retail={retail} jasa={jasa} onClose={() => setOpen(null)} onSaved={bump} />}
     </div>
   );
 }
