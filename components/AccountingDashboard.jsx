@@ -50,7 +50,7 @@ export function AccountingMenu({ active, menus, onOpen, canConfigure }) {
   </div>;
 }
 
-export default function AccountingDashboard({ report, kosId, entity, from, to, ym, ytd, menus, onOpen, canConfigure }) {
+export default function AccountingDashboard({ report, kosId, entity, from, to, ym, ytd, menus, onOpen, canConfigure, canForecast }) {
   const [extra, setExtra] = useState(null);
   useEffect(() => {
     let active = true;
@@ -120,6 +120,10 @@ export default function AccountingDashboard({ report, kosId, entity, from, to, y
       <Trend rows={[...history, [ym, current]]} ytd={ytd} />
     </section>
     <AccountingMenu active="overview" menus={menus} onOpen={onOpen} canConfigure={canConfigure} />
+    <section className={styles.planning}>
+      <Link href="/anggaran"><strong>Selisih Anggaran Bulan Ini</strong><small>Lihat realisasi dan transaksi biaya ›</small></Link>
+      {canForecast && <button type="button" onClick={() => onOpen('forecast')}><strong>Proyeksi Kas 30 Hari</strong><small>Lihat jadwal dan simulasi ›</small></button>}
+    </section>
     <section className={styles.status} data-warning={warnings.length > 0 || undefined}>
       <span className={styles.statusIcon} aria-hidden="true">{warnings.length ? '!' : '✓'}</span>
       <div><strong>Status Pembukuan: <span>{warnings.length ? 'Perlu diperiksa' : 'Lengkap'}</span></strong>

@@ -7,7 +7,7 @@ import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import FiturUpgrade from '@/components/FiturUpgrade';
 import { Loading, Tile, toast } from '@/components/ui';
-import { rp, errMsg, bulan, thisMonth, addMonthsYm, parseRp } from '@/lib/format';
+import { rp, errMsg, bulan, thisMonth, addMonthsYm, parseRp, monthEnd, tgl } from '@/lib/format';
 import { canArea } from '@/lib/business';
 
 const KIND = { operasional: 'Operasional', modal: 'Modal/aset', non_operasional: 'Non-operasional' };
@@ -20,9 +20,10 @@ export default function Anggaran() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(null);
+  const [selected, setSelected] = useState(null);
   const owner = canArea(kos, 'team');
   const muat = () => supabase.rpc('budget_report', { p_kos: kosId, p_month: ym + '-01' }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
-  useEffect(() => { setD(null); setErr(null); muat(); }, [kosId, ym]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setD(null); setErr(null); setSelected(null); muat(); }, [kosId, ym]); // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="notice bad">{/budget_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -48,10 +49,11 @@ export default function Anggaran() {
   };
 
   const rows = d.baris || [];
-  const dianggarkan = rows.filter((x) => x.anggaran != null);
+  const dianggarkan = rows.filter((x) => Number(x.anggaran) > 0);
+  const over = dianggarkan.filter((row) => Number(row.realisasi) > Number(row.anggaran));
   const totA = dianggarkan.reduce((t, x) => t + Number(x.anggaran), 0);
   const totR = dianggarkan.reduce((t, x) => t + Number(x.realisasi), 0);
-  const luar = rows.filter((x) => x.anggaran == null).reduce((t, x) => t + Number(x.realisasi), 0) + Number(d.tanpa_kategori || 0);
+  const luar = rows.filter((x) => !(Number(x.anggaran) > 0)).reduce((t, x) => t + Number(x.realisasi), 0) + Number(d.tanpa_kategori || 0);
   const pctTot = totA > 0 ? Math.round((totR * 100) / totA) : null;
   const warna = (p) => (p == null ? 'var(--line)' : p >= 100 ? 'var(--bad)' : p >= 80 ? 'var(--att)' : 'var(--gold)');
 
@@ -68,17 +70,19 @@ export default function Anggaran() {
 
       <div className="grid">
         {aktif && <Tile label="Anggaran" value={rp(totA)} sub={`${dianggarkan.length} kategori`} />}
-        {aktif && <Tile label="Terpakai" value={rp(totR)} sub={pctTot == null ? 'belum ada anggaran' : `${pctTot}% dari anggaran`} />}
+        {aktif && <Tile label="Realisasi yang dianggarkan" value={rp(totR)} sub={pctTot == null ? 'belum ada anggaran' : `${pctTot}% dari anggaran`} />}
         {aktif && <Tile label="Sisa" value={rp(totA - totR)} sub={totA - totR < 0 ? 'melebihi anggaran' : 'belum terpakai'} />}
         <Tile label={aktif ? 'Di luar anggaran' : 'Total pengeluaran'} value={rp(aktif ? luar : luar + totR)} sub={aktif ? 'kategori tanpa anggaran & tanpa kategori' : 'bulan ini'} />
       </div>
+
+      {aktif && over.length > 0 && <div className="notice">{over.length} kategori melampaui anggaran sebesar {rp(over.reduce((total, row) => total + Number(row.realisasi) - Number(row.anggaran), 0))}. Buka transaksi kategori untuk memeriksa selisihnya.</div>}
 
       {aktif && d.ada_bulan_lalu && <button className="ghost" disabled={busy === 'salin'} onClick={salin}>{busy === 'salin' ? 'Menyalin…' : `Salin anggaran ${bulan(addMonthsYm(ym, -1))}`}</button>}
 
       <section className="panel">
         {rows.length === 0 ? <span className="small muted">Belum ada kategori biaya. Kategori dibuat saat mencatat pengeluaran.</span> : (
           <div className="list">{rows.map((x) => {
-            const a = x.anggaran == null ? null : Number(x.anggaran);
+            const a = Number(x.anggaran) > 0 ? Number(x.anggaran) : null;
             const r = Number(x.realisasi);
             const p = a ? Math.round((r * 100) / a) : null;
             return (
@@ -92,7 +96,10 @@ export default function Anggaran() {
                     <div style={{ width: `${Math.min(p, 100)}%`, height: '100%', background: warna(p) }} />
                   </div>
                 )}
-                {aktif && a != null && <span className="small" style={{ color: p >= 100 ? 'var(--bad)' : undefined }}>{p >= 100 ? `Melebihi ${rp(r - a)}` : `Sisa ${rp(a - r)}`} · {p}%</span>}
+                {aktif && a != null && <span className="small" style={{ color: r > a ? 'var(--bad)' : undefined }}>{r > a ? `Melebihi ${rp(r - a)}` : r === a ? 'Tepat anggaran' : `Sisa ${rp(a - r)}`} · {p}%</span>}
+                {aktif && a == null && r !== 0 && <span className="small">Pengeluaran tanpa anggaran: {rp(r)}</span>}
+                {r !== 0 && <button className="sm ghost" aria-expanded={selected === x.id} onClick={() => setSelected(selected === x.id ? null : x.id)}>Lihat transaksi · {x.nama}</button>}
+                {selected === x.id && <ExpenseRows key={ym + x.id} kosId={kosId} ym={ym} categoryId={x.id} />}
                 {aktif && (
                   <div className="row" style={{ flexWrap: 'nowrap', gap: 8 }}>
                     <input inputMode="numeric" aria-label={`Anggaran ${x.nama}`} placeholder="Anggaran bulan ini" disabled={busy === x.id}
@@ -105,9 +112,40 @@ export default function Anggaran() {
             );
           })}</div>
         )}
-        {Number(d.tanpa_kategori) > 0 && <span className="small muted">Pengeluaran tanpa kategori bulan ini: {rp(d.tanpa_kategori)} (tidak bisa dianggarkan; beri kategori di menu pengeluaran).</span>}
+        {Number(d.tanpa_kategori) !== 0 && <>
+          <p className="small muted">Pengeluaran tanpa kategori bulan ini: {rp(d.tanpa_kategori)}.</p>
+          <button className="sm ghost" aria-expanded={selected === 'none'} onClick={() => setSelected(selected === 'none' ? null : 'none')}>Lihat transaksi tanpa kategori</button>
+          {selected === 'none' && <ExpenseRows key={ym + '-none'} kosId={kosId} ym={ym} categoryId={null} />}
+        </>}
       </section>
       <span className="small muted">Pengeluaran dicatat di menu <Link href={kos?.business_type === 'properti' ? '/pengeluaran' : '/kas'}>{kos?.business_type === 'properti' ? 'Pengeluaran' : 'Kas'}</Link>. Kosongkan isian untuk menghapus anggaran kategori itu. Setiap perubahan tercatat di Konfigurasi › Riwayat.</span>
     </div>
   );
+}
+
+function ExpenseRows({ kosId, ym, categoryId }) {
+  const PAGE_SIZE = 25;
+  const [offset, setOffset] = useState(0);
+  const [result, setResult] = useState(null);
+  useEffect(() => {
+    let active = true;
+    setResult(null);
+    let query = supabase.from('expenses').select('id, date, description, amount', { count: 'exact' })
+      .eq('kos_id', kosId).gte('date', ym + '-01').lte('date', monthEnd(ym))
+      .order('date', { ascending: false }).order('id').range(offset, offset + PAGE_SIZE - 1);
+    query = categoryId == null ? query.is('category_id', null) : query.eq('category_id', categoryId);
+    query.then((response) => { if (active) setResult(response); });
+    return () => { active = false; };
+  }, [kosId, ym, categoryId, offset]);
+  if (!result) return <Loading />;
+  if (result.error) return <div className="notice bad">{errMsg(result.error)}</div>;
+  if (!result.data.length) return <p className="small muted">Belum ada transaksi pada halaman ini.</p>;
+  return <div className="list">
+    {result.data.map((row) => <div className="li small" key={row.id}><span>{tgl(row.date)} · {row.description || 'Pengeluaran'}</span><b>{rp(row.amount)}</b></div>)}
+    <div className="row between">
+      <button className="sm ghost" disabled={!offset} onClick={() => setOffset(offset - PAGE_SIZE)}>Sebelumnya</button>
+      <span className="small muted">{offset + 1}–{offset + result.data.length} dari {result.count}</span>
+      <button className="sm ghost" disabled={offset + PAGE_SIZE >= result.count} onClick={() => setOffset(offset + PAGE_SIZE)}>Berikutnya</button>
+    </div>
+  </div>;
 }
