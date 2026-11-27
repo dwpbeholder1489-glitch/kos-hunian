@@ -22,13 +22,13 @@ export function CompactKpis({ items, prefs, onDetail }) {
   return <>{groups.map(([title, ids]) => {
     const rows = ids.map((id) => byId.get(id)).filter(Boolean);
     if (!rows.length) return null;
-    return <section key={title} className={styles.kpiGroup}>
+    return <section key={title} className={styles.kpiGroup} data-custom={Array.isArray(selected) || undefined}>
       <h3>{title}</h3><div className={styles.kpiGrid}>{rows.map((item) => {
         const content = <>
           <NavIcon name={item.icon} size={20} /><span className={styles.kpiCopy}>
             <b>{item.label}</b><strong className={item.value.length > 12 ? styles.longValue : undefined}>{item.value}</strong>
             {item.sub && <small>{item.sub}</small>}
-            {item.change && <span className={styles.change} data-tone={item.change.tone}>{item.change.text}</span>}
+            {item.change && <span className={styles.change} data-tone={item.change.tone}><b>{item.change.valueText}</b><small>{item.change.comparison}</small></span>}
           </span><NavIcon name="next" size={14} />
         </>;
         const props = { className: styles.kpi, 'data-primary': item.id === 'omzet' || undefined, 'data-tone': item.tone };
