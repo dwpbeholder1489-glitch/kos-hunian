@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
-import { Loading, Empty } from '@/components/ui';
+import { Loading, Empty, toast } from '@/components/ui';
 import { waLink, errMsg } from '@/lib/format';
 import PrinterManager, { PrintReceiptButton } from '@/components/PrinterManager';
+import { printLines } from '@/lib/printer-format.mjs';
 import { strukText } from '@/lib/struk';
 
 export default function Struk() {
@@ -25,6 +26,14 @@ export default function Struk() {
   if (!d) return <Loading />;
   if (d.missing) return <Empty title="Struk tidak ditemukan" />;
   const text = strukText(kos, d.s, d.lines, d.contact);
+  async function copyThermal() {
+    try {
+      await navigator.clipboard.writeText(printLines(text, 32).join('\n'));
+      toast('Struk disalin. Tempel di mode Plain aplikasi printer.');
+    } catch {
+      toast('Tekan lama pada teks struk untuk menyalinnya.');
+    }
+  }
   return (
     <div className="stack" style={{ maxWidth: 420, margin: '0 auto' }}>
       <div className="row between noprint"><h2>Struk</h2><Link href="/penjualan" className="small">← Penjualan</Link></div>
@@ -32,6 +41,7 @@ export default function Struk() {
       <div className="row noprint">
         <PrinterManager kosId={kos.id} />
         <PrintReceiptButton kosId={kos.id} renderText={(paper) => strukText(kos, d.s, d.lines, d.contact, paper)} />
+        <button type="button" onClick={copyThermal}>Salin struk 58 mm</button>
         <a href={d.contact?.phone ? waLink(d.contact.phone, '```\n' + text + '\n```') : `https://wa.me/?text=${encodeURIComponent('```\n' + text + '\n```')}`} target="_blank" rel="noreferrer"><button>Kirim via WhatsApp</button></a>
         <Link href="/kasir"><button className="ghost">Transaksi baru</button></Link>
       </div>
