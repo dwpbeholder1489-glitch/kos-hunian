@@ -1,0 +1,23 @@
+.fallback { display: flex; justify-content: flex-end; margin-block: 6px; }
+[data-guide-page]:has([data-guide-content] [data-guide-button]) .fallback { display: none; }
+.overlay { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; overflow: hidden; background: transparent; color: var(--fg); }
+.overlay::backdrop { background: transparent; }
+.overlay:not(:has(.spotlight)) { background: #071b14a6; }
+.spotlight { position: fixed; border: 2px solid #66de9a; border-radius: 12px; box-shadow: 0 0 0 200vmax #071b14b5; pointer-events: none; }
+.tooltip { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); width: min(425px, calc(100% - 24px)); max-height: 55dvh; overflow: auto; padding: 15px; background: var(--surface, var(--bg)); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 36px #0005; }
+.tooltip[data-top] { bottom: auto; top: max(12px, env(safe-area-inset-top)); }
+.tooltip h3 { margin: 4px 0; }
+.tooltip p { margin: 8px 0; }
+.buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.tooltip .buttons { margin-bottom: 6px; }
+.field { position: fixed; z-index: 150; right: 12px; bottom: 76px; max-width: min(340px, calc(100% - 24px)); display: grid; justify-items: end; gap: 4px; }
+.field > div, .field > button, .customer { background: var(--surface, var(--bg)); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.field p { margin: 4px 0 0; }
+.customer { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 8px auto; width: min(560px, calc(100% - 24px)); }
+.customer summary { cursor: pointer; }
+@media (min-width: 768px) { .field { bottom: 18px; } }
+@media print { .fallback, .field, .customer { display: none; } }
+.spotlight { pointer-events: auto; padding: 0; min-height: 0; background: transparent; }
+.spotlight:hover { background: #66de9a16; }
+.field { pointer-events: none; }
+.field > button { pointer-events: auto; }

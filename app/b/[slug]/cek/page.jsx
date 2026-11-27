@@ -1,5 +1,7 @@
 'use client';
 // Pelanggan cek status pesanan: nomor pesanan + No. WhatsApp yang dipakai saat memesan. Tidak perlu akun.
+import { CustomerGuide } from '@/components/InteractiveGuide';
+import { CUSTOMER_HELP } from '@/lib/customerGuide';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import PublicPay from '@/components/PublicPay';
@@ -42,7 +44,7 @@ export default function Cek() {
     setBusy(false);
   };
   return (
-    <main className="wrap stack" style={{ maxWidth: 560, paddingTop: 20, paddingBottom: 40 }}>
+    <CustomerGuide business={slug} kind="status" help={CUSTOMER_HELP.status}><main className="wrap stack" style={{ maxWidth: 560, paddingTop: 20, paddingBottom: 40 }}>
       <a href={`/b/${slug}`} className="small">← Kembali ke halaman</a>
       <h1 style={{ margin: 0, fontSize: 24 }}>Cek status pesanan</h1>
       <form className="panel stack" onSubmit={go}>
@@ -65,6 +67,6 @@ export default function Cek() {
           {o.status !== 'batal' && o.status !== 'permintaan' && !o.lunas && <PublicPay slug={slug} note="Setelah membayar, kirim bukti transfer lewat WhatsApp agar pembayaran dicatat." />}
         </section>
       )}
-    </main>
+    </main></CustomerGuide>
   );
 }

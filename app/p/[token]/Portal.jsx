@@ -1,4 +1,6 @@
 'use client';
+import { CustomerGuide } from '@/components/InteractiveGuide';
+import { CUSTOMER_HELP } from '@/lib/customerGuide';
 import { useEffect, useRef, useState } from 'react';
 import { LogoMark } from '@/components/Logo';
 import { useParams } from 'next/navigation';
@@ -50,7 +52,7 @@ export default function Portal() {
   const waiting = p.payments.filter((x) => x.status === 'menunggu').reduce((s, x) => s + Number(x.amount), 0);
 
   return (
-    <>
+    <CustomerGuide kind="penghuni" help={CUSTOMER_HELP.penghuni}>
       <header className="top portal">
         <div className="wrap" style={{ paddingBottom: 0 }}>
           <div className="brandrow">
@@ -118,7 +120,7 @@ export default function Portal() {
         {tab === 'tanya' && ai && <Chat demo={demo} token={token} name={p.occupant.name} kos={p.kos.name} />}
       </main>
       {pay && <PaySheet demo={demo} token={token} inv={pay} info={p.kos.payment_info} qris={p.kos.qris} onClose={() => setPay(null)} onDone={() => { setPay(null); load(); }} />}
-    </>
+    </CustomerGuide>
   );
 }
 

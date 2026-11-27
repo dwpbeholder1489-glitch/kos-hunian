@@ -1,5 +1,7 @@
 // Halaman bisnis publik (blueprint 24, Phase 1): profil yang diterbitkan pemilik, katalog/kamar tersedia, formulir permintaan.
 // Hanya data yang boleh dipublikasikan yang diambil (lewat fungsi public_page_view); tanpa harga modal, margin, atau stok persis.
+import { CustomerGuide } from '@/components/InteractiveGuide';
+import { CUSTOMER_HELP } from '@/lib/customerGuide';
 import { notFound } from 'next/navigation';
 import PublicForm from '@/components/PublicForm';
 import PublicPay from '@/components/PublicPay';
@@ -49,18 +51,19 @@ export default async function PublicPage({ params, searchParams }) {
   const [shop, quoteCatalog] = retail ? await Promise.all([getPublicShop(slug), getPublicQuoteCatalog(slug)]) : [null, null];
   const quoteViews = ['penawaran', 'permintaan', 'riwayat-penawaran', 'lacak'];
   const initialScreen = [typeof view === 'string' ? view : 'beranda', typeof query?.id === 'string' ? query.id : null];
+  const help = CUSTOMER_HELP[p.type] || CUSTOMER_HELP.jasa;
   if (shop) {
     const media = p.media && {
       ...p.media,
       items: Object.fromEntries(p.items.map(({ id }) => [id, p.media.items?.[id] || []])),
     };
-    return <PublicShop key={p.slug} page={{ ...p, media }} shop={shop} quoteCatalog={quoteCatalog} initialScreen={initialScreen} />;
+    return <CustomerGuide business={slug} kind={p.type} help={help}><PublicShop key={p.slug} page={{ ...p, media }} shop={shop} quoteCatalog={quoteCatalog} initialScreen={initialScreen} /></CustomerGuide>;
   }
   if (quoteCatalog && quoteViews.includes(view)) {
-    return <PublicShop key={p.slug} page={p} shop={{ items: [], pay: null }} quoteCatalog={quoteCatalog} initialScreen={initialScreen} quoteOnly />;
+    return <CustomerGuide business={slug} kind={p.type} help={help}><PublicShop key={p.slug} page={p} shop={{ items: [], pay: null }} quoteCatalog={quoteCatalog} initialScreen={initialScreen} quoteOnly /></CustomerGuide>;
   }
   return (
-    <main className="wrap stack" style={{ maxWidth: 640, paddingTop: 20, paddingBottom: 40 }}>
+    <CustomerGuide business={slug} kind={p.type} help={help}><main className="wrap stack" style={{ maxWidth: 640, paddingTop: 20, paddingBottom: 40 }}>
       <PublicCover cover={p.media?.cover} name={p.name} />
       <header className="stack" style={{ gap: 6 }}>
         <div className="row" style={{ flexWrap: 'nowrap', gap: 12 }}>
@@ -99,6 +102,6 @@ export default async function PublicPage({ params, searchParams }) {
       {p.type !== 'properti' && <div id="bayar"><PublicPay slug={p.slug} panel /></div>}
       {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.policy} /></p></section>}
       <footer className="small muted" style={{ textAlign: 'center' }}>Halaman ini dikelola {p.name} dengan <a href="/">PRASARA</a></footer>
-    </main>
+    </main></CustomerGuide>
   );
 }

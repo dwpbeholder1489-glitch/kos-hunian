@@ -2,7 +2,9 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useKos } from '@/components/KosProvider';
-import { HELP_CATS, searchHelp } from '@/lib/help';
+import { OnboardingActions } from '@/components/InteractiveGuide';
+import { knowledgeFor } from '@/lib/learning';
+import { HELP_CATS } from '@/lib/help';
 import { BUSINESS } from '@/lib/plan';
 import Tickets from '@/components/Tickets';
 import SupportAccess from '@/components/SupportAccess';
@@ -13,8 +15,9 @@ export default function Bantuan() {
   const { kos } = useKos();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
-  const hasil = useMemo(() => searchHelp(q), [q]);
-  const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, saya pemilik ${kos?.name || 'kos'}. Saya butuh bantuan: `)}`;
+  const hasil = useMemo(() => knowledgeFor(kos, q), [kos, q]);
+  const categories = HELP_CATS.filter(([cat]) => hasil.some((h) => h.cat === cat));
+  const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, saya menggunakan PRASARA untuk ${kos?.name || 'kos'}. Saya butuh bantuan: `)}`;
 
   const Item = ({ h }) => (
     <div className="li" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
@@ -37,14 +40,15 @@ export default function Bantuan() {
 
   return (
     <div className="stack">
-      <h2>Pusat bantuan</h2>
+      <h2>Panduan &amp; Bantuan</h2>
+      <section className="panel"><h3>Panduan awal PRASARA</h3><OnboardingActions /></section>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ketik pertanyaan, mis. penghuni lama, kwitansi, prive" aria-label="Cari bantuan" />
       {q.trim() ? (
         <section className="panel">
           <span className="label">{hasil.length ? `${hasil.length} jawaban` : 'Belum ada jawaban untuk kata itu'}</span>
           <div className="list">{hasil.map((h) => <Item key={h.id} h={h} />)}</div>
         </section>
-      ) : HELP_CATS.map(([cat, name]) => (
+      ) : categories.map(([cat, name]) => (
         <section className="panel" key={cat}>
           <h3>{name}</h3>
           <div className="list">{hasil.filter((h) => h.cat === cat).map((h) => <Item key={h.id} h={h} />)}</div>

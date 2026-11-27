@@ -1071,6 +1071,15 @@ const PARTS = [
       <><b>Perangkat terhubung</b>: semua HP/laptop yang menerima push akun Anda — matikan sementara, ganti nama, atau <b>Hapus</b> perangkat yang tidak dikenal (maks. 10 aktif).</>,
     ], <>Kategori & prioritas berlaku per bisnis; jam tenang, suara, dan privasi berlaku untuk semua bisnis Anda. Notifikasi kritis (keamanan akun) selalu masuk dan tidak ditunda.</>, 'info', <ScrNotifSet />],
   ]],
+  ['AO', 'Learning Center & Panduan Interaktif', [
+    ['Belajar bertahap dan mengulang panduan', 'Panduan & Bantuan → Learning Center', [
+      <>Mulai dengan rekomendasi sesuai kategori, hak akses, dan modul aktif. Buka Progres Belajar untuk memilih atau mengulang tahap.</>,
+      <>Pada Simulasi Transaksi, pilih item contoh, masukkan pembayaran, lalu periksa sisa tagihan dan pilih Simpan simulasi. Data contoh terpisah dari data usaha.</>,
+      <>Gunakan peta hubungan antarmodul dan periksa pemahaman melalui evaluasi. Asisten Bisnis mencari jawaban di dokumentasi internal.</>,
+      <>Pilih <b>? Panduan</b> di halaman modul. Sorotan menunjukkan elemen yang sedang dijelaskan. Gunakan Lanjutkan, Jeda, Lewati, atau Ulangi.</>,
+      <>Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>. Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,
+    ], <>Progres belajar dan tutorial tersimpan pada peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang sedang dibuka.</>, 'info'],
+  ]],
 ];
 
 const RULES = [
@@ -1142,6 +1151,7 @@ export default function Panduan() {
           <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
           <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–136</a><br />Event, kreatif &amp; produksi: penawaran & scope, anggaran & laba proyek, tagihan termin & pembayaran, klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Notifikasi</b><span><a href="#bagian-AN">Langkah 141–143</a><br />Aktifkan di HP/komputer (iPhone lewat Layar Utama), Pusat Notifikasi, kategori, jam tenang, perangkat</span></div>
+          <div><b>Learning Center</b><span><a href="#langkah-147">Langkah 147</a><br />Belajar, simulasi, evaluasi, dan ulangi panduan</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

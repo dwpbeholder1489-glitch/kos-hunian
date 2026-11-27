@@ -27,6 +27,7 @@ import QuickPanel from '@/components/QuickPanel';
 import HomeTop from '@/components/HomeTop';
 import { createPortal } from 'react-dom';
 import { logoUrl } from '@/lib/logo';
+import { GuideBoundary, GuideFallback, OnboardingPrompt } from '@/components/InteractiveGuide';
 import { Sidebar, Topbar, Crumbs, toggleSide } from '@/components/AppShell';
 
 
@@ -74,7 +75,7 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
           <hr />
           <Link href="/operasional" className={'drawer-i' + (on('/operasional') ? ' on' : '')} onClick={onClose}><NavIcon name="/layers" />Semua modul</Link>
           {admin && <Link href="/admin" className={'drawer-i' + (on('/admin') ? ' on' : '')} onClick={onClose}><NavIcon name="/admin" />Admin PRASARA</Link>}
-          <Link href="/bantuan" className={'drawer-i' + (on('/bantuan') ? ' on' : '')} onClick={onClose}><NavIcon name="/bantuan" />Bantuan</Link>
+          <Link href="/bantuan" className={'drawer-i' + (on('/bantuan') ? ' on' : '')} onClick={onClose}><NavIcon name="/bantuan" />Panduan &amp; Bantuan</Link>
           <Link href="/akun" className={'drawer-i' + (on('/akun') ? ' on' : '')} onClick={onClose}><NavIcon name="/karyawan" />Akun & tampilan</Link>
         </nav>
         <button className="drawer-biz" onClick={onBiz}><span className="ic" aria-hidden="true">{typeOf(kos).icon}</span><span className="t"><b>{kos.name}</b><small>{isDraft(kos) ? 'Draf · menunggu konfirmasi' : kos.closed_at ? 'Ditutup (arsip)' : 'Bisnis aktif'} · ganti bisnis</small></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>
@@ -122,7 +123,7 @@ export default function AppLayout({ children }) {
   const home = homeOf(kos);
   const fourth = fourthTab(kos);
   const main = mainTabOf(kos);
-  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !(fourth && on(fourth[0])) && !on('/akun') && !on('/bantuan'));
+  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !(fourth && on(fourth[0])) && !on('/akun') && !on('/bantuan') && !on('/learning-center'));
   // Lonceng Pusat Notifikasi untuk semua peran; hitungan "perlu ditindaklanjuti" lama ikut bila peran & modulnya sesuai
   const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <KosBell /> : <NotifBellMenu />) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailNotifBell /> : <NotifBellMenu />);
   // Tombol menu topbar: tablet (icon rail) → menu samping lengkap; desktop → lebarkan/ciutkan sidebar
@@ -130,6 +131,7 @@ export default function AppLayout({ children }) {
   const go = (k) => { setSheet(null); if (k === '+') return router.push('/mulai'); pickKos(k.id); router.push(homeOf(k)); };
 
   return (
+    <GuideBoundary key={`${session.user.id}:${kosId}:${role}`} scope={`${session.user.id}:${kosId}:${role}`} path={path} kos={kos}>
     <div className="shell" data-accounting={path === '/pembukuan' || undefined} data-fnb={isKuliner(kos) || undefined}>
       {wide && <Sidebar kos={kos} path={path} on={on} admin={isAdmin} onBiz={() => setSheet('biz')} />}
       <div className="shell-main">
@@ -161,12 +163,12 @@ export default function AppLayout({ children }) {
       {!portfolio && role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
       <AnnounceBanner />
       {!portfolio && <ClosedBar />}
-      <main className="wrap" key={kosId}><Crumbs kos={kos} path={path} />{portfolio && !ownsBusiness ? <div className="empty"><h2>Ringkasan ini khusus pemilik bisnis</h2><Link href={home}>Buka bisnis aktif</Link></div> : !portfolio && kos.suspended_at ? (
+      <main className="wrap" key={kosId} data-guide-page><Crumbs kos={kos} path={path} />{portfolio && !ownsBusiness ? <div className="empty"><h2>Ringkasan ini khusus pemilik bisnis</h2><Link href={home}>Buka bisnis aktif</Link></div> : !portfolio && kos.suspended_at ? (
         <div className="empty"><h2>Bisnis ini sedang ditangguhkan</h2><p className="muted">Alasan: {kos.suspend_reason || '—'}. Data Anda tetap tersimpan dan tidak dihapus.</p>
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka dengan mengetuk nama bisnis di kiri atas.</span>}</div>
-      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && <HomeTop kos={kos} />}{path === home && !isDraft(kos) && <ActivationCard />}<Suspense fallback={<p className="muted">Memuat…</p>}>{children}</Suspense></> : isDraft(kos) ? (
+      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && <HomeTop kos={kos} />}{path === home && !isDraft(kos) && <ActivationCard />}<Suspense fallback={<p className="muted">Memuat…</p>}><GuideFallback />{path === home && <OnboardingPrompt />}<div data-guide-content style={{ display: "contents" }}>{children}</div></Suspense></> : isDraft(kos) ? (
         <div className="empty"><h2>{kos.name} masih dalam setup</h2><p className="muted">Menu operasional terbuka setelah pemilik meninjau dan mengaktifkan bisnis di Pusat Konfirmasi.</p>{canArea(kos, 'settings') && <Link href="/konfirmasi"><button className="primary">Buka Pusat Konfirmasi</button></Link>}</div>
       ) : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
         <div className="empty"><h2>Modul ini sedang nonaktif</h2><p className="muted">Data lamanya tetap tersimpan. Pemilik atau pengelola bisa mengaktifkannya lagi di Pusat konfigurasi.</p>{canArea(kos, 'settings') && <Link href="/konfigurasi"><button className="primary">Buka Pusat konfigurasi</button></Link>}</div>
@@ -210,5 +212,6 @@ export default function AppLayout({ children }) {
         </Sheet>
       )}
     </div>
+    </GuideBoundary>
   );
 }

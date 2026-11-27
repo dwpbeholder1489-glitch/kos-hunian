@@ -2,6 +2,8 @@
 // Portal pelanggan grosir (Tahap 5 Retail, Master Prompt Bagian 15 "B2B Portal"). Link pribadi dari penjual, tanpa akun/sandi.
 // Data dari cportal_get (anon): harga milik pelanggan, status tersedia (tanpa angka stok), piutang & faktur, riwayat pesanan.
 // Pesan / batal lewat /api/portal-b2b (server). Pesanan = "Menunggu konfirmasi" sampai penjual mengonfirmasi (cek stok & batas kredit di sana).
+import { CustomerGuide } from '@/components/InteractiveGuide';
+import { CUSTOMER_HELP } from '@/lib/customerGuide';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -92,7 +94,7 @@ export default function CustomerPortal({ initialTab }) {
   ];
 
   return (
-    <div className={styles.portal}>
+    <CustomerGuide kind="grosir" help={CUSTOMER_HELP.grosir}><div className={styles.portal}>
       <header className={styles.header}>
         <div className={styles.brand}>
           {logoUrl(b.logo) ? <img src={logoUrl(b.logo)} alt="" width={38} height={38} /> : <LogoMark size={38} />}
@@ -170,7 +172,7 @@ export default function CustomerPortal({ initialTab }) {
       </div>
       {checkout && <Checkout p={p} token={token} lines={lines} total={total} setQty={setQty} onClose={() => setCheckout(false)}
         onSent={(r) => { setCheckout(false); setCart([]); setTab('pesan'); setSent(r); window.scrollTo(0, 0); load(); }} />}
-    </div>
+    </div></CustomerGuide>
   );
 }
 

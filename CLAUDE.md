@@ -120,3 +120,7 @@ PRASARA: platform bisnis multi-usaha, berawal dari SaaS manajemen kos (Next.js A
 - Menu menyesuaikan jenis bisnis & peran; jangan tampilkan menu yang tidak relevan.
 - Keamanan: otorisasi di server/database, audit trail, tidak menampilkan rahasia, status jujur (Verified/Partial/UI only).
 - Sebelum menyatakan selesai: uji (database lokal, esbuild, render statis + screenshot bila UI) dan pikirkan kasus nyata pengguna (mis. barang tanpa barcode, iPhone/Safari).
+
+## Pemeliharaan Learning Center
+
+Perbarui langkah modul di `lib/guide.js`, entri pencarian di `lib/help.js`, dan panduan lengkap di `app/panduan/page.jsx` pada PR perubahan fitur yang sama. Learning Center mengambil materi, rekomendasi, dan jawaban dari sumber ini serta aturan `lib/learning.js`. Bila skenario transaksi, akses, atau dampak antarmodul berubah, sesuaikan aturan, contoh, evaluasi, dan pengujian terkait. Untuk portal publik, perbarui aturan pelanggan di `lib/customerGuide.js`. Gunakan `data-help` untuk petunjuk kolom khusus dan `data-guide-action` untuk menandai aksi yang perlu disorot. Uji panduan dan simulasi di layar kecil dan desktop. Workflow `learning-docs` memeriksa ketiga berkas dokumentasi dan menjalankan pengujian aturan.
