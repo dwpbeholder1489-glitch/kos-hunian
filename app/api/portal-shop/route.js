@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
+import { portalExchange } from '@/lib/customerExperience';
 import { createClient } from '@supabase/supabase-js';
 import { userDb } from '@/lib/serverAuth';
 import { NextResponse } from 'next/server';
@@ -91,7 +92,8 @@ export async function GET(req) {
     console.error('[portal-shop] riwayat', failure.code);
     return json({ error: 'Gagal memuat pesanan.' }, 500);
   }
-  const response = json({ orders: data || [] });
+  const { data: unread } = token ? await sb.rpc('cx_guest_unread', { p_slug: slug, p_guest: hash(token) }) : {};
+  const response = json({ orders: (data || []).map((order) => ({ ...order, unread: unread?.[order.id] || 0 })) });
   if (!token) response.cookies.set(cookie, randomBytes(32).toString('hex'), {
     httpOnly: true, secure: req.nextUrl.protocol === 'https:', sameSite: 'strict',
     path: '/api/portal-shop', maxAge: 60 * 60 * 24 * 180,
@@ -114,6 +116,9 @@ export async function POST(req) {
   catch { return json({ error: 'Permintaan tidak valid.' }, 400); }
   if (multipart && (!file || body?.kind !== 'penawaran' || typeof file.arrayBuffer !== 'function' || !file.size || file.size > maxFile)) {
     return json({ error: 'Lampiran penawaran harus berukuran maksimal 3 MB.' }, 400);
+  }
+  if (!multipart && body?.action === 'conversation') {
+    return json(...await portalExchange(sb, body, 'guest', hash(token), slug));
   }
   if (body?.action === 'approve-quote') {
     if (!isId(body.order) || !isId(body.revision)) return json({ error: 'Versi penawaran tidak valid.' }, 400);
