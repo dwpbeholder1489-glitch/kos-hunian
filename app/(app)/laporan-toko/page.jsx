@@ -1,4 +1,5 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -7,7 +8,7 @@ import PageHelp from '@/components/PageHelp';
 import NavIcon from '@/components/NavIcon';
 import Locked from '@/components/Locked';
 import { Loading, Empty, Field, Sheet, toast } from '@/components/ui';
-import { rp, angka, tgl, bulan, errMsg, today } from '@/lib/format';
+import { reportMonth, rp, angka, tgl, bulan, errMsg, today } from '@/lib/format';
 import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
 import { canArea, moduleOn } from '@/lib/business';
@@ -33,7 +34,8 @@ export default function LaporanToko() {
 }
 
 function Dashboard({ kos, kosId, ver }) {
-  const [period, setPeriod] = useState({ mode: 'month', date: today(), custom: null });
+  const initialMonth = reportMonth(useSearchParams().get('bulan'));
+  const [period, setPeriod] = useState(() => ({ mode: 'month', date: initialMonth + '-01', custom: null }));
   const [d, setD] = useState(null);
   const [source, setSource] = useState(null);
   const [editPeriod, setEditPeriod] = useState(false);

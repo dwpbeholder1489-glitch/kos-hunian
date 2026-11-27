@@ -1,4 +1,5 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import PageHelp from '@/components/PageHelp';
 import { useState } from 'react';
 import { useData } from '@/lib/useData';
@@ -6,7 +7,7 @@ import { Loading, Tile } from '@/components/ui';
 import Locked from '@/components/Locked';
 import { useKos } from '@/components/KosProvider';
 import { hasFeature } from '@/lib/plan';
-import { rp, tgl, thisMonth, bulan, addMonthsYm, BLN, METHOD, ENTRY } from '@/lib/format';
+import { reportMonth, rp, tgl, thisMonth, bulan, addMonthsYm, BLN, METHOD, ENTRY } from '@/lib/format';
 import { CompareBars, BarList } from '@/components/Charts';
 import { useKuotaEkspor } from '@/lib/ekspor';
 
@@ -26,7 +27,8 @@ export default function Laporan() {
   const d = useData();
   const { kos } = useKos();
   const full = hasFeature(kos, 'laporan_lengkap');
-  const [ym, setYm] = useState(thisMonth());
+  const initialMonth = reportMonth(useSearchParams().get('bulan'));
+  const [ym, setYm] = useState(initialMonth);
   const ek = useKuotaEkspor(full ? kos?.id : null);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 

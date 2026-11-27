@@ -1,11 +1,12 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { Loading, Tile } from '@/components/ui';
-import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from '@/lib/format';
+import { reportMonth, rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg } from '@/lib/format';
 import { DayColumns, BarList } from '@/components/Charts';
 import { hasFeature } from '@/lib/plan';
 import { makeXlsx } from '@/lib/xlsx';
@@ -15,7 +16,8 @@ import { useKuotaEkspor } from '@/lib/ekspor';
 // Laporan jasa: pendapatan diakui saat pesanan diserahkan; uang masuk, piutang, dan uang muka ditampilkan terpisah
 export default function LaporanJasa() {
   const { kos, kosId, ver } = useKos();
-  const [ym, setYm] = useState(thisMonth());
+  const initialMonth = reportMonth(useSearchParams().get('bulan'));
+  const [ym, setYm] = useState(initialMonth);
   const [r, setR] = useState(null);
   const [err, setErr] = useState(null);
   const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);

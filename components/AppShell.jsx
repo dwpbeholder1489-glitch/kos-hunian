@@ -129,9 +129,10 @@ export function Sidebar({ kos, path, on, admin, onBiz }) {
         <Link href={home} className="side-logo" aria-label="PRASARA, ke Beranda"><LogoMark size={30} /><b className="side-t">PRASARA</b></Link>
         <button type="button" className="side-col" onClick={toggleSide} aria-label={mini ? 'Lebarkan menu samping' : 'Ciutkan menu samping'} title={mini ? 'Lebarkan menu' : 'Ciutkan menu'}><Chev dir={mini ? 'right' : 'left'} size={18} /></button>
       </div>
-      <button type="button" className="side-biz" onClick={onBiz} data-tip={`${kos.name} · ganti bisnis`} aria-label={`${kos.name}, ganti bisnis`}>
-        <BizMark kos={kos} size={32} />
-        <span className="side-t"><b>{kos.name}</b><small>{isDraft(kos) ? 'Draf · menunggu konfirmasi' : typeOf(kos).name}</small></span>
+      <button type="button" className="side-biz" onClick={onBiz} data-tip={(path === '/bisnis' ? 'Semua Bisnis' : kos.name) + ' · ganti bisnis'}
+        aria-label={(path === '/bisnis' ? 'Semua Bisnis' : kos.name) + ', ganti bisnis'}>
+        {path === '/bisnis' ? <LogoMark size={32} /> : <BizMark kos={kos} size={32} />}
+        <span className="side-t"><b>{path === '/bisnis' ? 'Semua Bisnis' : kos.name}</b><small>{path === '/bisnis' ? 'Ringkasan Pemilik' : isDraft(kos) ? 'Draf · menunggu konfirmasi' : typeOf(kos).name}</small></span>
         <Chev />
       </button>
       <nav className="side-nav" aria-label="Menu bisnis">

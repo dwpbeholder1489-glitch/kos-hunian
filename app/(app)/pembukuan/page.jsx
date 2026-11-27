@@ -1,4 +1,5 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -7,7 +8,7 @@ import PageHelp from '@/components/PageHelp';
 import AccountingDashboard, { AccountingHeading, AccountingMenu } from '@/components/AccountingDashboard';
 import layout from '@/components/AccountingDashboard.module.css';
 import { Field, Loading, Empty, Tile, toast, run } from '@/components/ui';
-import { rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
+import { reportMonth, rp, tgl, errMsg, bulan, today, monthEnd, addMonthsYm, parseRp } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
 import BusinessValuation from '@/components/BusinessValuation';
@@ -33,8 +34,9 @@ export default function Pembukuan() {
   const owner = canArea(kos, 'team');
   const retail = ['retail', 'jasa', 'kustom'].includes(kos?.business_type); // biaya dicatat di Kas
   const toko = kos?.business_type === 'retail'; // umur piutang/utang & nilai persediaan (Tahap 2 Retail)
-  const [tab, setTab] = useState('overview');
-  const [ym, setYm] = useState(today().slice(0, 7));
+  const search = useSearchParams();
+  const [tab, setTab] = useState(search.get('tab') === 'arus-kas' ? 'laporan' : 'overview');
+  const [ym, setYm] = useState(() => reportMonth(search.get('bulan')));
   const [ytd, setYtd] = useState(false);
   const [entity, setEntity] = useState(false);
   const [draft, setDraft] = useState(null);
@@ -545,7 +547,7 @@ function ArusKas({ kosId, from, to, period, owner, ver }) {
 function CashFlowReport({ c, period, kosId, owner }) {
   return (
     <section className="panel">
-      <h3>Arus kas · {period}</h3>
+      <h3 id="arus-kas" style={{ scrollMarginTop: 85 }}>Arus kas · {period}</h3>
       <span className="small muted">Kas = akun Kas + Bank. Pindah kas ke bank (atau sebaliknya) tidak dihitung sebagai uang masuk/keluar.</span>
       <div className="list">
         <div className="li"><span className="small">Saldo awal</span><b className="small">{rp(c.saldo_awal)}</b></div>

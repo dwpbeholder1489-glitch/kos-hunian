@@ -21,3 +21,12 @@
   .figure small { display: block; }
   .row { font-size: .82rem; }
 }
+.view { display: flex; align-items: center; gap: 7px; font-size: .82rem; }
+.view select { width: auto; min-width: 0; }
+.chartLayout { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.chartLayout .rows { flex: 1 1 220px; min-width: 0; }
+.donut { display: grid; place-items: center; flex: none; width: 138px; aspect-ratio: 1; border-radius: 50%; }
+.donut > div { display: grid; place-content: center; gap: 4px; width: 77%; aspect-ratio: 1; padding: 7px; border-radius: 50%; text-align: center; background: var(--surface); overflow-wrap: anywhere; font-size: 12px; line-height: 1.25; }
+.swatch { display: inline-block; width: 9px; height: 9px; margin-inline-end: 5px; border-radius: 2px; }
+.row { grid-template-columns: minmax(0, 1fr) fit-content(48%); }
+.figure { min-width: 0; overflow-wrap: anywhere; }

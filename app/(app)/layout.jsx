@@ -7,7 +7,7 @@ import Bagikan from '@/components/Bagikan';
 import { LogoMark } from '@/components/Logo';
 import Link from 'next/link';
 import { ClosedBar } from '@/components/DataTutup';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { trackMenu, loadMine } from '@/lib/usage';
 import { Sheet } from '@/components/ui';
@@ -113,7 +113,9 @@ export default function AppLayout({ children }) {
   const type = typeOf(kos);
   const own = tabsFor(kos);
   const role = roleOf(kos);
-  const allowed = pathAllowed(kos, path);
+  const portfolio = path === '/bisnis';
+  const ownsBusiness = list.some((business) => roleOf(business) === 'pemilik');
+  const allowed = portfolio ? ownsBusiness : pathAllowed(kos, path);
   const activeTab = own.reduce((active, [href]) => (path === href || path.startsWith(href + '/')) && href.length > active.length ? href : active, '');
   const on = (h) => path === h || (path.startsWith(h + '/') && !activeTab.startsWith(h + '/'));
   const home = homeOf(kos);
@@ -133,9 +135,9 @@ export default function AppLayout({ children }) {
       <header className="top">
         <div className="wrap">
           <div className="brandrow">
-            <button className="bizbtn" onClick={() => setSheet('biz')} aria-label={`${kos.name}, ganti bisnis`}>
-              {logoUrl(kos.profile?.logo_path) ? <img className="mark" src={logoUrl(kos.profile.logo_path)} alt="" style={{ objectFit: 'cover', padding: 0 }} /> : <LogoMark size={34} />}
-              <span className="t"><b>{kos.name}</b><small>{type.name}{role !== 'pemilik' ? ` · ${ROLES[role]?.name || role}` : ''}</small></span>
+            <button className="bizbtn" onClick={() => setSheet('biz')} aria-label={(portfolio ? "Semua Bisnis" : kos.name) + ", ganti bisnis"}>
+              {!portfolio && logoUrl(kos.profile?.logo_path) ? <img className="mark" src={logoUrl(kos.profile.logo_path)} alt="" style={{ objectFit: 'cover', padding: 0 }} /> : <LogoMark size={34} />}
+              <span className="t"><b>{portfolio ? 'Semua Bisnis' : kos.name}</b><small>{portfolio ? 'Ringkasan Pemilik' : type.name}{!portfolio && role !== 'pemilik' ? ` · ${ROLES[role]?.name || role}` : ''}</small></span>
               <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
             <div className="right">
@@ -149,19 +151,19 @@ export default function AppLayout({ children }) {
       </header>
       )}
       <OfflineSync />
-      {!path.startsWith('/langganan') && role === 'pemilik' && <PlanBar kos={kos} />}
-      {!path.startsWith('/langganan') && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
-      {!path.startsWith('/langganan') && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
-      {role === 'pemilik' && <UpgradeSukses kosId={kos.id} skip={/^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
-      {role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
+      {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <PlanBar kos={kos} />}
+      {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
+      {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
+      {!portfolio && role === 'pemilik' && <UpgradeSukses kosId={kos.id} skip={/^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
+      {!portfolio && role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
       <AnnounceBanner />
-      <ClosedBar />
-      <main className="wrap" key={kosId}><Crumbs kos={kos} path={path} />{kos.suspended_at ? (
+      {!portfolio && <ClosedBar />}
+      <main className="wrap" key={kosId}><Crumbs kos={kos} path={path} />{portfolio && !ownsBusiness ? <div className="empty"><h2>Ringkasan ini khusus pemilik bisnis</h2><Link href={home}>Buka bisnis aktif</Link></div> : !portfolio && kos.suspended_at ? (
         <div className="empty"><h2>Bisnis ini sedang ditangguhkan</h2><p className="muted">Alasan: {kos.suspend_reason || '—'}. Data Anda tetap tersimpan dan tidak dihapus.</p>
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka dengan mengetuk nama bisnis di kiri atas.</span>}</div>
-      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && <HomeTop kos={kos} />}{children}</> : isDraft(kos) ? (
+      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && <HomeTop kos={kos} />}<Suspense fallback={<p className="muted">Memuat…</p>}>{children}</Suspense></> : isDraft(kos) ? (
         <div className="empty"><h2>{kos.name} masih dalam setup</h2><p className="muted">Menu operasional terbuka setelah pemilik meninjau dan mengaktifkan bisnis di Pusat Konfirmasi.</p>{canArea(kos, 'settings') && <Link href="/konfirmasi"><button className="primary">Buka Pusat Konfirmasi</button></Link>}</div>
       ) : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
         <div className="empty"><h2>Modul ini sedang nonaktif</h2><p className="muted">Data lamanya tetap tersimpan. Pemilik atau pengelola bisa mengaktifkannya lagi di Pusat konfigurasi.</p>{canArea(kos, 'settings') && <Link href="/konfigurasi"><button className="primary">Buka Pusat konfigurasi</button></Link>}</div>
@@ -201,7 +203,7 @@ export default function AppLayout({ children }) {
             ))}
             <button onClick={() => go('+')}><span className="ic" aria-hidden="true">＋</span><b>Tambah bisnis</b></button>
           </div>
-          {list.length > 1 && canArea(kos, 'finance') && <Link href="/bisnis" onClick={() => setSheet(null)} className="small">Lihat ringkasan semua bisnis →</Link>}
+          {ownsBusiness && !portfolio && <Link href="/bisnis" onClick={() => setSheet(null)} className="small">Lihat ringkasan semua bisnis →</Link>}
         </Sheet>
       )}
     </div>
