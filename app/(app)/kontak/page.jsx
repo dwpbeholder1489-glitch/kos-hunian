@@ -2,7 +2,7 @@
 import IsianTambahan from '@/components/IsianTambahan';
 import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import NavIcon from '@/components/NavIcon';
@@ -25,13 +25,13 @@ const ST = { batal: 'Batal', dipesan: 'Dipesan', sebagian: 'Sebagian' };
 
 // Pelanggan & supplier: daftar, saldo kasbon/utang, riwayat transaksi, ubah nama & nomor
 export default function Kontak() {
-  const { kosId, kos, ver, user } = useKos();
+  const { kosId, kos, ver, user, bump } = useKos();
   if (!kosId || !kos || !user) return <Loading />;
   const fin = canArea(kos, 'finance');
-  return <ContactsWorkspace key={`${kosId}:${user.id}:${fin}`} {...{ kosId, kos, ver, fin }} />;
+  return <ContactsWorkspace key={`${kosId}:${user.id}:${fin}`} {...{ kosId, kos, ver, fin, bump }} />;
 }
 
-function ContactsWorkspace({ kosId, kos, ver, fin }) {
+function ContactsWorkspace({ kosId, kos, ver, fin, bump }) {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState(fin ? 'pelanggan' : 'supplier');
@@ -39,6 +39,17 @@ function ContactsWorkspace({ kosId, kos, ver, fin }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
   useBaru(() => setOpen({ kind: !fin || new URLSearchParams(window.location.search).get('tab') === 'supplier' ? 'supplier' : 'pelanggan' }));
+  const viewedLink = useRef(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('kontak');
+    if (!id || viewedLink.current === id || !rows) return;
+    const contact = rows.find((row) => row.id === id && (fin || row.kind === 'supplier'));
+    if (!contact) return;
+    viewedLink.current = id;
+    setTab(contact.kind);
+    setArsip(Boolean(contact.archived_at));
+    setOpen(contact);
+  }, [rows, fin]);
   const [arsip, setArsip] = useState(false);
   const [filter, setFilter] = useState('all');
   const [menu, setMenu] = useState(null);
@@ -157,7 +168,7 @@ function ContactsWorkspace({ kosId, kos, ver, fin }) {
         <p className="small muted">Penggabungan kontak masih berupa usulan. Peninjauan ini tidak memindahkan transaksi atau saldo.</p>
       </Sheet>}
       {menu === 'import' && <Sheet title="Import Kontak" onClose={() => setMenu(null)}><p>Import kontak masih berupa usulan pengembangan.</p></Sheet>}
-      {open && <Detail c={open} fin={fin} kosId={kosId} kos={kos} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} onReload={load} />}
+      {open && <Detail c={open} fin={fin} kosId={kosId} kos={kos} onTasksChanged={bump} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} onReload={load} />}
     </div>
   );
 }
@@ -173,7 +184,7 @@ function ContactName({ row, duplicate }) {
   </div>;
 }
 
-function Detail({ c, fin, kosId, kos, onClose, onSaved, onReload }) {
+function Detail({ c, fin, kosId, kos, onTasksChanged, onClose, onSaved, onReload }) {
   const isNew = !c.id;
   const [name, setName] = useState(c.name || '');
   const [phone, setPhone] = useState(c.phone || '');
@@ -208,7 +219,7 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved, onReload }) {
       {!isNew && <IsianTambahan entity="contact" id={c.id} area="sell,stock,finance" />}
       {!isNew && c.kind === 'pelanggan' && !c.archived_at && moduleOn(kos, 'u_crm') && canArea(kos, 'sell,rent') && <>
         <h3 style={{ margin: '8px 0 0' }}>Catatan & tindak lanjut</h3>
-        <CrmTimeline kosId={kosId} contact={c.id} />
+        <CrmTimeline kosId={kosId} contact={c.id} onTasksChanged={onTasksChanged} />
       </>}
       {!isNew && hist && <>
         <h3 style={{ margin: '8px 0 0' }}>Riwayat</h3>

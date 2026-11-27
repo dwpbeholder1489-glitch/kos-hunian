@@ -9,7 +9,7 @@ const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${ne
 const addDays = (n) => { const d = new Date(today() + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 
 // Catatan komunikasi + tindak lanjut; dipakai juga di halaman Pelanggan
-export default function Timeline({ kosId, lead = null, contact = null }) {
+export default function Timeline({ kosId, lead = null, contact = null, onTasksChanged }) {
   const [t, setT] = useState(null);
   const [kind, setKind] = useState('wa');
   const [body, setBody] = useState('');
@@ -30,9 +30,9 @@ export default function Timeline({ kosId, lead = null, contact = null }) {
     const { error } = await supabase.rpc('crm_task_add', { p_kos: kosId, p_lead: lead, p_contact: contact, p_title: task, p_due: due });
     setBusy(false);
     if (error) return toast(errMsg(error));
-    setTask(''); toast(`Tindak lanjut ${tgl(due)}`); load();
+    setTask(''); toast(`Tindak lanjut ${tgl(due)}`); load(); onTasksChanged?.();
   };
-  const done = async (k, v) => { const { error } = await supabase.rpc('crm_task_done', { p_task: k.id, p_done: v }); if (error) return toast(errMsg(error)); load(); };
+  const done = async (k, v) => { const { error } = await supabase.rpc('crm_task_done', { p_task: k.id, p_done: v }); if (error) return toast(errMsg(error)); load(); onTasksChanged?.(); };
   if (!t) return <Loading />;
   const openT = t.tasks.filter((k) => !k.done_at);
   return <>

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import CrmDue, { useCrmDue } from '@/components/CrmDue';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { supabase } from '@/lib/supabase';
@@ -42,6 +43,7 @@ function items(d) {
 
 export default function Notifikasi() {
   const d = useData();
+  const crmDue = useCrmDue();
   const { kos, user, loadKos } = useKos();
   const [hist, setHist] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -80,7 +82,8 @@ export default function Notifikasi() {
       <PageHeader title="Notifikasi" help={<PageHelp page="notifikasi" />} />
       <section className="panel">
         <h3>Perlu perhatian</h3>
-        {list.length === 0 ? (
+        <CrmDue count={crmDue} />
+        {list.length === 0 && !crmDue ? (
           <div className="notice good">Administrasi kos Anda sudah diperbarui. Tidak ada pembayaran yang menunggu diperiksa dan tidak ada tagihan yang lewat jatuh tempo.</div>
         ) : (
           <div className="list">{list.map(([tone, title, text, href]) => (

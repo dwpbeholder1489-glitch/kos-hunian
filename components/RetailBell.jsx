@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useCrmDue } from '@/components/CrmDue';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { usePortalInbox } from '@/components/PortalInbox';
@@ -13,7 +14,7 @@ export default function RetailBell() {
   const { kosId, ver } = useKos();
   const path = usePathname();
   const [n, setN] = useState(0);
-  const count = n + usePortalInbox().length;
+  const count = n + usePortalInbox().length + useCrmDue();
   useEffect(() => {
     let alive = true;
     supabase.rpc('retail_alerts', { p_kos: kosId }).then(({ data }) => { if (alive) setN(alertCount(data)); }, () => {});

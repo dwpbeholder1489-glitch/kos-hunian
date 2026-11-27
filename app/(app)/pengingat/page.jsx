@@ -10,6 +10,7 @@ import { rp, angka, tgl, today, errMsg, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { alertCount } from '@/components/RetailBell';
 import { PortalInboxList, usePortalInbox } from '@/components/PortalInbox';
+import CrmDue, { useCrmDue } from '@/components/CrmDue';
 import StockMinusList from '@/components/StockMinus';
 
 const due = (d) => { const n = Math.round((Date.parse(d) - Date.parse(today())) / 864e5); return n < 0 ? `lewat ${-n} hari` : n === 0 ? 'hari ini' : `${n} hari lagi`; };
@@ -18,6 +19,7 @@ const due = (d) => { const n = Math.round((Date.parse(d) - Date.parse(today())) 
 export default function Pengingat() {
   const { kosId, kos, user, ver, loadKos } = useKos();
   const portal = usePortalInbox();
+  const crmDue = useCrmDue();
   const [a, setA] = useState(null);
   const [err, setErr] = useState(null);
   useEffect(() => {
@@ -39,7 +41,8 @@ export default function Pengingat() {
   return (
     <div className="stack">
       <PageHeader title="Pengingat toko" help={<PageHelp page="pengingat" />} />
-      {alertCount(a) === 0 && !portal.length && <Empty title="Semua aman" text="Tidak ada stok minus atau menipis, pesanan terlambat, kasbon/utang jatuh tempo, transaksi offline, atau pesanan portal yang perlu dicek." />}
+      {alertCount(a) === 0 && !portal.length && !crmDue && <Empty title="Semua aman" text="Tidak ada stok minus atau menipis, pesanan terlambat, kasbon/utang jatuh tempo, transaksi offline, atau pesanan portal yang perlu dicek." />}
+      {crmDue > 0 && <section className="panel"><CrmDue count={crmDue} /></section>}
       {!!a.stok_minus?.length && <div className="panel"><StockMinusList key={kosId} rows={a.stok_minus} canOpen={canArea(kos, 'stock')} /></div>}
       {a.offline?.length > 0 && <section className="panel"><h3>📶 Transaksi offline perlu dicek ({a.offline.length})</h3>
         <p className="small muted" style={{ margin: 0 }}>Penjualan saat internet putus yang terkirim dengan temuan (harga berubah, stok minus, diskon lewat batas) atau tidak bisa disimpan.</p>
