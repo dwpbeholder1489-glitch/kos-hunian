@@ -61,7 +61,7 @@ belum ada), transaksi antarentitas belum ditandai.
 
 | Tahap | Isi | Dependensi | Keputusan pemilik yang dibutuhkan |
 |---|---|---|---|
-| A | Akun beban bunga & pemisahan pokok/bunga pinjaman, jadwal pinjaman | Mesin jurnal | Apakah pinjaman dicatat lewat menu Kas atau menu baru Pinjaman |
+| A | ✅ SELESAI 27 Nov 2026 (migrasi `20261127140000`): daftar pinjaman, bayar = pokok + bunga (akun Beban bunga 6-3000), porsi jatuh tempo ≤ 12 bulan, cakupan bunga | Mesin jurnal | Diputuskan: lewat menu Kas (kos: Pengeluaran › Pinjaman) |
 | B | Profil pajak & PPh (final UMKM 0,5% / PPh badan), kalender pajak, versi aturan | A (bunga), PPN yang ada | Rezim pajak per bisnis; PRASARA tidak menggantikan pelaporan resmi DJP |
 | C | ROIC, cakupan bunga, laporan perubahan ekuitas | A, B | — |
 | D | Anggaran pendapatan & kas + status persetujuan, actual vs budget di KPI | `budgets` | Alur persetujuan anggaran |

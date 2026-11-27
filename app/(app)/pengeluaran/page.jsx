@@ -8,10 +8,12 @@ import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import Lampiran from '@/components/Lampiran';
+import Pinjaman from '@/components/Pinjaman';
 import { rp, tgl, today, thisMonth, bulan, addMonthsYm, parseRp, angka, KIND, ENTRY, errMsg } from '@/lib/format';
 
 export default function Pengeluaran() {
   const d = useData();
+  const { kosId } = useKos();
   const [ym, setYm] = useState(thisMonth());
   const [tab, setTab] = useState('biaya');
   const [sheet, setSheet] = useState(null);
@@ -35,11 +37,13 @@ export default function Pengeluaran() {
 
   return (
     <div className="stack">
-      <PageHeader title="Pengeluaran" help={<PageHelp page="pengeluaran" />} actions={<><button className="primary" onClick={add}>+ Catat</button></>} />
+      <PageHeader title="Pengeluaran" help={<PageHelp page="pengeluaran" />} actions={tab === 'pinjaman' ? null : <><button className="primary" onClick={add}>+ Catat</button></>} />
       <div className="seg">
         <button className={tab === 'biaya' ? 'on' : ''} onClick={() => setTab('biaya')}>Biaya kos</button>
         <button className={tab === 'lain' ? 'on' : ''} onClick={() => setTab('lain')}>Diambil pemilik & lainnya</button>
+        <button className={tab === 'pinjaman' ? 'on' : ''} onClick={() => setTab('pinjaman')}>Pinjaman</button>
       </div>
+      {tab === 'pinjaman' ? <Pinjaman kosId={kosId} /> : <>
       <section className="panel">
         <div className="row between">
           <button className="sm" onClick={() => setYm(addMonthsYm(ym, -1))} aria-label="Bulan sebelumnya">‹</button>
@@ -91,11 +95,15 @@ export default function Pengeluaran() {
           )}
         </>
       )}
+      </>}
       {sheet?.t === 'exp' && <ExpSheet d={d} x={sheet.x} onClose={() => setSheet(null)} />}
       {sheet?.t === 'ent' && <EntrySheet x={sheet.x} onClose={() => setSheet(null)} />}
     </div>
   );
 }
+
+// Pinjaman baru dicatat di tab Pinjaman (pokok + bunga, sisa utang); catatan lama tetap bisa diubah di sini
+const LOAN_KINDS = ['pinjaman_masuk', 'bayar_pinjaman'];
 
 function EntrySheet({ x, onClose }) {
   const { kosId, bump } = useKos();
@@ -121,8 +129,9 @@ function EntrySheet({ x, onClose }) {
   return (
     <Sheet title={isNew ? 'Catat transaksi lain' : 'Ubah transaksi'} onClose={onClose}>
       <Field label="Jenis" hint={ENTRY[kind][1]}>
-        <select value={kind} onChange={(e) => setKind(e.target.value)}>{Object.entries(ENTRY).map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}</select>
+        <select value={kind} onChange={(e) => setKind(e.target.value)}>{Object.entries(ENTRY).filter(([k]) => !isNew || !LOAN_KINDS.includes(k)).map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}</select>
       </Field>
+      {isNew && <p className="small muted" style={{ margin: 0 }}>Pinjaman diterima atau dibayar dicatat di tab <b>Pinjaman</b> agar bunga dan sisa utang terpisah.</p>}
       <div className="row">
         <Field label="Jumlah"><input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="mis. 500rb" /></Field>
         <Field label="Tanggal"><input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} /></Field>

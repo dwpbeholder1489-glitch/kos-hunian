@@ -46,7 +46,7 @@ export function FinancialsModule({ kosId, range, cmp, retail, owner, ver }) {
   const s = incomeStatement(f.laba_rugi.cur); const s0 = f.laba_rugi.cmp ? incomeStatement(f.laba_rugi.cmp) : null;
   const L0 = s0 ? Object.fromEntries(incomeLines(s0).map((l) => [l[0], l[2]])) : {};
   const accOf = (key) => (f.laba_rugi.akun || []).filter((a) => (LINE_CLASSES[key] || []).includes(a.cls));
-  const b1 = balanceSheet(f.neraca?.close); const b0 = balanceSheet(f.neraca?.open);
+  const b1 = balanceSheet(f.neraca?.close, f.neraca?.pinjaman_close); const b0 = balanceSheet(f.neraca?.open, f.neraca?.pinjaman_open);
   const rs = f.lengkap ? ratios(f) : [];
   const hist = (f.bulanan || []).map((m) => { const x = incomeStatement(m.v); return { mulai: m.mulai, label: monthName(m.mulai.slice(0, 7)), short: BLN[+m.mulai.slice(5, 7) - 1], net: x.net, ebitda: x.ebitda, netIncome: x.netIncome }; });
   const groups = [...new Set(rs.map((r) => r.group))];
@@ -57,7 +57,7 @@ export function FinancialsModule({ kosId, range, cmp, retail, owner, ver }) {
         <tbody>{incomeLines(s).map(([key, label, v, kind]) => <tr key={key} className={kind === 'sub' ? styles.sub : undefined}>
           <th scope="row"><button type="button" className={styles.linkBtn} onClick={() => setSheet({ key, label, v, prev: L0[key] })}>{label}</button></th>
           <td className={v < 0 ? styles.neg : undefined}>{num(v)}</td>{s0 && <><td>{num(L0[key])}</td><td className={styles.dcol}>{pctTxt(kind === 'neg' ? chg(-v, -L0[key]) : chg(v, L0[key]))}</td></>}</tr>)}</tbody></table>
-      <p className={styles.note}>Pajak penghasilan dan beban bunga belum punya akun sendiri, jadi laba bersih = laba sebelum pajak. Beban bunga (bila ada) tercatat di beban non-operasional.</p>
+      <p className={styles.note}>Beban bunga dari pembayaran pinjaman di menu Kas. Pajak penghasilan belum diatur (Tahap B), jadi laba bersih = laba sebelum pajak.</p>
     </Card>
     {!f.lengkap ? <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Neraca & rasio keuangan tersedia mulai Paket Bisnis" text="Neraca per tanggal dengan cek seimbang, rasio likuiditas, solvabilitas, efisiensi, dan riwayat EBITDA 12 bulan." /> : <>
       <Card title="Neraca" icon="/neraca-saldo" right={<Go href={`/pembukuan?tab=saldo&bulan=${range.to.slice(0, 7)}`}>Neraca saldo</Go>}>
@@ -65,7 +65,7 @@ export function FinancialsModule({ kosId, range, cmp, retail, owner, ver }) {
         <table className={styles.stmt}><thead><tr><th>Pos (Rp)</th><th>Akhir</th><th>Awal</th></tr></thead>
           <tbody>{balanceLines(b1).map(([key, label, v, kind], i) => kind === 'head' ? <tr key={key} className={styles.head}><th colSpan={3}>{label}</th></tr>
             : <tr key={key} className={kind === 'sub' ? styles.sub : undefined}><th scope="row">{label}</th><td>{num(v)}</td><td>{num(balanceLines(b0)[i][2])}</td></tr>)}</tbody></table>
-        <p className={styles.note}>Pinjaman belum dipisah jangka pendek/panjang (jatuh tempo belum dicatat), jadi tidak masuk kewajiban lancar.</p>
+        <p className={styles.note}>Pinjaman jatuh tempo ≤ 12 bulan dihitung dari daftar pinjaman (jatuh tempo, cicilan, bunga). {b1.unscheduled > 0 ? `${rp(b1.unscheduled)} pinjaman belum terdaftar atau belum punya jadwal/jatuh tempo sehingga dianggap jangka panjang — lengkapi di Kas › Pinjaman.` : ''}</p>
       </Card>
       <Card title="Rasio Keuangan" icon="/analisis">
         <p className={styles.note}>Rasio tidak dihitung bila komponennya belum tersedia. Ketuk rasio untuk rumus & angka sumbernya.</p>
@@ -187,7 +187,7 @@ export function InvestModule({ kosId, ver }) {
       <ul className={styles.hub}>
         <li><Link href="/pembukuan?tab=investment"><b>Simulasi & realisasi investasi</b><small>NPV, IRR, payback, skenario, perbandingan dengan realisasi</small></Link></li>
         <li><Link href="/pembukuan?tab=valuation"><b>Valuasi bisnis (DCF)</b><small>Dari arus kas historis, dengan analisis sensitivitas</small></Link></li>
-        <li><span><b>ROIC, valuasi multiple & asset-based, register modal</b><small>Dalam rencana — butuh akun pajak penghasilan, bunga, dan sumber pembanding</small></span></li>
+        <li><span><b>ROIC, valuasi multiple & asset-based, register modal</b><small>Dalam rencana — ROIC menunggu tarif pajak penghasilan (Tahap B); multiple butuh sumber pembanding</small></span></li>
       </ul>
     </Card>
   </div>;
@@ -215,10 +215,10 @@ export const BLUEPRINT = [
   ['Analisis biaya', 'Parsial', 'Per akun & kategori; tetap/variabel & cost center belum', 'keuangan'],
   ['Pajak', 'Parsial', 'PPN keluaran/masukan; PPh belum', 'pajak'],
   ['Arus kas & likuiditas', 'Parsial', 'Per aktivitas, arus kas bebas, rasio likuiditas; proyeksi lintas jenis belum', 'kas'],
-  ['Aset, kewajiban & ekuitas', 'Parsial', 'Neraca, aset tetap, umur piutang; jadwal pinjaman belum', 'keuangan'],
+  ['Aset, kewajiban & ekuitas', 'Parsial', 'Neraca, aset tetap, umur piutang, pinjaman (pokok/bunga, porsi ≤ 12 bulan); laporan perubahan ekuitas belum', 'keuangan'],
   ['Anggaran', 'Parsial', 'Biaya per kategori; pendapatan/CAPEX & persetujuan belum', 'anggaran'],
   ['Kinerja bisnis', 'Parsial', 'KPI toko/kos/jasa/kuliner; laundry per kg & benchmark belum', 'ringkasan'],
-  ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi; ROIC belum', 'investasi'],
+  ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga; ROIC menunggu PPh (Tahap B)', 'investasi'],
   ['Valuasi bisnis', 'Parsial', 'DCF; multiple & asset-based belum', 'investasi'],
   ['Proyeksi & skenario', 'Parsial', 'Proyeksi linier; stress test tersimpan belum', 'ringkasan'],
   ['Manajemen risiko', 'Parsial', 'Faktor risiko aturan tetap; register risiko belum', 'ringkasan'],
