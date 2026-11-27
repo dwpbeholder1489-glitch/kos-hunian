@@ -209,7 +209,7 @@ lalu lulus setelah migrasi. Keputusan pemilik §3 tidak diubah.
 | G · 0,001 tersimpan 0,00 | Diperbaiki | ≥ 0,01 & maks. 2 desimal (SQL = JS), input `step=0.01` | ditolak; 0,01/1,25 utuh |
 | H · Draf 500 hari tersimpan, pratinjau gagal | Diperbaiki | trigger `investor_reports_period` (≤ 400, juga pembanding) + `periodIssue` di formulir | 500 ditolak, 400 pratinjau jalan |
 | J · Hunian 200% & antar-jemput 200% | Diperbaiki | hari-kamar unik; himpunan pesanan sama | 1 hari = 1; antar-jemput 1/1 |
-| Konsolidasi kos + toko (basis kas vs akrual) | **Menunggu keputusan pemilik** | sementara: catatan basis di layar & panduan | — |
+| Konsolidasi kos + toko (basis kas vs akrual) | **Diputuskan pemilik 27 Nov 2026: tetap campur** | catatan basis di layar & panduan; kos tidak diubah ke akrual | — |
 
 Belum diuji pada putaran ini: UI di HP 390 px & 1440 px untuk perubahan layar (lihat laporan sesi), PDF di Safari iPhone (tidak ada perangkat),
 pergantian hari 00.00–07.00 WIB (uji memakai tanggal Jakarta, tidak disimulasikan jamnya), dan data produksi.
