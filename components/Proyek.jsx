@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Sheet, Field, run, toast } from '@/components/ui';
 import { useKos } from '@/components/KosProvider';
 import { angka, parseRp, rp, tgl, today, errMsg } from '@/lib/format';
+import { EVENT_CATS, termOf, isEventBiz } from '@/lib/event';
 
 export const KIND = { event: 'Event / acara', kreatif: 'Kreatif & media', produksi: 'Produksi', umum: 'Umum' };
 export const STATUS = { penawaran: ['Penawaran', 'info'], berjalan: ['Berjalan', 'good'], ditunda: ['Ditunda', 'gold'], selesai: ['Selesai', 'void'], batal: ['Batal', 'bad'] };
@@ -23,9 +24,11 @@ export const jadwal = (p) => (p.start_date ? (p.end_date && p.end_date !== p.sta
 export function ProjectForm({ kosId, init, fin, onClose, onDone }) {
   const edit = init?.id ? init : null;
   const { kos } = useKos();
+  const T = termOf(kos);
   const [opt, setOpt] = useState(null);
   const [f, setF] = useState({
-    name: edit?.name || '', kind: edit?.kind || init?.kind || defaultKind(kos), status: 'berjalan',
+    name: edit?.name || '', kind: edit?.kind || init?.kind || defaultKind(kos), status: init?.status === 'penawaran' ? 'penawaran' : 'berjalan',
+    category: edit?.category || '', guests: edit?.guests != null ? String(edit.guests) : '', start_time: edit?.start_time || '', end_time: edit?.end_time || '',
     contact_id: edit?.contact_id || '', newClient: false, client_name: '', client_phone: '',
     manager_user: edit ? edit.manager_user || '' : '', parent_id: edit?.parent_id || init?.parent_id || '',
     start_date: edit?.start_date || '', end_date: edit?.end_date || '', value: edit?.value != null ? angka(edit.value) : '',
@@ -41,7 +44,8 @@ export function ProjectForm({ kosId, init, fin, onClose, onDone }) {
     });
   }, [kosId]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = async () => {
-    if (f.name.trim().length < 2) return toast('Isi nama proyek.');
+    if (f.name.trim().length < 2) return toast(`Isi nama ${T.one}.`);
+    if (f.guests !== '' && !/^\d{1,8}$/.test(f.guests.replace(/\./g, ''))) return toast('Jumlah peserta harus angka.');
     if (f.start_date && f.end_date && f.end_date < f.start_date) return toast('Tanggal selesai tidak boleh sebelum tanggal mulai.');
     if (f.newClient && f.client_name.trim().length === 0 && f.client_phone.trim()) return toast('Isi nama klien.');
     const p = {
@@ -52,16 +56,30 @@ export function ProjectForm({ kosId, init, fin, onClose, onDone }) {
     };
     setBusy(true);
     let newId = null;
-    const ok = await run(async () => { const r = await supabase.rpc('prj_save', { p_kos: kosId, p_id: edit?.id || null, p_data: p }); newId = r.data; return r; }, edit ? 'Proyek diperbarui' : 'Proyek dibuat', errMsg);
+    const ok = await run(async () => {
+      const r = await supabase.rpc('prj_save', { p_kos: kosId, p_id: edit?.id || null, p_data: p });
+      if (r.error) return r;
+      newId = r.data;
+      // Info event (kategori, peserta, jam): kolom tambahan Mesin Proyek, disimpan sesudah proyeknya ada
+      if (f.kind === 'event') {
+        const e = await supabase.rpc('prj_event_info_set', { p_project: edit?.id || r.data, p: { category: f.category.trim(), guests: f.guests.replace(/\./g, ''), start_time: f.start_time, end_time: f.end_time } });
+        if (e.error) return e;
+      }
+      return r;
+    }, edit ? `${T.One} diperbarui` : `${T.One} dibuat`, errMsg);
     setBusy(false);
     if (ok) onDone(newId);
   };
   const parents = (opt?.parents || []).filter((x) => x.id !== edit?.id);
   return (
-    <Sheet title={edit ? `Ubah · ${edit.number}` : 'Proyek baru'} onClose={onClose}>
-      <Field label="Nama proyek"><input value={f.name} maxLength={120} onChange={(e) => set('name', e.target.value)} placeholder="mis. Wedding Andi & Sari, Video profil PT Maju" /></Field>
-      <Field label="Jenis"><div className="seg">{Object.entries(KIND).map(([k, l]) => <button type="button" key={k} className={f.kind === k ? 'on' : ''} onClick={() => set('kind', k)}>{l}</button>)}</div></Field>
-      {!edit && <Field label="Tahap" hint="Penawaran = belum deal dengan klien. Bisa diubah kapan saja."><div className="seg">{[['berjalan', 'Sudah deal / berjalan'], ['penawaran', 'Masih penawaran']].map(([k, l]) => <button type="button" key={k} className={f.status === k ? 'on' : ''} onClick={() => set('status', k)}>{l}</button>)}</div></Field>}
+    <Sheet title={edit ? `Ubah · ${edit.number}` : `${T.One} baru`} onClose={onClose}>
+      <Field label={`Nama ${T.one}`}><input value={f.name} maxLength={120} onChange={(e) => set('name', e.target.value)} placeholder="mis. Wedding Andi & Sari, Seminar Nasional 2026" /></Field>
+      {!isEventBiz(kos) && <Field label="Jenis"><div className="seg">{Object.entries(KIND).map(([k, l]) => <button type="button" key={k} className={f.kind === k ? 'on' : ''} onClick={() => set('kind', k)}>{l}</button>)}</div></Field>}
+      {!edit && <Field label="Tahap" hint={isEventBiz(kos) ? 'Belum dikonfirmasi = masih booking / penawaran. Bisa dikonfirmasi kapan saja.' : 'Penawaran = belum deal dengan klien. Bisa diubah kapan saja.'}><div className="seg">{(isEventBiz(kos) ? [['berjalan', 'Sudah dikonfirmasi'], ['penawaran', 'Belum dikonfirmasi']] : [['berjalan', 'Sudah deal / berjalan'], ['penawaran', 'Masih penawaran']]).map(([k, l]) => <button type="button" key={k} className={f.status === k ? 'on' : ''} onClick={() => set('status', k)}>{l}</button>)}</div></Field>}
+      {f.kind === 'event' && <div className="row">
+        <Field label="Kategori event (opsional)"><input list="ev-cats" value={f.category} maxLength={60} onChange={(e) => set('category', e.target.value)} placeholder="mis. Wedding, Seminar" /><datalist id="ev-cats">{EVENT_CATS.map((c) => <option key={c} value={c} />)}</datalist></Field>
+        <Field label="Jumlah peserta (opsional)"><input inputMode="numeric" value={f.guests} maxLength={10} onChange={(e) => set('guests', e.target.value)} placeholder="mis. 300" /></Field>
+      </div>}
       <span className="label">Klien</span>
       {opt && opt.clients.length > 0 && <div className="seg">{[[false, 'Pilih pelanggan'], [true, 'Klien baru']].map(([k, l]) => <button type="button" key={String(k)} className={f.newClient === k ? 'on' : ''} onClick={() => set('newClient', k)}>{l}</button>)}</div>}
       {f.newClient ? <div className="row">
@@ -73,13 +91,17 @@ export function ProjectForm({ kosId, init, fin, onClose, onDone }) {
         <Field label="Mulai"><input type="date" value={f.start_date} onChange={(e) => set('start_date', e.target.value)} /></Field>
         <Field label="Selesai"><input type="date" value={f.end_date} min={f.start_date || undefined} onChange={(e) => set('end_date', e.target.value)} /></Field>
       </div>
-      <Field label="PIC (penanggung jawab proyek)" hint={edit ? 'PIC bisa mengubah proyek ini, mengatur tugas, milestone, dan anggota.' : 'Kosong = Anda sendiri. PIC bisa mengatur tugas, milestone, dan anggota proyek ini.'}>
+      {f.kind === 'event' && <div className="row">
+        <Field label="Jam mulai (opsional)"><input type="time" value={f.start_time} onChange={(e) => set('start_time', e.target.value)} /></Field>
+        <Field label="Jam selesai (opsional)"><input type="time" value={f.end_time} onChange={(e) => set('end_time', e.target.value)} /></Field>
+      </div>}
+      <Field label={`PIC (penanggung jawab ${T.one})`} hint={edit ? `PIC bisa mengubah ${T.one} ini, mengatur tugas, milestone, dan anggota.` : `Kosong = Anda sendiri. PIC bisa mengatur tugas, milestone, dan anggota ${T.one} ini.`}>
         <select value={f.manager_user} onChange={(e) => set('manager_user', e.target.value)}><option value="">{edit ? '— belum ada —' : 'Saya sendiri'}</option>{(opt?.team || []).map((t) => <option key={t.user_id} value={t.user_id}>{t.name}</option>)}</select>
       </Field>
       {fin && <Field label="Nilai kontrak (opsional)" hint="Pendapatan diakui di Pembukuan saat milestone diserahkan / proyek selesai — bukan saat diisi di sini."><input inputMode="numeric" value={f.value} onChange={(e) => set('value', e.target.value)} placeholder="mis. 85.000.000" /></Field>}
       <Field label="Lokasi (opsional)"><input value={f.location} maxLength={200} onChange={(e) => set('location', e.target.value)} placeholder="mis. Gedung Serbaguna, Jl. Merdeka 1" /></Field>
       <Field label="Keterangan (opsional)"><textarea rows={3} value={f.description} maxLength={2000} onChange={(e) => set('description', e.target.value)} placeholder="ringkasan kebutuhan klien, catatan penting" /></Field>
-      {parents.length > 0 && <Field label="Bagian dari proyek lain? (opsional)" hint="mis. produksi panggung sebagai subproyek dari acara utama"><select value={f.parent_id} onChange={(e) => set('parent_id', e.target.value)}><option value="">— proyek mandiri —</option>{parents.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}</select></Field>}
+      {parents.length > 0 && <Field label={`Bagian dari ${T.one} lain? (opsional)`} hint="mis. produksi panggung sebagai bagian dari acara utama"><select value={f.parent_id} onChange={(e) => set('parent_id', e.target.value)}><option value="">— {T.one} mandiri —</option>{parents.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}</select></Field>}
       <button className="cta" disabled={busy || !opt} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
     </Sheet>
   );

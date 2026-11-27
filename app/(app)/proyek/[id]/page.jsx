@@ -16,11 +16,16 @@ import { KIND, STATUS, TASK_ST, PRIO, Chip, Progress, ProjectForm, MilestoneForm
 import { QuoteForm, qStatus } from '@/components/Penawaran';
 import CostPanel from '@/components/ProyekBiaya';
 import BillingPanel from '@/components/ProyekTagihan';
+import EntityPhotos from '@/components/media/EntityPhotos';
+import FiturUpgrade from '@/components/FiturUpgrade';
+import { EV_ST, STAGE_PRE, STAGE_POST, termOf, tglHari } from '@/lib/event';
 
 const waktu = (iso) => new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 // Tombol pindah status yang masuk akal dari status sekarang (server tetap menerima perpindahan lain)
 const NEXT = { penawaran: ['berjalan', 'batal'], berjalan: ['selesai', 'ditunda', 'batal'], ditunda: ['berjalan', 'batal'], selesai: ['berjalan'], batal: ['berjalan'] };
 const NEXT_LABEL = { berjalan: 'Jalankan / buka lagi', selesai: 'Tandai selesai', ditunda: 'Tunda', batal: 'Batalkan', penawaran: 'Kembali ke penawaran' };
+// Event: "Jalankan" dari penawaran = Konfirmasi event
+const lbl = (p, s) => (p.kind === 'event' && p.status === 'penawaran' && s === 'berjalan' ? 'Konfirmasi event' : p.kind === 'event' && s === 'penawaran' ? 'Kembali ke belum dikonfirmasi' : NEXT_LABEL[s]);
 
 export default function ProyekDetail() {
   const { id } = useParams();
@@ -45,23 +50,38 @@ export default function ProyekDetail() {
   const setTask = async (t, s) => { if (await run(() => supabase.rpc('prj_task_status', { p_id: t.id, p_status: s }), s === 'selesai' ? 'Tugas selesai' : 'Status tugas diubah', errMsg)) load(); };
   const msDone = async (m) => { if (await run(() => supabase.rpc('prj_milestone_done', { p_id: m.id, p_done: m.status !== 'selesai' }), m.status !== 'selesai' ? 'Milestone selesai' : 'Milestone dibuka lagi', errMsg)) load(); };
   const myTask = (t) => t.assignee_user === p.me;
+  const T = termOf(kos);
+  const ev = p.kind === 'event';
+  // Tahap event manual (null = otomatis dari data). Selesai/Dibatalkan tetap lewat tombol status.
+  const stageOpts = p.status === 'penawaran' ? STAGE_PRE : closed ? [] : STAGE_POST;
+  const setStage = async (v) => { if (await run(() => supabase.rpc('prj_stage_set', { p_project: p.id, p_stage: v || null }), 'Tahap event diubah', errMsg)) load(); };
   return (
     <div className="stack">
-      <Link href="/proyek" className="small">← Semua proyek</Link>
-      <PageHeader title={p.name} desc={`${p.number} · ${KIND[p.kind]}${p.client ? ` · ${p.client}` : ''}`} help={<PageHelp page="proyek" />}
+      <Link href="/proyek" className="small">← {T.all}</Link>
+      <PageHeader title={p.name} desc={`${p.number} · ${ev && p.category ? p.category : KIND[p.kind]}${p.client ? ` · ${p.client}` : ''}`} help={<PageHelp page="proyek" />}
         actions={canEdit && <button onClick={() => setForm('edit')}>Ubah</button>} />
-      {!p.allowed && kelola && <div className="notice">Paket bisnis ini belum mencakup Proyek (mulai Paket Bisnis). Anda masih bisa membuka data, menandai tugas, dan menyelesaikan atau membatalkan proyek.</div>}
+      {!p.allowed && kelola && <div className="notice">Paket bisnis ini belum mencakup {T.list} (mulai Paket Dasar). Anda masih bisa membuka data, menandai tugas, dan menyelesaikan atau membatalkan {T.one}.</div>}
 
       <section className="panel" style={{ gap: 10 }}>
         <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <Chip map={STATUS} v={p.status} />
+          {ev ? <span className={'chip ' + (EV_ST[p.event_status] || ['', 'void'])[1]}>{(EV_ST[p.event_status] || [p.event_status])[0]}{p.event_stage ? '' : ' · otomatis'}</span> : <Chip map={STATUS} v={p.status} />}
           {kelola && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{(NEXT[p.status] || []).filter((s) => p.allowed || ['selesai', 'batal'].includes(s)).map((s) => (
-            <button key={s} className={'sm' + (s === 'batal' ? ' ghost danger' : s === 'selesai' ? ' primary' : '')} onClick={() => setStat(s)}>{NEXT_LABEL[s]}</button>))}</div>}
+            <button key={s} className={'sm' + (s === 'batal' ? ' ghost danger' : s === 'selesai' || (s === 'berjalan' && p.status === 'penawaran') ? ' primary' : '')} onClick={() => setStat(s)}>{lbl(p, s)}</button>))}</div>}
         </div>
+        {ev && kelola && stageOpts.length > 0 && <label className="row" style={{ flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <span className="small muted">Tahap event</span>
+          <select value={p.event_stage || ''} onChange={(e) => setStage(e.target.value)} style={{ maxWidth: 260 }} aria-label="Tahap event">
+            <option value="">Otomatis dari data ({(EV_ST[p.event_status] || [p.event_status])[0]})</option>
+            {stageOpts.map((k) => <option key={k} value={k}>{EV_ST[k][0]}</option>)}
+          </select>
+        </label>}
+        {ev && p.event_status === 'berlangsung' && p.event_stage && p.event_stage !== 'berlangsung' && <span className="small muted">Hari ini termasuk tanggal acara, jadi status tampil Berlangsung.</span>}
         {p.status_note && <span className="small muted">Catatan status: {p.status_note}</span>}
         <Progress pct={p.progress} />
         <dl className="kv">
-          <dt>Jadwal</dt><dd>{jadwal(p)}</dd>
+          <dt>Jadwal</dt><dd>{ev && p.start_date ? tglHari(p.start_date) + (p.end_date && p.end_date !== p.start_date ? ` – ${tglHari(p.end_date)}` : '') : jadwal(p)}{p.start_time ? ` · ${p.start_time}${p.end_time ? `–${p.end_time}` : ''}` : ''}</dd>
+          {ev && p.category && <><dt>Kategori</dt><dd>{p.category}</dd></>}
+          {ev && p.guests != null && <><dt>Peserta</dt><dd>{Number(p.guests).toLocaleString('id-ID')} orang</dd></>}
           <dt>PIC</dt><dd>{p.manager || '—'}</dd>
           {p.client && <><dt>Klien</dt><dd>{p.client}</dd></>}
           {p.location && <><dt>Lokasi</dt><dd>{p.location}</dd></>}
@@ -76,7 +96,7 @@ export default function ProyekDetail() {
 
       {p.can_quote && <section className="panel" style={{ gap: 6 }}>
         <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}><span className="label">Penawaran & perubahan scope ({(p.quotes || []).length})</span>
-          {p.allowed && p.status !== 'batal' && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+          {p.allowed && p.lanjut && p.status !== 'batal' && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
             {!p.quote_id && ['penawaran', 'berjalan', 'ditunda'].includes(p.status) && !(p.quotes || []).some((x) => x.kind === 'awal' && ['draf', 'terkirim'].includes(x.status)) && <button className="sm primary" onClick={() => setQform('awal')}>+ Buat penawaran</button>}
             {(p.quote_id || p.status !== 'penawaran') && <button className="sm" onClick={() => setQform('perubahan')}>+ Perubahan scope</button>}
           </div>}</div>
@@ -88,7 +108,9 @@ export default function ProyekDetail() {
       </section>}
 
       {p.fin && p.status !== 'penawaran' && <BillingPanel project={p} onChange={load} />}
-      {p.fin && <CostPanel project={p} onChange={load} />}
+      {p.fin && (p.lanjut || Number(p.cost?.budget) > 0 || Number(p.cost?.actual) > 0) && <CostPanel project={p} onChange={load} />}
+      {p.allowed && !p.lanjut && (p.can_quote || p.fin) && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.ADVANCED.REQUESTED" title={`Penawaran, anggaran & laba per ${T.one} — Paket Bisnis`}
+        text={`Paket Dasar sudah mencakup ${T.one}, jadwal, tugas tim, dan tagihan DP & pelunasan. Paket Bisnis menambah penawaran ke klien (scope & termin), perubahan scope, anggaran per kategori, komitmen vendor, dan laba per ${T.one}.`} />}
 
       <section className="panel" style={{ gap: 6 }}>
         <div className="row between"><span className="label">Milestone ({p.milestones.length})</span>{canEdit && <button className="sm" onClick={() => setForm({ ms: {} })}>+ Milestone</button>}</div>
@@ -134,7 +156,7 @@ export default function ProyekDetail() {
       </section>
 
       <section className="panel" style={{ gap: 6 }}>
-        <div className="row between"><span className="label">Anggota proyek ({p.members.length})</span>{canEdit && <button className="sm" onClick={() => setMember(true)}>+ Anggota</button>}</div>
+        <div className="row between"><span className="label">Anggota {T.one} ({p.members.length})</span>{canEdit && <button className="sm" onClick={() => setMember(true)}>+ Anggota</button>}</div>
         <span className="small muted">Anggota bisa melihat proyek ini walau perannya bukan bagian proses. Penanggung jawab tugas otomatis bisa melihatnya.</span>
         {p.members.length > 0 && <div className="list">{p.members.map((m) => (
           <div className="li" key={m.user_id}><div className="main"><b className="small">{m.name}</b>{m.role_label && <span className="small muted">{m.role_label}</span>}</div>
@@ -142,12 +164,14 @@ export default function ProyekDetail() {
       </section>
 
       {(p.children.length > 0 || (canEdit && !p.parent_id)) && <section className="panel" style={{ gap: 6 }}>
-        <div className="row between"><span className="label">Subproyek ({p.children.length})</span>{canEdit && !p.parent_id && <button className="sm" onClick={() => setForm('sub')}>+ Subproyek</button>}</div>
+        <div className="row between"><span className="label">{ev ? 'Bagian event' : 'Subproyek'} ({p.children.length})</span>{canEdit && !p.parent_id && <button className="sm" onClick={() => setForm('sub')}>+ Subproyek</button>}</div>
         {p.children.length === 0 ? <span className="small muted">Pekerjaan besar bisa dipecah, mis. produksi panggung atau dokumentasi sebagai subproyek dengan PIC & tugas sendiri.</span>
           : <div className="list">{p.children.map((c) => <Link className="li" key={c.id} href={`/proyek/${c.id}`} style={{ textDecoration: 'none', color: 'inherit' }}><div className="main"><b className="small">{c.name}</b><span className="small muted">{c.number}</span></div><Chip map={STATUS} v={c.status} /></Link>)}</div>}
       </section>}
 
-      {canArea(kos, 'ops,settings') && <Lampiran entity="project" id={p.id} title="Dokumen proyek" hint="Mis. kontrak, brief, denah, foto lokasi (foto/PDF, maks. 4 MB). File desain/video besar simpan di Google Drive/Dropbox dan tempel tautannya di keterangan." />}
+      {ev && canArea(kos, 'ops,settings') && <EntityPhotos kosId={kosId} entity="project" entityId={p.id} category="portofolio" title="Foto event" max={8} canEdit={kelola && !closed}
+        hint="Foto pertama = cover di Beranda Event & daftar event. Foto juga bisa dipakai ulang di Foto & media." />}
+      {canArea(kos, 'ops,settings') && <Lampiran entity="project" id={p.id} title={`Dokumen ${T.one}`} hint="Mis. kontrak, brief, denah, foto lokasi (foto/PDF, maks. 4 MB). File desain/video besar simpan di Google Drive/Dropbox dan tempel tautannya di keterangan." />}
 
       <section className="panel" style={{ gap: 6 }}>
         <span className="label">Riwayat</span>
@@ -181,12 +205,12 @@ function StatusSheet({ p, to, onClose, onDone }) {
     if (ok) { if (to === 'selesai' && res?.open_tasks > 0) toast(`Proyek selesai. Catatan: ${res.open_tasks} tugas masih belum selesai.`); onDone(); }
   };
   return (
-    <Sheet title={NEXT_LABEL[to]} onClose={onClose}>
+    <Sheet title={lbl(p, to)} onClose={onClose}>
       <p className="small" style={{ margin: 0 }}>{STATUS[p.status][0]} → <b>{STATUS[to][0]}</b></p>
       {to === 'selesai' && open > 0 && <div className="notice">Masih ada {open} tugas belum selesai. Proyek tetap bisa ditandai selesai; tugas itu dibiarkan seperti adanya.</div>}
       {to === 'batal' && <span className="small muted">Proyek batal tidak bisa ditambah tugas. Data & riwayatnya tetap tersimpan, dan bisa dibuka lagi bila klien kembali.</span>}
       <Field label={wajib ? 'Alasan (wajib)' : 'Catatan (opsional)'}><input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder={to === 'batal' ? 'mis. klien memilih vendor lain' : reopen ? 'mis. klien minta tambahan acara' : ''} /></Field>
-      <button className={to === 'batal' ? 'cta danger' : 'cta'} disabled={busy} onClick={go}>{busy ? 'Menyimpan…' : NEXT_LABEL[to]}</button>
+      <button className={to === 'batal' ? 'cta danger' : 'cta'} disabled={busy} onClick={go}>{busy ? 'Menyimpan…' : lbl(p, to)}</button>
     </Sheet>
   );
 }

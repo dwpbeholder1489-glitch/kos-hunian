@@ -9,9 +9,11 @@ insert into auth.users(id,email,raw_user_meta_data) values
 insert into kos(id,name,owner_id,plan,paid_until,setup_status,business_type,category_code) values
   ('e0e0e0e0-0000-0000-0000-00000000000a','EO Bahagia','e0e0e0e0-0000-0000-0000-000000000001','bisnis',(now() at time zone 'Asia/Jakarta')::date + 20,'active','kustom','event'),
   ('e0e0e0e0-0000-0000-0000-00000000000b','Studio Lain','e0e0e0e0-0000-0000-0000-000000000004','bisnis',(now() at time zone 'Asia/Jakarta')::date + 20,'active','jasa','media'),
-  ('e0e0e0e0-0000-0000-0000-00000000000c','EO Dasar','e0e0e0e0-0000-0000-0000-000000000005','dasar',(now() at time zone 'Asia/Jakarta')::date + 20,'active','kustom','event'),
+  ('e0e0e0e0-0000-0000-0000-00000000000c','EO Gratis','e0e0e0e0-0000-0000-0000-000000000005','gratis',(now() at time zone 'Asia/Jakarta')::date + 20,'active','kustom','event'),
   ('e0e0e0e0-0000-0000-0000-00000000000d','Toko Biasa','e0e0e0e0-0000-0000-0000-000000000005','bisnis',(now() at time zone 'Asia/Jakarta')::date + 20,'active','retail','retail'),
   ('e0e0e0e0-0000-0000-0000-00000000000e','Laundry Bisnis','e0e0e0e0-0000-0000-0000-000000000005','bisnis',(now() at time zone 'Asia/Jakarta')::date + 20,'active','jasa','laundry');
+-- Gratis tanpa masa coba (masa coba = Paket Dasar yang kini mencakup Proyek inti)
+update kos set trial_until = (now() at time zone 'Asia/Jakarta')::date - 1 where id in ('e0e0e0e0-0000-0000-0000-00000000000c');
 insert into kos_members(kos_id,user_id,role) values
   ('e0e0e0e0-0000-0000-0000-00000000000a','e0e0e0e0-0000-0000-0000-000000000001','pemilik'),
   ('e0e0e0e0-0000-0000-0000-00000000000a','e0e0e0e0-0000-0000-0000-000000000002','operator'),
@@ -28,8 +30,8 @@ insert into kos_members(kos_id,user_id,role) values
 \set LAIN 'e0e0e0e0-0000-0000-0000-000000000004'
 \set DSR 'e0e0e0e0-0000-0000-0000-000000000005'
 
-\echo == A. Modul: aktif untuk event + Paket Bisnis; tidak untuk Paket Dasar, laundry, dan toko
-select module_on(:'K', 'u_proyek') a_event_bisnis_aktif, not module_on(:'KD', 'u_proyek') a_event_dasar_mati,
+\echo == A. Modul: aktif untuk event + paket yang mencakup (Dasar ke atas sejak keputusan E3); tidak untuk Gratis, laundry, dan toko
+select module_on(:'K', 'u_proyek') a_event_bisnis_aktif, not plan_has(:'KD', 'proyek') a_gratis_tanpa_fitur,
        not module_on('e0e0e0e0-0000-0000-0000-00000000000e', 'u_proyek') a_laundry_mati,
        not exists (select 1 from business_modules where kos_id = 'e0e0e0e0-0000-0000-0000-00000000000d' and module_code = 'u_proyek') a_toko_tanpa_baris,
        plan_has(:'K', 'proyek') and not plan_has(:'KD', 'proyek') a_fitur_bisnis,
@@ -38,8 +40,8 @@ select module_on(:'K', 'u_proyek') a_event_bisnis_aktif, not module_on(:'KD', 'u
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'DSR', false), set_config('request.jwt.claims', '{"sub":"e0e0e0e0-0000-0000-0000-000000000005","email":"dasar@x.com"}', false) \g /dev/null
 do $$ declare m text; begin
-  begin perform module_set('e0e0e0e0-0000-0000-0000-00000000000c', 'u_proyek', true, null); exception when others then m := sqlerrm; end;
-  if m like '%paket yang lebih tinggi%' then raise notice 'A_DASAR_TIDAK_BISA_AKTIFKAN_OK'; else raise warning 'GAGAL A dasar aktifkan: %', m; end if;
+  begin perform prj_save('e0e0e0e0-0000-0000-0000-00000000000c', null, '{"name":"Event gratis"}'::jsonb); exception when others then m := sqlerrm; end;
+  if m like 'BATAS_PAKET:%' then raise notice 'A_GRATIS_TIDAK_BISA_BUAT_OK'; else raise warning 'GAGAL A gratis buat: %', m; end if;
 end $$;
 
 \echo == B. Pemilik membuat proyek + klien baru; nomor berurutan
@@ -149,9 +151,9 @@ do $$ declare m text; begin
   if m like '%satu tingkat%' then raise notice 'H_SATU_TINGKAT_OK'; else raise warning 'GAGAL H: %', m; end if;
 end $$;
 
-\echo == I. Paket turun ke Dasar: buka & selesaikan boleh, membuat/mengubah ditolak
+\echo == I. Paket turun ke Gratis: buka & selesaikan boleh, membuat/mengubah ditolak
 reset role;
-update kos set plan = 'dasar' where id = :'K';
+update kos set plan = 'gratis', trial_until = (now() at time zone 'Asia/Jakarta')::date - 1 where id = :'K';
 set role authenticated;
 select jsonb_array_length(prj_list(:'K')->'projects') = 3 i_data_tetap_terbuka, not (prj_list(:'K')->>'allowed')::boolean i_tanda_paket;
 do $$ declare m text; begin
@@ -162,7 +164,7 @@ select prj_task_status(:'t3', 'selesai');
 select (prj_status(:'p1', 'selesai', null)->>'open_tasks')::int = 1 i_selesai_dengan_peringatan;
 select prj_get(:'p1')->>'status' = 'selesai' and prj_get(:'p1')->>'closed_at' is not null i_tertutup;
 reset role;
-update kos set plan = 'bisnis' where id = :'K';
+update kos set plan = 'bisnis', trial_until = null where id = :'K';
 
 \echo == J. Riwayat proyek & label
 select count(*) filter (where event_type = 'TaskCompleted') = 2 and count(*) filter (where event_type = 'MilestoneCompleted') = 0

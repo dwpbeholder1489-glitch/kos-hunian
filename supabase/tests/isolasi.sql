@@ -171,7 +171,11 @@ begin
       ('prj_invoice_create', format('select public.prj_invoice_create((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"description":"dibajak"}'')', k)),
       ('prj_payment_add', format('select public.prj_payment_add((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"account":"kas"}'')', k)),
       ('prj_invoice_get', format('select public.prj_invoice_get((select id from public.prj_invoices where kos_id = %L limit 1))', k)),
-      ('prj_payment_void', format('select public.prj_payment_void((select id from public.prj_payments where kos_id = %L limit 1), ''dibajak'')', k))
+      ('prj_payment_void', format('select public.prj_payment_void((select id from public.prj_payments where kos_id = %L limit 1), ''dibajak'')', k)),
+      ('event_home', format('select public.event_home(%L, null)', k)),
+      ('event_schedule', format('select public.event_schedule(%L, null)', k)),
+      ('prj_stage_set', format('select public.prj_stage_set((select id from public.prj_projects where kos_id = %L limit 1), ''persiapan'')', k)),
+      ('prj_event_info_set', format('select public.prj_event_info_set((select id from public.prj_projects where kos_id = %L limit 1), ''{"guests":1}'')', k))
     ) v(name, q) loop
     begin
       execute t.q;

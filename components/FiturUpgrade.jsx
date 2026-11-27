@@ -7,9 +7,9 @@ import { GrowthSheet } from '@/components/GrowthOffer';
 // Fitur Paket Bisnis yang belum dimiliki (V2 §6.2). Saat pemilik mengetuk, server memutuskan penawaran
 // (growth_offer konteks 'fitur' + event); tanpa penawaran (frekuensi/aturan nonaktif) langsung ke Langganan.
 // Karyawan hanya melihat keterangan, tanpa tombol.
-// plan = paket tujuan bila server tidak memberi penawaran ('bisnis' atau 'pro')
+// plan = paket tujuan bila server tidak memberi penawaran ('dasar', 'bisnis' atau 'pro')
 export default function FiturUpgrade({ kosId, event, title, text, owner = true, plan = 'bisnis' }) {
-  const nama = plan === 'pro' ? 'Paket Pro' : 'Paket Bisnis';
+  const nama = plan === 'pro' ? 'Paket Pro' : plan === 'dasar' ? 'Paket Dasar' : 'Paket Bisnis';
   const router = useRouter();
   const [offer, setOffer] = useState(null);
   const [busy, setBusy] = useState(false);

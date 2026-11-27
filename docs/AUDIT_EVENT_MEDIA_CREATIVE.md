@@ -144,7 +144,7 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | K2 | Event = proyek bertipe event (perluasan 1-ke-1), subproyek opsional | **Final** (menjawab Open Question #1; mengunci EVT-004, EVT-017) |
 | K3 | Pembayaran sebelum serah terima = uang muka; pendapatan diakui per termin/milestone yang diserahkan | **Final** |
 | K4 | File karya tahap awal = tautan eksternal + metadata & versi di PRASARA; file kecil lewat Lampiran; konektor OAuth menyusul setelah diuji | **Final** (menjawab Open Question #3; mengunci arah EVT-012, EVT-022) |
-| K5 | Paket untuk Mesin Proyek | Menunggu |
+| K5 | Paket untuk Mesin Proyek | **Diganti E3** (lihat §9) |
 | K6 | Cara pindah data template Builder lama | Menunggu (cek jumlah pemakai di produksi dulu) |
 
 ### Data produksi (dicek baca-saja, 21 Nov 2026)
@@ -165,3 +165,26 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | Tagihan termin & jurnal uang muka → pendapatan (1D): tagihan dari milestone, cetak/WA, pembayaran (bisa tanpa tagihan), pengembalian & uang muka hangus, jurnal otomatis per kejadian (uang muka → pendapatan saat milestone diserahkan, kekurangan = piutang), koreksi otomatis saat dibatalkan | Selesai (migrasi `20261121260000`), diuji (`proyek_tagihan.sql` memeriksa saldo akun tiap langkah & keseimbangan jurnal, `isolasi.sql`) |
 | Piutang proyek di laporan Umur piutang Pembukuan; persetujuan pembayaran; PPN jasa | Belum |
 | Lampiran untuk PIC/anggota tanpa area proses | Belum — lampiran memakai izin area (ops/settings) |
+
+## 9. Workspace Event — Tahap A (migrasi `20261127170000_event_workspace.sql`, Master Implementation Prompt Event + gambar acuan)
+
+Keputusan pemilik (22 Nov 2026):
+
+| Kode | Keputusan |
+|---|---|
+| E1 | Event memakai Mesin Proyek saja; menu Builder (Acara/Klien) disembunyikan untuk bisnis event (data lama tidak disentuh) |
+| E2 | Status event otomatis dari data + bisa diubah manual |
+| E3 | Paket Dasar = inti (Beranda Event, event, kalender, tugas, pelanggan, DP & pelunasan); Paket Bisnis = lanjutan (penawaran, anggaran & laba, komitmen vendor). Menggantikan K5 |
+| E4 | Bertahap: A layout & navigasi → B rundown & jadwal → C inventaris & vendor → D booking publik, dokumen & laporan, kustomisasi (+) |
+
+| Bagian (prompt Event) | Status |
+|---|---|
+| Navigasi 10 menu (§17) | Selesai. Catatan: Analisis Bisnis selalu tampil tepat di bawah Beranda (aturan platform `PINNED_TOP`), jadi "Laporan & Analisis" berada di posisi ke-2, bukan ke-9 |
+| Beranda Event (§4 A–F): ringkasan 4 KPI + perbandingan, Event Mendatang (cover, status, progres), Aksi Cepat 6, Kalender, Pendapatan 6 bulan + pengeluaran/keuntungan/piutang, Tugas & Persiapan | Selesai, data nyata (`event_home`, diuji SQL) — render diuji dengan data tiruan |
+| Status event 8 tahap otomatis + manual, Konfirmasi event | Selesai, diuji |
+| Foto cover event | Selesai (media entity 'project', diuji SQL) |
+| Booking & Pesanan (daftar, konfirmasi) | Selesai — booking = event belum dikonfirmasi (tanpa tabel ganda) |
+| Jadwal & Tim (kalender, beban kerja, semua tugas) | Selesai (`event_schedule`, diuji) |
+| Pelanggan (Client) & Vendor | Selesai — menyaring kontak yang sama |
+| Detail event tab Overview/Informasi/Anggaran/Pembayaran | Sebagian — satu halaman berisi info, status, foto, penawaran, tagihan, biaya, milestone, tugas, anggota, dokumen, riwayat (belum dalam bentuk tab) |
+| Rundown, inventaris per event, kategori & evaluasi vendor, booking publik, dokumen PDF event, laporan BI event, kustomisasi (+), adaptif per jenis event | Belum — Tahap B–D |
