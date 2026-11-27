@@ -1,5 +1,6 @@
 'use client';
 import IsianTambahan from '@/components/IsianTambahan';
+import KontakBisnis from '@/components/KontakBisnis';
 import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import { useEffect, useRef, useState } from 'react';
@@ -216,6 +217,7 @@ function Detail({ c, fin, kosId, kos, onTasksChanged, onClose, onSaved, onReload
         ? <button onClick={restore}>Pulihkan dari arsip</button>
         : <button className="ghost danger" onClick={del}>Hapus {c.kind === 'supplier' ? 'supplier' : 'pelanggan'}</button>)}
       {!isNew && c.kind === 'pelanggan' && !c.archived_at && kos.business_type === 'retail' && moduleOn(kos, 'u_kredit') && <SyaratPelanggan c={c} kosId={kosId} canEdit={fin} onReload={onReload} />}
+      {!isNew && fin && !c.archived_at && <KontakBisnis contactId={c.id} kosId={kosId} />}
       {!isNew && <IsianTambahan entity="contact" id={c.id} area="sell,stock,finance" />}
       {!isNew && c.kind === 'pelanggan' && !c.archived_at && moduleOn(kos, 'u_crm') && canArea(kos, 'sell,rent') && <>
         <h3 style={{ margin: '8px 0 0' }}>Catatan & tindak lanjut</h3>

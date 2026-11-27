@@ -1039,6 +1039,15 @@ const PARTS = [
       <><b>Ekspor PDF / Excel</b> berisi ringkasan + pembanding, laba rugi, tren, antarperiode, kas & bank, penjualan, pembelian, persediaan, utang-piutang, pelanggan, karyawan, aset, pajak & modal (memakai kuota ekspor paket). Ada juga <b>Cetak halaman</b> dan <b>Bagikan ringkasan</b> (WhatsApp/email).</>,
       <>Arsip otomatis & versi koreksi muncul di <b>Notifikasi</b> (kos) atau <b>Pengingat</b> (toko/jasa) selama 7 hari.</>,
     ], <>Hanya pemilik & karyawan berizin Keuangan. Penutupan periode tetap dilakukan di Pembukuan (Periode & manual) — Rekap hanya menampilkan statusnya dan tautan ke sana.</>, 'info'],
+  ['AM', 'Analisis: Konsolidasi beberapa bisnis (Paket Pro)', [
+    ['Menggabungkan bisnis dengan eliminasi & bagian pemilik lain', 'Analisis Bisnis › Laporan & Portofolio › Konsolidasi · Pelanggan & supplier', [
+      <>Di tiap bisnis, buka <b>Pelanggan & supplier</b> → kontak yang sebenarnya bisnis Anda sendiri (mis. “Warung B” sebagai pelanggan Toko A) → <b>Kontak ini bisnis saya sendiri?</b> → pilih bisnisnya.</>,
+      <>Buka <b>Konsolidasi</b> → <b>+ Grup</b>: beri nama, centang minimal dua bisnis, isi <b>persen kepemilikan</b> Anda (bawaan 100%). Minimal satu bisnis Paket Pro.</>,
+      <>Pilih periode (Bulan ini / Bulan lalu / Tahun ini / tanggal bebas). Tabel <b>Laba rugi</b> & <b>Neraca gabungan</b> menampilkan angka per bisnis, kolom <b>Eliminasi</b>, dan <b>Gabungan</b>.</>,
+      <>Eliminasi otomatis: penjualan antarbisnis (pendapatan ↔ harga pokok) dan piutang ↔ utang antarbisnis yang masih terbuka. Isi <b>% barang antarbisnis yang sudah dijual lagi</b> — sisanya dianggap masih di gudang pembeli sehingga laba penjual atasnya belum dihitung.</>,
+      <><b>+ Eliminasi manual</b> untuk kasus lain (mis. pinjaman antarbisnis): jenis, tanggal, jumlah, alasan wajib. Salah catat? <b>Batal</b> dengan alasan.</>,
+      <>Bila kepemilikan di bawah 100%, ringkasan memisahkan laba & ekuitas <b>milik Anda</b> dan <b>pemilik lain</b> (kepentingan nonpengendali).</>,
+    ], <>Berbeda dengan Ringkasan multi-bisnis yang hanya menjumlahkan. Batasan: tanpa goodwill/biaya investasi; laba belum terjadi berdasarkan perkiraan persen Anda; piutang/utang antarbisnis otomatis hanya untuk periode yang berakhir hari ini atau sesudahnya. Laporan pengelolaan internal, bukan laporan konsolidasi yang diaudit.</>, 'warn', null, 'pro'],
   ]],
 ];
 
