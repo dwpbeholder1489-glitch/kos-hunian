@@ -1039,6 +1039,7 @@ const PARTS = [
       <><b>Ekspor PDF / Excel</b> berisi ringkasan + pembanding, laba rugi, tren, antarperiode, kas & bank, penjualan, pembelian, persediaan, utang-piutang, pelanggan, karyawan, aset, pajak & modal (memakai kuota ekspor paket). Ada juga <b>Cetak halaman</b> dan <b>Bagikan ringkasan</b> (WhatsApp/email).</>,
       <>Arsip otomatis & versi koreksi muncul di <b>Notifikasi</b> (kos) atau <b>Pengingat</b> (toko/jasa) selama 7 hari.</>,
     ], <>Hanya pemilik & karyawan berizin Keuangan. Penutupan periode tetap dilakukan di Pembukuan (Periode & manual) — Rekap hanya menampilkan statusnya dan tautan ke sana.</>, 'info'],
+  ]],
   ['AM', 'Analisis: Konsolidasi beberapa bisnis (Paket Pro)', [
     ['Menggabungkan bisnis dengan eliminasi & bagian pemilik lain', 'Analisis Bisnis › Laporan & Portofolio › Konsolidasi · Pelanggan & supplier', [
       <>Di tiap bisnis, buka <b>Pelanggan & supplier</b> → kontak yang sebenarnya bisnis Anda sendiri (mis. “Warung B” sebagai pelanggan Toko A) → <b>Kontak ini bisnis saya sendiri?</b> → pilih bisnisnya.</>,
