@@ -15,7 +15,7 @@ function goDone(slug, q) {
 
 // Formulir permintaan di halaman bisnis publik. Kiriman = permintaan/prospek, bukan pesanan final;
 // harga & ketersediaan dikonfirmasi pemilik. Anti-spam: kolom jebakan, waktu isi minimal, batas per perangkat (di server).
-export default function PublicForm({ page }) {
+export default function PublicForm({ page, initialReservation = false }) {
   const started = useRef(Date.now());
   const retail = page.type === 'retail';
   const jasa = page.type === 'jasa';
@@ -44,7 +44,7 @@ export default function PublicForm({ page }) {
       if (kul && /^\d{1,3}$/.test(m) && n >= 1 && n <= Number(ord?.tables || 0)) { setMeja(String(n)); setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300); } else setMejaBad(true);
     } catch {}
   }, []);
-  const [resv, setResv] = useState(false); // kuliner: tab Reservasi meja
+  const [resv, setResv] = useState(initialReservation); // kuliner: tab Reservasi meja
   const kosType = !retail && !jasa && page.type !== 'kustom';
   const [ask, setAsk] = useState(false); // kos: Daftar (default) atau Tanya dulu
   const [pickup, setPickup] = useState(false);

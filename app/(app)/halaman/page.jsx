@@ -59,6 +59,7 @@ export default function Halaman() {
   return (
     <div className="stack">
       <PageHeader title="Halaman bisnis" help={<PageHelp page="halaman" />} />
+      {canArea(kos, 'settings') && <Link href="/pengaturan/tampilan-link">Atur Tampilan Berbagi Link →</Link>}
       {canArea(kos, 'settings') && <section className="panel"><span className="label">Logo</span><LogoUpload /><span className="small muted">Tampil di halaman bisnis dan di aplikasi (pojok kiri atas). Gambar persegi paling bagus.</span></section>}
       {canArea(kos, 'settings') && <section className="panel">
         <EntityPhotos kosId={kosId} entity="kos_cover" category="cover" title="Cover (opsional)" max={1} hint="Satu foto lebar (16:9) di bagian atas halaman, mis. tampak depan." />

@@ -8,28 +8,42 @@ import { logoUrl } from '@/lib/logo';
 import { PublicCover, PublicGallery, ItemThumb } from '@/components/media/PublicPics';
 import { getPublicPage as getPage, getPublicShop } from '@/lib/publicPage';
 import PublicShop from '@/components/commerce/PublicShop';
+import { linkBannerMetadata } from '@/lib/linkBannerServer';
+import { isBannerId } from '@/lib/linkBanner';
 
 export const revalidate = 60;
 
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params;
+  const query = await searchParams;
   const p = await getPage(slug);
   if (!p) return { title: 'Halaman tidak ditemukan', robots: { index: false } };
-  const desc = p.tagline || (p.type === 'retail' ? `Katalog & pemesanan ${p.name}` : p.type === 'jasa' ? `Layanan & harga ${p.name}` : `Info kamar & sewa ${p.name}`);
-  const img = p.media?.cover?.path || p.media?.gallery?.[0]?.path;
-  const og = img && process.env.NEXT_PUBLIC_SUPABASE_URL ? [`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${img}`] : undefined;
-  return { title: p.name, description: desc, openGraph: { title: p.name, description: desc, type: 'website', ...(og ? { images: og } : {}) } };
+  const view = query?.tampilan;
+  const item = view === 'produk' && isBannerId(query.id) ? query.id.toLowerCase() : null;
+  const context = item && p.type === 'retail' ? 'produk'
+    : view === 'katalog' ? 'katalog'
+    : view === 'booking' && (p.type === 'properti' || p.order?.kuliner) ? 'booking'
+    : ['bayar', 'checkout'].includes(view) ? 'bayar'
+    : view === 'lacak' ? 'lacak' : 'beranda';
+  const path = `/b/${encodeURIComponent(slug)}` + (item && context === 'produk' ? `?tampilan=produk&id=${item}`
+    : context === 'beranda' ? '' : `?tampilan=${view}`);
+  return linkBannerMetadata('b', slug, context, {
+    item: context === 'produk' ? item : undefined, path, fallbackTitle: p.name,
+    fallbackDescription: p.tagline || (p.type === 'retail' ? `Katalog & pemesanan ${p.name}`
+      : p.type === 'jasa' ? `Layanan & harga ${p.name}` : `Informasi ${p.name}`),
+  });
 }
 
 const rp = (n) => 'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
 const ICON = (l) => (/maps|goo\.gl\/maps|maps\.app/i.test(l.url) ? '📍' : /instagram|tiktok|facebook|fb\.com/i.test(l.url) ? '📱' : /drive\.google|photos/i.test(l.url) ? '🖼️' : /youtu/i.test(l.url) ? '▶️' : '🔗');
 const wa = (phone, text) => `https://wa.me/${String(phone || '').replace(/\D/g, '').replace(/^0/, '62')}?text=${encodeURIComponent(text)}`;
 
-export default async function PublicPage({ params }) {
+export default async function PublicPage({ params, searchParams }) {
   const { slug } = await params;
   const p = await getPage(slug);
   if (!p) notFound();
+  const view = (await searchParams)?.tampilan;
   const retail = p.type === 'retail';
   const shop = retail ? await getPublicShop(slug) : null;
   if (shop) {
@@ -57,7 +71,7 @@ export default async function PublicPage({ params }) {
       {p.about && <section className="panel"><h3>Tentang kami</h3><p style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.about} /></p></section>}
       <PublicGallery items={p.media?.gallery} title={p.type === 'properti' ? 'Foto kos & fasilitas' : 'Galeri'} />
       {p.items?.length > 0 && (
-        <section className="panel">
+        <section className="panel" id="katalog">
           <h3>{retail ? 'Barang' : p.type === 'jasa' ? 'Layanan' : 'Kamar tersedia'}</h3>
           <div className="list">{p.items.map((it) => (
             <div className="li" key={it.id} style={{ alignItems: 'flex-start', justifyContent: 'flex-start', gap: 10 }}>
@@ -72,9 +86,9 @@ export default async function PublicPage({ params }) {
           {p.show_prices && <span className="small muted">Harga dapat berubah; harga final dikonfirmasi oleh {p.name}.</span>}
         </section>
       )}
-      <PublicForm page={p} />
+      <div id="booking"><PublicForm page={p} initialReservation={view === 'booking'} /></div>
       {p.type === 'jasa' && p.order && <a href={`/b/${p.slug}/cek`} className="small" style={{ textAlign: 'center' }}>Sudah memesan? Cek status pesanan →</a>}
-      {p.type !== 'properti' && <PublicPay slug={p.slug} panel />}
+      {p.type !== 'properti' && <div id="bayar"><PublicPay slug={p.slug} panel /></div>}
       {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.policy} /></p></section>}
       <footer className="small muted" style={{ textAlign: 'center' }}>Halaman ini dikelola {p.name} dengan <a href="/">PRASARA</a></footer>
     </main>

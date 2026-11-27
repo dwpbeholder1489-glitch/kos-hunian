@@ -9,7 +9,7 @@ import { useKos } from '@/components/KosProvider';
 import { Sheet, Loading, toast } from '@/components/ui';
 import { errMsg, waLink } from '@/lib/format';
 import { qrMatrix, qrSvg } from '@/lib/qr';
-import { isDraft } from '@/lib/business';
+import { canArea, isDraft } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
 import FiturUpgrade from '@/components/FiturUpgrade';
 
@@ -37,9 +37,10 @@ export function SharePanel({ kosId, compact }) {
   const [printing, setPrinting] = useState(null); // null | {mode:'poster'} | {mode:'meja', tables:[n…]}
   const [one, setOne] = useState('');
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState('');
   const { kos, loadKos } = useKos();
   const fetchInfo = () => supabase.rpc('share_info', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setI(data)));
-  useEffect(() => { setOrigin(window.location.origin); fetchInfo(); }, [kosId]);
+  useEffect(() => { setView(''); setOrigin(window.location.origin); fetchInfo(); }, [kosId]);
   const publish = async () => {
     if (!window.confirm(`Terbitkan halaman ${i.name}?\n\nSiapa saja yang membuka tautan bisa melihat nama, alamat, WhatsApp, dan ${i.type === 'retail' ? 'barang' : i.type === 'jasa' ? 'layanan/menu' : i.type === 'properti' ? 'kamar yang tersedia' : 'informasi bisnis'} beserta harganya.\nHarga modal, laba, dan data pelanggan/penghuni tidak pernah ditampilkan.\n\nIsi lengkap (tagline, foto, tautan, jam buka) bisa diatur nanti di menu Halaman bisnis.`)) return;
     setBusy(true);
@@ -48,12 +49,19 @@ export function SharePanel({ kosId, compact }) {
     if (error) return toast(/public_page_quick_publish/.test(error.message || '') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : errMsg(error));
     toast('Halaman terbit — siap dibagikan'); loadKos?.(); fetchInfo();
   };
-  const url = i?.slug ? `${origin}/b/${i.slug}` : '';
+  const pages = i ? [
+    ['', 'Beranda bisnis'],
+    ...(i.type === 'retail' || i.type === 'jasa' ? [['?tampilan=katalog#katalog', i.kuliner ? 'Menu' : 'Katalog']] : []),
+    ...(i.type === 'properti' || (i.kuliner && i.tables > 0) ? [['?tampilan=booking#booking', 'Booking & reservasi']] : []),
+    ...(i.type === 'jasa' ? [['/cek', 'Cek status pesanan']] : []),
+  ] : [];
+  const url = i?.slug ? `${origin}/b/${i.slug}${view}` : '';
   const svg = useMemo(() => (url ? qrSvg(url) : ''), [url]);
   if (isDraft(kos)) return (
     <div className="stack" style={{ gap: 10 }}>
       <div className="notice">Bisnis <b>{kos.name}</b> masih <b>draf</b>. Tautan & QR bisa dibagikan setelah bisnis diaktifkan.</div>
       <Link href="/konfirmasi"><button className="cta" style={{ width: '100%' }}>Buka Pusat Konfirmasi</button></Link>
+      {canArea(kos, 'settings') && <Link href="/pengaturan/tampilan-link" className="small">Siapkan Tampilan Berbagi Link →</Link>}
     </div>
   );
   if (err) return <div className="notice bad">{/share_info/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
@@ -64,12 +72,13 @@ export function SharePanel({ kosId, compact }) {
       {i.can_edit && !hasFeature(kos, 'portal_bisnis') ? <FiturUpgrade kosId={kos?.id} event="PORTAL.PUBLIC_PAGE.REQUESTED" plan="pro" title="Halaman bisnis publik tersedia di Paket Pro" text="Portal PRASARA: katalog, pendaftaran, dan pemesanan pelanggan secara online, lengkap dengan tautan & QR. Isi halaman bisa disiapkan dulu di menu Halaman bisnis." />
       : i.can_edit ? <>
         <button className="cta" disabled={busy} onClick={publish}>{busy ? 'Menerbitkan…' : 'Terbitkan sekarang & dapatkan tautan'}</button>
+        <Link href="/pengaturan/tampilan-link" className="small">Siapkan Tampilan Berbagi Link →</Link>
         <Link href="/halaman"><button className="ghost" style={{ width: '100%' }}>Atur isi halaman dulu</button></Link>
         <span className="small muted">Satu ketukan: halaman diterbitkan dengan nama, alamat & WhatsApp bisnis{i.type === 'properti' ? ' serta kamar yang tersedia (calon penghuni bisa langsung daftar)' : ''}. Bisa disembunyikan lagi kapan saja di menu Halaman bisnis.</span>
       </> : <span className="small muted">Minta pemilik menerbitkannya (ikon Bagikan › Terbitkan sekarang).</span>}
     </div>
   );
-  const line = ajakan(i);
+  const line = view ? `Pindai untuk membuka ${pages.find(([path]) => path === view)?.[1] || 'halaman bisnis'}` : ajakan(i);
   const msg = `${i.name} — ${line.replace('Pindai untuk', 'Klik untuk')}: ${url}`;
   const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Tautan disalin'); } catch { window.prompt('Salin tautan ini:', url); } };
   const share = async () => {
@@ -94,6 +103,9 @@ export function SharePanel({ kosId, compact }) {
   };
   return (
     <div className="stack" style={{ gap: 10 }}>
+      {pages.length > 1 && <label className="small">Halaman untuk dibagikan
+        <select value={view} onChange={(e) => setView(e.target.value)}>{pages.map(([path, label]) => <option key={path} value={path}>{label}</option>)}</select>
+      </label>}
       <div className="qrbox" aria-label={`QR code ${url}`} dangerouslySetInnerHTML={{ __html: svg }} style={{ maxWidth: compact ? 220 : 260 }} />
       <span className="small" style={{ textAlign: 'center', wordBreak: 'break-all' }}><b>{url.replace(/^https?:\/\//, '')}</b></span>
       <div className="sharegrid">

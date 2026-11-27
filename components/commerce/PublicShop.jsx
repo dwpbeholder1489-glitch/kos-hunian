@@ -467,6 +467,10 @@ export default function PublicShop({ page, shop }) {
     {networkError && <p role="alert" className={styles.error}>{networkError} <button type="button" onClick={refresh}>Coba lagi</button></p>}
     {view === 'penawaran' && !chosen.length && <div className={styles.info}><PublicForm page={page} /></div>}
   </>;
+  else if (view === 'bayar') content = <>
+    <Bar title="Cara Bayar" back={() => go('beranda')} />
+    <div className={styles.info}>{shop.pay ? <PayBox pay={shop.pay} /> : <p className={styles.empty}>Hubungi bisnis untuk mengetahui cara pembayaran.</p>}</div>
+  </>;
   else if (view === 'pesanan') content = <Orders orders={orders} photos={photos} error={networkError} refresh={refresh} go={go} />;
   else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} />;
   else if (view === 'info') content = <>

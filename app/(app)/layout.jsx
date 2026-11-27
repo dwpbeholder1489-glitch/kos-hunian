@@ -114,7 +114,8 @@ export default function AppLayout({ children }) {
   const own = tabsFor(kos);
   const role = roleOf(kos);
   const allowed = pathAllowed(kos, path);
-  const on = (h) => path === h || path.startsWith(h + '/');
+  const activeTab = own.reduce((active, [href]) => (path === href || path.startsWith(href + '/')) && href.length > active.length ? href : active, '');
+  const on = (h) => path === h || (path.startsWith(h + '/') && !activeTab.startsWith(h + '/'));
   const home = homeOf(kos);
   const fourth = fourthTab(kos);
   const main = mainTabOf(kos);

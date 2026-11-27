@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import PrinterManager from '@/components/PrinterManager';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
@@ -70,6 +71,11 @@ export default function Pengaturan() {
   return (
     <div className="stack">
       <PageHeader title="Pengaturan" help={<PageHelp page="pengaturan" />} actions={<PrinterManager kosId={kos.id} />} />
+      {canEdit && <section className="panel">
+        <h3>Tampilan Berbagi Link</h3>
+        <p className="small muted" style={{ margin: 0 }}>Atur dan tinjau banner yang tampil saat tautan bisnis dibagikan.</p>
+        <Link href="/pengaturan/tampilan-link">Buka Tampilan Link →</Link>
+      </section>}
       <section className="panel"><h3>Profil {noun}</h3>
         <Field label={`Nama ${noun}`}><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} /></Field>
         <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} disabled={!canEdit} /></Field>
