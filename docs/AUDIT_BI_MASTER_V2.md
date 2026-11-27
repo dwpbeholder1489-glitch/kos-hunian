@@ -62,7 +62,7 @@ belum ada), transaksi antarentitas belum ditandai.
 | Tahap | Isi | Dependensi | Keputusan pemilik yang dibutuhkan |
 |---|---|---|---|
 | A | ✅ SELESAI 27 Nov 2026 (migrasi `20261127140000`): daftar pinjaman, bayar = pokok + bunga (akun Beban bunga 6-3000), porsi jatuh tempo ≤ 12 bulan, cakupan bunga | Mesin jurnal | Diputuskan: lewat menu Kas (kos: Pengeluaran › Pinjaman) |
-| B | Profil pajak & PPh (final UMKM 0,5% / PPh badan), kalender pajak, versi aturan | A (bunga), PPN yang ada | Rezim pajak per bisnis; PRASARA tidak menggantikan pelaporan resmi DJP |
+| B | ✅ SELESAI 27 Nov 2026 (migrasi `20261127150000`): PPh final UMKM 0,5% — aturan berversi, profil pajak, perhitungan bulanan (Rp500 jt OP digabung per NPWP), akrual jurnal, setoran via Kas, jatuh tempo, peringatan batas Rp4,8 M/jangka/kos; ROIC aktif. Belum: PPh badan tarif normal, PPh 21/23/4(2) potong-pungut, e-Bupot | A, PPN | Diputuskan: PPh final UMKM 0,5% |
 | C | ROIC, cakupan bunga, laporan perubahan ekuitas | A, B | — |
 | D | Anggaran pendapatan & kas + status persetujuan, actual vs budget di KPI | `budgets` | Alur persetujuan anggaran |
 | E | Skenario bull/base/bear & stress test tersimpan berversi (laba, kas, likuiditas) | `biz_financials`, proyeksi | Variabel skenario per jenis bisnis |

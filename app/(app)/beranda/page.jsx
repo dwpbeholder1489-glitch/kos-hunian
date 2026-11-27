@@ -59,7 +59,7 @@ function PropertyHome() {
   const checkins = (d.bookings || []).filter((b) => b.status === 'aktif' && b.check_in <= in7);
   const cashOut = d.expenses.filter((x) => x.date.startsWith(ym)).reduce((s, x) => s + x.amount, 0);
   const entIn = d.entries.filter((x) => x.date.startsWith(ym) && ['pendapatan_lain', 'setoran_modal', 'pinjaman_masuk'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
-  const entOut = d.entries.filter((x) => x.date.startsWith(ym) && ['prive', 'bayar_pinjaman'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
+  const entOut = d.entries.filter((x) => x.date.startsWith(ym) && ['prive', 'bayar_pinjaman', 'bayar_pajak'].includes(x.kind)).reduce((s, x) => s + x.amount, 0);
   const overdue = live.filter((i) => i.overdue);
   const arrears = overdue.reduce((s, i) => s + i.outstanding, 0);
   const pending = d.payments.filter((p) => p.status === 'menunggu');

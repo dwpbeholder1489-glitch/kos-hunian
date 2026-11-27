@@ -11,7 +11,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
-import { rp, angka, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
+import { rp, angka, parseRp, tgl, today, errMsg, waLink, ENTRY } from '@/lib/format';
 import { uid } from '@/lib/retail';
 import LokasiBar from '@/components/LokasiBar';
 import Lampiran from '@/components/Lampiran';
@@ -122,9 +122,9 @@ function CashWorkspace({ kos, kosId, ver }) {
   const activity = (scope && filteredFeed) || d;
   const feed = [
     ...activity.expenses.map((x) => ({ id: x.id, t: 'exp', date: x.date, at: x.created_at, type: 'expense', category: x.category_id, accounts: [x.account], label: catName.get(x.category_id) || 'Biaya', note: x.description, acc: (ACC[x.account] || x.account) + at(x.branch_id), amt: -Number(x.amount) })),
-    ...activity.cash.map((x) => ({ id: x.id, t: 'cash', date: x.date, at: x.created_at, type: x.kind, accounts: ['setor_bank', 'tarik_bank'].includes(x.kind) ? ['kas', 'bank'] : [x.account], label: x.kind === 'pindah_kas' ? 'Pindah uang kas antar lokasi' : OTHER[x.kind]?.[0] || x.kind, note: x.description,
+    ...activity.cash.map((x) => ({ id: x.id, t: 'cash', date: x.date, at: x.created_at, type: x.kind, accounts: ['setor_bank', 'tarik_bank'].includes(x.kind) ? ['kas', 'bank'] : [x.account], label: x.kind === 'pindah_kas' ? 'Pindah uang kas antar lokasi' : OTHER[x.kind]?.[0] || ENTRY[x.kind]?.[0] || x.kind, note: x.description,
       acc: x.kind === 'pindah_kas' ? `${locName(x.branch_id)} → ${locName(x.to_branch)}` : (x.kind === 'setor_bank' ? 'kas → bank' : x.kind === 'tarik_bank' ? 'bank → kas' : ACC[x.account] || x.account) + at(x.branch_id),
-      amt: ['prive', 'bayar_pinjaman'].includes(x.kind) ? -Number(x.amount) : TRANSFERS.has(x.kind) ? 0 : Number(x.amount), raw: Number(x.amount) })),
+      amt: ['prive', 'bayar_pinjaman', 'bayar_pajak'].includes(x.kind) ? -Number(x.amount) : TRANSFERS.has(x.kind) ? 0 : Number(x.amount), raw: Number(x.amount) })),
     ...activity.pays.filter((x) => x.status === 'selesai').map((x) => ({ id: x.id, t: 'pay', date: x.date, at: x.created_at, type: x.kind, accounts: [x.account], label: x.kind === 'piutang' ? 'Pelunasan kasbon' : 'Bayar utang supplier', note: x.note, acc: (ACC[x.account] || x.account) + at(x.branch_id), amt: x.kind === 'piutang' ? Number(x.amount) : -Number(x.amount), contact: x.contact_id })),
   ].sort((a, b) => (a.date === b.date ? String(b.at).localeCompare(String(a.at)) : b.date.localeCompare(a.date)));
 
