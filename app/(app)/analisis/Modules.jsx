@@ -234,7 +234,7 @@ export function ReportsModule({ onExport }) {
       <li><button type="button" onClick={() => onExport('xlsx')}><b>Ekspor analisis (Excel)</b><small>Lembar terpisah per bagian</small></button></li>
       <li><Link href="/bisnis"><b>Portofolio multi-bisnis</b><small>Gabungan bisnis yang Anda pilih (Paket Pro), tanpa eliminasi antarbisnis</small></Link></li>
       <li><Link href="/laporan-investor"><b>Laporan investor (Paket Pro)</b><small>A4 bersampul: ringkasan & MD&A, laporan keuangan, rasio, KPI, skenario, risiko, valuasi — disetujui pemilik, angka dibekukan & diarsip</small></Link></li>
-      <li><span><b>Konsolidasi formal antarentitas</b><small>Dalam rencana — butuh struktur kepemilikan & penandaan transaksi antarentitas</small></span></li>
+      <li><Link href="/konsolidasi"><b>Konsolidasi (Paket Pro)</b><small>Gabungan beberapa bisnis dengan persen kepemilikan, eliminasi transaksi antarbisnis, dan bagian pemilik lain</small></Link></li>
     </ul>
   </Card>;
 }
@@ -254,7 +254,7 @@ export const BLUEPRINT = [
   ['Valuasi bisnis', 'Ada', 'DCF, kelipatan (sumber dari pemilik), berbasis aset; tersimpan berversi', 'investasi'],
   ['Proyeksi & skenario', 'Ada', 'Pesimis/Dasar/Optimis 12 bulan (laba, kas, likuiditas), stress test, versi tersimpan', 'skenario'],
   ['Manajemen risiko', 'Ada', 'Faktor risiko otomatis, daftar risiko (kemungkinan × dampak, PIC, tinjauan) + saran dari data', '/risiko'],
-  ['Konsolidasi', 'Parsial', 'Portofolio (Mode A); eliminasi antarentitas belum', 'laporan'],
+  ['Konsolidasi', 'Ada', 'Portofolio (Mode A) + konsolidasi dengan eliminasi antarbisnis & kepentingan nonpengendali', '/konsolidasi'],
   ['Laporan investor', 'Ada', 'Laporan bulanan berversi + laporan investor A4 (Pro) disetujui pemilik & diarsip', '/laporan-investor'],
   ['Pendukung keputusan', 'Ada', 'Fakta → temuan → rekomendasi berbasis aturan', 'ringkasan'],
 ];
