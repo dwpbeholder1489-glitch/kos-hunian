@@ -11,7 +11,7 @@ import FiturUpgrade from '@/components/FiturUpgrade';
 import { PlanSummary, useBudgetSummary, STATUS as BUDGET_STATUS } from '@/components/AnggaranRencana';
 import { Empty, Loading } from '@/components/ui';
 import { BLN, errMsg, rp, tgl } from '@/lib/format';
-import { LINE_CLASSES, balanceLines, balanceSheet, fmtRatio, incomeLines, incomeStatement, ratios } from '@/lib/finRatios';
+import { LINE_CLASSES, balanceLines, balanceSheet, equityChanges, fmtRatio, incomeLines, incomeStatement, ratios } from '@/lib/finRatios';
 import { monthName } from '@/lib/bizIntel';
 import PajakPPh from '@/components/PajakPPh';
 import { C, TrendChart } from './Charts';
@@ -52,6 +52,7 @@ export function FinancialsModule({ kosId, range, cmp, retail, owner, ver }) {
   const rs = f.lengkap ? ratios(f) : [];
   const hist = (f.bulanan || []).map((m) => { const x = incomeStatement(m.v); return { mulai: m.mulai, label: monthName(m.mulai.slice(0, 7)), short: BLN[+m.mulai.slice(5, 7) - 1], net: x.net, ebitda: x.ebitda, netIncome: x.netIncome }; });
   const groups = [...new Set(rs.map((r) => r.group))];
+  const eqc = f.lengkap ? equityChanges(f) : null;
   return <div className={styles.modGrid}>
     <Card title="Laba Rugi" icon="/laporan" right={<Go href={`/pembukuan?tab=laporan&bulan=${range.to.slice(0, 7)}`}>Pembukuan</Go>}>
       <p className={styles.note}>{tgl(f.from)} – {tgl(f.to)}{s0 ? ` · pembanding ${tgl(f.cmp_from)} – ${tgl(f.cmp_to)}` : ''} · basis jurnal Pembukuan</p>
@@ -69,6 +70,18 @@ export function FinancialsModule({ kosId, range, cmp, retail, owner, ver }) {
             : <tr key={key} className={kind === 'sub' ? styles.sub : undefined}><th scope="row">{label}</th><td>{num(v)}</td><td>{num(balanceLines(b0)[i][2])}</td></tr>)}</tbody></table>
         <p className={styles.note}>Pinjaman jatuh tempo ≤ 12 bulan dihitung dari daftar pinjaman (jatuh tempo, cicilan, bunga). {b1.unscheduled > 0 ? `${rp(b1.unscheduled)} pinjaman belum terdaftar atau belum punya jadwal/jatuh tempo sehingga dianggap jangka panjang — lengkapi di Kas › Pinjaman.` : ''}</p>
       </Card>
+      {eqc && <Card title="Perubahan Ekuitas" icon="/neraca-saldo" right={<Go href={`/pembukuan?tab=saldo&bulan=${range.to.slice(0, 7)}`}>Neraca saldo</Go>}>
+        <p className={styles.note}>{tgl(f.from)} – {tgl(f.to)} · ekuitas = aset − kewajiban · <b className={eqc.cocok ? styles.good : styles.bad}>{eqc.cocok ? '✓ Cocok dengan neraca' : '✗ Tidak cocok dengan neraca — periksa jurnal'}</b></p>
+        <table className={styles.stmt}><thead><tr><th>Mutasi (Rp)</th><th>Jumlah</th></tr></thead>
+          <tbody>
+            <tr className={styles.sub}><th scope="row">Ekuitas awal periode</th><td>{num(eqc.open)}</td></tr>
+            {eqc.lines.map(([key, label, v]) => <tr key={key}><th scope="row">{label}</th><td className={v < 0 ? styles.neg : undefined}>{v > 0 ? '+' : ''}{num(v)}</td></tr>)}
+            <tr className={styles.sub}><th scope="row">Ekuitas akhir periode</th><td>{num(eqc.close)}</td></tr>
+          </tbody></table>
+        <table className={styles.stmt}><thead><tr><th>Komponen (Rp)</th><th>Awal</th><th>Akhir</th></tr></thead>
+          <tbody>{eqc.parts.map((p) => <tr key={p.key}><th scope="row">{p.label}</th><td>{num(p.open)}</td><td>{num(p.close)}</td></tr>)}</tbody></table>
+        <p className={styles.note}>Setoran modal & prive dicatat di Kas (kos: Pengeluaran › Diambil pemilik & lainnya); saldo awal berasal dari stok awal, aset yang sudah dimiliki, dan saldo pembukaan. Laba ditahan = akumulasi laba rugi sejak awal pembukuan (belum ada jurnal penutup).</p>
+      </Card>}
       <Card title="Rasio Keuangan" icon="/analisis">
         <p className={styles.note}>Rasio tidak dihitung bila komponennya belum tersedia. Ketuk rasio untuk rumus & angka sumbernya.</p>
         {groups.map((g) => <div key={g} className={styles.ratioGroup}><h3>{g}</h3>
@@ -232,7 +245,7 @@ export const BLUEPRINT = [
   ['Analisis biaya', 'Parsial', 'Per akun & kategori; tetap/variabel & cost center belum', 'keuangan'],
   ['Pajak', 'Parsial', 'PPh final UMKM 0,5% berversi + setoran, PPN keluaran/masukan; PPh badan normal & potong-pungut belum', 'pajak'],
   ['Arus kas & likuiditas', 'Parsial', 'Per aktivitas, arus kas bebas, rasio likuiditas; proyeksi lintas jenis belum', 'kas'],
-  ['Aset, kewajiban & ekuitas', 'Parsial', 'Neraca, aset tetap, umur piutang, pinjaman (pokok/bunga, porsi ≤ 12 bulan); laporan perubahan ekuitas belum', 'keuangan'],
+  ['Aset, kewajiban & ekuitas', 'Ada', 'Neraca, laporan perubahan ekuitas, aset tetap, umur piutang, pinjaman (pokok/bunga, porsi ≤ 12 bulan)', 'keuangan'],
   ['Anggaran', 'Parsial', 'Biaya per kategori, target pendapatan, persetujuan & proyeksi akhir bulan; CAPEX & kas belum', 'anggaran'],
   ['Kinerja bisnis', 'Parsial', 'KPI toko/kos/jasa/kuliner; laundry per kg & benchmark belum', 'ringkasan'],
   ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga, ROIC; register modal belum', 'investasi'],
