@@ -159,7 +159,7 @@ export function ReportSource({ kosId, range, source, owner, onChange, onClose })
     {source.compare && <button onClick={() => onChange(source.compare)}>Telusuri periode pembanding</button>}
     {source.explanation && <p>{source.explanation}</p>}
     {source.bridge && <div className={styles.sourceList}>{source.bridge.map(([label, amount, key]) => <button key={key} onClick={() => { setLimit(20); setKind(key); }}><span>{label}</span><b>{rp(amount)}</b></button>)}</div>}
-    <div className={styles.controls}>{source.kinds.map((key) => <button key={key} aria-pressed={key === kind} onClick={() => { setLimit(20); setKind(key); }}>{TYPES[key]}</button>)}</div>
+    <div className={styles.controls} role="group" aria-label="Sumber laporan">{source.kinds.map((key) => <button key={key} aria-pressed={key === kind} onClick={() => { setLimit(20); setKind(key); }}>{TYPES[key]}</button>)}</div>
     {kind === 'stock' && !owner && <p className="small muted">Daftar memuat mutasi fisik. Buka jurnal persediaan untuk melihat nilai yang masuk laba rugi.</p>}
     {kind === 'product' && <p className="small muted">Rincian mengikuti alokasi diskon dan PPN pada laporan produk. Pembulatan per baris dapat menimbulkan selisih kecil.</p>}
     {!result ? <Loading /> : result.error ? <p role="alert" className="notice bad">{errMsg(result.error)}</p> :

@@ -1,6 +1,9 @@
-.page {
+/* Panel rincian dirender di body melalui portal. */
+.page, .controls, .sourceList {
   --report-green: #08733f;
   --report-mint: color-mix(in srgb, #42ba77 14%, var(--surface));
+}
+.page {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: clamp(10px, 2.8vw, 17px);
@@ -32,7 +35,7 @@
 .toolbar button { display: inline-flex; align-items: center; }
 .toolbar > button { text-align: left; }
 .controls { gap: 5px; }
-.controls button[aria-pressed=true] { background: var(--report-green); border-color: var(--report-green); color: white; }
+.controls button[aria-pressed=true] { background: var(--report-green); border-color: var(--report-green); color: #fff; }
 .toolbar svg, .panel h2 svg, .dataRow > svg, .reconcile svg, .chartRead svg { color: var(--brand-2); flex: none; }
 .metrics, .dashboardColumns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(7px, 2vw, 13px); }
 .metric {
