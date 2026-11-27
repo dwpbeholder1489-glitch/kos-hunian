@@ -7,6 +7,7 @@ import { BUSINESS } from '@/lib/plan';
 import Tickets from '@/components/Tickets';
 import SupportAccess from '@/components/SupportAccess';
 import { supabase } from '@/lib/supabase';
+import { notifSignOut } from '@/lib/notif';
 
 export default function Bantuan() {
   const { kos } = useKos();
@@ -57,7 +58,7 @@ export default function Bantuan() {
         <a href={wa} target="_blank" rel="noreferrer"><button className="primary">Tanya via WhatsApp</button></a>
         <Link href="/panduan" className="small">Baca panduan lengkap bergambar →</Link>
       </section>
-      <button className="ghost" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
+      <button className="ghost" onClick={async () => { await notifSignOut(); await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
     </div>
   );
 }

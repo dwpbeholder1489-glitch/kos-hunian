@@ -11,6 +11,7 @@ import NavIcon from '@/components/NavIcon';
 import { LogoMark } from '@/components/Logo';
 import { useKos } from '@/components/KosProvider';
 import { supabase } from '@/lib/supabase';
+import { notifSignOut } from '@/lib/notif';
 import { logoUrl } from '@/lib/logo';
 import { SIDE_KEY } from '@/lib/theme';
 import { isKuliner, typeOf, roleOf, ROLES, isDraft, homeOf } from '@/lib/business';
@@ -239,7 +240,7 @@ export function Topbar({ kos, path, bell, share, admin, onMenu, onBiz }) {
           <Link href="/panduan" role="menuitem"><NavIcon name="/catatan" size={18} />Panduan lengkap</Link>
           {admin && <Link href="/admin" role="menuitem"><NavIcon name="/admin" size={18} />Admin PRASARA</Link>}
           <hr />
-          <button type="button" role="menuitem" data-close className="danger" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/masuk'; }}><NavIcon name="logout" size={18} />Keluar</button>
+          <button type="button" role="menuitem" data-close className="danger" onClick={async () => { await notifSignOut(); await supabase.auth.signOut(); window.location.href = '/masuk'; }}><NavIcon name="logout" size={18} />Keluar</button>
         </Dropdown>
       </div>
     </header>
