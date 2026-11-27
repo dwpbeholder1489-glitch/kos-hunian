@@ -53,7 +53,7 @@ function PrinterSheet({ kosId, onClose }) {
   return <Sheet title="Pengaturan printer" onClose={onClose}>
     <p className="small muted">Pengaturan disimpan untuk bisnis ini di browser perangkat ini.</p>
     <fieldset disabled={busy} className="stack" style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-      <Field label="Jalur cetak"><select value={settings.mode} onChange={(event) => change({ mode: event.target.value })}>
+      <Field label="Jalur cetak"><select value={settings.mode} onChange={(event) => change({ mode: event.target.value, paper: event.target.value === 'bridge' && settings.paper === 'auto' ? '58' : settings.paper })}>
         <option value="system">Dialog cetak sistem / AirPrint</option>
         <option value="bridge">Aplikasi penghubung PRASARA</option>
       </select></Field>
@@ -79,6 +79,7 @@ function PrinterSheet({ kosId, onClose }) {
         </select></Field>
       </> : <p className="small muted">Sistem mendeteksi printer yang kompatibel dan menangani pilihan printer. Di iPhone atau iPad, pilih printer AirPrint. Untuk thermal lain, gunakan aplikasi penghubung melalui HTTPS.</p>}
       <Field label="Ukuran kertas"><select value={settings.paper} disabled={bridge} onChange={(event) => change({ paper: event.target.value })}>
+        {!bridge && <option value="auto">Ikuti ukuran kertas printer</option>}
         <option value="58">Thermal 58 mm</option>
         <option value="80">Thermal 80 mm</option>
         <option value="A4">Dokumen A4</option>

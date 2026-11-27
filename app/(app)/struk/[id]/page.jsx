@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { Loading, Empty } from '@/components/ui';
 import { waLink, errMsg } from '@/lib/format';
-import { PrintReceiptButton } from '@/components/PrinterManager';
+import PrinterManager, { PrintReceiptButton } from '@/components/PrinterManager';
 import { strukText } from '@/lib/struk';
 
 export default function Struk() {
@@ -30,6 +30,7 @@ export default function Struk() {
       <div className="row between noprint"><h2>Struk</h2><Link href="/penjualan" className="small">← Penjualan</Link></div>
       <pre className="struk">{text}</pre>
       <div className="row noprint">
+        <PrinterManager kosId={kos.id} />
         <PrintReceiptButton kosId={kos.id} renderText={(paper) => strukText(kos, d.s, d.lines, d.contact, paper)} />
         <a href={d.contact?.phone ? waLink(d.contact.phone, '```\n' + text + '\n```') : `https://wa.me/?text=${encodeURIComponent('```\n' + text + '\n```')}`} target="_blank" rel="noreferrer"><button>Kirim via WhatsApp</button></a>
         <Link href="/kasir"><button className="ghost">Transaksi baru</button></Link>

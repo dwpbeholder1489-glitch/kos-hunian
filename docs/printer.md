@@ -11,7 +11,7 @@ Buka **Pengaturan → Pengaturan printer** atau tombol yang sama di Kasir. Simpa
 | Thermal 58/80 mm, Bluetooth Classic | Penghubung | Linux, pairing Bluetooth SPP, perangkat RFCOMM; atau antrean CUPS raw dengan backend Bluetooth yang sesuai |
 | Thermal dengan driver sistem | Dialog sistem | Driver dan ukuran rol yang sesuai tersedia di perangkat |
 
-Dialog sistem menemukan printer melalui sistem operasi. Pilih printer dan periksa ukuran media di dialog tersebut. Sistem operasi mengelola printer default dan izin. Untuk salinan yang sudah diatur di PRASARA, biarkan jumlah salinan di dialog sistem tetap 1. Browser dapat mengabaikan ukuran kertas CSS untuk rol tertentu, sehingga pilih ukuran rol di driver. AirPrint memerlukan konfirmasi pengguna.
+Dialog sistem menemukan printer melalui sistem operasi. Pilih **Ikuti ukuran kertas printer** agar struk mengikuti media dari dialog cetak. Struk diletakkan di tengah, dan baris yang melebihi satu halaman diteruskan ke halaman berikutnya. Halaman **Cetak label barcode** memiliki pengaturan medianya sendiri untuk mencetak beberapa kolom pada A4 atau satu kolom pada rol thermal. Pilih printer dan periksa ukuran media di dialog tersebut. Sistem operasi mengelola printer default dan izin. Untuk salinan yang sudah diatur di PRASARA, biarkan jumlah salinan di dialog sistem tetap 1. Browser dapat mengabaikan ukuran kertas CSS untuk rol tertentu, sehingga pilih ukuran rol di driver. AirPrint memerlukan konfirmasi pengguna.
 
 ## Menjalankan aplikasi penghubung
 

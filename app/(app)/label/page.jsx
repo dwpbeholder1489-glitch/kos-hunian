@@ -5,9 +5,10 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
-import { Loading, Empty, run } from '@/components/ui';
+import { Loading, Empty, run, Field, toast } from '@/components/ui';
 import { rp, errMsg } from '@/lib/format';
 import { unitsOf } from '@/lib/retail';
+import { printDocument } from '@/lib/printer';
 import { code128Svg, code128Ok } from '@/lib/code128';
 
 // Cetak label barcode sendiri untuk barang tanpa barcode pabrik (beras kiloan, gula, telur, dll.)
@@ -17,6 +18,7 @@ export default function Label() {
   const [err, setErr] = useState(null);
   const [pick, setPick] = useState({}); // {key: jumlah label}
   const [q, setQ] = useState('');
+  const [paper, setPaper] = useState('auto');
   const [showPrice, setShowPrice] = useState(true);
   const load = () => Promise.all([
     supabase.from('products').select('id,name,sku,base_unit,active').eq('kos_id', kosId).eq('active', true).order('name'),
@@ -41,6 +43,32 @@ export default function Label() {
   const setN = (k, n) => setPick({ ...pick, [k]: Math.max(0, Math.min(99, n)) });
   const auto = async () => { if (await run(() => supabase.rpc('product_auto_codes', { p_kos: kosId }), 'Kode otomatis dibuat', errMsg)) load(); };
 
+  function printLabels() {
+    const labelsToPrint = document.getElementById('barcode-labels');
+    const thermal = paper === '58' || paper === '80';
+    const size = thermal ? `${paper}mm 297mm` : paper;
+    try {
+      printDocument('Label barcode PRASARA', `
+        @page { size: ${size}; margin: ${thermal ? '3mm' : '4%'} }
+        * { box-sizing: border-box; }
+        body { margin: 0; color: #000; font: 10pt/1.2 sans-serif; text-align: center; }
+        .lbl {
+          display: inline-block; vertical-align: top; width: ${thermal ? '100%' : '31%'};
+          margin: 0 0.8% 2mm; padding: 2mm; border: 1px dashed #777;
+          break-inside: avoid; page-break-inside: avoid; overflow-wrap: anywhere;
+        }
+        .lbl b, .lbl span, .lbl svg { display: block; }
+        .lbl svg { width: 100%; height: 12mm; margin-top: 1mm; }
+        .lbl .cd { font: 8pt monospace; }
+        @media print and (max-width: 100mm) {
+          .lbl { width: 100%; margin-inline: 0; }
+        }
+      `, (doc) => doc.body.appendChild(doc.importNode(labelsToPrint, true)));
+    } catch {
+      toast('Dialog cetak gagal dibuka.');
+    }
+  }
+
   return (
     <div className="stack">
       <div className="noprint stack">
@@ -59,10 +87,16 @@ export default function Label() {
           </div>
         ))}</div></section>
         <label className="row small"><input type="checkbox" style={{ width: 22, minHeight: 22 }} checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} /> Tampilkan harga eceran di label</label>
-        {labels.length === 0 ? <Empty title="Pilih jumlah label" text="Tekan + di barang yang ingin dicetak labelnya." /> : <button className="cta" onClick={() => window.print()}>Cetak {labels.length} label</button>}
+        <Field label="Ukuran kertas"><select value={paper} onChange={(e) => setPaper(e.target.value)}>
+          <option value="auto">Ikuti ukuran kertas printer</option>
+          <option value="A4">A4</option>
+          <option value="58">Thermal 58 mm</option>
+          <option value="80">Thermal 80 mm</option>
+        </select></Field>
+        {labels.length === 0 ? <Empty title="Pilih jumlah label" text="Tekan + di barang yang ingin dicetak labelnya." /> : <button className="cta" onClick={printLabels}>Cetak {labels.length} label</button>}
         {labels.length > 0 && <span className="small muted">Di iPhone: Cetak › pilih printer, atau cubit pratinjau untuk menyimpan PDF. Barcode pabrik juga bisa dicetak ulang bila labelnya rusak.</span>}
       </div>
-      {labels.length > 0 && <div className="labels">{labels.map((l) => (
+      {labels.length > 0 && <div id="barcode-labels" className="labels">{labels.map((l) => (
         <div className="lbl" key={l.key + l.i}>
           <b>{l.name}{l.unit ? ` · ${l.unit}` : ''}</b>
           {showPrice && l.price > 0 && <span className="pr">{rp(l.price)}</span>}
