@@ -305,3 +305,22 @@
   .stmt { font-size: 12px; }
   .stmt th, .stmt td { padding: 6px 3px; }
 }
+
+/* Skenario & stress test (Tahap E) */
+.wide { grid-column: 1 / -1; }
+.scWrap { overflow-x: auto; margin: 0 -4px; }
+.scTable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.scTable th, .scTable td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.scTable thead th { font-size: 12px; font-weight: 700; text-align: center; }
+.scTable thead th:first-child, .scTable tbody th { text-align: left; }
+.scTable tbody th { font-weight: 600; min-width: 110px; }
+.scTable tbody th small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; line-height: 1.35; }
+.scTable input { width: 100%; min-width: 62px; max-width: 130px; padding: 6px 6px; font-size: 13px; text-align: right; }
+.scSub { display: block; color: var(--muted); font-size: 11px; font-weight: 400; white-space: normal; }
+.scField { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+.scGroup { display: grid; gap: 4px; padding: 8px 0; }
+.scGroup > button:not(:global(.sm)) { justify-self: start; padding: 4px 0; border: 0; background: none; color: var(--fg); font-size: 13px; text-align: left; white-space: normal; text-decoration: underline; text-decoration-color: var(--line); }
+.scGroup > button[aria-pressed=true] { color: var(--gold); font-weight: 700; }
+.scGroup > :global(.sm) { justify-self: start; }
+.scList { margin: 0; padding: 0; list-style: none; }
+.scList li + li { border-top: 1px solid var(--line); }
