@@ -168,7 +168,8 @@ export default function Dashboard({ id, kosId, header, widgets, prefs: given, kp
   };
   const toggle = (wid) => save({ ...pref, hidden: hidden.includes(wid) ? hidden.filter((x) => x !== wid) : [...hidden, wid] });
   // KPI: daftar pilihan saat ini (pilihan pemilik atau rekomendasi), bisa dicentang & diurutkan
-  const kOn = pref.kpis?.length ? pref.kpis : prefs.kpiDefaults || [];
+  const hasKpiOrder = id === 'toko' ? Array.isArray(pref.kpis) : Boolean(pref.kpis?.length);
+  const kOn = hasKpiOrder ? pref.kpis : prefs.kpiDefaults || [];
   const kList = kpis ? [...kOn.map((x) => kpis.find((c) => c.id === x)).filter(Boolean), ...kpis.filter((c) => !kOn.includes(c.id))] : [];
   const kToggle = (kid) => save({ ...pref, kpis: kOn.includes(kid) ? kOn.filter((x) => x !== kid) : [...kOn, kid].slice(0, 16) });
   const kMove = (kid, dir) => { const a = [...kOn]; const i = a.indexOf(kid), j = i + dir; if (i < 0 || j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; save({ ...pref, kpis: a }); };
@@ -189,8 +190,8 @@ export default function Dashboard({ id, kosId, header, widgets, prefs: given, kp
             </li>
           ))}</ul>
           {kList.length > 0 && <>
-            <span className="label">Angka utama {pref.kpis?.length ? '' : '(rekomendasi PRASARA dari profil bisnis)'}</span>
-            <ul className="dash-set">{kList.map((c) => { const i = kOn.indexOf(c.id); return (
+            <span className="label">Angka utama {hasKpiOrder ? '' : '(rekomendasi PRASARA dari profil bisnis)'}</span>
+            <ul className="dash-set" aria-label="Atur angka utama">{kList.map((c) => { const i = kOn.indexOf(c.id); return (
               <li key={c.id}>
                 <label><input type="checkbox" checked={i >= 0} onChange={() => kToggle(c.id)} />{c.label}</label>
                 <button className="sm ghost" onClick={() => kMove(c.id, -1)} disabled={i <= 0} aria-label={`Naikkan ${c.label}`}>↑</button>

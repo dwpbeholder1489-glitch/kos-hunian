@@ -34,8 +34,15 @@ export default function LaporanToko() {
 }
 
 function Dashboard({ kos, kosId, ver }) {
-  const initialMonth = reportMonth(useSearchParams().get('bulan'));
-  const [period, setPeriod] = useState(() => ({ mode: 'month', date: initialMonth + '-01', custom: null }));
+  const search = useSearchParams();
+  const initialMonth = reportMonth(search.get('bulan'));
+  const from = search.get('dari');
+  const to = search.get('sampai');
+  const validDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value))
+    && new Date(value).toISOString().slice(0, 10) === value;
+  const [period, setPeriod] = useState(() => validDate(from) && validDate(to) && from <= to && to <= today()
+    ? { mode: from === to ? 'day' : 'custom', date: from, custom: { from, to } }
+    : { mode: 'month', date: initialMonth + '-01', custom: null });
   const [d, setD] = useState(null);
   const [source, setSource] = useState(null);
   const [editPeriod, setEditPeriod] = useState(false);
@@ -83,6 +90,11 @@ function Dashboard({ kos, kosId, ver }) {
     supabase.rpc('stock_health', { p_kos: kosId }).then(({ data, error }) => { if (active) setStock({ data, error }); });
     return () => { active = false; };
   }, [kosId, sort, key, ver]);
+  useEffect(() => {
+    if (!d || d.key !== requestKey || d.error) return;
+    const target = window.location.hash.slice(1);
+    if (target === 'produk' || target === 'laba-rugi-toko') document.getElementById(target)?.scrollIntoView({ block: 'start' });
+  }, [d, requestKey]);
   const toolbar = <div className={styles.toolbar + ' noprint'}>
     <button onClick={() => setEditPeriod(true)}><NavIcon name="calendar" /><b>{label}</b><NavIcon name="down" size={17} /></button>
     {d?.key === requestKey && !d.error && canExport && <div className={styles.controls}>

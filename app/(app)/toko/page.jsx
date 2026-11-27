@@ -9,14 +9,15 @@ import CrmHint from '@/components/CrmHint';
 import PageHelp from '@/components/PageHelp';
 import Persiapan from '@/components/Persiapan';
 import { PageHeader } from '@/components/Page';
+import { CompactKpis, CostSources, RetailTrend } from './RetailSummary';
+import { comparableMetrics, moveDay, retailComparison, retailMetrics, retailReportLink } from './retail-summary';
 import NavIcon from '@/components/NavIcon';
 import styles from './retail-home.module.css';
-import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity, useDashPrefs, KpiGrid, Pulse } from '@/components/Dashboard';
-import { KPIS, periodRange, baselineRange, pulseLine } from '@/lib/dashboards';
-import { DayColumns } from '@/components/Charts';
+import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity, useDashPrefs, Pulse } from '@/components/Dashboard';
+import { KPIS, periodRange } from '@/lib/dashboards';
 import { mediaUrl } from '@/lib/media';
-import { Loading } from '@/components/ui';
-import { rp, angka, today, tgl, tglShort, bulan, thisMonth, monthEnd, addMonthsYm } from '@/lib/format';
+import { Loading, Sheet } from '@/components/ui';
+import { rp, angka, today, tgl, tglShort, bulan, thisMonth } from '@/lib/format';
 import { isLow, payLabel, jam } from '@/lib/retail';
 import { canArea, tabsFor } from '@/lib/business';
 import { quickActions } from '@/lib/menu';
@@ -32,7 +33,14 @@ const STORE_LINKS = [
   ['/laporan-toko', 'Laporan'],
 ];
 
-const KPI_ICONS = { omzet: '/kas', trx: '/penjualan', produk: '/barang', pelanggan: '/kontak', laba: '/laporan-toko', menipis: '/barang', piutang: '/kas' };
+const KPI_ICONS = {
+  omzet: '/kas', bulan: '/laporan', trx: 'cart', keranjang: '/analisis', pelanggan: '/kontak', retur: 'return',
+  laba: 'coins', margin: '/analisis', nilai_stok: '/barang', produk: '/barang', menipis: 'info',
+  modal: 'swap', diam: '/laporan-toko', piutang: 'wallet', piutang_lewat: 'calendar',
+};
+const REPORT_LINKS = [['/laporan-toko', 'Laporan lengkap', '/resep'], ['/laporan-toko', 'Laba Rugi', '/laporan', 'laba-rugi-toko'],
+  ['/laporan-toko', 'Performa produk', '/layers', 'produk'], ['/analisis', 'Analisis bisnis', '/analisis']];
+
 
 function ProductThumb({ path }) {
   const [failed, setFailed] = useState(false);
@@ -52,7 +60,13 @@ function greeting() {
 }
 
 const N = (x) => Number(x) || 0;
-const delta = (a, b) => (b ? Math.round(((a - b) / Math.abs(b)) * 100) : null);
+const percent = new Intl.NumberFormat('id-ID', { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' });
+function growth(value, before, comparison) {
+  if (value == null || before == null || before === 0) return null;
+  const delta = (value - before) / Math.abs(before);
+  return { tone: delta > 0 ? 'good' : delta < 0 ? 'bad' : 'neutral', text: `${delta > 0 ? '↑ ' : delta < 0 ? '↓ ' : ''}${percent.format(delta)} · ${comparison}` };
+}
+
 
 // Dashboard toko (Unified Design System §13): angka hari ini, bulan berjalan vs bulan lalu, tren harian,
 // barang terlaris, transaksi terakhir, peringatan berbasis aturan, stok menipis, aktivitas, aksi cepat.
@@ -70,22 +84,28 @@ export default function Toko() {
   const [d, setD] = useState(null);
   const [m, setM] = useState(null);        // { r, prev } laporan bulan ini & bulan lalu (keuangan saja)
   const [trend, setTrend] = useState(null);
+  const [detail, setDetail] = useState(null);
   const [thumbs, setThumbs] = useState({});
   const [counts, setCounts] = useState({});
   const [recent, setRecent] = useState(null);
   const [po, setPo] = useState(null);      // belanja menunggu diterima
   const act = useActivity(kosId, ver);
   const prefs = useDashPrefs('toko');
-  const per = periodRange(prefs.period), base = baselineRange(prefs.period);
+  const per = periodRange(prefs.period), base = retailComparison(prefs.period, per);
+  const ym = thisMonth();
+  const month = periodRange('bulan'), prevMonth = retailComparison('bulan', month);
+  const requestKey = per.from + ':' + per.to + ':' + ver;
+  const queryReport = (range) => supabase.rpc('retail_report', { p_kos: kosId, p_from: range.from, p_to: range.to });
   const [pr, setPr] = useState(null);      // { r, b } laporan periode terpilih & 30 hari sebelumnya (keuangan)
   const [ex, setEx] = useState({});        // piutang, kesehatan stok, perubahan harga modal (masing-masing boleh gagal sendiri)
   useEffect(() => {
     if (!fin) return;
-    Promise.all([
-      supabase.rpc('retail_report', { p_kos: kosId, p_from: per.from, p_to: per.to }),
-      supabase.rpc('retail_report', { p_kos: kosId, p_from: base.from, p_to: base.to }),
-    ]).then(([a, b]) => setPr(a.error ? null : { r: a.data, b: b.error ? null : b.data }));
-  }, [kosId, ver, prefs.period]); // eslint-disable-line react-hooks/exhaustive-deps
+    let current = true;
+    Promise.all([queryReport(per), queryReport(base)]).then(([a, b]) => {
+      if (current) setPr(a.error ? null : { key: requestKey, r: a.data, b: b.error ? null : b.data });
+    });
+    return () => { current = false; };
+  }, [kosId, requestKey, fin]);
   useEffect(() => {
     const put = (k) => ({ data, error }) => setEx((x) => ({ ...x, [k]: error ? null : data }));
     if (canArea(kos, 'sell,finance')) supabase.rpc('receivable_open', { p_kos: kosId }).then(async ({ data, error }) => {
@@ -104,13 +124,8 @@ export default function Toko() {
     ]).then(([p, s, r]) => setD({ ps: p.error ? null : (p.data || []).filter((x) => x.active), sales: s.error ? null : (s.data || []).filter((x) => x.status === 'selesai'), rets: r.error ? null : r.data || [] }));
     supabase.from('sales').select('id,number,total,status,sold_at,pay_method,pay_split,amt_tunai,amt_transfer,amt_kasbon').eq('kos_id', kosId).order('sold_at', { ascending: false }).limit(6)
       .then(({ data, error }) => setRecent(error ? null : data || []));
-    if (fin) {
-      const ym = thisMonth(), pm = addMonthsYm(ym, -1);
-      Promise.all([
-        supabase.rpc('retail_report', { p_kos: kosId, p_from: ym + '-01', p_to: today() }),
-        supabase.rpc('retail_report', { p_kos: kosId, p_from: pm + '-01', p_to: monthEnd(pm) }),
-      ]).then(([a, b]) => setM(a.error || b.error ? null : { r: a.data, prev: b.data }));
-    }
+    if (fin) Promise.all([queryReport(month), queryReport(prevMonth)])
+      .then(([a, b]) => setM(a.error ? null : { r: a.data, prev: b.error ? null : b.data }));
     if (stockArea) supabase.from('purchases').select('id', { count: 'exact', head: true }).eq('kos_id', kosId).in('status', ['dipesan', 'sebagian'])
       .then(({ count, error }) => setPo(error ? null : count || 0));
   }, [kosId, ver]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,8 +145,7 @@ export default function Toko() {
         .then(({ data }) => { if (current) setThumbs(data || {}); });
     }
     if (fin) {
-      const week = periodRange('7hari');
-      supabase.rpc('retail_report', { p_kos: kosId, p_from: week.from, p_to: week.to })
+      queryReport({ from: moveDay(per.to, -29), to: per.to })
         .then(({ data, error }) => { if (current) setTrend(error ? null : data); });
     }
     return () => { current = false; };
@@ -144,24 +158,13 @@ export default function Toko() {
   const noCost = ps.filter((p) => !(N(p.cost) > 0));
   const omzet = sales.reduce((a, s) => a + N(s.total), 0) - retur;
   const laba = sales.reduce((a, s) => a + N(s.total) - N(s.cost_total), 0) - rets.reduce((a, r) => a + N(r.total) - N(r.cost_total), 0);
-  const ym = thisMonth();
-  // bulan berjalan dibanding bulan lalu PENUH (ditulis jelas di keterangan)
-  const mo = m && { omzet: N(m.r.omzet), trx: N(m.r.trx), prev: N(m.prev.omzet), prevTrx: N(m.prev.trx) };
-  const days = trend ? (() => {
-    const map = new Map((trend.harian || []).map((item) => [String(item.d).slice(0, 10), item]));
-    const start = new Date(periodRange('7hari').from + 'T00:00:00Z');
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(start.getTime());
-      day.setUTCDate(start.getUTCDate() + i);
-      const key = day.toISOString().slice(0, 10);
-      const row = map.get(key);
-      return { key, label: tgl(key), short: tglShort(key), value: N(row?.omzet), note: row ? `${angka(row.trx)} transaksi` : 'tidak ada transaksi' };
-    });
-  })() : null;
-  const dl = mo ? delta(mo.omzet, mo.prev) : null;
-  // Angka periode terpilih (keuangan: dari retail_report — sama dengan Laporan toko; lainnya: transaksi hari ini)
-  const P = pr?.r ? { omzet: N(pr.r.omzet), trx: N(pr.r.trx), laba: N(pr.r.omzet) - N(pr.r.hpp), retur: N(pr.r.retur) } : prefs.period === 'hari' && d.sales && d.rets ? { omzet, trx: sales.length, laba, retur } : null;
-  const B = pr?.b ? { omzet: N(pr.b.omzet), trx: N(pr.b.trx), laba: N(pr.b.omzet) - N(pr.b.hpp) } : null;
+  const activeReport = pr?.key === requestKey ? pr : null;
+  const P = retailMetrics(activeReport?.r) || (prefs.period === 'hari' && d.sales && d.rets ? { omzet, trx: sales.length, laba, retur } : null);
+  const B = retailMetrics(activeReport?.b);
+  const comparison = comparableMetrics(activeReport?.r, per.to, base.currentTo);
+  const currentMonth = retailMetrics(m?.r);
+  const mo = comparableMetrics(m?.r, month.to, prevMonth.currentTo);
+  const priorMonth = retailMetrics(m?.prev);
   const mPct = (x) => (x && x.omzet > 0 ? Math.round((x.laba / x.omzet) * 100) : null);
   const piut = Array.isArray(ex.piutang) ? ex.piutang : null;
   const piutTotal = piut ? piut.reduce((a, x) => a + N(x.open_amount), 0) : 0;
@@ -171,33 +174,32 @@ export default function Toko() {
   const modal = Array.isArray(ex.modal) ? ex.modal : null;
   const modalUp = modal ? modal.filter((x) => N(x.pct) > 0) : [];
   const per2 = per.label;
+  const reportLink = (range, anchor) => has('/laporan-toko') ? retailReportLink(range, anchor) : has('/penjualan') ? '/penjualan' : undefined;
+  const marginChange = mPct(comparison) != null && mPct(B) != null ? mPct(comparison) - mPct(B) : null;
+  const marginTone = marginChange < 0 ? 'bad' : marginChange > 0 ? 'good' : undefined;
   const kpiItems = [
-    P && { id: 'omzet', label: `Penjualan ${per2}`, value: rp(P.omzet), sub: `${angka(P.trx)} transaksi${P.retur ? ` · retur ${rp(P.retur)}` : ''}` },
-    mo && { id: 'bulan', label: `Penjualan ${bulan(ym)}`, value: rp(mo.omzet), sub: <>{dl != null && <span className={dl >= 0 ? 'up' : 'down'}>{dl >= 0 ? '↑ +' : '↓ '}{dl}%</span>} {dl != null ? 'dari bulan lalu (penuh)' : `${angka(mo.trx)} transaksi`}</> },
-    P && { id: 'trx', label: `Transaksi ${per2}`, value: angka(P.trx), sub: B?.trx > 0 ? `${angka(B.trx)} transaksi pada 30 hari pembanding` : undefined },
-    stockArea && counts.products != null && { id: 'produk', label: 'Produk aktif', value: angka(counts.products) },
-    has('/kontak') && counts.customers != null && { id: 'pelanggan', label: 'Pelanggan', value: angka(counts.customers) },
-    P && { id: 'laba', label: `Laba kotor ${per2}`, value: rp(P.laba), sub: mPct(P) == null ? undefined : `Margin ${mPct(P)}%` },
-    P && P.omzet > 0 && { id: 'margin', label: `Margin ${per2}`, value: `${mPct(P)}%`, sub: mPct(B) != null ? `30 hari sebelumnya ${mPct(B)}%` : 'laba kotor ÷ penjualan', tone: mPct(B) != null && mPct(P) < mPct(B) - 3 ? 'bad' : '' },
-    P && P.trx > 0 && { id: 'keranjang', label: 'Rata-rata belanja', value: rp(Math.round(P.omzet / P.trx)), sub: `per transaksi · ${per2}` },
-    P && { id: 'retur', label: `Retur ${per2}`, value: rp(P.retur), tone: P.retur > 0 ? 'gold' : '' },
-    d.ps && stockArea && { id: 'nilai_stok', label: 'Nilai stok', value: rp(ps.reduce((s2, p) => s2 + Math.max(0, N(p.stock)) * N(p.cost), 0)), sub: `${angka(ps.length)} barang · harga modal` },
-    d.ps && stockArea && { id: 'menipis', label: 'Stok menipis', value: angka(low.length), tone: low.length ? 'bad' : '', sub: low.length ? 'perlu belanja ulang' : 'aman' },
-    piut && { id: 'piutang', label: 'Piutang pelanggan', value: rp(piutTotal), sub: `${angka(new Set(piut.map((x) => x.contact_id)).size)} pelanggan · kasbon belum dibayar` },
-    piut && { id: 'piutang_lewat', label: 'Piutang lewat tempo', value: rp(piutLewatTotal), tone: piutLewatTotal > 0 ? 'bad' : '', sub: `${angka(piutLewat.length)} transaksi` },
-    diam && { id: 'diam', label: 'Barang tidak bergerak', value: angka(diam.length), sub: `nilai ${rp(diam.reduce((a, x) => a + N(x.value), 0))} · tidak terjual ≥ 90 hari`, tone: diam.length ? 'gold' : '' },
-    modal && { id: 'modal', label: 'Harga modal berubah', value: angka(modal.length), sub: `${angka(modalUp.length)} naik · 30 hari terakhir`, tone: modalUp.length ? 'gold' : '' },
-  ].filter(Boolean).map((item) => ({
-    ...item,
-    tone: item.id === 'omzet' ? styles.salesTile : item.tone,
-    icon: KPI_ICONS[item.id] ? <span className={styles.kpiIcon}><NavIcon name={KPI_ICONS[item.id]} size={22} /></span> : null,
-  }));
-  // Denyut bisnis: periode terpilih dibanding rata-rata 30 hari sebelumnya (±15% = normal)
-  const pulse = P && B ? [
-    pulseLine(`Penjualan ${per2}`, P.omzet, B.omzet / 30, per.days, rp),
-    pulseLine(`Transaksi ${per2}`, P.trx, B.trx / 30, per.days, angka),
-    mPct(P) != null && mPct(B) != null && { tone: mPct(P) < mPct(B) - 3 ? 'warn' : mPct(P) > mPct(B) + 3 ? 'good' : 'info', text: `Margin ${per2} ${mPct(P)}% (30 hari sebelumnya ${mPct(B)}%)${mPct(P) < mPct(B) - 3 ? ' — periksa harga modal & diskon' : ''}`, href: mPct(P) < mPct(B) - 3 ? '/laporan-toko' : undefined },
-  ] : [];
+    P && { id: 'omzet', label: `Penjualan ${per2}`, value: rp(P.omzet), sub: `${angka(P.trx)} transaksi${P.retur ? ` · retur ${rp(P.retur)}` : ''}`, change: growth(comparison?.omzet, B?.omzet, base.label), href: reportLink(per) },
+    currentMonth && { id: 'bulan', label: `Penjualan ${bulan(ym)}`, value: rp(currentMonth.omzet), sub: `${angka(currentMonth.trx)} transaksi`, change: growth(mo?.omzet, priorMonth?.omzet, prevMonth.label), href: reportLink(month) },
+    P && { id: 'trx', label: `Transaksi ${per2}`, value: angka(P.trx), sub: B && `${angka(B.trx)} transaksi · ${base.label}`, change: growth(comparison?.trx, B?.trx, base.label), href: reportLink(per) },
+    stockArea && counts.products != null && { id: 'produk', label: 'Produk aktif', value: angka(counts.products), href: has('/barang') ? '/barang' : undefined },
+    contactsArea && counts.customers != null && { id: 'pelanggan', label: 'Pelanggan', value: angka(counts.customers), href: '/kontak' },
+    P && { id: 'laba', label: `Laba kotor ${per2}`, value: rp(P.laba), sub: mPct(P) == null ? undefined : `Margin ${mPct(P)}%`, change: growth(comparison?.laba, B?.laba, base.label), href: reportLink(per, 'laba-rugi-toko') },
+    P && P.omzet > 0 && { id: 'margin', label: `Margin ${per2}`, value: `${mPct(P)}%`, sub: mPct(B) != null ? `${mPct(B)}% · ${base.label}` : 'Laba kotor ÷ penjualan', tone: marginTone, href: reportLink(per, 'laba-rugi-toko') },
+    P && P.trx > 0 && { id: 'keranjang', label: 'Rata-rata belanja', value: rp(Math.round(P.omzet / P.trx)), sub: `Per transaksi · ${per2}`, href: reportLink(per) },
+    P && { id: 'retur', label: `Retur ${per2}`, value: rp(P.retur), tone: P.retur > 0 ? 'warn' : undefined, href: reportLink(per, 'laba-rugi-toko') },
+    d.ps && stockArea && { id: 'nilai_stok', label: 'Nilai stok', value: rp(ps.reduce((sum, p) => sum + Math.max(0, N(p.stock)) * N(p.cost), 0)), sub: `${angka(ps.length)} barang · harga modal`, href: has('/barang') ? '/barang' : undefined },
+    d.ps && stockArea && { id: 'menipis', label: 'Stok menipis', value: angka(low.length), tone: low.length ? 'warn' : undefined, sub: low.length ? 'Perlu belanja ulang' : 'Aman' },
+    piut && { id: 'piutang', label: 'Piutang pelanggan', value: rp(piutTotal), sub: `${angka(new Set(piut.map((x) => x.contact_id)).size)} pelanggan · kasbon terbuka`, href: has('/kas') ? '/kas?tab=kasbon' : undefined },
+    piut && { id: 'piutang_lewat', label: 'Piutang lewat tempo', value: rp(piutLewatTotal), tone: piutLewatTotal > 0 ? 'warn' : undefined, sub: `${angka(piutLewat.length)} transaksi`, href: has('/kas') ? '/kas?tab=kasbon' : undefined },
+    diam && { id: 'diam', label: 'Barang tidak bergerak', value: angka(diam.length), sub: `Nilai ${rp(diam.reduce((sum, item) => sum + N(item.value), 0))} · ≥ 90 hari tanpa penjualan`, tone: diam.length ? 'warn' : undefined, href: has('/barang') ? '/barang?tab=kesehatan' : undefined },
+    modal && { id: 'modal', label: 'Harga modal berubah', value: angka(modal.length), sub: `${angka(modalUp.length)} naik · 30 hari terakhir`, tone: modalUp.length ? 'warn' : undefined },
+  ].filter(Boolean).map((item) => ({ ...item, icon: KPI_ICONS[item.id] }));
+  const pulse = kpiItems.filter((item) => ['omzet', 'trx', 'laba'].includes(item.id) && item.change)
+    .map((item) => ({ text: `${item.label} ${item.value} · ${item.change.text}`, href: item.href, tone: item.change.tone === 'neutral' ? 'info' : item.change.tone }));
+  if (marginChange != null) pulse.push({
+    text: `Margin ${mPct(comparison)}% · ${mPct(B)}% ${base.label}${marginChange < -3 ? ' · periksa harga modal dan diskon' : ''}`,
+    tone: marginTone || 'info', href: reportLink(per, 'laba-rugi-toko'),
+  });
 
   const alerts = [
     stockArea && !d.ps && { tone: 'warn', text: 'Stok belum bisa dimuat. Buka Persediaan untuk memeriksa data.', href: has('/barang') ? '/barang' : undefined },
@@ -211,6 +213,24 @@ export default function Toko() {
   ].filter(Boolean);
 
   const widgets = [
+    { id: 'kpi', title: 'Angka utama', size: 'full', node: <section className={styles.metrics} aria-label="Angka utama toko">
+      {(base.partialLabel || prevMonth.partialLabel) && <p className="small muted">{base.partialLabel || prevMonth.partialLabel}</p>}
+      <CompactKpis items={kpiItems} prefs={prefs} onDetail={setDetail} />
+    </section> },
+    { id: 'mulai', title: 'Mulai di sini', size: 'full', node: d.ps && ps.length === 0 && has('/barang') && (
+      <Widget title="Mulai di sini"><span className="small muted">Masukkan barang yang dijual beserta satuan, harga eceran/grosir, dan stoknya. Semua angka dashboard dihitung dari transaksi nyata.</span><Link href="/barang?baru=1"><button className="primary">+ Tambah barang pertama</button></Link></Widget>
+    ) },
+    { id: 'tren', title: 'Tren 30 hari', size: 'full', node: trend && has('/laporan-toko') && (
+      <Widget title="Tren performa · 30 hari terakhir">
+        <RetailTrend kosId={kosId} ver={ver} to={per.to} data={trend} />
+      </Widget>
+    ) },
+    { id: 'laporan', title: 'Pintasan laporan', size: 'full', node: fin && REPORT_LINKS.some(([href]) => has(href)) && <nav className={styles.shortcuts} aria-label="Pintasan laporan">
+      {REPORT_LINKS.filter(([href]) => has(href)).map(([href, label, icon, anchor]) =>
+        <Link key={label} className={styles.shortcut} href={href === '/laporan-toko' ? retailReportLink(per, anchor) : href}>
+          <span className={styles.shortcutIcon}><NavIcon name={icon} size={19} /></span>{label}
+        </Link>)}
+    </nav> },
     { id: 'pintasan', title: 'Operasional', size: 'full', node: shortcuts.length > 0 && (
       <Widget title="Operasional">
         <nav className={styles.shortcuts} aria-label="Operasional toko">
@@ -219,18 +239,6 @@ export default function Toko() {
             {label}
           </Link>)}
         </nav>
-      </Widget>
-    ) },
-    { id: 'kpi', title: 'Angka utama', size: 'full', node: <section className={styles.metrics}>
-      <PageHeader title="Dashboard" help={<PageHelp page="toko" />} desc={`${kos.name} · ${tgl(today())}`} />
-      <KpiGrid items={kpiItems} prefs={prefs} />
-    </section> },
-    { id: 'mulai', title: 'Mulai di sini', size: 'full', node: d.ps && ps.length === 0 && has('/barang') && (
-      <Widget title="Mulai di sini"><span className="small muted">Masukkan barang yang dijual beserta satuan, harga eceran/grosir, dan stoknya. Semua angka dashboard dihitung dari transaksi nyata.</span><Link href="/barang?baru=1"><button className="primary">+ Tambah barang pertama</button></Link></Widget>
-    ) },
-    { id: 'tren', title: 'Tren penjualan', size: 'wide', node: days && (
-      <Widget title="Tren penjualan 7 hari terakhir" action={has('/laporan-toko') && <Link href="/laporan-toko">Lihat detail →</Link>}>
-        <DayColumns data={days} title="Penjualan 7 hari terakhir" />
       </Widget>
     ) },
     { id: 'perhatian', title: 'Perlu perhatian', size: 'normal', node: <Widget title="Perlu perhatian" action={has('/barang') && low.length > 0 && <Link href="/barang">Lihat stok →</Link>}>
@@ -245,9 +253,9 @@ export default function Toko() {
       {(alerts.length > 0 || (!negative.failed && !negative.rows?.length && (!stockArea || !low.length))) && <Alerts items={alerts} />}
     </Widget> },
     { id: 'denyut', title: 'Denyut bisnis', size: 'normal', node: pulse.some(Boolean) && <Pulse items={pulse} /> },
-    { id: 'terlaris', title: 'Barang terlaris', size: 'normal', node: pr?.r && (
+    { id: 'terlaris', title: 'Barang terlaris', size: 'normal', node: activeReport?.r && (
       <Widget title={`Produk terlaris ${per2}`} action={has('/laporan-toko') && <Link href="/laporan-toko">Lihat semua →</Link>}>
-        {(pr.r.produk || []).length ? <ol className="alerts">{pr.r.produk.slice(0, 3).map((product, index) => (
+        {(activeReport.r.produk || []).length ? <ol className="alerts">{activeReport.r.produk.slice(0, 3).map((product, index) => (
           <li key={product.product_id || product.name}><div>
             <span className={styles.rank}>{index + 1}</span>
             <ProductThumb key={thumbs[product.product_id]} path={thumbs[product.product_id]} />
@@ -312,7 +320,7 @@ export default function Toko() {
       <Dashboard id="toko" kosId={kosId} widgets={widgets} prefs={prefs} kpis={KPIS.toko.map(([id, label]) => ({ id, label }))} period={fin} header={(atur, periode) => <>
         <section className={styles.masthead} aria-label="Sambutan Beranda Toko">
           <div className={styles.greeting}>
-            <PageHeader title={`${greeting()}${name ? `, ${name}` : ''}`} desc={`Ringkasan bisnis ${kos.name}`} />
+            <PageHeader title={`${greeting()}${name ? `, ${name}` : ''}`} help={<PageHelp page="toko" />} desc={`Ringkasan bisnis · ${tgl(today())}`} />
           </div>
           <img className={styles.mascot} src="/retail/prasara-maskot.webp" width="600" height="400" alt="" />
           <div className={styles.controls}>{periode}{atur}</div>
@@ -321,6 +329,17 @@ export default function Toko() {
         <CrmHint />
         <RecHint />
       </>} />
+      {detail && <Sheet title={detail.label} onClose={() => setDetail(null)}>
+        <strong>{detail.value}</strong>{detail.sub && <p className="small muted">{detail.sub}</p>}
+        {detail.id === 'menipis' && <div className="list">{low.map((item) => <div className="li" key={item.id}>
+          <span>{item.name}</span><b>{angka(item.stock)} / {angka(item.min_stock)} {item.base_unit}</b>
+        </div>)}</div>}
+        {detail.id === 'modal' && <div className="list">{modal.map((item) => <CostSources key={item.product_id} item={item} kosId={kosId} purchaseAccess={has('/belanja')} />)}</div>}
+        {['menipis', 'modal'].includes(detail.id) && has('/barang') && <Link href="/barang">Buka Barang &amp; Persediaan</Link>}
+        {['piutang', 'piutang_lewat'].includes(detail.id) && <div className="list">{(detail.id === 'piutang' ? piut : piutLewat).map((item, i) => <div key={item.sale_id || i} className="li">
+          <span>{ex.nama?.[item.contact_id] || 'Pelanggan'}</span><b>{rp(item.open_amount)}</b>
+        </div>)}</div>}
+      </Sheet>}
       {canArea(kos, 'settings') && <Persiapan kos={kos} />}
     </div>
   );
