@@ -111,5 +111,57 @@ begin
   assert portal_shop_rate(slug, guest, guest_id, pr, 4), 'Penilaian yang sama dapat diperbarui';
   catalog := portal_shop_catalog(slug);
   assert (catalog #>> '{items,0,rating}')::numeric = 4 and (catalog #>> '{items,0,rating_count}')::int = 1, 'Agregat publik tidak menggandakan rating';
+
+  -- Pengajuan publik tanpa memilih katalog, revisi dan persetujuan tamu.
+  declare
+    quote_id uuid := gen_random_uuid();
+    revision uuid;
+    latest uuid;
+  begin
+    update public_pages set show_prices = false where kos_id = a;
+    assert portal_quote_catalog(slug) is not null and portal_shop_catalog(slug) is null, 'Penawaran terpisah dari sakelar harga/checkout';
+    assert portal_quote_catalog(slug) #>> '{0,id}' = pr::text and portal_quote_catalog(slug) #> '{0,units,0,price}' is null;
+    payload := jsonb_build_object('id', quote_id, 'kind', 'penawaran', 'name', 'Pelanggan publik uji', 'phone', '081234567890',
+      'consent', false, 'manual', 'Minta lima kemasan', 'purpose', 'Warung / Toko', 'lines', '[]'::jsonb);
+    assert portal_shop_order(slug, guest, device, payload)->>'ok' = 'false', 'Persetujuan wajib';
+    payload := payload || '{"consent":true}';
+    assert portal_shop_order(slug, guest, device, payload || '{"attachment":"forged"}')->>'ok' = 'false';
+    payload := payload || jsonb_build_object('attachment', slug || '/' || guest || '/' || quote_id::text || '/' || repeat('d', 64),
+      'filename', 'daftar-pelanggan.pdf');
+    assert portal_shop_order(slug, guest, device, payload)->>'ok' = 'true', 'Daftar manual tanpa barang harus masuk ke modul penawaran';
+    assert portal_shop_order(slug, guest, device, payload)->>'duplicate' = 'true', 'Pengajuan ulang tidak membuat baris ganda';
+    assert (select quote_manual = 'Minta lima kemasan' and quote_purpose = 'Warung / Toko'
+      and quote_consent_at is not null and quote_filename = 'daftar-pelanggan.pdf' from so_orders where id = quote_id);
+    assert (select item->>'quote_filename' = 'daftar-pelanggan.pdf' and not (item ? 'quote_attachment')
+      from jsonb_array_elements(portal_shop_orders(slug, guest)) item where item->>'id' = quote_id::text);
+    assert not has_function_privilege('anon', 'portal_quote_approve(text,text,uuid,uuid)', 'execute');
+    assert not has_function_privilege('anon', 'portal_quote_publish(uuid,text)', 'execute');
+    perform set_config('request.jwt.claim.sub', owner_a, true);
+    select contact_id into contact from so_orders where id = quote_id;
+    lines := jsonb_build_array(jsonb_build_object('product_id', pr, 'unit', 'pcs', 'qty', 5, 'price', 3000));
+    perform so_save(quote_id, a, jsonb_build_object('contact_id', contact, 'lines', lines));
+    revision := portal_quote_publish(quote_id, 'Penawaran pertama');
+    perform set_config('request.jwt.claim.sub', '', true);
+    assert portal_quote_approve(slug, repeat('c',64), quote_id, revision)->>'ok' = 'false';
+    assert portal_quote_approve('portal-shop-uji-b', guest, quote_id, revision)->>'ok' = 'false';
+    assert portal_quote_counter(slug, guest, quote_id, revision, 'Bisa Rp2.900 per pcs?');
+    assert portal_quote_approve(slug, guest, quote_id, revision)->>'ok' = 'false', 'Negosiasi menutup versi lama';
+    perform set_config('request.jwt.claim.sub', owner_a, true);
+    assert retail_portal_inbox(a) #>> '{0,kind}' = 'penawaran_negosiasi';
+    latest := portal_quote_publish(quote_id, 'Penawaran kedua');
+    perform so_save(quote_id, a, jsonb_build_object('contact_id', contact,
+      'lines', jsonb_set(lines, '{0,price}', '2900')));
+    assert portal_quote_approve(slug, guest, quote_id, latest)->>'ok' = 'false', 'Ubah harga menonaktifkan versi yang sudah dikirim';
+    assert (select item->>'total' is null from jsonb_array_elements(portal_shop_orders(slug, guest)) item where item->>'id' = quote_id::text),
+      'Harga draf revisi tidak tampil sebelum dikirim';
+    latest := portal_quote_publish(quote_id, 'Harga revisi');
+    perform set_config('request.jwt.claim.sub', '', true);
+    assert portal_quote_approve(slug, guest, quote_id, latest)->>'ok' = 'true', 'Pelanggan dapat menyetujui versi yang berlaku';
+    assert portal_quote_approve(slug, guest, quote_id, latest)->>'ok' = 'true', 'Persetujuan dapat diulang';
+    assert (select status = 'dikonfirmasi' and total = 14500 and quote_accepted_at is not null from so_orders where id = quote_id), 'Satu baris menjadi pesanan dengan harga revisi';
+    assert not exists (select 1 from so_deliveries where order_id = quote_id), 'Persetujuan tidak menerbitkan faktur atau surat jalan';
+    perform set_config('request.jwt.claim.sub', owner_a, true);
+    assert retail_portal_inbox(a) #>> '{0,kind}' = 'penawaran_disetujui';
+  end;
 end $$;
 rollback;

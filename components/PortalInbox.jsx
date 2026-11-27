@@ -30,14 +30,14 @@ export function usePortalInbox() {
   return state?.kosId === kosId ? state.rows : [];
 }
 
-const labels = { pesanan: 'Pesanan baru', penawaran: 'Penawaran baru', permintaan: 'Permintaan baru' };
+const labels = { pesanan: 'Pesanan baru', penawaran: 'Penawaran baru', penawaran_disetujui: 'Penawaran disetujui', penawaran_negosiasi: 'Negosiasi penawaran', permintaan: 'Permintaan baru' };
 
 export function PortalInboxList({ rows }) {
   if (!rows.length) return null;
   return <section className="panel" aria-label="Pemberitahuan portal">
     <h3>Pemberitahuan portal <span className="chip gold">{rows.length}</span></h3>
     <div className="list">{rows.map((row) => {
-      const href = row.target === 'lead' ? `/crm?prospek=${row.id}` : `/grosir?tab=penawaran&pesanan=${row.id}`;
+      const href = row.target === 'lead' ? `/crm?prospek=${row.id}` : `/grosir?${row.kind === 'penawaran_disetujui' ? '' : 'tab=penawaran&'}pesanan=${row.id}`;
       return <Link href={href} className="li" key={row.id} style={{ color: 'inherit', textDecoration: 'none' }}>
         <div className="main" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
           <b>{labels[row.kind] || labels.pesanan}</b>

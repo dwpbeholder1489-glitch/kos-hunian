@@ -379,9 +379,27 @@ function OrderDetail({ initialMode, kos, reloadKey, d, order: o, onClose, onEdit
     setMode(null); setReason(''); onChanged();
     return data || true;
   };
+  const publicQuote = o.portal_kind === 'penawaran' && Boolean(o.portal_guest_hash);
+  const [offerMessage, setOfferMessage] = useState('');
+  const [publicSlug, setPublicSlug] = useState(null);
+  useEffect(() => {
+    if (!publicQuote) return;
+    supabase.from('public_pages').select('slug').eq('kos_id', o.kos_id).maybeSingle().then(({ data }) => setPublicSlug(data?.slug || null));
+  }, [publicQuote, o.kos_id]);
+  async function downloadQuote() {
+    const { data: session } = await supabase.auth.getSession();
+    const response = await fetch(`/api/portal-shop?attachment=${o.id}`, { headers: { Authorization: `Bearer ${session.session?.access_token || ''}` } });
+    const result = await response.json().catch(() => ({}));
+    if (!result.url) { toast(result.error || 'Gagal membuka lampiran.'); return; }
+    window.location.assign(result.url);
+  }
+  const guestLink = publicSlug ? `${typeof window === 'undefined' ? '' : window.location.origin}/b/${publicSlug}?tampilan=lacak&id=${o.id}` : '';
   const waText = `Halo ${c?.name || ''}, berikut ${o.status === 'penawaran' ? 'penawaran harga' : 'pesanan'} ${o.number} dari ${kos.name}:\n\n` +
     lines.map((l) => `• ${l.name} ${angka(l.qty)} ${l.unit} × ${rp(l.price)} = ${rp(l.line_total)}`).join('\n') +
-    `\n\nTotal ${rp(o.total)}${o.terms_days ? `\nPembayaran tempo ${o.terms_days} hari setelah barang dikirim` : ''}${o.status === 'penawaran' && o.valid_until ? `\nBerlaku sampai ${tgl(o.valid_until)}` : ''}${o.note ? `\n${o.note}` : ''}\n\nBalas pesan ini untuk konfirmasi. Terima kasih.`;
+    `\n\nTotal ${rp(o.total)}${o.terms_days ? `\nPembayaran tempo ${o.terms_days} hari setelah barang dikirim` : ''}${o.status === 'penawaran' && o.valid_until ? `\nBerlaku sampai ${tgl(o.valid_until)}` : ''}${o.note ? `\n${o.note}` : ''}` +
+    (publicQuote && o.quote_revision && guestLink
+      ? `\n\nTinjau dan setujui penawaran di browser yang dipakai saat mengajukan: ${guestLink}`
+      : '\n\nBalas pesan ini untuk konfirmasi. Terima kasih.');
   return (
     <Sheet title={`${o.number} · ${c?.name || ''}`} onClose={onClose}>
       <div className="row" style={{ gap: 6 }}><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.source === 'portal' && <span className="chip">{o.portal_guest_hash ? 'Dari portal bisnis publik' : 'Dari portal pelanggan'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span>}{o.customer_ref && <span className="chip">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</span>}</div>
@@ -396,6 +414,11 @@ function OrderDetail({ initialMode, kos, reloadKey, d, order: o, onClose, onEdit
         <dt>Alamat kirim</dt><dd>{o.ship_address || 'ambil sendiri'}</dd>
         <dt>Tempo bayar</dt><dd>{o.terms_days != null ? `${o.terms_days} hari` : '—'}</dd>
         {o.note && <><dt>Catatan</dt><dd>{o.note}</dd></>}
+        {o.quote_counter && <><dt>Negosiasi pelanggan</dt><dd style={{ whiteSpace: 'pre-wrap' }}>{o.quote_counter}</dd></>}
+        {o.quote_purpose && <><dt>Tujuan</dt><dd>{o.quote_purpose}</dd></>}
+        {o.quote_manual && <><dt>Daftar kebutuhan</dt><dd style={{ whiteSpace: 'pre-wrap' }}>{o.quote_manual}</dd></>}
+        {o.quote_filename && <><dt>Lampiran</dt><dd><button type="button" onClick={() => downloadQuote().catch(() => toast('Gagal membuka lampiran.'))}>{o.quote_filename}</button></dd></>}
+        {o.quote_accepted_at && <><dt>Persetujuan pelanggan</dt><dd>{tgl(o.quote_accepted_at)}</dd></>}
         {o.credit_check?.override && <><dt>Lewat batas kredit</dt><dd>{o.credit_check.override}</dd></>}
         {o.close_reason && <><dt>Alasan ditutup</dt><dd>{o.close_reason}</dd></>}
       </dl>
@@ -425,8 +448,13 @@ function OrderDetail({ initialMode, kos, reloadKey, d, order: o, onClose, onEdit
         {over && !owner && <span className="small" style={{ color: 'var(--bad)' }}>Melewati batas kredit — hanya pemilik/pengelola yang bisa mengonfirmasi.</span>}
         <button className="primary" disabled={busy || (over && !owner)} onClick={() => act('so_confirm', { p_order: o.id, p_override: reason || null }, 'Penawaran dikonfirmasi jadi pesanan')}>Konfirmasi jadi pesanan</button></div>}
 
+      {publicQuote && o.status === 'penawaran' && mode === 'publish' && <div className="unitbox">
+        <Field label="Pesan untuk pelanggan (opsional)"><textarea maxLength={500} value={offerMessage} onChange={(event) => setOfferMessage(event.target.value)} /></Field>
+        <button className="primary" disabled={busy} onClick={() => act('portal_quote_publish', { p_order: o.id, p_message: offerMessage }, 'Penawaran tersedia untuk ditinjau pelanggan')}>Tampilkan ke pelanggan</button>
+      </div>}
       <div className="row" style={{ flexWrap: 'wrap' }}>
-        {o.status === 'penawaran' && mode !== 'konfirmasi' && <button className="primary" onClick={() => setMode('konfirmasi')}>{o.source === 'portal' && o.portal_kind !== 'penawaran' ? 'Konfirmasi pesanan pelanggan' : 'Pelanggan setuju → jadikan pesanan'}</button>}
+        {publicQuote && o.status === 'penawaran' && mode !== 'publish' && <button className="primary" disabled={!lines.length} onClick={() => { setOfferMessage(o.quote_message || ''); setMode('publish'); }}>{o.quote_revision ? 'Kirim ulang penawaran' : 'Kirim penawaran ke portal'}</button>}
+        {o.status === 'penawaran' && mode !== 'konfirmasi' && lines.length > 0 && <button className="primary" onClick={() => setMode('konfirmasi')}>{o.source === 'portal' && o.portal_kind !== 'penawaran' ? 'Konfirmasi pesanan pelanggan' : 'Pelanggan setuju → jadikan pesanan'}</button>}
         {['dikonfirmasi', 'sebagian'].includes(o.status) && mode !== 'kirim' && mode !== 'supplier' && <button className="primary" onClick={() => setMode('kirim')}>Buat surat jalan</button>}
         {!['selesai', 'batal'].includes(o.status) && mode !== 'supplier' && <button onClick={() => onEdit(o)}>Ubah</button>}
         <Link href={`/dokumen/grosir/${o.id}`}><button>{o.status === 'penawaran' ? 'Cetak penawaran' : 'Cetak pesanan'}</button></Link>

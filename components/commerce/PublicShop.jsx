@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LogoMark } from '@/components/Logo';
 import NavIcon from '@/components/NavIcon';
-import PublicForm from '@/components/PublicForm';
+import QuoteRequest from './QuoteRequest';
 import { PayBox } from '@/components/PublicPay';
 import Linkify from '@/components/Linkify';
 import { mediaUrl } from '@/lib/media';
@@ -220,7 +220,7 @@ function Cart({ lines, selected, toggle, setQty, photos, total, canCheckout, pro
   </>;
 }
 
-function Checkout({ page, pay, lines, quote, back, submit, ready }) {
+function Checkout({ page, pay, lines, back, submit, ready }) {
   const [fulfillment, setFulfillment] = useState('ambil');
   const [payment, setPayment] = useState('tunai');
   const [busy, setBusy] = useState(false);
@@ -230,8 +230,7 @@ function Checkout({ page, pay, lines, quote, back, submit, ready }) {
     event.preventDefault();
     if (busy) return;
     const fields = Object.fromEntries(new FormData(event.currentTarget));
-    const payload = { ...fields, consent: fields.consent === 'on', fulfillment: quote ? null : fulfillment,
-      payment: quote ? null : payment, kind: quote ? 'penawaran' : 'pesanan',
+    const payload = { ...fields, consent: fields.consent === 'on', fulfillment, payment, kind: 'pesanan',
       lines: lines.map(({ product_id, unit, qty }) => ({ product_id, unit, qty })) };
     const signature = JSON.stringify(payload);
     if (!pending.current || pending.current.signature !== signature) pending.current = { signature, id: uid() };
@@ -242,9 +241,9 @@ function Checkout({ page, pay, lines, quote, back, submit, ready }) {
   }
   const methods = ['tunai', ...(pay?.payment_info ? ['transfer'] : []), ...(pay?.qris ? ['qris'] : [])];
   return <>
-    <Bar title={quote ? 'Minta Penawaran' : 'Checkout'} back={back} />
+    <Bar title="Checkout" back={back} />
     <form className={styles.checkout} onSubmit={send}>
-      {!quote && <>
+      <>
         <fieldset><legend>Alamat Pengiriman</legend>
           <label className={styles.choice}><input type="radio" name="delivery_choice" checked={fulfillment === 'ambil'} onChange={() => setFulfillment('ambil')} /><span><b>Ambil di Toko</b><small>{page.name}{[page.address, page.hours].filter(Boolean).length > 0 && <><br />{[page.address, page.hours].filter(Boolean).join(' · ')}</>}</small></span></label>
           <label className={styles.choice}><input type="radio" name="delivery_choice" checked={fulfillment === 'antar'} onChange={() => setFulfillment('antar')} /><span><b>Dikirim ke Alamat</b><small>Masukkan alamat pengiriman</small></span></label>
@@ -253,7 +252,7 @@ function Checkout({ page, pay, lines, quote, back, submit, ready }) {
         <fieldset><legend>Metode Pembayaran</legend>{methods.map((method) =>
           <label className={styles.choice} key={method}><input type="radio" name="payment_choice" checked={payment === method} onChange={() => setPayment(method)} /><b>{paymentLabels[method]}</b></label>
         )}</fieldset>
-      </>}
+      </>
       <fieldset><legend>Kontak Pemesan</legend>
         <label className={styles.field}>Nama<input name="name" autoComplete="name" minLength={2} maxLength={80} required /></label>
         <label className={styles.field}>Nomor WhatsApp<input name="phone" type="tel" autoComplete="tel" minLength={9} maxLength={30} required /></label>
@@ -263,18 +262,18 @@ function Checkout({ page, pay, lines, quote, back, submit, ready }) {
       {!lines.length && <p className={styles.empty}>Pilih barang di keranjang untuk melanjutkan.</p>}
       {error && <p role="alert" className={styles.error}>{error}</p>}
       <div className={`${styles.dock} ${styles.summary} ${styles.checkoutDock}`}>
-        <div><small>{quote ? 'Perkiraan Total' : 'Total Barang'}</small><strong>{rp(money(lines))}</strong></div>
-        <button type="submit" className={styles.primary} disabled={!ready || !lines.length || busy}>{busy ? 'Mengirim…' : quote ? 'Kirim Permintaan' : 'Buat Pesanan'}</button>
+        <div><small>Total Barang</small><strong>{rp(money(lines))}</strong></div>
+        <button type="submit" className={styles.primary} disabled={!ready || !lines.length || busy}>{busy ? 'Mengirim…' : 'Buat Pesanan'}</button>
       </div>
     </form>
   </>;
 }
 
-function Orders({ orders, error, refresh, go, photos }) {
+function Orders({ orders, error, refresh, go, photos, quotes = false }) {
   const [filter, setFilter] = useState('Semua');
   const visible = orders?.filter((order) => filter === 'Semua' || orderStatus(order) === filter);
   return <>
-    <Bar title="Pesanan Saya" back={() => go('beranda')} />
+    <Bar title={quotes ? "Riwayat Permintaan" : "Pesanan Saya"} back={() => go(quotes ? 'penawaran' : 'beranda')} />
     <div className={styles.filters}>{orderFilters.map((status) => <button type="button" key={status} aria-pressed={filter === status} onClick={() => setFilter(status)}>{status}</button>)}</div>
     {error && <p role="alert" className={styles.error}>{error} <button type="button" onClick={refresh}>Coba lagi</button></p>}
     {!orders && !error && <p className={styles.empty}>Memuat pesanan…</p>}
@@ -282,7 +281,7 @@ function Orders({ orders, error, refresh, go, photos }) {
     <div className={styles.orderList}>{visible?.map((order) => {
       const status = orderStatus(order);
       return <button key={order.id} type="button" onClick={() => go('lacak', order.id)}>
-        <span><b>#{order.number}</b><small>{stamp(order.created_at)}</small><strong>{rp(order.total)}</strong>
+        <span><b>#{order.number}</b><small>{stamp(order.created_at)}</small>{order.total != null && <strong>{rp(order.total)}</strong>}
           <span className={styles.orderThumbs}>{order.lines.slice(0, 4).map((line, index) => <Picture key={index} photo={photos[line.product_id]?.[0]} name={line.name} thumb className={styles.thumbnail} />)}</span>
         </span>
         <span><span className={styles.status} data-status={status}>{status}</span><Icon name="next" size={16} /></span>
@@ -313,8 +312,19 @@ function Rating({ item, orderId, rate }) {
   </form>;
 }
 
-function Tracking({ order, orders, page, pay, contact, go, error, rate }) {
+function Tracking({ order, orders, page, pay, contact, go, error, rate, respond, repeat }) {
+  const [approvalError, setApprovalError] = useState('');
+  const [responding, setResponding] = useState(false);
+  const [negotiating, setNegotiating] = useState(false);
+  async function reply(message) {
+    setApprovalError('');
+    setResponding(true);
+    try { await respond(order, message); setNegotiating(false); }
+    catch (failure) { setApprovalError(failure.message); }
+    finally { setResponding(false); }
+  }
   if (!order) return <><Bar title="Detail Pesanan" back={() => go('pesanan')} /><p className={styles.empty}>{error || (orders ? 'Pesanan tidak ditemukan di browser ini.' : 'Memuat pesanan…')}</p></>;
+  const pendingQuote = order.kind === 'penawaran' && order.status === 'penawaran';
   const status = orderStatus(order);
   const delivery = order.deliveries.find((entry) => entry.status !== 'gagal');
   const received = [...order.deliveries].reverse().find((entry) => entry.received_at)?.received_at;
@@ -326,15 +336,33 @@ function Tracking({ order, orders, page, pay, contact, go, error, rate }) {
     ['Selesai', status === 'Selesai' ? received || order.closed_at || delivery?.created_at : null, status === 'Selesai' ? '' : 'Belum selesai'],
   ];
   return <>
-    <Bar title="Detail Pesanan" subtitle={`#${order.number}`} back={() => go('pesanan')} />
+    <Bar title={pendingQuote ? 'Detail Penawaran' : 'Detail Pesanan'} subtitle={`#${order.number}`} back={() => go(order.kind === 'penawaran' ? 'riwayat-penawaran' : 'pesanan')} />
+    {pendingQuote && <section className={styles.info}>
+      <h2>{order.quote_revision ? 'Penawaran siap ditinjau' : 'Permintaan diterima'}</h2>
+      {order.quote_counter && !order.quote_revision && <p>Usulan Anda sudah diterima. Tunggu tanggapan bisnis.</p>}
+    </section>}
     <ol className={styles.timeline}>{steps.map(([label, date, hint]) => <li key={label} data-done={Boolean(date)}>
       <span className={styles.dot}>{date && <Icon name="check" size={14} />}</span><div><b>{label}</b>{date && <small>{stamp(date)}</small>}{hint && (!date || label === 'Diproses') && <small>{hint}</small>}</div>
     </li>)}</ol>
     {status === 'Batal' && <p className={styles.error}>Pesanan dibatalkan.</p>}
-    {contact && <a className={styles.contactOrder} href={waLink(page.wa_phone, `Halo ${page.name}, saya ingin menanyakan pesanan ${order.number}.`)} target="_blank" rel="noreferrer"><Icon name="/crm" />Hubungi Toko</a>}
-    <section className={styles.orderContents}><h2>Ringkasan Pesanan</h2>
-      {order.lines.map((line, index) => <div key={index}><span>{line.name}<small>{line.qty} {line.unit}</small></span><b>{rp(line.total)}</b></div>)}
-      <div><strong>Total Barang</strong><strong>{rp(order.total)}</strong></div>
+    {contact && <a className={styles.contactOrder} href={waLink(page.wa_phone, `Halo ${page.name}, saya ingin menanyakan ${pendingQuote ? 'permintaan penawaran' : 'pesanan'} ${order.number}.`)} target="_blank" rel="noreferrer"><Icon name="/crm" />{pendingQuote ? 'Lanjutkan di WhatsApp' : 'Hubungi Toko'}</a>}
+    <section className={styles.orderContents}><h2>{pendingQuote ? 'Ringkasan Penawaran' : 'Ringkasan Pesanan'}</h2>
+      {order.lines.map((line, index) => <div key={index}><span>{line.name}<small>{line.qty} {line.unit}</small></span>{line.total != null && <b>{rp(line.total)}</b>}</div>)}
+      {order.total != null && <div><strong>{pendingQuote && !order.quote_revision ? 'Perkiraan' : 'Total Barang'}</strong><strong>{rp(order.total)}</strong></div>}
+      {order.quote_manual && <p style={{ whiteSpace: 'pre-wrap' }}>{order.quote_manual}</p>}
+      {order.quote_filename && <p>Lampiran: {order.quote_filename}</p>}
+      {order.quote_message && <p style={{ whiteSpace: 'pre-wrap' }}>{order.quote_message}</p>}
+      {pendingQuote && order.quote_revision && order.valid_until && <p>Berlaku sampai {new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeZone: 'Asia/Jakarta' }).format(new Date(order.valid_until + 'T12:00:00+07:00'))}</p>}
+      {pendingQuote && order.quote_revision && <>
+        <button type="button" className={styles.primary} disabled={responding} onClick={() => reply()}>{responding ? 'Menyimpan…' : 'Setujui penawaran & buat pesanan'}</button>
+        <button type="button" onClick={() => setNegotiating(!negotiating)}>{negotiating ? 'Tutup negosiasi' : 'Ajukan negosiasi'}</button>
+        {negotiating && <form onSubmit={(event) => { event.preventDefault(); reply(new FormData(event.currentTarget).get('message')); }}>
+          <label className={styles.field}>Usulan Anda<textarea name="message" required minLength={3} maxLength={500} rows={3} /></label>
+          <button type="submit" className={styles.primary} disabled={responding}>Kirim usulan</button>
+        </form>}
+      </>}
+      {approvalError && <p role="alert" className={styles.error}>{approvalError}</p>}
+      {order.kind === 'penawaran' && <button type="button" onClick={() => repeat(order)}>Minta penawaran lagi</button>}
       {order.payment && <p>{paymentLabels[order.payment]}</p>}
       {status === 'Menunggu' && order.payment && <p>Tunggu konfirmasi toko untuk total akhir, ongkir, dan instruksi pembayaran.</p>}
       {status === 'Diproses' && (order.payment === 'transfer' || order.payment === 'qris') && <PayBox pay={pay ? { ...pay, payment_info: order.payment === 'transfer' ? pay.payment_info : null, qris: order.payment === 'qris' ? pay.qris : null } : null} note="Konfirmasi total akhir dengan toko dan simpan bukti pembayaran." />}
@@ -350,10 +378,11 @@ function readScreen() {
   return [url.searchParams.get('tampilan') || 'beranda', url.searchParams.get('id')];
 }
 
-export default function PublicShop({ page, shop }) {
+export default function PublicShop({ page, shop, quoteCatalog, initialScreen, quoteOnly = false }) {
   const photos = page.media?.items || {};
   const products = useMemo(() => new Map(shop.items.map((item) => [item.id, item])), [shop.items]);
-  const [screen, setScreen] = useState(['beranda', null]);
+  const [screen, setScreen] = useState(initialScreen || ['beranda', null]);
+  const [repeatQuote, setRepeatQuote] = useState(null);
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [initialized, setInitialized] = useState(false);
@@ -377,6 +406,7 @@ export default function PublicShop({ page, shop }) {
 
   function go(view, id = null) {
     const url = new URL(window.location.href);
+    if (quoteOnly && view === 'beranda') { window.location.assign(url.pathname); return; }
     if (view === 'beranda') url.searchParams.delete('tampilan');
     else url.searchParams.set('tampilan', view);
     if (id) url.searchParams.set('id', id);
@@ -419,9 +449,9 @@ export default function PublicShop({ page, shop }) {
     return pendingLoad.current;
   }
   useEffect(() => {
-    if (!['checkout', 'penawaran', 'pesanan', 'lacak'].includes(view)) return;
+    if (!['checkout', 'penawaran', 'permintaan', 'pesanan', 'riwayat-penawaran', 'lacak'].includes(view)) return;
     refresh();
-    if (view !== 'lacak' && view !== 'pesanan') return;
+    if (view !== 'lacak' && view !== 'pesanan' && view !== 'riwayat-penawaran') return;
     const timer = setInterval(() => { if (!document.hidden) refresh(); }, 15000);
     return () => clearInterval(timer);
   }, [view, endpoint]); // refresh memakai endpoint yang sama selama tampilan aktif
@@ -436,15 +466,36 @@ export default function PublicShop({ page, shop }) {
   function favorite(id) {
     setFavorites((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
   }
-  async function submit(payload) {
+  async function submit(payload, file) {
     if (pendingLoad.current) await pendingLoad.current;
-    const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Pesanan gagal dikirim.');
-    const keys = new Set(payload.lines.map(lineKey));
-    setCart((old) => old.filter((line) => !keys.has(lineKey(line))));
+    let body = JSON.stringify(payload);
+    let headers = { 'Content-Type': 'application/json' };
+    if (file) {
+      body = new FormData();
+      body.set('request', JSON.stringify(payload));
+      body.set('attachment', file);
+      headers = undefined;
+    }
+    const res = await fetch(endpoint, { method: 'POST', headers, body });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Permintaan gagal dikirim.');
+    if (payload.kind !== 'penawaran') {
+      const keys = new Set(payload.lines.map(lineKey));
+      setCart((old) => old.filter((line) => !keys.has(lineKey(line))));
+    }
+    setRepeatQuote(null);
     await refresh();
     go('lacak', data.id);
+  }
+  async function respond(order, message) {
+    const res = await fetch(endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: message === undefined ? 'approve-quote' : 'counter-quote', order: order.id, revision: order.quote_revision, message }),
+    });
+    const data = await res.json().catch(() => ({}));
+    await refresh();
+    if (!res.ok) throw new Error(data.error || 'Tanggapan gagal dikirim.');
+    setNotice(message === undefined ? 'Penawaran disetujui dan pesanan dibuat.' : 'Usulan negosiasi dikirim.');
   }
   async function rate(order, product, score) {
     const res = await fetch(endpoint, {
@@ -455,6 +506,10 @@ export default function PublicShop({ page, shop }) {
     await refresh();
     setNotice('Penilaian tersimpan.');
   }
+  if (view === 'penawaran' || view === 'permintaan') return <main className={styles.quotePage} data-screen="penawaran">
+    {networkError && <p role="alert" className={styles.error}>{networkError} <button type="button" onClick={refresh}>Coba lagi</button></p>}
+    <QuoteRequest page={page} products={quoteCatalog || shop.items} cart={quoteOnly ? null : chosen} go={go} submit={submit} ready={orders !== null} repeat={repeatQuote} />
+  </main>;
   let content;
   if (view === 'produk' && product) content = <ProductSelection key={product.id} product={product} photos={photos[product.id] || []}
     close={() => go('katalog')} add={add} favorite={favorites.includes(product.id)} toggleFavorite={() => favorite(product.id)} />;
@@ -462,17 +517,17 @@ export default function PublicShop({ page, shop }) {
     toggle={(key) => setExcluded((old) => old.includes(key) ? old.filter((item) => item !== key) : [...old, key])}
     setQty={(...args) => setCart((old) => updateCart(old, ...args))} proceed={() => go('checkout')}
     clear={() => setCart((old) => old.filter((line) => !selected(lineKey(line))))} />;
-  else if (view === 'checkout' || view === 'penawaran') content = <>
-    {(view !== 'penawaran' || chosen.length > 0) && <Checkout key={view} page={page} pay={shop.pay} lines={chosen} quote={view === 'penawaran'} back={() => go('keranjang')} submit={submit} ready={orders !== null && (view === 'penawaran' || canCheckout)} />}
+  else if (view === 'checkout') content = <>
+    <Checkout page={page} pay={shop.pay} lines={chosen} back={() => go('keranjang')} submit={submit} ready={orders !== null && canCheckout} />
     {networkError && <p role="alert" className={styles.error}>{networkError} <button type="button" onClick={refresh}>Coba lagi</button></p>}
-    {view === 'penawaran' && !chosen.length && <div className={styles.info}><PublicForm page={page} /></div>}
   </>;
   else if (view === 'bayar') content = <>
     <Bar title="Cara Bayar" back={() => go('beranda')} />
     <div className={styles.info}>{shop.pay ? <PayBox pay={shop.pay} /> : <p className={styles.empty}>Hubungi bisnis untuk mengetahui cara pembayaran.</p>}</div>
   </>;
+  else if (view === 'riwayat-penawaran') content = <Orders quotes orders={orders?.filter((row) => row.kind === 'penawaran')} photos={photos} error={networkError} refresh={refresh} go={go} />;
   else if (view === 'pesanan') content = <Orders orders={orders} photos={photos} error={networkError} refresh={refresh} go={go} />;
-  else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} />;
+  else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} respond={respond} repeat={(previous) => { setRepeatQuote(previous); go('penawaran'); }} />;
   else if (view === 'info') content = <>
     <Bar title="Info Toko" back={() => go('beranda')} />
     <section className={styles.info}><h2>{page.name}</h2>
@@ -481,12 +536,10 @@ export default function PublicShop({ page, shop }) {
       {page.links?.filter((link) => /^https?:\/\//i.test(link.url)).map((link) => <p key={link.url}><a href={link.url} target="_blank" rel="noreferrer">{link.label}</a></p>)}
       <button type="button" onClick={() => go('favorit')}><Icon name="heart" />Produk Favorit</button>
       <button type="button" onClick={() => go('penawaran')}><Icon name="/tagihan" />Minta Penawaran</button>
-      <button type="button" onClick={() => go('permintaan')}><Icon name="/crm" />Kirim Permintaan ke Toko</button>
       <a href="/panduan">Panduan PRASARA</a>
     </section>
     <PublicGallery items={page.media?.gallery} title="Galeri Toko" />
   </>;
-  else if (view === 'permintaan') content = <><Bar title="Kirim Permintaan" back={() => go('info')} /><div className={styles.info}><PublicForm page={page} /></div></>;
   else content = <Catalog key={view === 'favorit' ? 'favorit' : 'catalog'} page={page} items={shop.items} photos={photos} go={go} contact={contact} favorites={favorites} toggleFavorite={favorite}
     count={lines.length} current={['katalog', 'favorit'].includes(view) ? 'katalog' : 'beranda'} openQuick={setQuick} initialMode={view === 'favorit' ? 'favorit' : ''} />;
   return <main className={styles.portal} data-screen={view}>

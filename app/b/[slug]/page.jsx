@@ -6,7 +6,7 @@ import PublicPay from '@/components/PublicPay';
 import Linkify from '@/components/Linkify';
 import { logoUrl } from '@/lib/logo';
 import { PublicCover, PublicGallery, ItemThumb } from '@/components/media/PublicPics';
-import { getPublicPage as getPage, getPublicShop } from '@/lib/publicPage';
+import { getPublicPage as getPage, getPublicShop, getPublicQuoteCatalog } from '@/lib/publicPage';
 import PublicShop from '@/components/commerce/PublicShop';
 import { linkBannerMetadata } from '@/lib/linkBannerServer';
 import { isBannerId } from '@/lib/linkBanner';
@@ -43,15 +43,21 @@ export default async function PublicPage({ params, searchParams }) {
   const { slug } = await params;
   const p = await getPage(slug);
   if (!p) notFound();
-  const view = (await searchParams)?.tampilan;
+  const query = await searchParams;
+  const view = query?.tampilan;
   const retail = p.type === 'retail';
-  const shop = retail ? await getPublicShop(slug) : null;
+  const [shop, quoteCatalog] = retail ? await Promise.all([getPublicShop(slug), getPublicQuoteCatalog(slug)]) : [null, null];
+  const quoteViews = ['penawaran', 'permintaan', 'riwayat-penawaran', 'lacak'];
+  const initialScreen = [typeof view === 'string' ? view : 'beranda', typeof query?.id === 'string' ? query.id : null];
   if (shop) {
     const media = p.media && {
       ...p.media,
       items: Object.fromEntries(p.items.map(({ id }) => [id, p.media.items?.[id] || []])),
     };
-    return <PublicShop key={p.slug} page={{ ...p, media }} shop={shop} />;
+    return <PublicShop key={p.slug} page={{ ...p, media }} shop={shop} quoteCatalog={quoteCatalog} initialScreen={initialScreen} />;
+  }
+  if (quoteCatalog && quoteViews.includes(view)) {
+    return <PublicShop key={p.slug} page={p} shop={{ items: [], pay: null }} quoteCatalog={quoteCatalog} initialScreen={initialScreen} quoteOnly />;
   }
   return (
     <main className="wrap stack" style={{ maxWidth: 640, paddingTop: 20, paddingBottom: 40 }}>
@@ -86,7 +92,9 @@ export default async function PublicPage({ params, searchParams }) {
           {p.show_prices && <span className="small muted">Harga dapat berubah; harga final dikonfirmasi oleh {p.name}.</span>}
         </section>
       )}
-      <div id="booking"><PublicForm page={p} initialReservation={view === 'booking'} /></div>
+      <div id="booking">{quoteCatalog
+        ? <a href={`/b/${p.slug}?tampilan=penawaran`} className="primary">Minta Penawaran</a>
+        : <PublicForm page={p} initialReservation={view === 'booking'} />}</div>
       {p.type === 'jasa' && p.order && <a href={`/b/${p.slug}/cek`} className="small" style={{ textAlign: 'center' }}>Sudah memesan? Cek status pesanan →</a>}
       {p.type !== 'properti' && <div id="bayar"><PublicPay slug={p.slug} panel /></div>}
       {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.policy} /></p></section>}

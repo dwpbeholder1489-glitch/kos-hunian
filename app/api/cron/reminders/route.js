@@ -41,6 +41,19 @@ export async function GET(req) {
       lampiran = { ok: true, dibersihkan: rows?.length || 0 };
     }
   } catch (e) { lampiran = { ok: false, error: e.message }; }
+  let lampiranPenawaran = { ok: true, skipped: 'belum dikonfigurasi' };
+  try {
+    const sb = adminDb();
+    if (sb) {
+      const { data: paths, error } = await sb.rpc('portal_quote_orphan_paths');
+      if (error) throw error;
+      if (paths?.length) {
+        const { error: removal } = await sb.storage.from('portal-quote').remove(paths);
+        if (removal) throw removal;
+      }
+      lampiranPenawaran = { ok: true, dibersihkan: paths?.length || 0 };
+    }
+  } catch (e) { lampiranPenawaran = { ok: false, error: e.message }; }
   // Media (foto publik): file lama setelah diganti/dihapus + unggahan yang tidak selesai
   let media = { ok: true, skipped: 'belum dikonfigurasi' };
   try {
@@ -53,7 +66,7 @@ export async function GET(req) {
       media = { ok: true, dibersihkan: paths.length };
     }
   } catch (e) { media = { ok: false, error: e.message }; }
-  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && pengalaman.ok && integrasi.ok && pemakaian.ok && lampiran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, pengalaman, integrasi, pemakaian, lampiran, media };
+  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && pengalaman.ok && integrasi.ok && pemakaian.ok && lampiran.ok && lampiranPenawaran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, pengalaman, integrasi, pemakaian, lampiran, lampiranPenawaran, media };
   console.log('[cron daily]', JSON.stringify(res));
   try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });
