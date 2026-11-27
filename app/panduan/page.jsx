@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrBerandaEvent, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrBerandaEvent, ScrRundown, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -966,7 +966,7 @@ const PARTS = [
       <><b>Nilai kontrak</b> hanya terlihat &amp; bisa diisi oleh pemilik/bagian keuangan. Nilai ini baru menjadi pendapatan di Pembukuan saat milestone diserahkan / proyek selesai (Langkah 136).</>,
       <>Di halaman proyek, tekan <b>+ Milestone</b> untuk tahap besar (mis. <i>DP &amp; konsep</i> → <i>Gladi bersih</i> → <i>Hari H</i> → <i>Pelunasan</i>) beserta target tanggal dan <b>rencana nilai termin</b>. Total termin dibandingkan dengan nilai kontrak (kurang/lebih ditampilkan). Centang milestone saat selesai.</>,
       <>Pekerjaan besar bisa dipecah: <b>+ Subproyek</b> (mis. produksi panggung) dengan PIC &amp; tugas sendiri — hanya satu tingkat.</>,
-    ], <>Proyek inti (proyek/event, milestone, tugas, tagihan DP &amp; pelunasan) memakai <b>Paket Dasar</b> ke atas; penawaran, anggaran &amp; laba proyek memakai <b>Paket Bisnis</b>. Bila paket turun, proyek yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan proyeknya diselesaikan atau dibatalkan — membuat &amp; mengubah butuh paketnya lagi. Anggaran & laba proyek ada di Langkah 135, tagihan & pembayaran klien di Langkah 136. Bisnis event punya tampilan khusus (Langkah 140–142).</>, 'warn', <ScrProyek />, 'dasar'],
+    ], <>Proyek inti (proyek/event, milestone, tugas, tagihan DP &amp; pelunasan) memakai <b>Paket Dasar</b> ke atas; penawaran, anggaran &amp; laba proyek memakai <b>Paket Bisnis</b>. Bila paket turun, proyek yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan proyeknya diselesaikan atau dibatalkan — membuat &amp; mengubah butuh paketnya lagi. Anggaran & laba proyek ada di Langkah 135, tagihan & pembayaran klien di Langkah 136. Bisnis event punya tampilan khusus (Langkah 140–144).</>, 'warn', <ScrProyek />, 'dasar'],
     ['Tugas tim, anggota & status proyek', 'Proyek › buka proyek', [
       <>Tekan <b>+ Tugas</b>: judul, <b>penanggung jawab</b> (anggota tim bisnis), tenggat, prioritas, milestone. <b>Simpan &amp; tambah lagi</b> untuk mengetik banyak tugas berturut-turut.</>,
       <>Penanggung jawab melihat tugasnya di menu <b>Proyek</b> › <b>Tugas saya</b> dari HP-nya sendiri dan menekan <b>Mulai</b> lalu <b>Selesai ✓</b> — walau perannya kasir atau gudang, ia hanya melihat proyek tempat ia diberi tugas. Tugas lewat tenggat ditandai <b>terlambat</b>.</>,
@@ -1015,7 +1015,7 @@ const PARTS = [
       <>PIC (karyawan mana pun) melihat menu <b>Daftar risiko</b> berisi risiko miliknya saja dan menekan <b>Tulis perkembangan</b> (status + catatan). Hanya pemilik/pengelola yang mengubah nilai atau menutup risiko.</>,
     ], <>Dikelola pemilik atau karyawan berizin Keuangan/Pengaturan. Setiap perubahan, tinjauan, dan perkembangan tercatat di riwayat risiko; pembuatan & penutupan juga di Konfigurasi › Riwayat. Daftar ini catatan pengelolaan internal, bukan penilaian resmi pihak luar.</>, null, null, 'bisnis'],
   ]],
-  ['AK', 'Event: Beranda Event, booking, jadwal & tim', [
+  ['AK', 'Event: Beranda Event, booking, jadwal, tim & rundown', [
     ['Beranda Event', 'Beranda (bisnis kategori Event)', [
       <>Bisnis berkategori <b>Event</b> (event/wedding organizer, seminar, konser, pameran) memakai tampilan khusus dengan 10 menu: <b>Beranda</b>, <b>Event / Kegiatan</b>, <b>Booking &amp; Pesanan</b>, <b>Pelanggan (Client)</b>, <b>Jadwal &amp; Tim</b>, <b>Vendor</b>, <b>Inventaris &amp; Properti</b>, <b>Keuangan</b>, <b>Laporan &amp; Analisis</b>, dan <b>Pengaturan</b>. Analisis Bisnis selalu tampil tepat di bawah Beranda.</>,
       <>Kartu ringkasan di atas: <b>Event Aktif</b> (berjalan/ditunda, dibanding awal bulan), <b>Booking Masuk</b> (nilai event yang dikonfirmasi bulan ini), <b>Event Bulan Ini</b> (acara yang berlangsung di bulan itu), <b>Pendapatan Bulan Ini</b> — semuanya dibanding bulan lalu. Ganti bulan dengan tombol ‹ › di kanan atas.</>,
@@ -1033,7 +1033,19 @@ const PARTS = [
       <><b>Jadwal &amp; Tim</b>: kalender event bulanan (ketuk tanggal untuk event hari itu), <b>Beban kerja tim</b> (tugas terbuka &amp; terlambat per orang — ketuk untuk menyaring), dan semua <b>tugas persiapan</b> dengan saringan Terlambat / 7 hari ke depan / per orang.</>,
       <><b>Pelanggan (Client)</b> hanya menampilkan pelanggan; <b>Vendor</b> menampilkan supplier/vendor. Keduanya memakai daftar kontak yang sama dengan Belanja &amp; Pembukuan — tidak ada data ganda.</>,
       <><b>Inventaris &amp; Properti</b> memakai menu Aset tetap (peralatan, sound system, tenda, dekorasi) beserta penyusutannya.</>,
-    ], <>Rundown per jam, kategori &amp; evaluasi vendor, serta jadwal peralatan per event menyusul di tahap berikutnya (Tahap B &amp; C) — belum tersedia sekarang.</>, null, null, 'dasar'],
+    ], <>Kategori &amp; evaluasi vendor serta jadwal peralatan per event menyusul di tahap berikutnya (Tahap C) — belum tersedia sekarang. Rundown ada di Langkah 143–144.</>, null, null, 'dasar'],
+    ['Menyusun rundown & menyimpan versi', 'Event / Kegiatan › buka event › tab Rundown', [
+      <>Halaman event kini bertab: <b>Ringkasan</b>, <b>Rundown</b>, <b>Tim &amp; Tugas</b>, <b>Keuangan</b> (pemilik/keuangan), dan <b>Dokumen &amp; riwayat</b>.</>,
+      <>Di tab <b>Rundown</b> tekan <b>+ Item</b>: tanggal, jam mulai, jam selesai <i>atau</i> durasi (menit), kegiatan, lokasi/stage, <b>PIC</b>, pengisi acara/pembicara, deskripsi, <b>technical cue</b> (lampu, musik, mic), kebutuhan alat, catatan. <b>Simpan &amp; tambah berikutnya</b> langsung mengisi jam mulai item berikut dari jam selesai item ini. Jam selesai lebih kecil dari jam mulai = lewat tengah malam.</>,
+      <>Belum punya susunan? Saat rundown kosong tekan <b>Pakai kerangka</b> (Pernikahan, Seminar, Workshop, Konser, Acara umum), isi tanggal &amp; jam acara inti, lalu sesuaikan setiap item.</>,
+      <>Tampilan <b>Timeline</b> (per hari), <b>Agenda</b> (tabel lengkap), dan <b>Checklist</b> (tugas persiapan event — sama dengan tab Tim &amp; Tugas). <b>Cetak</b> membuka dokumen rundown berlogo bisnis untuk PDF atau <b>Bagikan WA</b> ke tim.</>,
+      <>Rundown disepakati klien/tim? Tekan <b>Simpan sebagai versi</b> (beri catatan, mis. <i>Disetujui klien</i>). Setiap perubahan isi setelahnya ditandai <b>Ada perubahan — simpan versi</b>. <b>Riwayat versi</b> menampilkan isi tiap versi dan bisa <b>Pulihkan versi ini</b> (alasan wajib; isi sekarang disimpan otomatis sebagai versi tersendiri).</>,
+    ], <>PIC yang sama di dua event pada jam bertumpuk diberi peringatan <b>⚠ PIC juga bertugas di …</b> — tidak diblokir. Item di luar tanggal event juga ditandai. PIC item otomatis bisa melihat event itu (walau perannya kasir/gudang) dan hanya bisa menjalankan itemnya sendiri.</>, 'warn', <ScrRundown />, 'dasar'],
+    ['Hari-H: rundown live, geser jadwal & agenda harian', 'tab Rundown · Jadwal & Tim › Agenda', [
+      <>Saat kegiatan dimulai tekan <b>Mulai</b>, lalu <b>Selesai ✓</b> (atau <b>Lewati</b>). Jam nyata &amp; siapa yang menekan tercatat; item yang sedang berjalan disorot dan tampil di atas sebagai <b>Sedang berjalan</b>.</>,
+      <>Acara molor atau maju? Tekan <b>Geser jadwal</b>: pilih hari, mulai dari jam berapa, mundur/maju berapa menit. Semua kegiatan berikutnya yang belum selesai ikut bergeser sekaligus dan tercatat di riwayat event.</>,
+      <>Di <b>Jadwal &amp; Tim</b>, kartu <b>Agenda</b> menampilkan rundown semua event hari ini; ketuk tanggal di kalender untuk agenda hari lain. PIC bisa menekan Mulai/Selesai langsung dari sana.</>,
+    ], <>Status pelaksanaan bukan perubahan isi rundown (tidak membuat versi baru). Menjalankan &amp; menggeser rundown tetap bisa walau paket turun; menambah &amp; mengubah item butuh Paket Dasar.</>, null, null, 'dasar'],
   ]],
 ];
 
@@ -1104,7 +1116,7 @@ export default function Panduan() {
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
-          <div><b>Event</b><span><a href="#bagian-AK">Langkah 140–142</a><br />Beranda Event, booking &amp; status event, foto cover, kalender, jadwal &amp; tim, pelanggan &amp; vendor</span></div>
+          <div><b>Event</b><span><a href="#bagian-AK">Langkah 140–144</a><br />Beranda Event, booking &amp; status event, foto cover, kalender, jadwal &amp; tim, pelanggan &amp; vendor, rundown berversi &amp; hari-H</span></div>
           <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–136</a><br />Event, kreatif &amp; produksi: penawaran & scope, anggaran & laba proyek, tagihan termin & pembayaran, klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>

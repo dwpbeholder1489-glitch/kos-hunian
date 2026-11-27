@@ -528,6 +528,20 @@ export function ScrBerandaEvent() {
   );
 }
 
+// Rundown event (Langkah 143) — DATA CONTOH
+export function ScrRundown() {
+  return (
+    <Phone bare>
+      <h3>Rundown · Wedding Rina &amp; Bayu</h3>
+      <span className="small muted">DATA CONTOH · versi 2 · Disetujui klien</span>
+      <div className="row between small"><span><b>08:00–09:30</b> Persiapan pengantin<br /><span className="muted">Rias · PIC Sari</span></span><span className="chip good">Selesai</span></div>
+      <div className="row between small" style={{ background: 'var(--gold-soft)', borderRadius: 8, padding: 6 }}><span><b>09:30–10:30</b> Akad nikah<br /><span className="muted">Ballroom · Cue: musik instrumental</span></span><span className="chip gold">Berjalan</span></div>
+      <div className="row between small"><span><b>11:00–12:30</b> Resepsi<br /><span className="muted">PIC MC Andi</span></span><span className="chip void">Rencana</span></div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn cta">Selesai ✓</span><span className="mini-btn">Geser jadwal</span><span className="mini-btn">Cetak</span></div>
+    </Phone>
+  );
+}
+
 export function ScrResep() {
   return (
     <Phone bare>

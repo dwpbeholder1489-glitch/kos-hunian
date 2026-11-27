@@ -1,7 +1,7 @@
 'use client';
 // Jadwal & Tim (workspace Event): kalender event bulanan, semua tugas persiapan yang masih terbuka, dan beban kerja
 // per orang. Server: event_schedule (izin sama dengan daftar event; nilai uang tidak dikirim ke non-keuangan).
-// Rundown per jam menyusul di Tahap B — di sini hanya tanggal & jam acara yang sudah ada.
+// Agenda harian = rundown semua event pada tanggal terpilih (event_agenda).
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -12,7 +12,7 @@ import EventCal, { eventsOn } from '@/components/EventCal';
 import { Loading, Empty, run } from '@/components/ui';
 import { canArea } from '@/lib/business';
 import { tglShort, errMsg } from '@/lib/format';
-import { EV_ST, tglHari, addMonths, addDays } from '@/lib/event';
+import { EV_ST, RD_ST, tglHari, addMonths, addDays } from '@/lib/event';
 import { PRIO, Chip } from '@/components/Proyek';
 
 export default function Jadwal() {
@@ -23,6 +23,10 @@ export default function Jadwal() {
   const [sel, setSel] = useState(null);
   const [who, setWho] = useState('');          // '' = semua, 'me', 'none', atau user_id
   const [when, setWhen] = useState('semua');   // semua | telat | minggu
+  const [ag, setAg] = useState(null);          // agenda rundown harian lintas event (event_agenda)
+  const agDay = sel || null;
+  const loadAg = () => supabase.rpc('event_agenda', { p_kos: kosId, p_day: agDay }).then(({ data, error }) => setAg(error ? { error: errMsg(error) } : data));
+  useEffect(() => { loadAg(); }, [kosId, ver, agDay]); // eslint-disable-line react-hooks/exhaustive-deps
   const load = () => supabase.rpc('event_schedule', { p_kos: kosId, p_month: month }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setD(data))));
   useEffect(() => { load(); }, [kosId, ver, month]); // eslint-disable-line react-hooks/exhaustive-deps
   const tasks = useMemo(() => {
@@ -34,6 +38,7 @@ export default function Jadwal() {
   if (err) return <div className="notice bad">{/event_schedule|function/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
   const go = (n) => { setSel(null); setMonth(addMonths(d.month, n)); };
+  const agStatus = async (r, s) => { if (await run(() => supabase.rpc('prj_rundown_status', { p_id: r.id, p_status: s }), `${r.title}: ${RD_ST[s][0].toLowerCase()}`, errMsg)) loadAg(); };
   const toggle = async (t) => { if (await run(() => supabase.rpc('prj_task_status', { p_id: t.id, p_status: 'selesai' }), 'Tugas selesai', errMsg)) load(); };
   const shown = sel ? eventsOn(d.events, sel) : d.events;
   const besok = addDays(d.today, 1);
@@ -57,6 +62,23 @@ export default function Jadwal() {
               </Link>; })}</div>}
         </section>
       </div>
+
+      <section className="ev-card" aria-labelledby="jd-ag">
+        <div className="ev-card-h"><h2 id="jd-ag">Agenda {ag?.day ? (ag.day === d.today ? 'hari ini' : tglHari(ag.day)) : ''}</h2></div>
+        {!ag ? <span className="small muted">Memuat…</span> : ag.error ? <span className="small muted">{/event_agenda|function/.test(ag.error) ? 'Agenda sedang disiapkan. Coba lagi beberapa menit lagi.' : ag.error}</span>
+          : ag.items.length === 0 ? <span className="small muted">Tidak ada kegiatan rundown {ag.day === d.today ? 'hari ini' : 'di tanggal ini'}. Rundown diisi di halaman setiap event (tab Rundown). Ketuk tanggal lain di kalender untuk melihat agendanya.</span>
+            : <ol className="rd-tl">{ag.items.map((r) => { const st = RD_ST[r.status] || [r.status, 'void'];
+              return <li key={r.id} className={'rd-it' + (r.status === 'berjalan' ? ' now' : '') + (['selesai', 'dilewati'].includes(r.status) ? ' done' : '')}>
+                <div className="rd-time"><b>{r.start_time}</b>{r.end_time && <span>{r.end_time}</span>}</div>
+                <div className="rd-body">
+                  <div className="row between" style={{ flexWrap: 'nowrap', gap: 8, alignItems: 'flex-start' }}><b className="rd-title">{r.title}</b><span className={'chip ' + st[1]}>{st[0]}</span></div>
+                  <span className="small muted"><Link href={`/proyek/${r.project_id}?tab=rundown`}>{r.project}</Link>{[r.location, r.pic && `PIC ${r.pic}`, r.performer].filter(Boolean).map((x) => ` · ${x}`).join('')}</span>
+                  {r.can_status && !['selesai', 'dilewati'].includes(r.status) && <div className="row" style={{ gap: 6, marginTop: 4 }}>
+                    {r.status !== 'berjalan' ? <button className="sm primary" onClick={() => agStatus(r, 'berjalan')}>Mulai</button> : <button className="sm primary" onClick={() => agStatus(r, 'selesai')}>Selesai ✓</button>}
+                  </div>}
+                </div>
+              </li>; })}</ol>}
+      </section>
 
       {d.team.length > 0 && <section className="ev-card" aria-labelledby="jd-tim">
         <div className="ev-card-h"><h2 id="jd-tim">Beban kerja tim</h2>{canArea(kos, 'team') && <Link href="/karyawan">Kelola karyawan →</Link>}</div>

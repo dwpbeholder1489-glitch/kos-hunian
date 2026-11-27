@@ -18,6 +18,7 @@ import CostPanel from '@/components/ProyekBiaya';
 import BillingPanel from '@/components/ProyekTagihan';
 import EntityPhotos from '@/components/media/EntityPhotos';
 import FiturUpgrade from '@/components/FiturUpgrade';
+import RundownPanel from '@/components/Rundown';
 import { EV_ST, STAGE_PRE, STAGE_POST, termOf, tglHari } from '@/lib/event';
 
 const waktu = (iso) => new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -38,6 +39,12 @@ export default function ProyekDetail() {
   const [taskTab, setTaskTab] = useState('buka');
   const [member, setMember] = useState(false);
   const [qform, setQform] = useState(null);   // 'awal' | 'perubahan'
+  // Tab halaman (Master Prompt Event §5): dari ?tab= atau #tagihan-baru (Beranda Event › Buat Invoice → Keuangan)
+  const [tab, setTab] = useState(() => {
+    if (typeof window === 'undefined') return 'ringkasan';
+    if (window.location.hash === '#tagihan-baru') return 'keuangan';
+    return new URLSearchParams(window.location.search).get('tab') || 'ringkasan';
+  });
   const load = () => supabase.rpc('prj_get', { p_project: id }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setP(data))));
   useEffect(() => { load(); }, [id, ver]); // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="stack"><div className="notice bad">{/prj_get|function/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div><Link href="/proyek">← Kembali ke daftar proyek</Link></div>;
@@ -55,6 +62,9 @@ export default function ProyekDetail() {
   // Tahap event manual (null = otomatis dari data). Selesai/Dibatalkan tetap lewat tombol status.
   const stageOpts = p.status === 'penawaran' ? STAGE_PRE : closed ? [] : STAGE_POST;
   const setStage = async (v) => { if (await run(() => supabase.rpc('prj_stage_set', { p_project: p.id, p_stage: v || null }), 'Tahap event diubah', errMsg)) load(); };
+  const fin = p.fin || p.can_quote;
+  const tabs = [['ringkasan', 'Ringkasan'], ...(ev ? [['rundown', 'Rundown']] : []), ['tim', 'Tim & Tugas'], ...(fin ? [['keuangan', 'Keuangan']] : []), ['dokumen', 'Dokumen & riwayat']];
+  const cur = tabs.some(([k]) => k === tab) ? tab : 'ringkasan';
   return (
     <div className="stack">
       <Link href="/proyek" className="small">← {T.all}</Link>
@@ -62,6 +72,10 @@ export default function ProyekDetail() {
         actions={canEdit && <button onClick={() => setForm('edit')}>Ubah</button>} />
       {!p.allowed && kelola && <div className="notice">Paket bisnis ini belum mencakup {T.list} (mulai Paket Dasar). Anda masih bisa membuka data, menandai tugas, dan menyelesaikan atau membatalkan {T.one}.</div>}
 
+      <div className="ev-tabs noprint" role="tablist" aria-label={`Bagian ${T.one}`}>{tabs.map(([k, l]) => (
+        <button key={k} type="button" role="tab" aria-selected={cur === k} className={cur === k ? 'on' : ''}
+          onClick={() => { setTab(k); try { const u = new URL(window.location.href); u.searchParams.set('tab', k); u.hash = ''; window.history.replaceState(null, '', u.pathname + u.search); } catch {} }}>{l}</button>))}</div>
+      {cur === 'ringkasan' && <>
       <section className="panel" style={{ gap: 10 }}>
         <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}>
           {ev ? <span className={'chip ' + (EV_ST[p.event_status] || ['', 'void'])[1]}>{(EV_ST[p.event_status] || [p.event_status])[0]}{p.event_stage ? '' : ' · otomatis'}</span> : <Chip map={STATUS} v={p.status} />}
@@ -94,6 +108,8 @@ export default function ProyekDetail() {
         {p.description && <p className="small" style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{p.description}</p>}
       </section>
 
+      </>}
+      {cur === 'keuangan' && <>
       {p.can_quote && <section className="panel" style={{ gap: 6 }}>
         <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}><span className="label">Penawaran & perubahan scope ({(p.quotes || []).length})</span>
           {p.allowed && p.lanjut && p.status !== 'batal' && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
@@ -112,6 +128,9 @@ export default function ProyekDetail() {
       {p.allowed && !p.lanjut && (p.can_quote || p.fin) && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.ADVANCED.REQUESTED" title={`Penawaran, anggaran & laba per ${T.one} — Paket Bisnis`}
         text={`Paket Dasar sudah mencakup ${T.one}, jadwal, tugas tim, dan tagihan DP & pelunasan. Paket Bisnis menambah penawaran ke klien (scope & termin), perubahan scope, anggaran per kategori, komitmen vendor, dan laba per ${T.one}.`} />}
 
+      </>}
+      {cur === 'rundown' && <RundownPanel project={p} onChange={load} />}
+      {cur === 'tim' && <>
       <section className="panel" style={{ gap: 6 }}>
         <div className="row between"><span className="label">Milestone ({p.milestones.length})</span>{canEdit && <button className="sm" onClick={() => setForm({ ms: {} })}>+ Milestone</button>}</div>
         {p.fin && p.milestones.some((m) => Number(m.amount) > 0) && <span className="small muted">Mencentang milestone bernilai = pekerjaan diserahkan → nilainya diakui sebagai pendapatan di Pembukuan (dari uang muka lebih dulu, kekurangannya jadi piutang).</span>}
@@ -163,6 +182,8 @@ export default function ProyekDetail() {
             {canEdit && <button className="sm ghost" onClick={async () => { if (window.confirm(`Keluarkan ${m.name} dari proyek ini?`) && await run(() => supabase.rpc('prj_member_set', { p_project: p.id, p_user: m.user_id, p_on: false, p_role: null }), 'Anggota dikeluarkan', errMsg)) load(); }}>Keluarkan</button>}</div>))}</div>}
       </section>
 
+      </>}
+      {cur === 'ringkasan' && <>
       {(p.children.length > 0 || (canEdit && !p.parent_id)) && <section className="panel" style={{ gap: 6 }}>
         <div className="row between"><span className="label">{ev ? 'Bagian event' : 'Subproyek'} ({p.children.length})</span>{canEdit && !p.parent_id && <button className="sm" onClick={() => setForm('sub')}>+ Subproyek</button>}</div>
         {p.children.length === 0 ? <span className="small muted">Pekerjaan besar bisa dipecah, mis. produksi panggung atau dokumentasi sebagai subproyek dengan PIC & tugas sendiri.</span>
@@ -171,6 +192,8 @@ export default function ProyekDetail() {
 
       {ev && canArea(kos, 'ops,settings') && <EntityPhotos kosId={kosId} entity="project" entityId={p.id} category="portofolio" title="Foto event" max={8} canEdit={kelola && !closed}
         hint="Foto pertama = cover di Beranda Event & daftar event. Foto juga bisa dipakai ulang di Foto & media." />}
+      </>}
+      {cur === 'dokumen' && <>
       {canArea(kos, 'ops,settings') && <Lampiran entity="project" id={p.id} title={`Dokumen ${T.one}`} hint="Mis. kontrak, brief, denah, foto lokasi (foto/PDF, maks. 4 MB). File desain/video besar simpan di Google Drive/Dropbox dan tempel tautannya di keterangan." />}
 
       <section className="panel" style={{ gap: 6 }}>
@@ -178,6 +201,7 @@ export default function ProyekDetail() {
         {p.history.length === 0 ? <span className="small muted">Belum ada.</span>
           : <div className="list">{p.history.slice(0, 30).map((h, i) => <div className="li" key={i}><div className="main"><span className="small">{h.summary.replace(`${p.number} · `, '')}</span><span className="small muted">{waktu(h.at)} · {h.actor}</span></div></div>)}</div>}
       </section>
+      </>}
 
       {form === 'edit' && <ProjectForm kosId={kosId} init={p} fin={p.fin} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}
       {form === 'sub' && <ProjectForm kosId={kosId} init={{ parent_id: p.id, kind: p.kind }} fin={p.fin} onClose={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}

@@ -1817,3 +1817,26 @@ button.wf-line{background:none;border-width:0 0 1px;border-radius:0;color:inheri
   .ev-kpi-b b{font-size:17px}
   .ev-qa a,.ev-qa button{min-height:84px;font-size:12px}
 }
+
+/* ===== Event Tahap B: tab halaman event & rundown (kelas ev-tabs, rd-*) ===== */
+.ev-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin:0 -2px;padding:0 2px}
+.ev-tabs::-webkit-scrollbar{display:none}
+.ev-tabs button{flex:none;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;min-height:42px;padding:0 12px;color:var(--muted);font-weight:600;white-space:nowrap}
+.ev-tabs button.on{color:var(--gold);border-bottom-color:var(--gold)}
+.rd-tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rd-it{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line);position:relative}
+.rd-it:first-child{border-top:0}
+.rd-it.now{background:color-mix(in srgb,var(--gold-soft) 55%,transparent);border-radius:12px;padding:12px 10px;margin:2px -10px;border-top-color:transparent}
+.rd-it.done .rd-title{color:var(--muted)}
+.rd-time{display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.rd-time b{font-size:16px}
+.rd-time span{font-size:12.5px;color:var(--muted)}
+.rd-time small{font-size:11px;color:var(--muted)}
+.rd-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.rd-title{font-size:15px;overflow-wrap:anywhere}
+.rd-wrap{overflow-wrap:anywhere;white-space:pre-wrap}
+.rd-print td{overflow-wrap:break-word}
+.rd-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.rd-scroll .rd-print{min-width:560px}
+@media print{.rd-scroll{overflow:visible}.rd-scroll .rd-print{min-width:0}}
+@media print{.rd-print{font-size:11px}.rd-print th,.rd-print td{padding:4px 3px}}

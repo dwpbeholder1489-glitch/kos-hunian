@@ -186,5 +186,17 @@ Keputusan pemilik (22 Nov 2026):
 | Booking & Pesanan (daftar, konfirmasi) | Selesai — booking = event belum dikonfirmasi (tanpa tabel ganda) |
 | Jadwal & Tim (kalender, beban kerja, semua tugas) | Selesai (`event_schedule`, diuji) |
 | Pelanggan (Client) & Vendor | Selesai — menyaring kontak yang sama |
-| Detail event tab Overview/Informasi/Anggaran/Pembayaran | Sebagian — satu halaman berisi info, status, foto, penawaran, tagihan, biaya, milestone, tugas, anggota, dokumen, riwayat (belum dalam bentuk tab) |
-| Rundown, inventaris per event, kategori & evaluasi vendor, booking publik, dokumen PDF event, laporan BI event, kustomisasi (+), adaptif per jenis event | Belum — Tahap B–D |
+| Detail event bertab | Tahap B: Ringkasan · Rundown · Tim & Tugas · Keuangan (penawaran, tagihan & pembayaran, anggaran & biaya) · Dokumen & riwayat. Tab Vendor & Inventaris menyusul Tahap C |
+| Inventaris per event, kategori & evaluasi vendor, booking publik, dokumen PDF event (selain rundown), laporan BI event, kustomisasi (+) | Belum — Tahap C–D |
+
+## 10. Event Tahap B — Rundown & Jadwal (migrasi `20261128110000_event_rundown.sql`)
+
+| Bagian (Master Prompt §11 / Blueprint §5.5, §5.8, EVT-016) | Status |
+|---|---|
+| Item rundown: waktu mulai/selesai, durasi, lokasi/stage, aktivitas, deskripsi, PIC, pengisi acara/pembicara, technical cue, kebutuhan alat, catatan, status pelaksanaan | Selesai, diuji (`event_rundown.sql`) |
+| Riwayat versi (simpan, lihat, pulihkan dengan alasan) — EVT-016 | Selesai, diuji |
+| Rundown live: Mulai/Selesai/Lewati dengan waktu nyata & pelaku; geser jadwal saat molor; perubahan tercatat di riwayat | Selesai, diuji |
+| Tampilan Timeline, Agenda (tabel + cetak/PDF/WA), Kalender (agenda harian lintas event di Jadwal & Tim), Checklist persiapan (= Tugas event, tanpa tabel ganda) | Selesai (render diuji dengan data dari database uji) |
+| Peringatan PIC bentrok antar event | Selesai (peringatan, tidak memblokir) |
+| Kerangka rundown per jenis acara (Pernikahan/Seminar/Workshop/Konser/Umum) | Selesai — hanya bila pemilik memilihnya |
+| Kebutuhan alat tertaut ke inventaris; check-in kru/peserta; incident log; stage readiness | Belum — kebutuhan alat masih teks bebas (inventaris di Tahap C) |
