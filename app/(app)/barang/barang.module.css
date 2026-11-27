@@ -1,5 +1,6 @@
 .page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(10px, 3vw, 20px);
   min-width: 0;
   --inventory-green: #08782d;
