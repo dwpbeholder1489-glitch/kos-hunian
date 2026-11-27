@@ -104,10 +104,10 @@ export async function readCustomBanner(file) {
   if (!['png', 'jpeg', 'webp'].includes(info.format) || (info.pages ?? 1) !== 1) {
     throw new Error('Gunakan gambar PNG, JPG, atau WebP tanpa animasi.');
   }
-  const dims = info.autoOrient || info;
-  if (dims.width !== width || dims.height !== height) throw new Error('Ukuran banner harus 1200 × 630 piksel.');
   try {
-    const buf = await image.rotate().flatten({ background: '#ffffff' }).png().toBuffer();
+    const buf = await image.rotate()
+      .resize(width, height, { fit: 'contain', background: '#ffffff' })
+      .flatten({ background: '#ffffff' }).png().toBuffer();
     return buf.toString('base64');
   } catch { throw new Error('Gambar gagal dibaca. Coba unggah ulang.'); }
 }

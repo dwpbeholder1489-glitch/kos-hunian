@@ -144,7 +144,7 @@ function BannerSettings({ kosId, closed }) {
                   {draft.mode === mode.id && <i className={styles.selected}><NavIcon name="done" size={17} /></i>}
                 </button>)}
               </div>
-              {draft.mode === 'custom' && <Field label="File banner" hint={file ? file.name : draft.hasCustom ? 'Banner custom tersimpan. Pilih file untuk menggantinya.' : 'PNG, JPG, atau WebP • 1200 × 630 piksel • maks. 3 MB'}>
+              {draft.mode === 'custom' && <Field label="File banner" hint={file ? file.name : draft.hasCustom ? 'Banner custom tersimpan. Pilih file untuk menggantinya.' : 'PNG, JPG, atau WebP • maks. 3 MB • disesuaikan ke 1200 × 630 piksel'}>
                 <input type="file" accept="image/png,image/jpeg,image/webp" onChange={chooseFile} />
               </Field>}
               {draft.mode === 'photo' && <p className={styles.hint}>Foto diambil dari cover atau galeri di <Link href="/halaman">Halaman bisnis</Link>.</p>}
