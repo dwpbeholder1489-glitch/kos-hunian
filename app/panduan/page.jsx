@@ -1006,6 +1006,15 @@ const PARTS = [
       <>Pelanggan memantau di tab <b>Pesanan</b> (status, jumlah terkirim, surat jalan, nomor faktur), bisa <b>Pesan lagi</b> dari pesanan lama, dan <b>Batalkan</b> selama belum dikonfirmasi. Tab <b>Tagihan</b>: sisa tagihan, batas kredit, faktur & jatuh tempo, pembayaran yang sudah dicatat, cara bayar, tombol kirim bukti lewat WhatsApp.</>,
     ], <>Pesanan portal belum mengubah stok atau uang sampai dikirim. Harga terkunci saat pelanggan memesan (dihitung server, bukan dari HP pelanggan). Melewati batas kredit tetap bisa dikirim pelanggan — penjual yang memutuskan saat konfirmasi (aturan batas kredit sama). Batas wajar: 10 pesanan per jam & 20 pesanan menunggu per pelanggan.</>, 'warn', <ScrPortalPelanggan />],
   ]],
+  ['AJ', 'Keuangan: Daftar risiko', [
+    ['Mencatat, menangani & meninjau risiko', 'Keuangan › Daftar risiko (Paket Bisnis)', [
+      <><b>Saran dari data</b> muncul bila Pembukuan menunjukkan tanda bahaya: kas lebih kecil dari biaya sebulan, usaha merugi, cicilan pinjaman 12 bulan melebihi kas, piutang/tagihan lewat jatuh tempo, margin kotor sangat tipis, atau kas habis pada stress test. Ketuk <b>Masukkan ke daftar</b> (bisa diubah dulu) atau <b>Abaikan 90 hari</b> — tidak ada yang tercatat tanpa keputusan Anda.</>,
+      <><b>+ Risiko baru</b>: judul, kategori, <b>kemungkinan</b> dan <b>dampak</b> (1–5), cara menangani (kurangi/hindari/alihkan/terima), rencana penanganan, nilai setelah ditangani (opsional), <b>penanggung jawab (PIC)</b>, target selesai, dan jarak tinjau (mis. setiap 30 hari).</>,
+      <><b>Peta risiko</b> 5×5 menunjukkan jumlah risiko per kemungkinan × dampak — ketuk kotak untuk menyaring. Skor 1–4 rendah, 5–9 sedang, 10–14 tinggi, 15–25 sangat tinggi.</>,
+      <>Saat jadwal tinjau tiba, tanggalnya berwarna merah: buka risiko › <b>Tinjau ulang</b> untuk menilai ulang kemungkinan & dampak; jadwal berikutnya bergeser otomatis.</>,
+      <>PIC (karyawan mana pun) melihat menu <b>Daftar risiko</b> berisi risiko miliknya saja dan menekan <b>Tulis perkembangan</b> (status + catatan). Hanya pemilik/pengelola yang mengubah nilai atau menutup risiko.</>,
+    ], <>Dikelola pemilik atau karyawan berizin Keuangan/Pengaturan. Setiap perubahan, tinjauan, dan perkembangan tercatat di riwayat risiko; pembuatan & penutupan juga di Konfigurasi › Riwayat. Daftar ini catatan pengelolaan internal, bukan penilaian resmi pihak luar.</>, null, null, 'bisnis'],
+  ]],
 ];
 
 const RULES = [

@@ -251,7 +251,7 @@ export const BLUEPRINT = [
   ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga, ROIC; register modal belum', 'investasi'],
   ['Valuasi bisnis', 'Parsial', 'DCF; multiple & asset-based belum', 'investasi'],
   ['Proyeksi & skenario', 'Ada', 'Pesimis/Dasar/Optimis 12 bulan (laba, kas, likuiditas), stress test, versi tersimpan', 'skenario'],
-  ['Manajemen risiko', 'Parsial', 'Faktor risiko aturan tetap; register risiko belum', 'ringkasan'],
+  ['Manajemen risiko', 'Ada', 'Faktor risiko otomatis, daftar risiko (kemungkinan × dampak, PIC, tinjauan) + saran dari data', '/risiko'],
   ['Konsolidasi', 'Parsial', 'Portofolio (Mode A); eliminasi antarentitas belum', 'laporan'],
   ['Laporan investor', 'Parsial', 'Laporan bulanan berversi; laporan riset §32 belum', 'laporan'],
   ['Pendukung keputusan', 'Ada', 'Fakta → temuan → rekomendasi berbasis aturan', 'ringkasan'],

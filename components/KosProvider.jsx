@@ -74,7 +74,7 @@ export default function KosProvider({ children }) {
       }
     }
     data = data.map((k) => ({ ...k, my_role: roles[k.id] || 'pemilik', ent: ents[k.id] || null, modules: mods && mods[k.id] ? mods[k.id] : null, locs: locs[k.id] || null,
-      my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver), bb: bb[k.id] || null,
+      my_areas: acc[k.id]?.areas || null, my_approver: Boolean(acc[k.id]?.approver), my_risks: acc[k.id]?.risks || 0, bb: bb[k.id] || null,
       dna: exp[k.id]?.dna || null, dna_stored: Boolean(exp[k.id]?.dna_stored), exp: exp[k.id]?.cfg || { nav: {}, quick: {}, dash: {}, version: 0 } }));
     setList(data);
     if (uidRef.current) cacheKosList(uidRef.current, data);
