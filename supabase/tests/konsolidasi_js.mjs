@@ -23,11 +23,17 @@ eq('neraca gabungan seimbang', c0.balanced, true);
 eq('3 baris eliminasi (penjualan, piutang-utang, manual)', c0.items.length, 3);
 eq('tanpa selisih piutang-utang', c0.gaps.length, 0);
 
-const c1 = consolidate(rep, 100); // barang sudah dijual lagi oleh B
+// Data nyata: B belum menjual lagi (HPP B = 0) → isian 100% dibatasi HPP pembeli (perbaikan audit 20261128020000), sama dengan 0%.
+const cCap = consolidate(rep, 100);
+eq('100% tapi HPP B = 0 → dibatasi: HPP gabungan tidak negatif (= 1 jt)', row(cCap, 'hpp').total, 1e6);
+eq('pembatasan ditandai', cCap.capped, true);
+// Simulasi B sudah menjual lagi barang itu (penjualan 8 jt, HPP 5 jt) → 100% terjual berlaku penuh
+const sold = { ...rep, members: rep.members.map((m) => (m.name === 'Warung B' ? { ...m, fin: { ...m.fin, laba_rugi: { ...m.fin.laba_rugi, pendapatan_usaha: 8e6, hpp: 5e6 } } } : m)) };
+const c1 = consolidate(sold, 100); // barang sudah dijual lagi oleh B
 eq('100% terjual: HPP −5 jt penuh', row(c1, 'hpp').elim, -5e6);
 eq('100% terjual: persediaan tidak dikoreksi', row(c1, 'persediaan').elim, 0);
 eq('100% terjual: tetap seimbang', c1.balanced, true);
-eq('50%: laba belum terjadi 1 jt', consolidate(rep, 50).unrealized, 1e6);
+eq('50% (B sudah menjual lagi): laba belum terjadi 1 jt', consolidate(sold, 50).unrealized, 1e6);
 eq('50%: tetap seimbang', consolidate(rep, 50).balanced, true);
 
 // Kepentingan nonpengendali: B 60% dengan laba 1 jt & ekuitas 10 jt

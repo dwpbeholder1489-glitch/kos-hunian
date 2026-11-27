@@ -56,16 +56,23 @@ function BudgetWorkspace({ kos, kosId, ver }) {
     setSheet(null);
     setYm(value);
   };
-  const save = async (row, value) => {
+  const save = async (row, value, fixed) => {
     if (!row || busy) return;
     const amount = parseRp(value);
     if ((value.trim() && (!/\d/.test(value) || /[-−]/.test(value))) || amount > 999999999999) return toast('Nominal tidak valid');
-    if (Number(row.anggaran || 0) === amount) { setSheet(null); return; }
+    const fixedChanged = Boolean(row.tetap) !== Boolean(fixed);
+    if (Number(row.anggaran || 0) === amount && !fixedChanged) { setSheet(null); return; }
     setBusy(true);
-    const { error } = await supabase.rpc('budget_save', { p_kos: kosId, p_month: ym + '-01', p_category: row.id, p_amount: amount });
-    if (error) { setBusy(false); return toast(errMsg(error)); }
+    if (fixedChanged) {
+      const r = await supabase.rpc('expense_category_fixed_set', { p_kos: kosId, p_category: row.id, p_fixed: Boolean(fixed) });
+      if (r.error) { setBusy(false); return toast(errMsg(r.error)); }
+    }
+    if (Number(row.anggaran || 0) !== amount) {
+      const { error } = await supabase.rpc('budget_save', { p_kos: kosId, p_month: ym + '-01', p_category: row.id, p_amount: amount });
+      if (error) { setBusy(false); return toast(errMsg(error)); }
+    }
     setSheet(null);
-    toast(amount ? 'Anggaran disimpan' : 'Anggaran dihapus');
+    toast(Number(row.anggaran || 0) !== amount ? (amount ? 'Anggaran disimpan' : 'Anggaran dihapus') : 'Pengaturan biaya tetap disimpan');
     await muat();
     setBusy(false);
   };
@@ -191,13 +198,16 @@ function BudgetMetric({ icon, label, value, note }) {
 function EditBudget({ rows, initial, busy, onClose, onSave }) {
   const [categoryId, setCategoryId] = useState(initial?.id ?? '');
   const [value, setValue] = useState(initial?.anggaran ? angka(initial.anggaran) : '');
+  const [fixed, setFixed] = useState(Boolean(initial?.tetap));
   const row = rows.find((item) => item.id === categoryId);
   return <Sheet title={initial ? `Anggaran · ${initial.nama}` : 'Anggaran Baru'} onClose={onClose}>
     <Field label="Kategori pengeluaran"><select value={categoryId} disabled={Boolean(initial) || busy} onChange={(event) => {
-      setCategoryId(event.target.value); const item = rows.find((candidate) => candidate.id === event.target.value); setValue(item?.anggaran ? angka(item.anggaran) : '');
+      setCategoryId(event.target.value); const item = rows.find((candidate) => candidate.id === event.target.value); setValue(item?.anggaran ? angka(item.anggaran) : ''); setFixed(Boolean(item?.tetap));
     }}><option value="">Pilih kategori</option>{rows.map((item) => <option value={item.id} key={item.id}>{item.nama} · {KIND[item.kind] || item.kind}</option>)}</select></Field>
     <Field label="Batas pengeluaran bulanan (Rp)" hint="Kosongkan atau isi 0 untuk menghapus batas."><input value={value} inputMode="numeric" disabled={busy} onChange={(event) => setValue(event.target.value)} /></Field>
-    <button className="primary" disabled={!row || busy} onClick={() => onSave(row, value)}>{busy ? 'Menyimpan…' : 'Simpan Anggaran'}</button>
+    <label style={{ display: 'flex', flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start' }}><input type="checkbox" style={{ width: 18, height: 18, minHeight: 0, flex: '0 0 auto', marginTop: 2 }} checked={fixed} disabled={busy} onChange={(event) => setFixed(event.target.checked)} />
+      <span style={{ flex: 1, minWidth: 0 }}><b>Biaya tetap bulanan</b><br /><small className="muted">Dibayar sekali sebulan (mis. sewa tempat, gaji tetap, langganan). Proyeksi akhir bulan memakai yang lebih besar dari realisasi atau anggaran, tidak dikalikan laju harian. Berlaku untuk kategori ini di semua bulan.</small></span></label>
+    <button className="primary" disabled={!row || busy} onClick={() => onSave(row, value, fixed)}>{busy ? 'Menyimpan…' : 'Simpan Anggaran'}</button>
   </Sheet>;
 }
 
@@ -244,10 +254,11 @@ function BudgetComparison({ kosId, ym, rows, active }) {
   </section>;
 }
 
-const HIST = { salin_anggaran: 'Salin anggaran', ubah_anggaran: 'Ubah anggaran', ubah_target_pendapatan: 'Ubah target pendapatan', setujui_anggaran: 'Anggaran disetujui', tolak_anggaran: 'Anggaran ditolak' };
+const HIST = { salin_anggaran: 'Salin anggaran', ubah_anggaran: 'Ubah anggaran', ubah_target_pendapatan: 'Ubah target pendapatan', setujui_anggaran: 'Anggaran disetujui', tolak_anggaran: 'Anggaran ditolak', ubah_biaya_tetap: 'Ubah biaya tetap' };
 const money = (v) => v == null ? '—' : rp(v);
 function histText(log) {
   if (log.action === 'salin_anggaran') return `${angka(log.after?.kategori)} kategori disalin`;
+  if (log.action === 'ubah_biaya_tetap') return log.after?.tetap ? 'Ditandai biaya tetap bulanan' : 'Bukan biaya tetap lagi';
   if (log.action === 'ubah_target_pendapatan') return `${money(log.before?.target)} → ${money(log.after?.target)}`;
   if (log.action === 'setujui_anggaran' || log.action === 'tolak_anggaran') return [log.before?.status && `dari ${log.before.status}`, log.reason].filter(Boolean).join(' · ') || '—';
   return `${money(log.before?.anggaran)} → ${money(log.after?.anggaran)}`;
@@ -259,7 +270,7 @@ function BudgetHistory({ kosId, allowed, version }) {
     if (!allowed) return;
     const controller = new AbortController();
     supabase.from('config_history').select('id,action,target,actor,before,after,reason,created_at').eq('kos_id', kosId)
-      .in('action', ['ubah_anggaran', 'salin_anggaran', 'ubah_target_pendapatan', 'setujui_anggaran', 'tolak_anggaran']).order('created_at', { ascending: false }).limit(100).abortSignal(controller.signal)
+      .in('action', ['ubah_anggaran', 'salin_anggaran', 'ubah_target_pendapatan', 'setujui_anggaran', 'tolak_anggaran', 'ubah_biaya_tetap']).order('created_at', { ascending: false }).limit(100).abortSignal(controller.signal)
       .then((response) => { if (!controller.signal.aborted) setResult(response); });
     return () => controller.abort();
   }, [kosId, allowed, version]);

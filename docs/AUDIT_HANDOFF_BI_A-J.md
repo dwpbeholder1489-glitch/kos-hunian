@@ -187,3 +187,29 @@ konsolidasi: goodwill/akuisisi, laba belum terjadi dari data stok nyata.
 
 PR #33 (Workspace Event, sesi lain) masih terbuka dengan migrasi `20261127170000_event_workspace.sql` — **bentrok nomor** dengan
 `20261127170000_skenario_stress_test.sql` di `main`; harus diganti ke nomor > migrasi terakhir di `main` dan digabung dengan `main` terbaru sebelum merge.
+
+## 8. Tindak lanjut audit putaran 1 (Codex, 27 Nov 2026) — migrasi `20261128020000_perbaikan_audit_bi.sql`
+
+Setiap temuan dibuktikan dulu di database tanpa perbaikan (kolom `[audit]` di `supabase/tests/audit_bi_perbaikan.sql` bernilai `f` / galat),
+lalu lulus setelah migrasi. Keputusan pemilik §3 tidak diubah.
+
+| Temuan | Status | Perbaikan | Bukti |
+|---|---|---|---|
+| B · PPh: omzet bisnis tutup hilang dari grup (A April 450.000 → 250.000) | Diperbaiki | `pph_group` tanpa filter `closed_at`; sinkron jurnal hanya untuk bisnis buka | uji B: 250.000 sebelum, 450.000 sesudah; setoran sebelum & sesudah tutup → utang 0 |
+| (baru, ditemukan saat uji B) Semua laporan berbasis jurnal error untuk bisnis tutup | Diperbaiki | `acct_sync_internal` return 0 bila `closed_at` | `b_laporan_bisnis_tutup_tetap_terbaca` |
+| I · Konsolidasi: neraca bisnis Dasar dianggap 0, termasuk KNP | Diperbaiki | `fin.neraca_ada`; `consolidate` menahan neraca & ekuitas KNP (null) + pemberitahuan | uji I + `audit_bi_js` (60% & 100%) |
+| I · Batas periode 731 vs 400 | Diperbaiki | `consol_report` ≤ 400 hari | 500 hari ditolak, 400 diterima |
+| I · Pembelian dicatat sebagai beban → HPP −40 | Diperbaiki | eliminasi otomatis hanya sebesar `bought` (pembelian di Belanja); sisa = `unmatched` → eliminasi manual | `audit_bi_js`: HPP tidak negatif, laba −60 benar; ditemukan saat render: isian bawaan 100% dengan pembeli yang belum menjual lagi → HPP −10 rb, kini dibatasi HPP pembeli (`capped`) |
+| Analisis: tren Dasar memuat bulan terkunci | Diperbaiki | `v_tfrom` dijepit batas paket | 8 jt September tidak terkirim |
+| Laporan keuangan: bulan terakhir riwayat lewat `p_to` | Diperbaiki | `least(akhir bulan, p_to)` | hanya 1 jt (bukan 3 jt) |
+| A · Jatuh tempo 365 hari (kabisat) | Diperbaiki | 12 bulan kalender; teks dampak pinjaman tak terjadwal di Neraca | 28 Nov 2027 → 28 Nov 2028 = lancar |
+| D · Sewa tetap diproyeksikan ×3 | Diperbaiki | kategori `fixed_monthly` (centang "Biaya tetap bulanan"); label biaya = pengeluaran tanpa HPP & penyusutan; persetujuan tetap | proyeksi 3 jt |
+| E · Tanda retur & bunga setelah lunas | Diperbaiki | titik awal model v2 + rumus v2 di `lib/scenario.js`; v1 tetap | −20 rb; bunga bulan 2 = 0 |
+| F · Saran hilang untuk pengelola Pengaturan saja; PIC nonaktif | Diperbaiki | saran per sumber yang boleh dibaca; `risk_progress` cek anggota aktif | uji F + `audit_bi_js` |
+| G · 0,001 tersimpan 0,00 | Diperbaiki | ≥ 0,01 & maks. 2 desimal (SQL = JS), input `step=0.01` | ditolak; 0,01/1,25 utuh |
+| H · Draf 500 hari tersimpan, pratinjau gagal | Diperbaiki | trigger `investor_reports_period` (≤ 400, juga pembanding) + `periodIssue` di formulir | 500 ditolak, 400 pratinjau jalan |
+| J · Hunian 200% & antar-jemput 200% | Diperbaiki | hari-kamar unik; himpunan pesanan sama | 1 hari = 1; antar-jemput 1/1 |
+| Konsolidasi kos + toko (basis kas vs akrual) | **Diputuskan pemilik 27 Nov 2026: tetap campur** | catatan basis di layar & panduan; kos tidak diubah ke akrual | — |
+
+Belum diuji pada putaran ini: UI di HP 390 px & 1440 px untuk perubahan layar (lihat laporan sesi), PDF di Safari iPhone (tidak ada perangkat),
+pergantian hari 00.00–07.00 WIB (uji memakai tanggal Jakarta, tidak disimulasikan jamnya), dan data produksi.

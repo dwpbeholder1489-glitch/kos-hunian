@@ -9,7 +9,7 @@ import { useKos } from '@/components/KosProvider';
 import InvestorDoc from '@/components/InvestorDoc';
 import { Loading, Empty, Sheet, Field, toast } from '@/components/ui';
 import { errMsg, tgl } from '@/lib/format';
-import { SECTION_KEYS, TOGGLES, REPORT_STATUS as STATUS } from '@/lib/investorReport';
+import { SECTION_KEYS, TOGGLES, REPORT_STATUS as STATUS, periodIssue } from '@/lib/investorReport';
 
 const TEXTS = [['ringkasan', 'Ringkasan eksekutif', 'Pesan utama untuk investor: kinerja periode ini, pencapaian, hal penting.'],
   ['mdna', 'Pembahasan & analisis manajemen', 'Mengapa angka naik/turun, keputusan yang diambil, tantangan.'],
@@ -87,8 +87,9 @@ export default function LaporanInvestorDetail() {
         {SECTION_KEYS.filter(([k]) => TOGGLES.includes(k)).map(([k, l]) => <label key={k} className="row" style={{ gap: 8 }}>
           <input type="checkbox" style={{ width: 18, height: 18, minHeight: 0 }} checked={edit.include[k] !== false} onChange={(e) => setEdit({ ...edit, include: { ...edit.include, [k]: e.target.checked } })} />{l}</label>)}
       </fieldset>
+      {periodIssue(edit) && <p className="small" style={{ color: 'var(--bad)' }}>{periodIssue(edit)}</p>}
       {r.status === 'diajukan' && <p className="small muted">Laporan sedang diajukan — menyimpan perubahan mengembalikannya ke Draf.</p>}
-      <button className="primary" disabled={busy || edit.title.trim().length < 3 || Boolean(edit.cmp_from) !== Boolean(edit.cmp_to)} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
+      <button className="primary" disabled={busy || edit.title.trim().length < 3 || Boolean(periodIssue(edit))} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
     </Sheet>}
     {sheet === 'submit' && <Sheet title="Ajukan ke pemilik" onClose={() => setSheet(null)}>
       <Field label="Catatan (opsional)"><textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></Field>

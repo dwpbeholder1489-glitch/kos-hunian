@@ -67,6 +67,7 @@ export default function Konsolidasi() {
         <button className="sm" onClick={() => setRange({ from: t.slice(0, 4) + '-01-01', to: t })}>Tahun ini</button>
         <input type="date" aria-label="Dari" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} />
         <input type="date" aria-label="Sampai" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} />
+        <span className="small muted">maks. 400 hari</span>
       </div>
       {!rep ? <Loading rows={4} /> : rep.error ? <p className="notice bad">{errMsg(rep.error)}</p> : !rep.aktif ?
         <FiturUpgrade owner={canArea(kos, 'team')} plan="pro" event="PORTFOLIO.CONSOLIDATION.REQUESTED" title="Konsolidasi butuh minimal satu bisnis Paket Pro di grup"
@@ -89,18 +90,20 @@ function Report({ rep, c, real, setReal, onElim, onVoid }) {
         {r.per.map((v, i) => <td key={i} style={{ textAlign: 'right' }}>{num(v)}</td>)}<td style={{ textAlign: 'right' }}>{r.elim ? num(r.elim) : '—'}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>{num(r.total)}</td></tr>)}</tbody>
     </table></div>
   </section>;
-  const issues = c.members.filter((m) => !m.lengkap || m.seimbang === false);
+  const issues = c.members.filter((m) => m.neraca && m.seimbang === false);
   return <>
     <section className="panel">
       <h3>Ringkasan grup · {tgl(rep.from)} – {tgl(rep.to)}</h3>
       <div className="grid">
         <div className="tile"><span className="small muted">Laba bersih gabungan</span><b>{rp(c.netIncome)}</b></div>
         <div className="tile"><span className="small muted">Milik Anda</span><b>{rp(c.ownerProfit)}</b>{c.nciProfit ? <span className="small muted">pemilik lain {rp(c.nciProfit)}</span> : null}</div>
-        <div className="tile"><span className="small muted">Total aset gabungan</span><b>{rp(c.balance.assets)}</b></div>
-        <div className="tile"><span className="small muted">Ekuitas milik Anda</span><b>{rp(c.ownerEquity)}</b>{c.nciEquity ? <span className="small muted">pemilik lain {rp(c.nciEquity)}</span> : null}</div>
+        <div className="tile"><span className="small muted">Total aset gabungan</span><b>{c.bsComplete ? rp(c.balance.assets) : '—'}</b>{!c.bsComplete && <span className="small muted">ditahan</span>}</div>
+        <div className="tile"><span className="small muted">Ekuitas milik Anda</span><b>{c.bsComplete ? rp(c.ownerEquity) : '—'}</b>{c.bsComplete && c.nciEquity ? <span className="small muted">pemilik lain {rp(c.nciEquity)}</span> : null}{!c.bsComplete && <span className="small muted">ditahan</span>}</div>
       </div>
-      <p className={`small ${c.balanced ? 'muted' : ''}`} style={c.balanced ? undefined : { color: 'var(--bad)' }}>{c.balanced ? '✓ Neraca gabungan seimbang.' : '✗ Neraca gabungan tidak seimbang — periksa jurnal tiap bisnis.'} Total eliminasi {rp(c.elimTotal)}.</p>
-      {issues.length > 0 && <p className="notice">Perlu dicek: {issues.map((m) => m.name).join(', ')} — neraca belum lengkap (paket) atau tidak seimbang.</p>}
+      {c.bsComplete ? <p className={`small ${c.balanced ? 'muted' : ''}`} style={c.balanced ? undefined : { color: 'var(--bad)' }}>{c.balanced ? '✓ Neraca gabungan seimbang.' : '✗ Neraca gabungan tidak seimbang — periksa jurnal tiap bisnis.'} Total eliminasi {rp(c.elimTotal)}.</p>
+        : <p className="notice">Neraca gabungan dan ekuitas bagian pemilik lain <b>ditahan</b>: {c.noBs.join(', ')} belum punya neraca (Neraca tersedia mulai Paket Bisnis di bisnis itu). Angka tidak dianggap nol agar tidak menyesatkan. Laba rugi gabungan tetap lengkap.</p>}
+      {rep.members.some((m) => m.type === 'properti') && rep.members.some((m) => m.type !== 'properti') && <p className="small muted">Catatan basis: bisnis kos mencatat pendapatan sewa saat uang diterima (basis kas), sedangkan toko/jasa saat transaksi terjadi. Gabungan ini mencampur dua basis — tagihan sewa yang belum dibayar belum menjadi pendapatan maupun piutang.</p>}
+      {issues.length > 0 && <p className="notice">Perlu dicek: neraca {issues.map((m) => m.name).join(', ')} tidak seimbang — periksa jurnal bisnis itu.</p>}
     </section>
 
     <section className="panel">
@@ -108,19 +111,21 @@ function Report({ rep, c, real, setReal, onElim, onVoid }) {
       {Number(rep.contacts_linked) === 0 && <p className="notice">Belum ada kontak yang ditandai sebagai bisnis sendiri. Buka <b>Pelanggan & supplier</b> di tiap bisnis → kontak bisnis Anda yang lain → “Kontak ini bisnis saya sendiri?”.</p>}
       {rep.auto_sales.length > 0 && <Field label="Barang antarbisnis yang sudah dijual lagi ke pihak luar / terpakai (%)" hint="Sisanya dianggap masih di gudang pembeli: laba penjual atasnya belum terjadi dan persediaan dinilai ke harga pokok penjual. Perkiraan Anda — tidak disimpan.">
         <input type="number" min="0" max="100" value={real} onChange={(e) => setReal(e.target.value)} /></Field>}
+      {c.capped && <p className="small muted">Dibatasi oleh data: barang antarbisnis yang dianggap sudah dijual lagi tidak bisa melebihi harga pokok penjualan yang dicatat bisnis pembeli pada periode ini.</p>}
       {c.items.length ? <div className="list">{c.items.map((x, i) => <div className="li" key={x.id || i}><div className="main">
         <b className="small">{x.kind}{x.auto ? ' · otomatis' : ''}</b><span className="small muted">{x.text}{x.date ? ` · ${tgl(x.date)}` : ''}{x.debit ? ` · ${LABEL[x.debit]} & ${LABEL[x.credit]}` : ''}{x.unrealized ? ` · laba belum terjadi ${rp(x.unrealized)}` : ''}</span></div>
         <b className="small">{rp(x.amount)}</b>{x.id && <button className="sm ghost" onClick={() => onVoid(x)}>Batal</button>}</div>)}</div> : <p className="small muted">Belum ada eliminasi pada periode ini.</p>}
+      {c.unmatched.map((x, i) => <p key={`u${i}`} className="notice">Penjualan {x.from} ke {x.to} {rp(x.sale)}, tetapi yang dicatat {x.to} sebagai pembelian barang (menu Belanja) hanya {rp(x.bought)}. Sisa {rp(x.amount)} <b>belum dieliminasi</b> karena pos pencatatannya di {x.to} tidak diketahui (mis. dicatat sebagai pengeluaran). Bila memang dicatat sebagai pengeluaran, tambah eliminasi manual “Lainnya” dengan pos <b>Beban operasional</b> & <b>Pendapatan usaha</b>.</p>)}
       {c.gaps.map((x, i) => <p key={i} className="notice">Piutang {x.creditor} ke {x.debtor} {rp(x.piutang)} ≠ utang {x.debtor} ke {x.creditor} {rp(x.utang)} (selisih {rp(x.selisih)}). Yang dieliminasi hanya yang lebih kecil — cocokkan catatan kedua bisnis.</p>)}
       {rep.arap_dilewati && <p className="small muted">Piutang/utang antarbisnis otomatis hanya untuk periode yang berakhir hari ini atau sesudahnya (saldo terbuka = posisi hari ini). Untuk periode lampau, catat eliminasi manual.</p>}
       <button className="sm" onClick={onElim}>+ Eliminasi manual</button>
     </section>
 
     <Table title="Laba rugi gabungan" rows={c.pl} />
-    <Table title={`Neraca gabungan per ${tgl(rep.to)}`} rows={c.bs} />
+    {c.bsComplete && <Table title={`Neraca gabungan per ${tgl(rep.to)}`} rows={c.bs} />}
     {c.nci.length > 0 && <section className="panel"><h3>Kepentingan nonpengendali (bagian pemilik lain)</h3>
       <div className="list">{c.nci.map((x) => <div className="li" key={x.kos_id}><div className="main"><b className="small">{x.name}</b><span className="small muted">Anda {x.pct}% · pemilik lain {100 - x.pct}%</span></div>
-        <span className="small">laba {rp(x.profit)} · ekuitas {rp(x.equity)}</span></div>)}</div></section>}
+        <span className="small">laba {rp(x.profit)} · ekuitas {x.equity == null || !c.bsComplete ? 'ditahan' : rp(x.equity)}</span></div>)}</div></section>}
     <p className="small muted">Batasan: tanpa goodwill/biaya investasi (kepemilikan dianggap sejak awal); laba belum terjadi dihitung dari perkiraan persen di atas; eliminasi manual berlaku pada periode tanggalnya. Ini laporan pengelolaan internal, bukan laporan konsolidasi yang diaudit.</p>
   </>;
 }
