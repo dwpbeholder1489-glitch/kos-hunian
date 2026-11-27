@@ -734,19 +734,21 @@ export function ScrSDM() {
 }
 
 export function ScrAnalisis() {
-  const bars = [42, 48, 45, 55, 52, 60, 58, 63, 61, 70, 66, 78];
+  const kpi = (t, v, d) => <div className="tile" style={{ flex: 1, gap: 2 }}><span className="label">{t}</span><span className="v">{v}</span><span className="s">{d}</span></div>;
   return (
     <Phone bare>
-      <h3>Analisis bisnis</h3>
-      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
-        <div className="tile" style={{ flex: 1 }}><span className="label">Pendapatan</span><span className="v">{rp(18400000)}</span><span className="s" style={{ color: 'var(--gold)' }}>▲ 18%</span></div>
-        <div className="tile" style={{ flex: 1 }}><span className="label">Laba</span><span className="v">{rp(3150000)}</span><span className="s" style={{ color: 'var(--gold)' }}>▲ 9%</span></div>
+      <h3>Analisis Bisnis</h3>
+      <span className="mini-btn">Bulan ini · 1 – 27 Nov · vs bulan lalu ▾</span>
+      <div className="tile" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <svg width="58" height="58" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" strokeWidth="10" /><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" strokeWidth="10" strokeDasharray="216 264" transform="rotate(-90 50 50)" /><text x="50" y="58" textAnchor="middle" fontSize="28" fontWeight="800" fill="currentColor">82</text></svg>
+        <span style={{ display: 'flex', flexDirection: 'column' }}><b className="small">Bisnis dalam kondisi sehat</b><span className="small muted">Profitabilitas baik, perputaran persediaan perlu ditingkatkan.</span></span>
       </div>
-      <b className="small">Tren 12 bulan</b>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 60 }}>{bars.map((h, i) => <div key={i} style={{ flex: 1, height: `${h}%`, background: i === 11 ? 'var(--gold)' : 'color-mix(in srgb, var(--gold) 50%, transparent)', borderRadius: '3px 3px 0 0' }} />)}</div>
-      <b className="small">Perbandingan cabang</b>
-      <div className="row between small"><span>Pusat · 72%</span><span>Laba {rp(2600000)}</span></div>
-      <div className="row between small"><span>Cabang Pasar · 28%</span><span>Laba {rp(550000)}</span></div>
+      <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>{kpi('Pertumbuhan omzet', '+12,8%', 'vs bulan lalu')}{kpi('Margin laba bersih', '8,4%', '+0,9 p.p.')}</div>
+      <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>{kpi('Efisiensi operasional', '86%', '+3 p.p.')}{kpi('Risiko bisnis', 'Rendah', '0 faktor')}</div>
+      <b className="small">Insight Utama</b>
+      <span className="small">1. Omzet naik +12,8%: transaksi naik 9%, rata-rata belanja naik 3%.</span>
+      <span className="small">2. 12 barang tidak bergerak (Rp 3,1 jt).</span>
+      <div className="row" style={{ gap: 4 }}>{['Tren', 'Laba Rugi', 'Arus Kas', 'Produk', 'Pelanggan', 'Tindak Lanjut'].map((t, i) => <span key={t} className={'mini-btn' + (i === 0 ? ' cta' : '')}>{t}</span>)}</div>
     </Phone>
   );
 }

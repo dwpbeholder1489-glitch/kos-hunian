@@ -13,6 +13,7 @@ import { canArea } from '@/lib/business';
 import { hasFeature } from '@/lib/plan';
 import BusinessValuation from '@/components/BusinessValuation';
 import InvestmentSimulation from '@/components/InvestmentSimulation';
+import { SRC, srcHref } from '@/lib/journalSource';
 import CashForecast from '@/components/CashForecast';
 import FinancialOverview, { ComparisonChart } from '@/components/FinancialOverview';
 import { income, monthlyReportExport } from '@/lib/monthlyReport';
@@ -24,8 +25,6 @@ import { NeracaSaldo, UmurPiutangUtang, NilaiPersediaan } from '@/components/Aku
 
 const TYPE = { aset: 'Aset', kewajiban: 'Kewajiban', ekuitas: 'Ekuitas', pendapatan: 'Pendapatan', beban: 'Beban' };
 const KIND = { posting: ['Otomatis', ''], koreksi: ['Koreksi', 'gold'], manual: ['Manual', 'void'] };
-const SRC = { sale: 'Penjualan', return: 'Retur', purchase: 'Belanja', debt_payment: 'Kasbon/utang', stock_move: 'Stok', expense: 'Pengeluaran', cash_entry: 'Kas', payment: 'Pembayaran sewa', purchase_return: 'Retur ke supplier', svc_order: 'Pesanan jasa', svc_payment: 'Pembayaran jasa', deposit: 'Deposit penghuni', booking: 'Booking kamar', bb_record: 'Uang masuk catatan' };
-const srcHref = (t, id, retail) => ({ sale: `/struk/${id}`, return: '/penjualan', purchase: '/belanja', debt_payment: '/kas', stock_move: '/barang', expense: retail ? '/kas' : '/pengeluaran', cash_entry: '/kas', payment: '/pembayaran', purchase_return: '/belanja', svc_order: `/nota/${id}`, svc_payment: '/pesanan', deposit: '/penghuni', booking: '/booking', bb_record: `/catatan?buka=${id}` }[t]);
 const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
 
 // Pembukuan (blueprint 5.1, 22): jurnal double-entry otomatis dari transaksi, laporan per bisnis atau per badan usaha
@@ -35,7 +34,8 @@ export default function Pembukuan() {
   const retail = ['retail', 'jasa', 'kustom'].includes(kos?.business_type); // biaya dicatat di Kas
   const toko = kos?.business_type === 'retail'; // umur piutang/utang & nilai persediaan (Tahap 2 Retail)
   const search = useSearchParams();
-  const [tab, setTab] = useState(search.get('tab') === 'arus-kas' ? 'laporan' : 'overview');
+  // ?tab= dari tautan halaman lain (mis. drill-down Analisis Bisnis)
+  const [tab, setTab] = useState(() => { const t = search.get('tab'); return t === 'arus-kas' ? 'laporan' : ['jurnal', 'buku', 'laporan', 'umur', 'persediaan', 'saldo', 'investment'].includes(t) ? t : 'overview'; });
   const [ym, setYm] = useState(() => reportMonth(search.get('bulan')));
   const [ytd, setYtd] = useState(false);
   const [entity, setEntity] = useState(false);
