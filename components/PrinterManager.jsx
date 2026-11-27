@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { Field, Sheet, toast } from '@/components/ui';
 import { discoverPrinters, printReceipt, printerSettings, savePrinter } from '@/lib/printer';
 
-export function PrintReceiptButton({ kosId, renderText, children = 'Cetak ulang' }) {
+export function PrintReceiptButton({ kosId, renderText, portal, children = 'Cetak ulang' }) {
   const [busy, setBusy] = useState(false);
   async function print() {
     setBusy(true);
     try {
       const settings = printerSettings(kosId);
-      await printReceipt(renderText(settings.paper), settings);
+      await printReceipt(renderText(settings.paper), settings, portal);
     } catch (error) {
       toast('Cetak gagal: ' + error.message);
     } finally {

@@ -1705,3 +1705,6 @@ button.wf-line{background:none;border-width:0 0 1px;border-radius:0;color:inheri
 .receipt-paper small{display:block;color:var(--muted)}
 .receipt-new{color:var(--good);background:var(--good-bg);font-size:15px}
 @media(max-width:360px){.receipt-actions>*{gap:4px;padding:6px;font-size:12px}.receipt-actions svg{width:16px}}
+.receipt-portal{text-align:center;border-top:1px dashed var(--line);padding-top:12px;margin-top:12px;font-size:13px}
+.receipt-qr{width:118px;margin:4px auto}
+.receipt-qr svg{display:block;width:100%;height:auto}
