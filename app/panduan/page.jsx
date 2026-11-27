@@ -64,7 +64,7 @@ const MENUS = [
   ['Konfigurasi', 'Profil bisnis, modul aktif, saran, cabang & gudang, riwayat'],
   ['Pusat Pengalaman', 'Profil bisnis (Business DNA), fitur & rekomendasi beralasan, atur menu, tombol (+) & dashboard, tahap bisnis, pulihkan pengaturan'],
   ['Pembukuan', 'Jurnal otomatis, buku besar, laba rugi, neraca, tutup periode, rekonsiliasi bank & anggaran (Paket Bisnis)'],
-  ['Analisis bisnis', 'Bulan ini vs lalu; tren 12 bulan (Paket Bisnis); perbandingan cabang & tahun lalu (Paket Pro)'],
+  ['Analisis Bisnis', 'Skor kesehatan, insight & tindak lanjut, filter periode/cabang, drill-down ke transaksi sumber, ekspor Excel/PDF'],
   ['Riwayat aktivitas', 'Siapa melakukan apa & kapan: penjualan, pembatalan, stok, pembayaran, tagihan, pesanan'],
 ];
 
@@ -584,13 +584,15 @@ const PARTS = [
       <>Atur judul, deskripsi, dan warna bila perlu. Pilih jenis halaman di <b>Pratinjau</b>, periksa tampilan saat dibagikan, lalu tekan <b>Simpan tampilan</b>. Nama, logo, dan foto yang diubah dipakai otomatis pada render berikutnya. Aplikasi pesan mungkin masih menyimpan pratinjau lama.</>,
     ], <>Foto di sini bersifat <b>publik</b> (untuk ditampilkan ke pelanggan). Dokumentasi internal — nota, bukti transfer, kondisi kamar/barang — tetap lewat <b>📎 Lampiran</b> di tiap data (privat). Foto dikecilkan di HP sebelum dikirim (maks 1600 px + thumbnail) agar hemat kuota dan cepat dibuka; kuota dihitung bersama lampiran sesuai paket.</>, 'warn', <ScrMedia />],
   ]],
-  ['P', 'Analisis bisnis', [
-    ['Membaca analisis bisnis', 'Keuangan › Analisis bisnis (pemilik & bagian keuangan)', [
-      <>Buka <b>Keuangan › Analisis bisnis</b> dan pilih bulan dengan tombol <b>‹ ›</b>. Kotak <b>Bulan ini vs bulan lalu</b> menampilkan pendapatan, laba, HPP, biaya, jumlah transaksi, rata-rata per transaksi, dan margin laba — dengan panah naik/turun. Kos juga melihat persentase <b>hunian</b>.</>,
-      <><b>Temuan dari data</b> merangkum perubahan besar: pendapatan naik/turun ≥20%, bulan rugi, biaya yang melonjak, atau cabang yang rugi. Semua dihitung dari angka di halaman itu; cek rinciannya di Pembukuan sebelum memutuskan.</>,
-      <><b>Paket Bisnis</b>: <b>Tren 12 bulan</b> (batang = pendapatan, garis = laba; ketuk <b>Lihat tabel</b> untuk angkanya), rata-rata 3 bulan sebelumnya, <b>pendapatan & biaya per jenis</b> dibanding bulan lalu, dan 5 <b>barang/layanan paling menghasilkan</b>.</>,
-      <><b>Paket Pro</b>: <b>bulan yang sama tahun lalu</b>, <b>Perbandingan cabang</b> (kontribusi pendapatan, laba, transaksi, tren 6 bulan, 3 barang teratas per cabang), dan <b>pola hari</b> 90 hari terakhir untuk mengatur jadwal & stok.</>,
-    ], <>Angka uang diambil dari jurnal Pembukuan (otomatis dari setiap penjualan, pembayaran, dan pengeluaran), jadi sama dengan laporan keuangan; jumlah transaksi dari menu operasional. Laba di sini sebelum pajak. Perbandingan cabang muncul bila Anda punya lebih dari satu lokasi.</>, null, <ScrAnalisis />],
+  ['P', 'Analisis Bisnis', [
+    ['Membaca Analisis Bisnis', 'Menu Analisis Bisnis (tepat di bawah Beranda; pemilik & bagian keuangan)', [
+      <>Buka <b>Analisis Bisnis</b> di menu samping (di HP: ☰ › Analisis Bisnis). Ketuk tombol periode (mis. <b>Bulan ini · 1 – 27 Nov</b>) untuk memilih <b>Hari ini, Minggu ini, Bulan ini, Bulan lalu, Kuartal, Tahun, atau Kustom</b>, pembanding (<b>periode sebelumnya</b> dengan jumlah hari yang sama, <b>tahun lalu</b>, atau tanpa), serta <b>cabang</b> dan <b>kategori produk</b>. Pilihan ini tetap tersimpan saat Anda membuka halaman lain lalu kembali.</>,
+      <><b>Skor Kesehatan Bisnis (0–100)</b> = rata-rata berbobot 5 komponen: profitabilitas 25%, likuiditas 20%, pertumbuhan 20%, efisiensi operasional 15%, risiko 20%. Ketuk <b>Lihat Detail Penilaian</b> untuk melihat nilai tiap komponen dan rumusnya. Bila data belum cukup (tanpa pendapatan, kurang dari 5 transaksi, atau kurang dari 3 komponen bisa dinilai) skor <b>tidak ditampilkan</b> — bukan diisi angka kira-kira.</>,
+      <>Empat kotak di sampingnya: <b>Pertumbuhan omzet</b>, <b>Margin laba bersih</b>, <b>Efisiensi operasional</b> (100% − biaya operasional ÷ pendapatan), dan <b>Risiko bisnis</b> (Rendah/Sedang/Tinggi dari kas minus, rugi, pendapatan turun &gt;20%, piutang lewat tempo, stok mati). <b>Insight Utama</b> menjelaskan apa yang berubah, <b>penyebabnya dari data</b> (mis. jumlah transaksi vs nilai per transaksi), dan tindakan yang disarankan.</>,
+      <>Di bawahnya: <b>Tren Performa</b> (omzet & laba, transaksi, atau pelanggan; 12 bulan atau harian), <b>Laba Rugi</b>, <b>Arus Kas</b> per minggu, lalu kartu yang menyesuaikan jenis bisnis — toko: penjualan per produk, perputaran persediaan, perilaku pelanggan; jasa/kuliner: layanan/menu, produktivitas pesanan; kos: pendapatan per jenis, hunian & penagihan, penghuni masuk/keluar. Di HP bagian ini dipisah dengan tab <b>Tren · Laba Rugi · Arus Kas · Produk · Pelanggan · Tindak Lanjut</b>.</>,
+      <><b>Semua angka bisa diketuk</b>: muncul cara hitung, angka pembanding, lalu <b>baris jurnal sumber</b> dengan tautan <b>Bukti</b> (struk, nota, kwitansi, pengeluaran) dan tombol menuju Pembukuan/laporan. Panel <b>Analisis &amp; Tindak Lanjut</b> berisi 8 analisis mendalam: profitabilitas (grafik jembatan laba), arus kas, produk & persediaan, pelanggan, efisiensi (termasuk peta jam ramai di Paket Pro), prediksi & risiko, rekomendasi, serta alokasi laba & investasi (menuju Simulasi investasi di Pembukuan).</>,
+      <><b>Ekspor</b> membuat Excel atau PDF berisi ringkasan, skor, insight, tren, arus kas, per akun, produk, dan pelanggan sesuai filter (dihitung dalam kuota ekspor). <b>Bagikan</b> mengirim ringkasan teks lewat WhatsApp/aplikasi lain.</>,
+    ], <>Paket: <b>Dasar</b> = bulan ini & bulan lalu (ringkasan, skor, laba rugi, arus kas). <b>Bisnis</b> = periode bebas hingga ±1 tahun, tren 12 bulan + <b>proyeksi</b> bulan depan (tren linier, ditandai bukan angka aktual), per akun, produk, pelanggan, persediaan. <b>Pro</b> = filter & perbandingan cabang dan peta jam ramai. Angka uang = jurnal Pembukuan (sebelum pajak), jadi sama dengan laporan keuangan; kas dihitung untuk seluruh bisnis (tidak per cabang); biaya tanpa lokasi tidak masuk cabang mana pun.</>, null, <ScrAnalisis />],
   ]],
   ['Q', 'Riwayat aktivitas', [
     ['Melihat siapa melakukan apa', 'Pengaturan Bisnis › Riwayat aktivitas (semua anggota, sesuai bagiannya)', [
@@ -1064,7 +1066,7 @@ export default function Panduan() {
           <div><b>Setup bisnis baru</b><span><a href="#bagian-K">Langkah 64</a><br />Pusat Konfirmasi: lengkapi, setujui, aktifkan</span></div>
           <div><b>Antar jemput laundry</b><span><a href="#bagian-L">Langkah 65–66</a><br />Wilayah, biaya, jadwal, jemput & antar, pesanan dari halaman bisnis</span></div>
           <div><b>Foto & media</b><span><a href="#bagian-O">Langkah 71</a><br />Foto kamar, barang, layanan, cover & galeri; pustaka media</span></div>
-          <div><b>Analisis bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Bulan ini vs lalu, tren 12 bulan, perbandingan cabang, tahun lalu, pola hari</span></div>
+          <div><b>Analisis Bisnis</b><span><a href="#bagian-P">Langkah 72</a><br />Skor kesehatan, insight, tren & proyeksi, laba rugi, arus kas, produk, pelanggan, risiko, ekspor</span></div>
           <div><b>Riwayat aktivitas</b><span><a href="#bagian-Q">Langkah 73</a><br />Siapa melakukan apa & kapan, tercatat otomatis</span></div>
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
