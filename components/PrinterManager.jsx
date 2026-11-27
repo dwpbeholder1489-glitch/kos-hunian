@@ -30,12 +30,22 @@ export default function PrinterManager({ kosId }) {
 }
 
 function PrinterSheet({ kosId, onClose }) {
+  return <Sheet title="Pengaturan printer" onClose={onClose}>
+    <PrinterSettingsForm kosId={kosId} onSaved={onClose} />
+  </Sheet>;
+}
+
+export function PrinterSettingsForm({ kosId, onSaved, receipt = false }) {
   const [settings, setSettings] = useState(() => printerSettings(kosId));
   const [devices, setDevices] = useState([]);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [failed, setFailed] = useState(false);
-  const change = (patch) => setSettings((current) => ({ ...current, ...patch }));
+  const change = (patch) => {
+    setStatus('');
+    setFailed(false);
+    setSettings((current) => ({ ...current, ...patch }));
+  };
   const endpoint = (patch) => {
     setDevices([]);
     change({ ...patch, id: '', name: '' });
@@ -50,8 +60,7 @@ function PrinterSheet({ kosId, onClose }) {
   }
   const bridge = settings.mode === 'bridge';
   const ready = !bridge || Boolean(settings.id && settings.url && settings.token);
-  return <Sheet title="Pengaturan printer" onClose={onClose}>
-    <p className="small muted">Pengaturan disimpan untuk bisnis ini di browser perangkat ini.</p>
+  return <div className="stack">
     <fieldset disabled={busy} className="stack" style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <Field label="Jalur cetak"><select value={settings.mode} onChange={(event) => change({ mode: event.target.value, paper: event.target.value === 'bridge' && settings.paper === 'auto' ? '58' : settings.paper })}>
         <option value="system">Dialog cetak sistem / AirPrint</option>
@@ -61,13 +70,14 @@ function PrinterSheet({ kosId, onClose }) {
         <Field label="Alamat aplikasi penghubung"><input type="url" value={settings.url} onChange={(event) => endpoint({ url: event.target.value.trim() })} /></Field>
         <Field label="Token penghubung"><input type="password" autoComplete="off" value={settings.token} onChange={(event) => endpoint({ token: event.target.value.trim() })} /></Field>
         <button type="button" disabled={!settings.url || !settings.token} onClick={() => run(async () => {
+          setDevices([]);
           const found = await discoverPrinters(settings);
           setDevices(found);
           if (settings.id) {
             const selected = found.find((device) => device.id === settings.id);
             change(selected ? { name: selected.name, paper: selected.paper } : { id: '', name: '' });
           }
-          setStatus(found.length ? `${found.length} printer terdaftar di penghubung.` : 'Belum ada printer yang terdaftar di penghubung.');
+          setStatus(`Penghubung merespons · ${found.length} printer terdaftar. Gunakan tes cetak untuk memeriksa printer.`);
         })}>Deteksi printer</button>
         <Field label="Printer default"><select value={settings.id} onChange={(event) => {
           const device = devices.find(({ id }) => id === event.target.value);
@@ -77,13 +87,26 @@ function PrinterSheet({ kosId, onClose }) {
           {settings.id && !devices.some(({ id }) => id === settings.id) && <option value={settings.id}>{settings.name}</option>}
           {devices.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.paper === 'A4' ? 'A4' : p.paper + ' mm'} · {transportLabels[p.type]}</option>)}
         </select></Field>
-      </> : <p className="small muted">Sistem mendeteksi printer yang kompatibel dan menangani pilihan printer. Di iPhone atau iPad, pilih printer AirPrint. Untuk thermal lain, gunakan aplikasi penghubung melalui HTTPS.</p>}
-      <Field label="Ukuran kertas"><select value={settings.paper} disabled={bridge} onChange={(event) => change({ paper: event.target.value })}>
+      </> : <p className="small muted">Sistem mendeteksi printer yang kompatibel dan menangani pilihan printer. Di iPhone atau iPad, pilih printer AirPrint. Di Android dan desktop, gunakan printer yang tersedia di sistem. Untuk thermal lain, gunakan penghubung atau salin struk ke aplikasi printer yang kompatibel.</p>}
+      {receipt && !bridge && <fieldset className="receipt-paper">
+        <legend>Ukuran struk</legend>
+        {[['58', 'Kertas kasir'], ['80', 'Kertas kasir besar']].map(([size, label]) => (
+          <label key={size}>
+            <input type="radio" name="receipt-paper" checked={settings.paper === size} onChange={() => change({ paper: size })} />
+            <span><b>{size} mm</b><small>{label}</small></span>
+          </label>
+        ))}
+        <label>
+          <input type="radio" name="receipt-paper" checked={settings.paper === 'auto'} onChange={() => change({ paper: 'auto' })} />
+          <span>Ikuti ukuran printer</span>
+        </label>
+      </fieldset>}
+      {(!receipt || bridge) && <Field label="Ukuran kertas"><select value={settings.paper} disabled={bridge} onChange={(event) => change({ paper: event.target.value })}>
         {!bridge && <option value="auto">Ikuti ukuran kertas printer</option>}
         <option value="58">Thermal 58 mm</option>
         <option value="80">Thermal 80 mm</option>
         <option value="A4">Dokumen A4</option>
-      </select></Field>
+      </select></Field>}
       {bridge && <span className="small muted">Ukuran mengikuti profil printer di aplikasi penghubung.</span>}
       <Field label="Jumlah salinan"><input type="number" min="1" max="10" step="1" value={settings.copies || ''} onChange={(event) => change({ copies: event.target.valueAsNumber })} /></Field>
       {bridge && <label className="row"><input type="checkbox" checked={settings.auto} onChange={(event) => change({ auto: event.target.checked })} /> Cetak otomatis setelah transaksi atau pembayaran tersimpan</label>}
@@ -95,11 +118,13 @@ function PrinterSheet({ kosId, onClose }) {
         <button type="button" className="primary" disabled={!ready} onClick={() => run(() => {
           if (!Number.isInteger(settings.copies) || settings.copies < 1 || settings.copies > 10) throw new Error('Jumlah salinan harus 1–10.');
           savePrinter(kosId, settings);
-          onClose();
+          onSaved?.(settings);
           toast('Pengaturan printer disimpan.');
         })}>Simpan</button>
       </div>
     </fieldset>
-    {status && <p role="status" className={'notice' + (failed ? ' bad' : '')}>{status}</p>}
-  </Sheet>;
+    <p role="status" className={'small ' + (failed ? 'notice bad' : 'muted')}>
+      {status || (bridge ? 'Koneksi printer belum dikonfirmasi.' : 'Status printer tersedia di dialog cetak sistem.')}
+    </p>
+  </div>;
 }

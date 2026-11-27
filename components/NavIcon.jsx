@@ -4,6 +4,8 @@ const P = {
   filter: <><path d="M4 6h16M7 12h10M10 18h4" /></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></>,
   print: <><path d="M6 8V3h12v5M6 17H3V8h18v9h-3M6 14h12v7H6zM6 11h.01" /></>,
+  cart: <><path d="M2 4h3l2.5 11h11L21 7H6" /><circle cx="9" cy="19" r="1.5" /><circle cx="17" cy="19" r="1.5" /></>,
+  message: <path d="M20 11.5a8 8 0 0 1-8 8 8 8 0 0 1-3.5-.8L4 20l1.3-4.3A8 8 0 1 1 20 11.5Z" />,
   share: <><circle cx="5" cy="12" r="2.5" /><circle cx="18" cy="5" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="m7 10.7 8.6-4.4M7 13.3l8.6 4.4" /></>,
 
   lock: <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,

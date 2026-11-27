@@ -4,47 +4,97 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
-import { Loading, Empty, toast } from '@/components/ui';
+import { Loading, Empty, Sheet, toast } from '@/components/ui';
+import NavIcon from '@/components/NavIcon';
 import { waLink, errMsg } from '@/lib/format';
-import PrinterManager, { PrintReceiptButton } from '@/components/PrinterManager';
+import { PrintReceiptButton, PrinterSettingsForm } from '@/components/PrinterManager';
+import { printerSettings } from '@/lib/printer';
 import { printLines } from '@/lib/printer-format.mjs';
+import { downloadReceiptPdf } from '@/lib/receipt-pdf';
 import { strukText } from '@/lib/struk';
 
 export default function Struk() {
   const { id } = useParams();
   const { kos } = useKos();
   const [d, setD] = useState(null);
-  const [err, setErr] = useState(null);
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase.rpc('sale_detail', { p_sale: id });
-      if (error) return /tidak ditemukan/i.test(error.message) ? setD({ missing: true }) : setErr(errMsg(error));
-      setD({ s: data.sale, lines: data.lines || [], contact: data.contact });
-    })();
+    let active = true;
+    supabase.rpc('sale_detail', { p_sale: id }).then(({ data, error }) => {
+      if (active) setD({ id, data, error });
+    });
+    return () => { active = false; };
   }, [id]);
-  if (err) return <div className="notice bad">{err}</div>;
-  if (!d) return <Loading />;
-  if (d.missing) return <Empty title="Struk tidak ditemukan" />;
-  const text = strukText(kos, d.s, d.lines, d.contact);
-  async function copyThermal() {
+  if (!kos || d?.id !== id) return <Loading />;
+  if (d.error && !/tidak ditemukan/i.test(d.error.message)) return <div className="notice bad">{errMsg(d.error)}</div>;
+  if (!d.data?.sale || d.data.sale.kos_id !== kos.id) return <Empty title="Struk tidak ditemukan" />;
+  return <Receipt key={id} kos={kos} sale={d.data.sale} lines={d.data.lines || []} contact={d.data.contact} />;
+}
+
+function Receipt({ kos, sale, lines, contact }) {
+  const [paper, setPaper] = useState(() => printerSettings(kos.id).paper === '80' ? '80' : '58');
+  const [sharing, setSharing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const renderText = (size) => strukText(kos, sale, lines, contact, size);
+  const text = printLines(renderText(paper), paper === '80' ? 48 : 32).join('\n');
+  const cancelled = sale.status === 'batal';
+  const whatsapp = '```\n' + text + '\n```';
+
+  async function copy() {
     try {
-      await navigator.clipboard.writeText(printLines(text, 32).join('\n'));
+      await navigator.clipboard.writeText(text);
+      setSharing(false);
       toast('Struk disalin. Tempel di mode Plain aplikasi printer.');
     } catch {
+      setSharing(false);
       toast('Tekan lama pada teks struk untuk menyalinnya.');
     }
   }
-  return (
-    <div className="stack" style={{ maxWidth: 420, margin: '0 auto' }}>
-      <div className="row between noprint"><h2>Struk</h2><Link href="/penjualan" className="small">← Penjualan</Link></div>
-      <pre className="struk">{text}</pre>
-      <div className="row noprint">
-        <PrinterManager kosId={kos.id} />
-        <PrintReceiptButton kosId={kos.id} renderText={(paper) => strukText(kos, d.s, d.lines, d.contact, paper)} />
-        <button type="button" onClick={copyThermal}>Salin struk 58 mm</button>
-        <a href={d.contact?.phone ? waLink(d.contact.phone, '```\n' + text + '\n```') : `https://wa.me/?text=${encodeURIComponent('```\n' + text + '\n```')}`} target="_blank" rel="noreferrer"><button>Kirim via WhatsApp</button></a>
-        <Link href="/kasir"><button className="ghost">Transaksi baru</button></Link>
-      </div>
+
+  async function download() {
+    setDownloading(true);
+    try { await downloadReceiptPdf(text, sale.number, paper); }
+    catch (error) { toast('PDF gagal dibuat: ' + errMsg(error)); }
+    finally { setDownloading(false); }
+  }
+
+  async function share() {
+    try {
+      await navigator.share({ title: 'Struk ' + sale.number, text });
+      setSharing(false);
+    }
+    catch (error) { if (error.name !== 'AbortError') toast('Struk gagal dibagikan.'); }
+  }
+
+  return <div className="receipt-page stack">
+    <div className="receipt-heading noprint">
+      <h2>Struk</h2>
+      <span className={'chip ' + (cancelled ? 'bad' : 'good')}>
+        <NavIcon name={cancelled ? 'info' : 'done'} size={15} />
+        {cancelled ? 'Transaksi dibatalkan' : 'Transaksi selesai'}
+      </span>
+      <Link href="/penjualan" className="small">← Penjualan</Link>
     </div>
-  );
+    <div className="receipt-preview" data-paper={paper}>
+      <pre>{text.split('\n').map((line, index) => <span key={index} className={index === 0 || /^TOTAL\s/.test(line) ? 'receipt-emphasis' : undefined}>{line || ' '}{'\n'}</span>)}</pre>
+    </div>
+    <div className="receipt-actions noprint">
+      <PrintReceiptButton kosId={kos.id} renderText={renderText}><NavIcon name="print" size={20} />Cetak ulang</PrintReceiptButton>
+      <a href={contact?.phone ? waLink(contact.phone, whatsapp) : `https://wa.me/?text=${encodeURIComponent(whatsapp)}`} target="_blank" rel="noreferrer">
+        <NavIcon name="message" size={20} />Kirim via WhatsApp
+      </a>
+      <button type="button" onClick={() => setSharing(true)}><NavIcon name="upload" size={20} />Bagikan</button>
+    </div>
+    <details className="receipt-settings noprint" open>
+      <summary><NavIcon name="print" size={20} />Pengaturan cetak<NavIcon name="down" size={18} /></summary>
+      <div className="receipt-settings-body">
+        <PrinterSettingsForm kosId={kos.id} receipt onSaved={(settings) => setPaper(settings.paper === '80' ? '80' : '58')} />
+      </div>
+    </details>
+    <Link href="/kasir" className="receipt-new noprint"><NavIcon name="cart" size={22} />Transaksi baru</Link>
+    {sharing && <Sheet title="Bagikan struk" onClose={() => setSharing(false)}>
+      {typeof navigator.share === 'function' && <button type="button" onClick={share}>Bagikan teks</button>}
+      <button type="button" onClick={copy}>Salin struk {paper} mm</button>
+      <button type="button" onClick={download} disabled={downloading}>{downloading ? 'Menyiapkan PDF…' : 'Unduh PDF'}</button>
+    </Sheet>}
+  </div>;
 }

@@ -127,7 +127,7 @@ export function offlineStruk(kos, e, paper = '58') {
     number: e.result?.number || v.number, sale_date: new Date(e.at).toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' }), sold_at: e.at,
     subtotal: v.sub, discount: Number(p.discount || 0), promo_discount: 0, total: v.total, pay_method: p.method,
     pay_split: p.method === 'campuran' ? Object.fromEntries((p.payments || []).map((x) => [x.method, x.amount])) : null,
-    paid_amount: p.paid, due_date: p.due, status: 'selesai', tax_amount: 0,
+    paid_amount: p.paid, due_date: p.due, note: p.note, status: 'selesai', tax_amount: 0,
   };
   return strukText(kos, s, (v.lines || []).map((l) => ({ ...l, line_total: Math.round(l.qty * l.price), serials: l.serials })), v.contact ? { name: v.contact } : null, paper)
     + (e.state === 'gagal' ? '\nGagal dicatat di PRASARA' : e.result?.number ? '' : '\nNomor sementara · belum terkirim');
