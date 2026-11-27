@@ -9,10 +9,10 @@ import { playScanSuccess, prepareScanSound } from '@/lib/scan-sound';
 import { angka, rp } from '@/lib/format';
 import styles from './product-photo-scan.module.css';
 
-export default function ProductPhotoButton({ products, onPick, unitsFor, thumbs = {}, className = 'sm', purpose = 'stock' }) {
+export default function ProductPhotoButton({ products, onPick, unitsFor, thumbs = {}, className = 'sm', icon, purpose = 'stock' }) {
   const [open, setOpen] = useState(false);
   return <>
-    <button type="button" className={className} onClick={() => { prepareScanSound(); setOpen(true); }}>Pindai foto</button>
+    <button type="button" className={className} onClick={() => { prepareScanSound(); setOpen(true); }}>{icon} Pindai foto</button>
     {open && <ProductPhotoSheet products={products} thumbs={thumbs} unitsFor={unitsFor} purpose={purpose}
       onPick={onPick} onClose={() => setOpen(false)} />}
   </>;

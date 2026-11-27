@@ -1,5 +1,6 @@
 // Ikon garis sederhana untuk navigasi aplikasi (tanpa pustaka luar)
 const P = {
+  photo: <><path d="M3 7h4l2-3h6l2 3h4v13H3z" /><circle cx="12" cy="13" r="3.5" /></>,
   filter: <><path d="M4 6h16M7 12h10M10 18h4" /></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></>,
   print: <><path d="M6 8V3h12v5M6 17H3V8h18v9h-3M6 14h12v7H6zM6 11h.01" /></>,

@@ -80,7 +80,7 @@ export function Pagination({ page, size, total, onPage, onSize, sizes = [10, 25,
 // Tabel responsif: ≥1024 tabel lengkap; 768–1023 kolom `hide="tablet"` disembunyikan; <768 kartu.
 // columns: [{ key, label, render(row), sort(row) → nilai, align: 'right', hide: 'tablet', main: true (judul kartu), card: false }]
 // card(row) opsional = isi kartu HP buatan halaman (bila tidak ada: kolom `main` jadi judul, sisanya label: nilai).
-export function DataTable({ columns, rows, rowKey = (r) => r.id, onRow, rowLabel, card, caption, pageSize = 25, initialSort, rowClass }) {
+export function DataTable({ columns, rows, rowKey = (r) => r.id, onRow, rowLabel, card, caption, pageSize = 25, initialSort, rowClass, layout }) {
   const desk = useMedia('(min-width: 1024px)');
   const wide = useMedia('(min-width: 768px)');
   const [sort, setSort] = useState(initialSort || null); // { key, dir: 1|-1 }
@@ -104,7 +104,7 @@ export function DataTable({ columns, rows, rowKey = (r) => r.id, onRow, rowLabel
 
   return (
     <div className="dt-wrap">
-      {wide ? (
+      {wide && layout !== 'grid' ? (
         <div className="dt-scroll">
           <table className={'dt' + (onRow ? ' dt-click' : '')}>
             {caption && <caption className="vh">{caption}</caption>}

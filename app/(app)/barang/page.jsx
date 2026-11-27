@@ -3,6 +3,9 @@ import IsianTambahan from '@/components/IsianTambahan';
 import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import Link from 'next/link';
+import Image from 'next/image';
+import NavIcon from '@/components/NavIcon';
+import styles from './barang.module.css';
 import { ScanButton } from '@/components/BarcodeScan';
 import ProductPhotoButton from '@/components/ProductPhotoScan';
 import { moduleOn, multiLoc, canArea } from '@/lib/business';
@@ -10,11 +13,11 @@ import { Suspense, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
+import { DataTable, FilterToolbar } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
 import EntityPhotos from '@/components/media/EntityPhotos';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
-import { Sheet, Field, Loading, Empty, Tile, run, toast } from '@/components/ui';
+import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
 import { qtyNum, unitsOf, stockText, isLow, MOVE } from '@/lib/retail';
 import { isiNum, isiText, measure, toBase, resolveUnit, contentOf, contentChoices, presetsFor, crossDim, unitProblem, BASE_PRESETS } from '@/lib/units';
@@ -25,33 +28,50 @@ import { BrandSheet, BarcodeSheet, KitSheet, SerialSheet, SupplierPriceSheet } f
 import StockMinusList, { useStockMinus } from '@/components/StockMinus';
 import LocationStockCard from './LocationStockCard';
 
+async function readCatalog(makeQuery, signal) {
+  const rows = [];
+  for (let start = 0; ; start += 500) {
+    const { data, error } = await makeQuery().range(start, start + 499).abortSignal(signal);
+    if (error) return { error };
+    rows.push(...data);
+    if (data.length < 500) return { data: rows };
+  }
+}
+
 // Muat barang + satuan untuk bisnis aktif
 function useProducts(kosId, ver, multi) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal = new AbortController().signal) => {
     const [p, u, l, c, g, b, av, br, bc, kt] = await Promise.all([
-      supabase.from('products').select('*').eq('kos_id', kosId).order('name'),
-      supabase.from('product_units').select('*').eq('kos_id', kosId),
+      readCatalog(() => supabase.from('products').select('*').eq('kos_id', kosId).order('name').order('id'), signal),
+      readCatalog(() => supabase.from('product_units').select('*').eq('kos_id', kosId).order('product_id').order('name'), signal),
       multi ? supabase.rpc('stock_levels_list', { p_kos: kosId }) : Promise.resolve({ data: [] }),
       supabase.from('product_categories').select('*').eq('kos_id', kosId).order('sort').order('name'),
       supabase.from('product_variant_groups').select('*').eq('kos_id', kosId),
       supabase.from('price_breaks').select('*').eq('kos_id', kosId),
       supabase.rpc('stock_avail', { p_kos: kosId }),
       supabase.from('product_brands').select('*').eq('kos_id', kosId).order('name'),
-      supabase.from('product_barcodes').select('product_id, unit, code').eq('kos_id', kosId),
+      readCatalog(() => supabase.from('product_barcodes').select('product_id, unit, code').eq('kos_id', kosId).order('code'), signal),
       supabase.rpc('kit_overview', { p_kos: kosId }),
     ]);
+    if (signal.aborted) return;
     if (p.error || u.error) return setErr(errMsg(p.error || u.error));
+    setErr(null);
     setD({ products: p.data, units: u.data, levels: l.data || [], cats: c.data || [], groups: g.data || [], breaks: b.data || [], avail: av.data || { products: [], levels: [] },
       brands: br.data || [], codes: bc.data || [], kits: kt.error ? [] : kt.data || [] });
   }, [kosId, multi]);
-  useEffect(() => { load(); }, [load, ver]);
+  useEffect(() => { const controller = new AbortController(); load(controller.signal); return () => controller.abort(); }, [load, ver]);
   return { d, err, reload: load };
 }
 
 export default function Barang() {
   const { kosId, ver, kos } = useKos();
+  if (!kosId || !kos) return <Loading />;
+  return <InventoryWorkspace key={kosId} kosId={kosId} kos={kos} ver={ver} />;
+}
+
+function InventoryWorkspace({ kosId, ver, kos }) {
   const multi = multiLoc(kos);
   const { d, err, reload } = useProducts(kosId, ver, multi);
   const [stockVersion, setStockVersion] = useState(0);
@@ -59,6 +79,9 @@ export default function Barang() {
   const negative = useStockMinus(retail ? kosId : null, `${ver}:${stockVersion}`);
   const [q, setQ] = useState('');
   const [f, setF] = useState('aktif');
+  const [layout, setLayout] = useState('list');
+  const [showSummary, setShowSummary] = useState(true);
+  const [extra, setExtra] = useState(null);
   useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['kedaluwarsa', 'kesehatan'].includes(t)) setF(t); } catch {} }, []);
   const [edit, setEdit] = useState(null);   // null | 'new' | product
   useBaru(() => setEdit('new'));
@@ -85,23 +108,76 @@ export default function Barang() {
   const here = (p) => Number(d.levels.find((l) => l.product_id === p.id && l.branch_id === kos.locs?.current)?.qty || 0);
   const perLoc = (p) => d.levels.filter((l) => l.product_id === p.id);
   const active = d.products.filter((p) => p.active);
-  const low = active.filter(isLow);
-  const value = active.reduce((s, p) => s + Math.max(0, Number(p.stock)) * Number(p.cost), 0);
+  const physical = active.filter((p) => !p.is_kit && p.stock != null);
+  const low = physical.filter((p) => Number(p.stock) > 0 && isLow(p));
+  const empty = physical.filter((p) => Number(p.stock) === 0);
+  const minus = physical.filter((p) => Number(p.stock) < 0);
+  const locationMinus = negative.rows?.length ?? 0;
+  const knownStock = active.every((p) => p.is_kit || p.stock != null);
+  const catalogView = !['kedaluwarsa', 'kesehatan'].includes(f);
+  const issues = [
+    low.length > 0 && `${angka(low.length)} menipis`,
+    empty.length > 0 && `${angka(empty.length)} kosong`,
+    minus.length > 0 && `${angka(minus.length)} negatif secara total`,
+    locationMinus > 0 && `${angka(locationMinus)} catatan stok minus per lokasi`,
+  ].filter(Boolean);
+  const insight = issues.length
+    ? issues.join(' · ') + '.'
+    : !active.length ? 'Belum ada barang aktif.'
+      : !knownStock || (retail && !negative.rows) ? 'Belum ada masalah pada stok yang berhasil diperiksa.'
+        : 'Tidak ada stok kosong, menipis, atau negatif pada barang aktif.';
+  const value = active.reduce((s, p) => s + Math.max(0, Number(p.stock) || 0) * (Number(p.cost) || 0), 0);
   const term = q.trim().toLowerCase();
-  const catCount = active.reduce((m, p) => { const k = p.category_id || '-'; m[k] = (m[k] || 0) + 1; return m; }, {});
+  const catCount = (f === 'arsip' ? d.products.filter((p) => !p.active) : active).reduce((m, p) => { const k = p.category_id || '-'; m[k] = (m[k] || 0) + 1; return m; }, {});
   const catName = (id) => d.cats.find((c) => c.id === id)?.name;
   const brandName = (id) => d.brands.find((x) => x.id === id)?.name;
   const kitOf = (id) => d.kits.find((k) => k.product_id === id);
-  const shown = d.products.filter((p) => (f === 'arsip' ? !p.active : p.active) && (f !== 'menipis' || isLow(p))
+  const unitsByProduct = new Map();
+  const codesByProduct = new Map();
+  for (const unit of d.units) {
+    if (!unitsByProduct.has(unit.product_id)) unitsByProduct.set(unit.product_id, []);
+    unitsByProduct.get(unit.product_id).push(unit);
+  }
+  for (const code of d.codes) {
+    if (!codesByProduct.has(code.product_id)) codesByProduct.set(code.product_id, []);
+    codesByProduct.get(code.product_id).push(code.code);
+  }
+  const hasBarcode = (p, code) => (unitsByProduct.get(p.id) || []).some((unit) => (unit.barcode || '').toLowerCase() === code)
+    || (codesByProduct.get(p.id) || []).some((item) => item.toLowerCase() === code);
+  const shown = d.products.filter((p) => (f === 'arsip' ? !p.active : p.active)
+    && (f !== 'menipis' || (!p.is_kit && Number(p.stock) > 0 && isLow(p)))
+    && (f !== 'kosong' || (!p.is_kit && p.stock != null && Number(p.stock) === 0))
+    && (f !== 'negatif' || (!p.is_kit && Number(p.stock) < 0))
     && (!cat || (cat === '-' ? !p.category_id : p.category_id === cat))
     && (!brandF || (brandF === '-' ? !p.brand_id : p.brand_id === brandF))
-    && (!term || term.split(/\s+/).every((w) => (p.name + ' ' + (brandName(p.brand_id) || '')).toLowerCase().includes(w)) || (p.sku || '').toLowerCase() === term
-      || d.units.some((u) => u.product_id === p.id && (u.barcode || '').toLowerCase() === term)
-      || d.codes.some((c) => c.product_id === p.id && c.code.toLowerCase() === term)));
+    && (!term || term.split(/\s+/).every((word) => (p.name + ' ' + (brandName(p.brand_id) || '')).toLowerCase().includes(word))
+      || (p.sku || '').toLowerCase() === term || hasBarcode(p, term)));
+  const scan = (code) => {
+    const key = code.trim().toLowerCase();
+    if (!d.products.some((p) => hasBarcode(p, key) || (p.sku || '').toLowerCase() === key)) {
+      toast('Barcode belum terdaftar di persediaan.');
+      return false;
+    }
+    const existing = d.products.find((p) => p.active && (hasBarcode(p, key) || (p.sku || '').toLowerCase() === key));
+    setF(existing ? 'aktif' : 'arsip');
+    setCat('');
+    setBrandF('');
+    setQ(code);
+    return true;
+  };
+  const stockTone = (p, qty) => {
+    if (p.is_kit || qty == null) return null;
+    if (Number(qty) < 0) return ['Negatif', 'bad'];
+    if (qty != null && Number(qty) === 0) return ['Kosong', 'bad'];
+    return isLow({ ...p, stock: qty }) ? ['Menipis', 'gold'] : null;
+  };
+
 
   // Satu sumber isi baris barang: dipakai kartu HP dan kolom tabel laptop (Unified Design System §11)
-  const info = (p, us, tbl) => (<>
-                <b>{p.name} {!p.is_kit && isLow(p) && <span className="chip bad">Menipis</span>}{p.is_kit && <span className="chip gold" style={{ marginLeft: 4 }}>Paket</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}{p.track_serial && <span className="chip" style={{ marginLeft: 4 }}>No. seri</span>}</b>
+  const info = (p, us, tbl) => {
+    const tone = stockTone(p, multi ? here(p) : p.stock);
+    return <>
+                <b>{p.name} {tone && <span className={`chip ${tone[1]}`}>{tone[0]}</span>}{p.is_kit && <span className="chip gold" style={{ marginLeft: 4 }}>Paket</span>}{p.track_expiry && <span className="chip" style={{ marginLeft: 4 }}>Exp</span>}{p.track_serial && <span className="chip" style={{ marginLeft: 4 }}>No. seri</span>}</b>
                 {(p.sku || p.category_id || p.variant_group_id || p.brand_id) && <span className="small muted">{[p.variant_group_id && 'Varian', brandName(p.brand_id), p.category_id && catName(p.category_id), p.sku && `Kode ${p.sku}`].filter(Boolean).join(' · ')}</span>}
                 {p.is_kit && kitOf(p.id) && <span className="small">Isi: {kitOf(p.id).components.map((c) => `${angka(c.qty)} ${c.unit} ${c.name}`).join(' + ')} · <b>bisa dibuat {angka(kitOf(p.id).avail)}</b>{kitOf(p.id).cost != null ? ` · modal ${rp(kitOf(p.id).cost)}` : ''}</span>}
                 {!tbl && !p.is_kit && <span className="small">{multi ? <>Di sini <b>{stockText(here(p), us, p.base_unit)}</b> · total {stockText(p.stock, us, p.base_unit)}</> : <>Stok <b>{stockText(p.stock, us, p.base_unit)}</b></>} · modal {p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>}</span>}
@@ -109,7 +185,8 @@ export default function Barang() {
                 {us.some((u, k) => k > 0 && unitProblem(u, p.base_unit)) && <span className="small" style={{ color: 'var(--bad)' }}>Periksa satuan: {us.filter((u, k) => k > 0 && unitProblem(u, p.base_unit)).map((u) => unitProblem(u, p.base_unit)).join(' ')} Buka Ubah untuk memperbaiki.</span>}
                 {!bahan && d.breaks.some((x) => x.product_id === p.id) && <span className="small" style={{ color: 'var(--good)' }}>Beli banyak: {d.breaks.filter((x) => x.product_id === p.id).sort((a, b) => Number(a.min_qty) - Number(b.min_qty)).slice(0, 3).map((x) => `≥${angka(x.min_qty)} ${x.unit} ${rp(x.price)}${x.tier !== 'semua' ? ` (${x.tier === 'grosir' ? 'grosir' : 'ecer'})` : ''}`).join(' · ')}</span>}
                 <span className="small muted">{us.map((u) => bahan ? `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''}` : `${u.name}${Number(u.qty) !== 1 ? ` (${angka(u.qty)} ${p.base_unit})` : ''} ${u.price_retail > 0 ? rp(u.price_retail) : 'harga belum diisi'}${u.price_wholesale > 0 ? ` · grosir ${rp(u.price_wholesale)}` : ''}`).join(' · ')}</span>
-  </>);
+    </>;
+  };
   const acts = (p) => (<div className="row" style={{ flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
                 {p.active && <button className="sm ghost" aria-pressed={!!p.favorite} title={p.favorite ? 'Hapus dari tombol cepat Kasir' : 'Jadikan tombol cepat di Kasir'} aria-label={p.favorite ? `Hapus ${p.name} dari tombol cepat` : `Jadikan ${p.name} tombol cepat`}
                   onClick={async () => { if (await run(() => supabase.rpc('product_set_favorite', { p_product: p.id, p_on: !p.favorite }), p.favorite ? 'Dihapus dari tombol cepat' : 'Jadi tombol cepat di Kasir', errMsg)) reload(); }}
@@ -119,52 +196,103 @@ export default function Barang() {
                 {p.is_kit ? <button className="sm" onClick={() => setKit(p)}>Isi paket</button> : <button className="sm" onClick={() => setAdj(p)}>Stok</button>}
                 <button className="sm ghost" onClick={() => setEdit(p)}>Ubah</button>
   </div>);
+  const filterOptions = <>
+    <Field label="Kondisi stok"><select value={f} onChange={(event) => setF(event.target.value)}>
+      <option value="aktif">Barang aktif</option><option value="menipis">Stok menipis</option>
+      <option value="kosong">Stok kosong</option><option value="negatif">Stok negatif</option><option value="arsip">Diarsipkan</option>
+    </select></Field>
+    {!bahan && d.brands.length > 0 && <Field label="Merek"><select value={brandF} onChange={(event) => setBrandF(event.target.value)}>
+      <option value="">Semua merek</option>{d.brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}<option value="-">Tanpa merek</option>
+    </select></Field>}
+  </>;
+
   return (
-    <div className="stack">
-      <PageHeader title={bahan ? 'Bahan & stok' : 'Barang & stok'} help={<PageHelp page={bahan ? 'bahan' : 'barang'} />}
-        desc={bahan ? 'Bahan operasional, stok, dan biaya pemakaian.' : 'Kelola barang, satuan & harga, persediaan, dan pergerakan stok.'}
-        actions={<>{moduleOn(kos, 'r_label') && <Link href="/label"><button className="sm">Cetak label</button></Link>}{multi && <Link href="/mutasi"><button className="sm">Mutasi stok</button></Link>}{!bahan && <button className="sm" onClick={() => setVariant('new')}>+ Varian</button>}{!bahan && <button className="sm" onClick={() => setKit('new')}>+ Paket</button>}<button className="primary" onClick={() => setEdit('new')}>{bahan ? '+ Tambah bahan' : '+ Tambah barang'}</button></>} />
-      <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
-      {retail && (negative.failed || negative.rows?.length > 0) && <div id="stok-minus" className="panel">
-        <StockMinusList key={kosId} rows={negative.rows || []} failed={negative.failed} />
-      </div>}
-      {retail && <Suspense fallback={null}><LocationStockCard kosId={kosId} version={ver} /></Suspense>}
-      <div className="grid">
-        <Tile label={bahan ? 'Bahan aktif' : 'Barang aktif'} value={angka(active.length)} />
-        <Tile label="Nilai stok (harga modal)" value={rp(value)} sub={active.some((p) => !(p.cost > 0)) ? 'ada barang tanpa harga modal' : null} />
-        <Tile label="Stok menipis" value={angka(low.length)} tone={low.length ? 'bad' : ''} sub="di bawah batas minimum" />
-      </div>
-      {d.products.length > 0 && <>
-        <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama, kode, atau barcode" />
-        {retail && active.some((product) => product.kos_id === kosId) && <div className="row"><ProductPhotoButton key={kosId}
-          products={active.filter((product) => product.kos_id === kosId).map((product) => ({ ...product, brand: brandName(product.brand_id) }))}
-          thumbs={thumbs} onPick={(product) => setEdit(product)} /></div>}
-        <div className="seg">
-          {[['aktif', `Aktif (${active.length})`], ['menipis', `Menipis (${low.length})`], ...(moduleOn(kos, 'r_batch') ? [['kedaluwarsa', 'Kedaluwarsa']] : []), ['kesehatan', 'Kesehatan stok'], ['arsip', 'Diarsipkan']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
+    <div className={styles.page}>
+      <section className={styles.hero} aria-label="Inventory Management Center">
+        <div className={styles.heroCopy}>
+          <h1>{bahan ? 'Bahan & Stok' : 'Barang (Produk)'}</h1>
+          <p>{bahan ? 'Kelola bahan operasional, stok, dan biaya pemakaian.' : 'Kelola barang, satuan & harga, persediaan, dan pergerakan stok.'}</p>
+          <PageHelp page={bahan ? 'bahan' : 'barang'} label={<><NavIcon name="/buku-besar" size={17} />{bahan ? 'Panduan Bahan' : 'Panduan Barang'}<NavIcon name="next" size={14} /></>} />
         </div>
-        {!['kedaluwarsa', 'kesehatan'].includes(f) && <CategoryBar cats={d.cats} value={cat} onChange={setCat} counts={catCount} onManage={() => setCatSheet(true)} />}
-        {!bahan && !['kedaluwarsa', 'kesehatan'].includes(f) && <div className="row" style={{ flexWrap: 'nowrap', gap: 6 }}>
-          {d.brands.length > 0 && <select value={brandF} onChange={(e) => setBrandF(e.target.value)} aria-label="Saring merek" style={{ maxWidth: 220 }}><option value="">Semua merek</option>{d.brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}<option value="-">Tanpa merek</option></select>}
-          <button className="sm ghost" style={{ flex: 'none' }} onClick={() => setBrandSheet(true)}>{d.brands.length ? 'Atur merek' : '+ Merek'}</button>
-        </div>}
-      </>}
+        <span className={styles.heroArt}><Image src="/barang-persediaan.webp" alt="" fill sizes="(max-width: 600px) 35vw, 290px" priority /></span>
+      </section>
+      <div className={styles.actions}>
+        <button className={styles.primary} onClick={() => setEdit('new')}><NavIcon name="plus" />{bahan ? 'Tambah Bahan' : 'Tambah Barang'}</button>
+        {moduleOn(kos, 'r_label') && <Link href="/label"><NavIcon name="print" />Cetak Label</Link>}
+        {!bahan && <button onClick={() => setVariant('new')}><NavIcon name="/layers" />＋ Varian</button>}
+        {!bahan && <button onClick={() => setKit('new')}><NavIcon name="/barang" />＋ Paket</button>}
+        <button onClick={() => setExtra('more')}><NavIcon name="more" />Lainnya</button>
+      </div>
+      <LokasiBar note="Hitung ulang, rusak, dan koreksi stok dicatat di lokasi ini. Pindahkan barang antar lokasi lewat menu Mutasi stok." />
+      {retail && <Suspense fallback={null}><LocationStockCard kosId={kosId} version={ver} /></Suspense>}
+      <div className={styles.tabs} aria-label="Menu persediaan">
+        <button aria-pressed={catalogView && showSummary && f !== 'arsip'} onClick={() => { setShowSummary(true); setF('aktif'); }}>Ringkasan</button>
+        <button aria-pressed={catalogView && !showSummary && f !== 'arsip'} onClick={() => { setShowSummary(false); setF('aktif'); }}>Daftar Barang</button>
+        {moduleOn(kos, 'r_batch') && <button aria-pressed={f === 'kedaluwarsa'} onClick={() => setF('kedaluwarsa')}>Kedaluwarsa</button>}
+        <button aria-pressed={f === 'kesehatan'} onClick={() => setF('kesehatan')}>Kesehatan Stok</button>
+        <button aria-pressed={f === 'arsip'} onClick={() => { setShowSummary(false); setF('arsip'); }}>Diarsipkan</button>
+      </div>
+      {catalogView && showSummary && f !== 'arsip' && <div className={styles.metrics}>
+        <InventoryMetric icon="/barang" label={bahan ? 'Bahan Aktif' : 'Barang Aktif'} value={angka(active.length)} note="SKU / varian aktif" />
+        <InventoryMetric icon="coins" label="Nilai Stok (Harga Modal)" value={rp(value)} note={active.some((p) => !(p.cost > 0)) ? 'Ada barang tanpa harga modal' : 'Total persediaan menurut catatan'} />
+        <InventoryMetric icon="info" label="Stok Menipis" value={angka(low.length)} note="Stok positif pada atau di bawah minimum" />
+        <InventoryMetric icon="return" label="Stok Kosong / Negatif" value={`${angka(empty.length)} / ${angka(minus.length)}`} note={multi ? 'Berdasarkan total semua lokasi' : 'Jenis barang aktif'} />
+      </div>}
+      {catalogView && <div className={styles.catalogTools}>
+        <div className={styles.searchRow}>
+          <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama, kode, atau barcode" />
+          <div className={styles.scans}>
+            <ScanButton className={styles.scanButton} icon={<NavIcon name="barcode" />} label="Pindai barcode" onCode={scan} />
+            {retail && active.some((p) => p.kos_id === kosId) && <ProductPhotoButton key={kosId} className={styles.scanButton} icon={<NavIcon name="photo" />}
+              products={active.filter((p) => p.kos_id === kosId).map((p) => ({ ...p, brand: brandName(p.brand_id) }))}
+              thumbs={thumbs} onPick={(product) => setEdit(product)} />}
+          </div>
+        </div>
+        <div className={styles.categoryRow}>
+          <button className={styles.scanButton} onClick={() => setExtra('filters')}><NavIcon name="filter" size={17} />Filter</button>
+          <CategoryBar cats={d.cats} value={cat} onChange={setCat} counts={catCount} onManage={() => setCatSheet(true)} />
+          <div className={styles.view} aria-label="Tampilan barang">
+            <button aria-label="Tampilan daftar" aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><NavIcon name="/layanan" size={18} /></button>
+            <button aria-label="Tampilan grid" aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}><NavIcon name="/beranda" size={18} /></button>
+          </div>
+        </div>
+      </div>}
       {f === 'kedaluwarsa' ? <Kedaluwarsa kosId={kosId} ver={ver} multi={multi} tracked={active.some((p) => p.track_expiry)} onChanged={reload} /> : f === 'kesehatan' ? <StokSehat kosId={kosId} ver={ver} kos={kos} multi={multi} onChanged={reload} /> : d.products.length === 0 ? (
         <Empty title={bahan ? 'Belum ada bahan' : 'Belum ada barang'} text={bahan ? 'Catat bahan operasional (deterjen, pewangi, plastik, hanger) agar stok dan biaya bahan terpantau. Pemakaian dicatat lewat tombol Stok › Pemakaian bahan.' : 'Tambahkan barang yang dijual. Satu barang bisa punya beberapa satuan, misalnya pcs dan dus isi 40, masing-masing dengan harga eceran dan grosir.'}>
           <button className="primary" onClick={() => setEdit('new')}>+ Tambah barang pertama</button>
         </Empty>
       ) : shown.length === 0 ? <Empty title="Tidak ada yang cocok" /> : (
-        <DataTable rows={shown} caption={bahan ? 'Daftar bahan' : 'Daftar barang'} pageSize={50}
+        <div className={styles.products} data-layout={layout}><DataTable rows={shown} layout={layout} caption={bahan ? 'Daftar bahan' : 'Daftar barang'} pageSize={50}
           columns={[
-            { key: 'name', label: bahan ? 'Bahan' : 'Barang', sort: (p) => p.name.toLowerCase(), render: (p) => <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', minWidth: 220 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={40} />}<div className="main" style={{ minWidth: 0 }}>{info(p, unitsOf(p, d.units), true)}</div></div> },
-            { key: 'stock', label: 'Stok', align: 'right', sort: (p) => Number(p.stock) || 0, render: (p) => <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}><b style={{ color: isLow(p) ? 'var(--bad)' : undefined }}>{stockText(multi ? here(p) : p.stock, unitsOf(p, d.units), p.base_unit)}</b>{multi && <span className="small muted">total {stockText(p.stock, unitsOf(p, d.units), p.base_unit)}</span>}</div> },
+            { key: 'name', label: bahan ? 'Bahan' : 'Barang', sort: (p) => p.name.toLowerCase(), render: (p) => <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', minWidth: 220 }}>{!bahan && <InventoryThumb path={thumbs[p.id]} size={40} />}<div className="main" style={{ minWidth: 0 }}>{info(p, unitsOf(p, d.units), true)}</div></div> },
+            { key: 'stock', label: 'Stok', align: 'right', sort: (p) => Number(p.stock) || 0, render: (p) => <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}><b style={{ color: stockTone(p, multi ? here(p) : p.stock)?.[1] === 'bad' ? 'var(--bad)' : undefined }}>{stockText(multi ? here(p) : p.stock, unitsOf(p, d.units), p.base_unit)}</b>{multi && <span className="small muted">total {stockText(p.stock, unitsOf(p, d.units), p.base_unit)}</span>}</div> },
             { key: 'cost', label: 'Modal', align: 'right', hide: 'tablet', sort: (p) => Number(p.cost) || 0, render: (p) => (p.cost > 0 ? `${rp(p.cost)}/${p.base_unit}` : <span style={{ color: 'var(--warn)' }}>belum diisi</span>) },
             { key: 'act', label: <span className="vh">Aksi</span>, align: 'right', render: (p) => acts(p) },
           ]}
           card={(p) => <div className="row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', rowGap: 8 }}>
-            <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: '1 1 220px', minWidth: 0 }}>{!bahan && thumbs[p.id] && <ListThumb path={thumbs[p.id]} size={48} />}<div className="main" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>{info(p, unitsOf(p, d.units))}</div></div>
+            <div className="row" style={{ flexWrap: 'nowrap', gap: 10, alignItems: 'flex-start', flex: '1 1 220px', minWidth: 0 }}>{!bahan && <InventoryThumb path={thumbs[p.id]} size={48} />}<div className="main" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>{info(p, unitsOf(p, d.units))}</div></div>
             <div style={{ marginLeft: 'auto' }}>{acts(p)}</div>
-          </div>} />
+          </div>} /></div>
       )}
+      {catalogView && <aside className={styles.insight} data-attention={issues.length > 0}>
+        <NavIcon name="info" /><p><b>Insight Stok.</b> {insight}{retail && negative.failed && ' Pemeriksaan stok minus per lokasi gagal dimuat.'}</p>
+        {locationMinus > 0 && <a href="#stok-minus">Lihat stok minus</a>}
+      </aside>}
+      {retail && (negative.failed || locationMinus > 0) && <div id="stok-minus" className="panel">
+        <StockMinusList key={kosId} rows={negative.rows || []} failed={negative.failed} />
+      </div>}
+      {extra === 'filters' && <Sheet title="Filter Persediaan" onClose={() => setExtra(null)}>
+        {filterOptions}
+        {!bahan && <button onClick={() => { setExtra(null); setBrandSheet(true); }}>{d.brands.length ? 'Atur merek' : '＋ Merek'}</button>}
+        <button className="primary" onClick={() => setExtra(null)}>Tampilkan Hasil</button>
+      </Sheet>}
+      {extra === 'more' && <Sheet title="Lainnya" onClose={() => setExtra(null)}>
+        {multi && <Link href="/mutasi">Mutasi Stok</Link>}
+        <button onClick={() => { setExtra(null); setCatSheet(true); }}>Atur Kategori</button>
+        {!bahan && <button onClick={() => { setExtra(null); setBrandSheet(true); }}>Atur Merek</button>}
+        <button onClick={() => setExtra('import')}>Import Barang</button>
+      </Sheet>}
+      {extra === 'import' && <Sheet title="Import Barang" onClose={() => setExtra(null)}><p>Import barang masih berupa usulan pengembangan.</p></Sheet>}
       {brandSheet && <BrandSheet kosId={kosId} brands={d.brands} products={d.products} onClose={() => setBrandSheet(false)} onChanged={reload} />}
       {bcs && <BarcodeSheet p={bcs} units={unitsOf(bcs, d.units)} onClose={() => { setBcs(null); reload(); }} />}
       {kit && <KitSheet kosId={kosId} p={kit === 'new' ? null : kit} products={d.products} units={d.units} finance={canArea(kos, 'finance')} onClose={() => setKit(null)} onSaved={() => { setKit(null); reload(); }} />}
@@ -180,6 +308,14 @@ export default function Barang() {
       {adj && <StockSheet canCorrect={canArea(kos, 'team')} bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); setStockVersion((value) => value + 1); reload(); }} />}
     </div>
   );
+}
+
+function InventoryMetric({ icon, label, value, note }) {
+  return <article className={styles.metric}><span><NavIcon name={icon} /></span><div><b>{label}</b><strong>{value}</strong><small>{note}</small></div></article>;
+}
+
+function InventoryThumb({ path, size }) {
+  return path ? <ListThumb path={path} size={size} /> : <span className={styles.thumb} style={{ width: size, height: size }}><NavIcon name="/barang" /></span>;
 }
 
 const blankUnit = () => ({ name: '', content_qty: '', content_unit: '', price_retail: '', price_wholesale: '', barcode: '' });
