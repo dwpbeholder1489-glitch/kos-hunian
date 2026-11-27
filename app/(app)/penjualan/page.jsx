@@ -41,7 +41,8 @@ export default function Penjualan() {
   const canSell = pathAllowed(kos, '/kasir');
   const [menu, setMenu] = useState(null);
   const [history, setHistory] = useState(false);
-  const [day, setDay] = useState(today());
+  // ?tanggal=YYYY-MM-DD dari tautan halaman lain (mis. drill-down Rekap Bisnis)
+  const [day, setDay] = useState(() => { try { const t = new URLSearchParams(window.location.search).get('tanggal'); return /^\d{4}-\d{2}-\d{2}$/.test(t || '') && t <= today() ? t : today(); } catch { return today(); } });
   const [rows, setRows] = useState(null);
   const [previous, setPrevious] = useState(null);
   const request = useRef(0);

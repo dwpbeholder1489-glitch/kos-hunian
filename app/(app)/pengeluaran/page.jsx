@@ -14,7 +14,8 @@ import { rp, tgl, today, thisMonth, bulan, addMonthsYm, parseRp, angka, KIND, EN
 export default function Pengeluaran() {
   const d = useData();
   const { kosId } = useKos();
-  const [ym, setYm] = useState(thisMonth());
+  // ?bulan=YYYY-MM dari tautan halaman lain (mis. drill-down Rekap Bisnis); bulan depan tidak dibuka
+  const [ym, setYm] = useState(() => { try { const b = new URLSearchParams(window.location.search).get('bulan'); return /^\d{4}-\d{2}$/.test(b || '') && b <= thisMonth() ? b : thisMonth(); } catch { return thisMonth(); } });
   const [tab, setTab] = useState('biaya');
   const [sheet, setSheet] = useState(null);
   const [q, setQ] = useState('');

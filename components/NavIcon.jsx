@@ -96,6 +96,7 @@ const P = {
   '/proyek': <><rect x="3" y="6" width="18" height="14" rx="2" /><path d="M8 6V4h8v2M3 12h18M10 12v2h4v-2" /></>,
   '/aktivitas': <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   '/analisis': <><path d="M3 20h18M4 16l5-5 4 3 7-8" /><path d="M16 6h4v4" /></>,
+  '/rekap': <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" /><path d="M7 14h4M7 17h7M15 14h2" /></>,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
   logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></>,
   swap: <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
