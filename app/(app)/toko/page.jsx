@@ -64,7 +64,8 @@ const percent = new Intl.NumberFormat('id-ID', { style: 'percent', maximumFracti
 function growth(value, before, comparison) {
   if (value == null || before == null || before === 0) return null;
   const delta = (value - before) / Math.abs(before);
-  return { tone: delta > 0 ? 'good' : delta < 0 ? 'bad' : 'neutral', text: `${delta > 0 ? '↑ ' : delta < 0 ? '↓ ' : ''}${percent.format(delta)} · ${comparison}` };
+  const valueText = `${delta > 0 ? '↑ ' : delta < 0 ? '↓ ' : ''}${percent.format(delta)}`;
+  return { tone: delta > 0 ? 'good' : delta < 0 ? 'bad' : 'neutral', valueText, comparison, text: `${valueText} · ${comparison}` };
 }
 
 
