@@ -25,6 +25,7 @@ export default function Kontak() {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState(fin ? 'pelanggan' : 'supplier');
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('tab') === 'supplier') setTab('supplier'); }, []);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
   useBaru(() => setOpen({ kind: tab }));

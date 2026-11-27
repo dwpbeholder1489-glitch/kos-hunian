@@ -1,0 +1,114 @@
+.page {
+  display: grid;
+  gap: clamp(10px, 3vw, 20px);
+  min-width: 0;
+  --purchase-green: #08782d;
+  --purchase-mint: color-mix(in srgb, var(--brand-2) 12%, var(--surface));
+  --purchase-shadow: 0 2px 7px rgb(8 38 28 / 10%);
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(157deg, #073e34 7%, #0a4d3d 45%, #07913d 90%);
+  color: white;
+  padding: clamp(12px, 3.2vw, 28px) clamp(12px, 4.3vw, 32px);
+}
+.heroCopy { position: relative; z-index: 1; width: 66%; }
+.hero h1 { font-size: clamp(23px, 5.45vw, 42px); line-height: 1.08; letter-spacing: -.035em; margin: 0 0 5px; }
+.hero p { font-size: clamp(11px, 2.65vw, 17px); line-height: 1.38; margin: 0 0 9px; }
+.heroArt { position: absolute; inset: 5% 2% 5% auto; width: 35%; }
+.heroArt img, .emptyArt img { object-fit: contain; }
+.heroArt img { object-position: right bottom; }
+.hero :global(.helpchip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 12px;
+  background: white;
+  color: #10231b;
+  padding: 4px 8px;
+  white-space: nowrap;
+  font-size: clamp(10px, 2.35vw, 14px);
+}
+.hero :global(.helpchip) svg { color: var(--purchase-green); flex: none; }
+
+.actions, .tabs, .metrics, .quick, .content { display: grid; gap: clamp(5px, 1.6vw, 12px); }
+.actions { grid-template-columns: 1.28fr repeat(3, minmax(0, 1fr)); }
+.actions button, .quick > *, .toolbar > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 5px 3px;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--purchase-shadow);
+  font-size: clamp(11px, 2.6vw, 15px);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+.actions button { flex-direction: column; min-height: clamp(49px, 14vw, 72px); }
+.actions svg, .quick svg { color: var(--brand-2); flex: none; width: clamp(16px, 4.25vw, 25px); height: auto; }
+.actions .primary { background: var(--purchase-green); color: #fff; border-color: transparent; }
+.actions .primary svg { color: currentColor; }
+.tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 2px; background: var(--sunk); border-radius: 12px; }
+.tabs button { background: transparent; color: var(--muted); border: 0; border-radius: 10px; padding: 4px 2px; min-height: 36px; font-size: clamp(10px, 2.6vw, 15px); line-height: 1.2; }
+.tabs button[aria-pressed=true] { background: var(--surface); color: var(--brand-2); box-shadow: var(--purchase-shadow), inset 0 -2px var(--brand-2); }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+.toolbar > button { padding-inline: 9px; }
+.toolbar svg { color: var(--brand-2); }
+.period { position: relative; display: flex; align-items: center; gap: 7px; padding: 6px 9px; min-height: 42px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: clamp(12px, 3vw, 17px); }
+.period input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; opacity: 0; }
+.period input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; cursor: pointer; }
+.period:focus-within { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+
+.metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.metric { display: flex; align-items: flex-start; gap: clamp(5px, 2.1vw, 14px); min-width: 0; min-height: clamp(78px, 22vw, 110px); padding: clamp(7px, 2.45vw, 16px); border-radius: 13px; background: color-mix(in srgb, var(--tint) 12%, var(--surface)); line-height: 1.3; font-size: clamp(11px, 2.6vw, 15px); --tint: #4ad17f; --ink: #087d38; }
+.metric:nth-child(2) { --tint: #62b7ee; --ink: #0878a3; }
+.metric:nth-child(3) { --tint: #f3cc61; --ink: #976500; }
+.metric:nth-child(4) { --tint: #bc96e9; --ink: #7133af; }
+.metric > div { min-width: 0; overflow-wrap: anywhere; }
+.metricIcon, .recentIcon { flex: none; display: grid; place-items: center; width: clamp(26px, 8vw, 44px); aspect-ratio: 1; border-radius: 11px; background: color-mix(in srgb, var(--tint) 22%, var(--surface)); color: var(--ink); }
+.metricIcon svg { width: 65%; height: auto; }
+.metric strong { display: block; margin-block: 3px; font-size: clamp(15px, 3.8vw, 23px); letter-spacing: -.025em; }
+.metric small, .recent small { display: block; color: var(--muted); font-size: clamp(10px, 2.45vw, 14px); }
+
+.content { align-items: start; gap: inherit; }
+.panel { min-width: 0; padding: clamp(8px, 2.5vw, 15px); border: 1px solid var(--line); background: var(--surface); border-radius: 14px; box-shadow: var(--purchase-shadow); }
+.panelHead { display: flex; align-items: center; justify-content: space-between; gap: 5px; margin-bottom: 6px; }
+.panelHead h2 { margin: 0; font-size: clamp(15px, 3.6vw, 22px); letter-spacing: -.025em; }
+.panelHead button { display: flex; align-items: center; gap: 4px; background: var(--purchase-mint); color: var(--brand-2); white-space: nowrap; border: 0; padding: 4px 7px; min-height: 32px; font-size: clamp(10px, 2.45vw, 14px); }
+.recent > button { width: 100%; min-height: 49px; display: flex; text-align: left; align-items: center; gap: 6px; padding: 6px 2px; border: 0; border-radius: 0; background: none; font-size: clamp(11px, 2.7vw, 16px); }
+.recent > button + button { border-top: 1px solid var(--line); }
+.recentIcon { background: var(--purchase-mint); color: var(--brand-2); }
+.recentCopy { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
+.recent strong, .recent svg { flex: none; }
+.recent strong { white-space: nowrap; }
+.voidTotal { text-decoration: line-through; }
+.quick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.quick > * { min-height: 56px; flex-direction: column; }
+
+@media screen and (min-width: 1024px) {
+  .page { container-type: inline-size; gap: 18px; }
+}
+@container (min-width: 700px) {
+  .hero { min-height: 170px; display: flex; align-items: center; }
+  .heroArt { width: min(36%, 310px); }
+  .actions button { flex-direction: row; gap: 8px; min-height: 48px; }
+  .tabs { max-width: 680px; }
+  .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .metricIcon { width: clamp(26px, 4cqw, 44px); }
+  .metric { gap: 8px; }
+  .content[data-history=false] { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .content[data-history=false] .quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .content[data-history=true] .quick { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+}
