@@ -32,7 +32,7 @@ async function journal(kosId, from, to, kinds) {
   return { lines: lines.map((l) => ({ ...l, value: signed(l) })).sort((a, b) => b.entry.entry_date.localeCompare(a.entry.entry_date) || b.id - a.id), capped: rows.length >= MAX };
 }
 
-export function JournalLines({ kosId, from, to, kinds, retail, account, branchNote }) {
+export function JournalLines({ kosId, from, to, kinds, retail, account, accounts, branchNote }) {
   const [st, setSt] = useState(null);
   const [limit, setLimit] = useState(20);
   const [sort, setSort] = useState('tanggal');
@@ -43,11 +43,13 @@ export function JournalLines({ kosId, from, to, kinds, retail, account, branchNo
   }, [kosId, from, to, kinds.join()]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!st) return <Loading rows={4} />;
   if (st.error) return <p className="notice bad" role="alert">{errMsg(st.error)}</p>;
-  let lines = account ? st.lines.filter((l) => l.account.name === account) : st.lines;
+  let lines = account ? st.lines.filter((l) => l.account.name === account) : accounts ? st.lines.filter((l) => accounts.includes(l.account.name)) : st.lines;
   if (sort === 'nilai') lines = [...lines].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
-  const total = lines.reduce((t, l) => t + l.value, 0);
+  // Campuran pendapatan & beban (laba, EBITDA): jumlah = pendapatan − beban agar sama dengan angka di atas
+  const mixed = lines.some((l) => l.account.type === 'pendapatan') && lines.some((l) => l.account.type === 'beban');
+  const total = lines.reduce((t, l) => t + (mixed && l.account.type === 'beban' ? -l.value : l.value), 0);
   return <div className={styles.jl}>
-    <div className={styles.jlHead}><b>{lines.length.toLocaleString('id-ID')} baris jurnal · jumlah {rp(total)}</b>
+    <div className={styles.jlHead}><b>{lines.length.toLocaleString('id-ID')} baris jurnal · {mixed ? 'pendapatan − beban' : 'jumlah'} {rp(total)}</b>
       <label>Urut <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="tanggal">Terbaru</option><option value="nilai">Nilai terbesar</option></select></label></div>
     {branchNote && <p className={styles.note}>{branchNote}</p>}
     {st.capped && <p className={styles.note}>Menampilkan {MAX.toLocaleString('id-ID')} baris terbaru. Persempit periode untuk melihat semuanya.</p>}

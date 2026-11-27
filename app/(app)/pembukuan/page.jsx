@@ -35,7 +35,7 @@ export default function Pembukuan() {
   const toko = kos?.business_type === 'retail'; // umur piutang/utang & nilai persediaan (Tahap 2 Retail)
   const search = useSearchParams();
   // ?tab= dari tautan halaman lain (mis. drill-down Analisis Bisnis)
-  const [tab, setTab] = useState(() => { const t = search.get('tab'); return t === 'arus-kas' ? 'laporan' : ['jurnal', 'buku', 'laporan', 'umur', 'persediaan', 'saldo', 'investment'].includes(t) ? t : 'overview'; });
+  const [tab, setTab] = useState(() => { const t = search.get('tab'); return t === 'arus-kas' ? 'laporan' : ['jurnal', 'buku', 'laporan', 'umur', 'persediaan', 'saldo', 'investment', 'valuation', 'forecast', 'pusat', 'command', 'periode', 'bank'].includes(t) ? t : 'overview'; });
   const [ym, setYm] = useState(() => reportMonth(search.get('bulan')));
   const [ytd, setYtd] = useState(false);
   const [entity, setEntity] = useState(false);
