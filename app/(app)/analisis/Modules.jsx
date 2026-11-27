@@ -14,6 +14,7 @@ import { BLN, errMsg, rp, tgl } from '@/lib/format';
 import { LINE_CLASSES, balanceLines, balanceSheet, equityChanges, fmtRatio, incomeLines, incomeStatement, ratios } from '@/lib/finRatios';
 import { monthName } from '@/lib/bizIntel';
 import PajakPPh from '@/components/PajakPPh';
+import ValuationCard from './Valuation';
 import { C, TrendChart } from './Charts';
 import { DetailSheet, JournalLines } from './Details';
 import styles from './analisis.module.css';
@@ -201,7 +202,7 @@ function BudgetPlanCard({ kosId, month, ver }) {
 }
 
 // ---------- Investasi, aset & valuasi ----------
-export function InvestModule({ kosId, ver }) {
+export function InvestModule({ kosId, ver, owner }) {
   const st = useRpc('asset_list', { p_kos: kosId }, [kosId, ver]);
   return <div className={styles.modGrid}>
     <Card title="Aset Tetap" icon="/aset" right={<Go href="/aset">Daftar aset</Go>}>
@@ -217,9 +218,10 @@ export function InvestModule({ kosId, ver }) {
       <ul className={styles.hub}>
         <li><Link href="/pembukuan?tab=investment"><b>Simulasi & realisasi investasi</b><small>NPV, IRR, payback, skenario, perbandingan dengan realisasi</small></Link></li>
         <li><Link href="/pembukuan?tab=valuation"><b>Valuasi bisnis (DCF)</b><small>Dari arus kas historis, dengan analisis sensitivitas</small></Link></li>
-        <li><span><b>ROIC, valuasi multiple & asset-based, register modal</b><small>Dalam rencana — multiple butuh sumber pembanding bersumber; ROIC ada di Laporan Keuangan › Rasio</small></span></li>
+        <li><span><b>Register modal</b><small>Dalam rencana — ROIC ada di Laporan Keuangan › Rasio; valuasi multiple & aset di bawah</small></span></li>
       </ul>
     </Card>
+    <ValuationCard kosId={kosId} ver={ver} owner={owner} />
   </div>;
 }
 
@@ -249,7 +251,7 @@ export const BLUEPRINT = [
   ['Anggaran', 'Parsial', 'Biaya per kategori, target pendapatan, persetujuan & proyeksi akhir bulan; CAPEX & kas belum', 'anggaran'],
   ['Kinerja bisnis', 'Ada', 'KPI toko/kos/jasa/kuliner + KPI industri (laundry per kg, tepat janji, food cost, hunian, tunggakan); benchmark antarbisnis belum', 'industri'],
   ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga, ROIC; register modal belum', 'investasi'],
-  ['Valuasi bisnis', 'Parsial', 'DCF; multiple & asset-based belum', 'investasi'],
+  ['Valuasi bisnis', 'Ada', 'DCF, kelipatan (sumber dari pemilik), berbasis aset; tersimpan berversi', 'investasi'],
   ['Proyeksi & skenario', 'Ada', 'Pesimis/Dasar/Optimis 12 bulan (laba, kas, likuiditas), stress test, versi tersimpan', 'skenario'],
   ['Manajemen risiko', 'Ada', 'Faktor risiko otomatis, daftar risiko (kemungkinan × dampak, PIC, tinjauan) + saran dari data', '/risiko'],
   ['Konsolidasi', 'Parsial', 'Portofolio (Mode A); eliminasi antarentitas belum', 'laporan'],
