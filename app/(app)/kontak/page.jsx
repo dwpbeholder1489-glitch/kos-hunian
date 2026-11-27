@@ -4,10 +4,13 @@ import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import NavIcon from '@/components/NavIcon';
+import styles from './kontak.module.css';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
+import { DataTable, FilterToolbar } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import CrmTimeline from '@/components/CrmTimeline';
 import { rp, tgl, errMsg, waLink, angka, parseRp, today } from '@/lib/format';
@@ -16,51 +19,158 @@ import { canArea, moduleOn } from '@/lib/business';
 
 const KIND = { pelanggan: 'Pelanggan', supplier: 'Supplier' };
 const TIPE = { umum: 'Umum', reseller: 'Reseller', distributor: 'Distributor', institusi: 'Institusi' };
+const phoneKey = (phone) => String(phone || '').replace(/\D/g, '').replace(/^(62|0)/, '');
+const initials = (name) => name.trim().split(/\s+/).map((word) => word[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 const ST = { batal: 'Batal', dipesan: 'Dipesan', sebagian: 'Sebagian' };
 
 // Pelanggan & supplier: daftar, saldo kasbon/utang, riwayat transaksi, ubah nama & nomor
 export default function Kontak() {
-  const { kosId, kos, ver } = useKos();
+  const { kosId, kos, ver, user } = useKos();
+  if (!kosId || !kos || !user) return <Loading />;
   const fin = canArea(kos, 'finance');
+  return <ContactsWorkspace key={`${kosId}:${user.id}:${fin}`} {...{ kosId, kos, ver, fin }} />;
+}
+
+function ContactsWorkspace({ kosId, kos, ver, fin }) {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState(fin ? 'pelanggan' : 'supplier');
   useEffect(() => { if (new URLSearchParams(window.location.search).get('tab') === 'supplier') setTab('supplier'); }, []);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
-  useBaru(() => setOpen({ kind: tab }));
+  useBaru(() => setOpen({ kind: !fin || new URLSearchParams(window.location.search).get('tab') === 'supplier' ? 'supplier' : 'pelanggan' }));
   const [arsip, setArsip] = useState(false);
-  const load = () => supabase.rpc('contacts_overview', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data)));
+  const [filter, setFilter] = useState('all');
+  const [menu, setMenu] = useState(null);
+  const load = () => supabase.rpc('contacts_overview', { p_kos: kosId }).then(({ data, error }) => {
+    if (error) return setErr(errMsg(error));
+    setErr(null);
+    setRows(data);
+  });
   useEffect(() => { setRows(null); load(); }, [kosId, ver]);
   if (err) return <div className="notice bad">{/contacts_overview/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!rows) return <Loading />;
   const w = q.trim().toLowerCase();
-  const archivedN = rows.filter((c) => c.kind === tab && c.archived_at).length;
-  const shown = rows.filter((c) => c.kind === tab && Boolean(c.archived_at) === arsip && (!w || c.name.toLowerCase().includes(w) || (c.phone || '').includes(w)));
-
+  const phoneSearch = /^[+\d\s().-]+$/.test(w) ? phoneKey(w) : '';
+  const counts = { pelanggan: 0, supplier: 0 };
+  const groups = new Map();
+  for (const row of rows) {
+    if (row.archived_at) continue;
+    counts[row.kind]++;
+    const key = phoneKey(row.phone);
+    if (row.kind === 'pelanggan' && key) {
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    }
+  }
+  const duplicateGroups = [...groups.values()].filter((group) => group.length > 1);
+  const duplicateIds = new Set(duplicateGroups.flatMap((group) => group.map((row) => row.id)));
+  const inTab = rows.filter((row) => row.kind === tab);
+  const archivedN = inTab.filter((row) => row.archived_at).length;
+  const balance = inTab.reduce((sum, row) => sum + Math.max(0, Number(row.balance) || 0), 0);
+  const transactions = inTab.reduce((sum, row) => sum + Number(row.trx || 0), 0);
+  const shown = inTab.filter((row) => Boolean(row.archived_at) === arsip &&
+    (!w || row.name.toLowerCase().includes(w) || (row.phone || '').includes(w) || (phoneSearch && phoneKey(row.phone).includes(phoneSearch))) &&
+    (filter !== 'phone' || phoneKey(row.phone)) &&
+    (filter !== 'balance' || Number(row.balance) > 0) &&
+    (filter !== 'duplicate' || duplicateIds.has(row.id)));
+  const changeTab = (kind) => { setTab(kind); setArsip(false); setFilter('all'); };
+  const viewDuplicates = () => { changeTab('pelanggan'); setQ(''); setFilter('duplicate'); setMenu(null); };
+  const showWa = (row) => phoneKey(row.phone) ? <a className={styles.whatsapp} href={waLink(row.phone, '')} target="_blank" rel="noreferrer"
+    aria-label={`WhatsApp ${row.name}`} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>WhatsApp</a> : <span className="muted">—</span>;
+  const balanceLabel = tab === 'pelanggan' ? 'Total Kasbon' : 'Total Utang';
   return (
-    <div className="stack">
-      <PageHeader title="Pelanggan & supplier" help={<PageHelp page="kontak" />} desc="Data kontak, sisa kasbon/utang, dan riwayat transaksi." actions={<button className="primary" onClick={() => setOpen({ kind: tab })}>+ Tambah</button>} />
-      {fin && <div className="seg">{['pelanggan', 'supplier'].map((k) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{KIND[k]} ({rows.filter((c) => c.kind === k && !c.archived_at).length})</button>)}</div>}
-      {(archivedN > 0 || arsip) && <button className="sm ghost" onClick={() => setArsip(!arsip)}>{arsip ? '← Kembali ke daftar aktif' : `Lihat arsip (${archivedN})`}</button>}
-      <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama atau nomor" />
-      {shown.length === 0 && arsip ? <Empty title="Arsip kosong" /> : shown.length === 0 ? <Empty title={`Belum ada ${KIND[tab].toLowerCase()}`} text={tab === 'pelanggan' ? 'Pelanggan juga bisa ditambahkan dari Kasir saat memilih Kasbon.' : 'Supplier juga bisa ditambahkan dari Belanja.'} /> : (
-        <DataTable rows={shown} caption={KIND[tab]} onRow={setOpen} rowLabel={(c) => c.name} initialSort={null}
+    <div className={styles.page}>
+      <section className={styles.hero} aria-label="Customer & Supplier Management Center">
+        <div className={styles.heroCopy}>
+          <h1>Pelanggan &amp; Supplier</h1>
+          <p>Kelola data kontak, sisa kasbon dan utang, serta riwayat transaksi.</p>
+          <PageHelp page="kontak" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Kontak <NavIcon name="next" size={14} /></>} />
+        </div>
+        <span className={styles.heroArt}><Image src="/pelanggan-supplier.webp" alt="" fill sizes="(max-width: 600px) 36vw, 300px" priority /></span>
+      </section>
+      <div className={styles.actions}>
+        {fin && <button onClick={() => setOpen({ kind: 'pelanggan' })}><NavIcon name="/penghuni" />＋ Pelanggan</button>}
+        <button onClick={() => setOpen({ kind: 'supplier' })}><NavIcon name="/barang" />＋ Supplier</button>
+        <button onClick={() => setMenu('import')}><NavIcon name="upload" />Import Kontak</button>
+        <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
+      </div>
+      {fin && <div className={styles.tabs} aria-label="Jenis kontak">{['pelanggan', 'supplier'].map((kind) => (
+        <button key={kind} onClick={() => changeTab(kind)} aria-pressed={tab === kind}>{KIND[kind]} ({angka(counts[kind])})</button>
+      ))}</div>}
+      <div className={styles.metrics}>
+        <ContactMetric icon={tab === 'pelanggan' ? '/penghuni' : '/barang'} label={`Total ${KIND[tab]}`} value={angka(counts[tab])} note="Kontak aktif" />
+        {fin && <ContactMetric icon="wallet" label={balanceLabel} value={rp(balance)} note="Termasuk saldo kontak arsip" />}
+        <ContactMetric icon="/penjualan" label="Total Transaksi" value={angka(transactions)} note="Termasuk kontak arsip" />
+      </div>
+      {fin && tab === 'pelanggan' && duplicateGroups.length > 0 && <aside className={styles.duplicateNotice}>
+        <NavIcon name="info" /><div><b>Kemungkinan kontak ganda</b><p>{angka(duplicateGroups.length)} nomor dipakai oleh lebih dari satu pelanggan aktif.</p></div>
+        <button onClick={() => setMenu('duplicates')}>Tinjau Duplikasi</button>
+      </aside>}
+      {(archivedN > 0 || arsip) && <button className={styles.archive} onClick={() => { setArsip(!arsip); setFilter('all'); }}>{arsip ? 'Kembali ke daftar aktif' : `Lihat arsip (${angka(archivedN)})`}</button>}
+      <div className={styles.toolbar}>
+        <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama atau nomor" />
+        <button onClick={() => setMenu('filter')}><NavIcon name="filter" size={17} />{filter === 'all' ? 'Filter' : 'Filter Aktif'}</button>
+      </div>
+      {shown.length === 0 ? <Empty title={w || filter !== 'all' ? 'Tidak ada kontak yang cocok' : arsip ? 'Arsip kosong' : `Belum ada ${KIND[tab].toLowerCase()}`} /> : (
+        <div className={styles.results}><DataTable rows={shown} caption={KIND[tab]} onRow={setOpen} rowLabel={(row) => row.name} initialSort={null}
           columns={[
-            { key: 'name', label: 'Nama', sort: (c) => c.name.toLowerCase(), render: (c) => <><b>{c.name}</b>{c.tipe && <span className="chip" style={{ marginLeft: 6 }}>{TIPE[c.tipe]}</span>}</> },
-            { key: 'phone', label: 'Nomor HP', render: (c) => c.phone || <span className="muted">—</span> },
-            { key: 'trx', label: 'Transaksi', align: 'right', sort: (c) => Number(c.trx) || 0, render: (c) => angka(c.trx || 0) },
-            { key: 'last', label: 'Terakhir', hide: 'tablet', sort: (c) => c.last_at || '', render: (c) => (c.last_at ? tgl(String(c.last_at).slice(0, 10)) : '—') },
-            ...(rows.some((c) => c.balance != null) ? [{ key: 'bal', label: tab === 'pelanggan' ? 'Sisa kasbon' : 'Sisa utang', align: 'right', sort: (c) => Number(c.balance) || 0, render: (c) => (Number(c.balance) > 0 ? <span className="chip bad">{rp(c.balance)}</span> : <span className="muted">—</span>) }] : []),
+            { key: 'name', label: 'Nama', sort: (row) => row.name.toLowerCase(), render: (row) => <ContactName row={row} duplicate={duplicateIds.has(row.id)} /> },
+            { key: 'phone', label: 'Nomor HP', render: (row) => row.phone || <span className="muted">—</span> },
+            { key: 'trx', label: 'Transaksi', align: 'right', sort: (row) => Number(row.trx) || 0, render: (row) => angka(row.trx || 0) },
+            { key: 'last', label: 'Terakhir', hide: 'tablet', sort: (row) => row.last_at || '', render: (row) => row.last_at ? tgl(String(row.last_at).slice(0, 10)) : '—' },
+            ...(fin ? [{ key: 'bal', label: tab === 'pelanggan' ? 'Sisa kasbon' : 'Sisa utang', align: 'right', sort: (row) => Number(row.balance) || 0, render: (row) => Number(row.balance) > 0 ? <span className="chip bad">{rp(row.balance)}</span> : <span className="muted">—</span> }] : []),
+            { key: 'wa', label: 'Akses Cepat', hide: 'tablet', render: showWa },
           ]}
-          card={(c) => <>
-            <div className="dt-row"><b>{c.name}{c.tipe && <span className="chip" style={{ marginLeft: 6 }}>{TIPE[c.tipe]}</span>}</b>{c.balance != null && Number(c.balance) > 0 && <span className="chip bad">{tab === 'pelanggan' ? 'Kasbon' : 'Utang'} {rp(c.balance)}</span>}</div>
-            <span className="small muted">{c.phone || 'tanpa nomor'} · {c.trx} transaksi{c.last_at ? ` · terakhir ${tgl(String(c.last_at).slice(0, 10))}` : ''}</span>
-          </>} />
+          card={(row) => <div className={styles.card}>
+            <span className={styles.avatar}>{initials(row.name)}</span>
+            <span className={styles.cardBody}>
+              <b>{row.name}</b><small>{row.phone || 'Tanpa nomor'}</small>
+              <small>{angka(row.trx || 0)} transaksi{row.last_at ? ` · terakhir ${tgl(String(row.last_at).slice(0, 10))}` : ''}</small>
+              {duplicateIds.has(row.id) && <span className="chip gold">Nomor sama</span>}
+              {Number(row.balance) > 0 && <span className="chip bad">{tab === 'pelanggan' ? 'Kasbon' : 'Utang'} {rp(row.balance)}</span>}
+            </span>
+            <span className={styles.cardEnd}><span className="chip good">{KIND[tab]}</span><NavIcon name="next" size={15} /></span>
+          </div>} /></div>
       )}
+      <aside className={styles.notice}><NavIcon name="info" /><p><b>Tip.</b> Simpan data pelanggan dan supplier untuk memudahkan pencatatan kasbon, utang, dan riwayat transaksi.</p></aside>
+      {menu === 'filter' && <Sheet title="Filter Kontak" onClose={() => setMenu(null)}>
+        <Field label="Tampilkan"><select value={filter} onChange={(event) => setFilter(event.target.value)}>
+          <option value="all">Semua kontak</option><option value="phone">Punya nomor WhatsApp</option>
+          {fin && <option value="balance">Masih punya saldo</option>}
+          {fin && tab === 'pelanggan' && !arsip && <option value="duplicate">Kemungkinan duplikat</option>}
+        </select></Field>
+        <button className="primary" onClick={() => setMenu(null)}>Tampilkan Hasil</button>
+      </Sheet>}
+      {menu === 'more' && <Sheet title="Lainnya" onClose={() => setMenu(null)}>
+        {fin && <button onClick={() => setMenu('duplicates')}>Tinjau Duplikasi Pelanggan</button>}
+        <button onClick={() => { setArsip(!arsip); setFilter('all'); setMenu(null); }}>{arsip ? 'Kembali ke daftar aktif' : 'Lihat Arsip Kontak'}</button>
+        <button onClick={() => setMenu('import')}>Import Kontak</button>
+      </Sheet>}
+      {menu === 'duplicates' && fin && <Sheet title="Kemungkinan Duplikasi Pelanggan" onClose={() => setMenu(null)}>
+        <p>Nomor yang sama dapat dipakai oleh lebih dari satu orang. Periksa detail identitas, riwayat, dan saldo setiap kontak.</p>
+        {duplicateGroups.length ? duplicateGroups.map((group) => <section className="panel" key={group[0].id}>
+          <b>{group[0].phone}</b>
+          {group.map((row) => <button key={row.id} onClick={() => { setMenu(null); setOpen(row); }}>{row.name} · {angka(row.trx || 0)} transaksi · {rp(row.balance)}</button>)}
+        </section>) : <p>Tidak ada nomor yang sama pada pelanggan aktif.</p>}
+        {duplicateGroups.length > 0 && <button onClick={viewDuplicates}>Tampilkan di Daftar</button>}
+        <p className="small muted">Penggabungan kontak masih berupa usulan. Peninjauan ini tidak memindahkan transaksi atau saldo.</p>
+      </Sheet>}
+      {menu === 'import' && <Sheet title="Import Kontak" onClose={() => setMenu(null)}><p>Import kontak masih berupa usulan pengembangan.</p></Sheet>}
       {open && <Detail c={open} fin={fin} kosId={kosId} kos={kos} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} onReload={load} />}
     </div>
   );
+}
+
+function ContactMetric({ icon, label, value, note }) {
+  return <article className={styles.metric}><NavIcon name={icon} /><div><b>{label}</b><strong>{value}</strong><small>{note}</small></div></article>;
+}
+
+function ContactName({ row, duplicate }) {
+  return <div className={styles.name}><span className={styles.avatar}>{initials(row.name)}</span>
+    <span><b>{row.name}</b>{row.tipe && <span className="chip">{TIPE[row.tipe]}</span>}
+      {duplicate && <span className="chip gold">Nomor sama</span>}</span>
+  </div>;
 }
 
 function Detail({ c, fin, kosId, kos, onClose, onSaved, onReload }) {
@@ -83,6 +193,7 @@ function Detail({ c, fin, kosId, kos, onClose, onSaved, onReload }) {
   return (
     <Sheet title={isNew ? `${KIND[c.kind]} baru` : c.name} onClose={onClose}>
       {!isNew && c.balance != null && <div className={'notice' + (bal > 0 ? ' bad' : ' good')}>{bal > 0 ? `${c.kind === 'pelanggan' ? 'Sisa kasbon' : 'Sisa utang ke supplier'}: ${rp(bal)}` : 'Tidak ada sisa kasbon/utang.'}</div>}
+      {!isNew && phoneKey(c.phone) && <a className={styles.whatsapp} href={waLink(c.phone, '')} target="_blank" rel="noreferrer">Buka WhatsApp</a>}
       {!isNew && bal > 0 && <div className="row">
         <Link href="/kas"><button className="sm primary">{c.kind === 'pelanggan' ? 'Terima bayar di Kas' : 'Bayar di Kas'}</button></Link>
         {c.kind === 'pelanggan' && c.phone && <a href={waLink(c.phone, `Halo ${c.name}, ini pengingat dari ${kos.name}. Sisa kasbon Anda ${rp(bal)}. Terima kasih.`)} target="_blank" rel="noreferrer"><button className="sm">Ingatkan WA</button></a>}

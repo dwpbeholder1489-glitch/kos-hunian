@@ -1,0 +1,103 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(10px, 3vw, 20px);
+  min-width: 0;
+  --contacts-green: #08782d;
+  --contacts-mint: color-mix(in srgb, var(--brand-2) 12%, var(--surface));
+  --contacts-shadow: 0 2px 7px rgb(8 38 28 / 10%);
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(157deg, #073e34 7%, #0a4d3d 45%, #07913d 90%);
+  color: white;
+  padding: clamp(12px, 3.2vw, 28px) clamp(12px, 4.3vw, 32px);
+}
+.heroCopy { position: relative; z-index: 1; width: 66%; }
+.hero h1 { font-size: clamp(23px, 5.45vw, 42px); line-height: 1.08; letter-spacing: -.035em; margin: 0 0 5px; }
+.hero p { font-size: clamp(11px, 2.65vw, 17px); line-height: 1.38; margin: 0 0 9px; }
+.heroArt { position: absolute; inset: 5% 2% 5% auto; width: 35%; }
+.heroArt img, .emptyArt img { object-fit: contain; }
+.heroArt img { object-position: right bottom; }
+.hero :global(.helpchip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 12px;
+  background: white;
+  color: #10231b;
+  padding: 4px 8px;
+  white-space: nowrap;
+  font-size: clamp(10px, 2.35vw, 14px);
+}
+.hero :global(.helpchip) svg { color: var(--contacts-green); flex: none; }
+
+.actions, .tabs, .metrics { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: clamp(4px, 1.7vw, 11px); }
+.actions button, .toolbar > button, .tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: clamp(10px, 2.6vw, 15px);
+  line-height: 1.2;
+  padding: 5px 3px;
+}
+.actions button { min-height: clamp(52px, 13vw, 72px); flex-direction: column; box-shadow: var(--contacts-shadow); }
+.actions svg, .metric > svg { color: var(--brand-2); flex: none; width: clamp(16px, 4.5vw, 27px); height: auto; }
+.tabs button { min-height: 38px; background: var(--sunk); border-color: transparent; color: var(--muted); }
+.tabs button[aria-pressed=true] { background: var(--contacts-green); color: white; }
+.metrics { align-items: stretch; }
+.metric { display: flex; align-items: flex-start; gap: 6px; min-width: 0; min-height: 65px; padding: clamp(6px, 2vw, 14px); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: clamp(10px, 2.45vw, 14px); line-height: 1.25; }
+.metric > div { min-width: 0; overflow-wrap: anywhere; }
+.metric strong { display: block; margin-block: 3px; font-size: clamp(13px, 3.7vw, 23px); }
+.metric small { color: var(--muted); font-size: clamp(9px, 2.25vw, 13px); }
+.toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px; min-width: 0; }
+.toolbar :global(.ftb), .toolbar :global(.ftb-search) { min-width: 0; }
+.toolbar :global(.ftb-search) { max-width: none; }
+.toolbar > button { padding-inline: 9px; white-space: nowrap; }
+.toolbar > button svg { color: var(--brand-2); }
+.archive { justify-self: start; padding: 4px 8px; min-height: 36px; }
+.results { min-width: 0; }
+.results :global(.dt-cards) { display: grid; gap: 6px; }
+.card, .name { display: flex; align-items: center; gap: 7px; text-align: left; min-width: 0; }
+.cardBody { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cardBody > * { display: block; }
+.cardBody small { color: var(--muted); font-size: clamp(10px, 2.5vw, 14px); line-height: 1.35; }
+.cardBody :global(.chip) { display: inline-block; margin: 2px 3px 0 0; }
+.cardEnd { display: flex; align-items: center; gap: 3px; flex: none; }
+.avatar { display: grid; place-items: center; flex: none; width: clamp(29px, 9vw, 44px); aspect-ratio: 1; border-radius: 11px; background: var(--contacts-mint); color: var(--brand-2); font-size: clamp(12px, 3.2vw, 17px); font-weight: 800; }
+.name > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.name :global(.chip) { margin-inline-start: 4px; }
+.whatsapp { color: var(--brand-2); font-weight: 700; }
+.notice, .duplicateNotice { display: flex; align-items: center; gap: 7px; border-radius: 12px; padding: 8px 10px; background: var(--contacts-mint); font-size: clamp(11px, 2.65vw, 14px); }
+.notice svg, .duplicateNotice svg { flex: none; color: var(--brand-2); }
+.notice p, .duplicateNotice p { margin: 0; line-height: 1.4; }
+.duplicateNotice { background: color-mix(in srgb, #f3c14f 16%, var(--surface)); flex-wrap: wrap; }
+.duplicateNotice button { min-height: 34px; padding: 4px 7px; margin-left: auto; font-size: inherit; }
+
+@media (max-width: 355px) {
+  .heroCopy { width: 73%; }
+  .heroArt { width: 30%; }
+  .cardEnd > :global(.chip) { display: none; }
+}
+@media screen and (min-width: 1024px) {
+  .page { container-type: inline-size; gap: 15px; }
+}
+@container (min-width: 700px) {
+  .hero { min-height: 155px; display: flex; align-items: center; }
+  .heroArt { width: min(35%, 300px); }
+  .actions button { flex-direction: row; gap: 8px; min-height: 45px; }
+  .tabs { max-width: 560px; }
+  .metric { align-items: center; gap: 10px; }
+  .toolbar { max-width: 730px; }
+}
