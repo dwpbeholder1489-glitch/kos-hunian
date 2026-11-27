@@ -2,6 +2,7 @@
 // Portal pelanggan grosir (Tahap 5 Retail, Master Prompt Bagian 15 "B2B Portal"). Link pribadi dari penjual, tanpa akun/sandi.
 // Data dari cportal_get (anon): harga milik pelanggan, status tersedia (tanpa angka stok), piutang & faktur, riwayat pesanan.
 // Pesan / batal lewat /api/portal-b2b (server). Pesanan = "Menunggu konfirmasi" sampai penjual mengonfirmasi (cek stok & batas kredit di sana).
+import TransactionChat from '@/components/commerce/TransactionChat';
 import { CustomerGuide } from '@/components/InteractiveGuide';
 import { CUSTOMER_HELP } from '@/lib/customerGuide';
 import { useEffect, useMemo, useState } from 'react';
@@ -364,6 +365,7 @@ function Orders({ p, token, reorder, onChanged, waOwner }) {
               {waOwner && <a href={waOwner(`Halo, saya ingin menanyakan pesanan ${o.number}.`)} target="_blank" rel="noreferrer"><button className="sm">Tanya penjual</button></a>}
               {o.status === 'penawaran' && !sent && <button className="sm ghost danger" disabled={busy} onClick={() => cancel(o)}>Batalkan</button>}
             </div>
+            <TransactionChat key={o.id} order={o.id} endpoint="/api/portal-b2b" token={token} />
           </div>}
         </div>);
     })}</div></section>

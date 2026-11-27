@@ -1,5 +1,6 @@
 'use client';
 
+import TransactionChat from './TransactionChat';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LogoMark } from '@/components/Logo';
 import NavIcon from '@/components/NavIcon';
@@ -281,7 +282,7 @@ function Orders({ orders, error, refresh, go, photos, quotes = false }) {
     <div className={styles.orderList}>{visible?.map((order) => {
       const status = orderStatus(order);
       return <button key={order.id} type="button" onClick={() => go('lacak', order.id)}>
-        <span><b>#{order.number}</b><small>{stamp(order.created_at)}</small>{order.total != null && <strong>{rp(order.total)}</strong>}
+        <span><b>#{order.number}</b>{order.unread > 0 && <small>{order.unread} pesan belum dibaca</small>}<small>{stamp(order.created_at)}</small>{order.total != null && <strong>{rp(order.total)}</strong>}
           <span className={styles.orderThumbs}>{order.lines.slice(0, 4).map((line, index) => <Picture key={index} photo={photos[line.product_id]?.[0]} name={line.name} thumb className={styles.thumbnail} />)}</span>
         </span>
         <span><span className={styles.status} data-status={status}>{status}</span><Icon name="next" size={16} /></span>
@@ -344,6 +345,7 @@ function Tracking({ order, orders, page, pay, contact, go, error, rate, respond,
     <ol className={styles.timeline}>{steps.map(([label, date, hint]) => <li key={label} data-done={Boolean(date)}>
       <span className={styles.dot}>{date && <Icon name="check" size={14} />}</span><div><b>{label}</b>{date && <small>{stamp(date)}</small>}{hint && (!date || label === 'Diproses') && <small>{hint}</small>}</div>
     </li>)}</ol>
+    <TransactionChat key={order.id} order={order.id} endpoint={`/api/portal-shop?slug=${encodeURIComponent(page.slug)}`} />
     {status === 'Batal' && <p className={styles.error}>Pesanan dibatalkan.</p>}
     {contact && <a className={styles.contactOrder} href={waLink(page.wa_phone, `Halo ${page.name}, saya ingin menanyakan ${pendingQuote ? 'permintaan penawaran' : 'pesanan'} ${order.number}.`)} target="_blank" rel="noreferrer"><Icon name="/crm" />{pendingQuote ? 'Lanjutkan di WhatsApp' : 'Hubungi Toko'}</a>}
     <section className={styles.orderContents}><h2>{pendingQuote ? 'Ringkasan Penawaran' : 'Ringkasan Pesanan'}</h2>

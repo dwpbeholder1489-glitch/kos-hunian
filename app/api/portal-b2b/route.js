@@ -1,5 +1,6 @@
 // Portal pelanggan grosir (/c/[token]) → pesanan / batal. Ditulis HANYA lewat server (kunci rahasia) ke cportal_order / cportal_cancel;
 // harga, batas & validasi dihitung di database. Pemilik diberi tahu lewat email bila Pengaturan › Kirim email aktif (kos.notify_email).
+import { portalExchange } from '@/lib/customerExperience';
 import { createClient } from '@supabase/supabase-js';
 import { sendMail, mailConfigured } from '@/lib/mailer';
 
@@ -18,6 +19,11 @@ export async function POST(req) {
   if (token.length < 40) return json({ ok: false, error: 'Link tidak berlaku.' }, 400);
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
+  if (b.action === 'conversation') {
+    if (req.headers.get('sec-fetch-site') === 'cross-site') return json({ error: 'Permintaan tidak valid.' }, 400);
+    const [data, status] = await portalExchange(sb, b, 'private', token);
+    return Response.json(data, { status, headers: { 'Cache-Control': 'private, no-store' } });
+  }
   if (b.action === 'cancel') {
     const { data, error } = await sb.rpc('cportal_cancel', { p_token: token, p_order: str(b.order_id, 40), p_reason: str(b.reason, 200) || null });
     if (error) { console.error('[portal-b2b] batal gagal', error.message); return json({ ok: false, error: 'Gagal membatalkan. Coba lagi nanti.' }, 500); }
