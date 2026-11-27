@@ -1,0 +1,26 @@
+.card { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-lg, 14px); background: var(--surface); min-width: 0; overflow-wrap: anywhere; }
+.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.top > div { min-width: 0; }
+.top h2 { margin: 0; font-size: clamp(15px, 3.6vw, 19px); }
+.top small, .block small, .note { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.note, .reject { margin: 0; }
+.reject { padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--bad) 10%, var(--surface)); font-size: 13px; }
+.badge { flex: none; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--line); color: var(--text); white-space: nowrap; }
+.badge[data-tone=good] { background: var(--gold-soft); color: var(--gold-fg, var(--brand)); }
+.badge[data-tone=warn] { background: color-mix(in srgb, #f2c34e 28%, var(--surface)); }
+.badge[data-tone=bad] { background: color-mix(in srgb, var(--bad) 16%, var(--surface)); color: var(--bad); }
+.sum { display: grid; gap: 8px; grid-template-columns: 1fr; }
+.block { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--line) 30%, var(--surface)); min-width: 0; }
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.head b { font-size: 13px; }
+.block strong { font-size: clamp(16px, 4vw, 20px); }
+.neg { color: var(--bad); }
+.bar { display: block; height: 7px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--muted); border-radius: inherit; }
+.bar[data-tone=good] i { background: var(--good); }
+.bar[data-tone=warn] i { background: #c98b08; }
+.bar[data-tone=bad] i { background: var(--bad); }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.log summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.log ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; }
+@media (min-width: 768px) { .sum { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
