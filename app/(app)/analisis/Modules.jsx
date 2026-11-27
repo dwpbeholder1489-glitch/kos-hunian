@@ -14,6 +14,7 @@ import { BLN, errMsg, rp, tgl } from '@/lib/format';
 import { LINE_CLASSES, balanceLines, balanceSheet, equityChanges, fmtRatio, incomeLines, incomeStatement, ratios } from '@/lib/finRatios';
 import { monthName } from '@/lib/bizIntel';
 import PajakPPh from '@/components/PajakPPh';
+import ValuationCard from './Valuation';
 import { C, TrendChart } from './Charts';
 import { DetailSheet, JournalLines } from './Details';
 import styles from './analisis.module.css';
@@ -201,7 +202,7 @@ function BudgetPlanCard({ kosId, month, ver }) {
 }
 
 // ---------- Investasi, aset & valuasi ----------
-export function InvestModule({ kosId, ver }) {
+export function InvestModule({ kosId, ver, owner }) {
   const st = useRpc('asset_list', { p_kos: kosId }, [kosId, ver]);
   return <div className={styles.modGrid}>
     <Card title="Aset Tetap" icon="/aset" right={<Go href="/aset">Daftar aset</Go>}>
@@ -217,9 +218,10 @@ export function InvestModule({ kosId, ver }) {
       <ul className={styles.hub}>
         <li><Link href="/pembukuan?tab=investment"><b>Simulasi & realisasi investasi</b><small>NPV, IRR, payback, skenario, perbandingan dengan realisasi</small></Link></li>
         <li><Link href="/pembukuan?tab=valuation"><b>Valuasi bisnis (DCF)</b><small>Dari arus kas historis, dengan analisis sensitivitas</small></Link></li>
-        <li><span><b>ROIC, valuasi multiple & asset-based, register modal</b><small>Dalam rencana — multiple butuh sumber pembanding bersumber; ROIC ada di Laporan Keuangan › Rasio</small></span></li>
+        <li><span><b>Register modal</b><small>Dalam rencana — ROIC ada di Laporan Keuangan › Rasio; valuasi multiple & aset di bawah</small></span></li>
       </ul>
     </Card>
+    <ValuationCard kosId={kosId} ver={ver} owner={owner} />
   </div>;
 }
 
@@ -231,7 +233,7 @@ export function ReportsModule({ onExport }) {
       <li><button type="button" onClick={() => onExport('pdf')}><b>Ekspor analisis (PDF)</b><small>Ringkasan, skor, insight, tren, arus kas, per akun sesuai filter</small></button></li>
       <li><button type="button" onClick={() => onExport('xlsx')}><b>Ekspor analisis (Excel)</b><small>Lembar terpisah per bagian</small></button></li>
       <li><Link href="/bisnis"><b>Portofolio multi-bisnis</b><small>Gabungan bisnis yang Anda pilih (Paket Pro), tanpa eliminasi antarbisnis</small></Link></li>
-      <li><span><b>Laporan riset/investor profesional (§32)</b><small>Dalam rencana — cover, daftar isi, MD&A, valuasi, skenario, risiko, lampiran, arsip berversi</small></span></li>
+      <li><Link href="/laporan-investor"><b>Laporan investor (Paket Pro)</b><small>A4 bersampul: ringkasan & MD&A, laporan keuangan, rasio, KPI, skenario, risiko, valuasi — disetujui pemilik, angka dibekukan & diarsip</small></Link></li>
       <li><span><b>Konsolidasi formal antarentitas</b><small>Dalam rencana — butuh struktur kepemilikan & penandaan transaksi antarentitas</small></span></li>
     </ul>
   </Card>;
@@ -249,11 +251,11 @@ export const BLUEPRINT = [
   ['Anggaran', 'Parsial', 'Biaya per kategori, target pendapatan, persetujuan & proyeksi akhir bulan; CAPEX & kas belum', 'anggaran'],
   ['Kinerja bisnis', 'Ada', 'KPI toko/kos/jasa/kuliner + KPI industri (laundry per kg, tepat janji, food cost, hunian, tunggakan); benchmark antarbisnis belum', 'industri'],
   ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga, ROIC; register modal belum', 'investasi'],
-  ['Valuasi bisnis', 'Parsial', 'DCF; multiple & asset-based belum', 'investasi'],
+  ['Valuasi bisnis', 'Ada', 'DCF, kelipatan (sumber dari pemilik), berbasis aset; tersimpan berversi', 'investasi'],
   ['Proyeksi & skenario', 'Ada', 'Pesimis/Dasar/Optimis 12 bulan (laba, kas, likuiditas), stress test, versi tersimpan', 'skenario'],
   ['Manajemen risiko', 'Ada', 'Faktor risiko otomatis, daftar risiko (kemungkinan × dampak, PIC, tinjauan) + saran dari data', '/risiko'],
   ['Konsolidasi', 'Parsial', 'Portofolio (Mode A); eliminasi antarentitas belum', 'laporan'],
-  ['Laporan investor', 'Parsial', 'Laporan bulanan berversi; laporan riset §32 belum', 'laporan'],
+  ['Laporan investor', 'Ada', 'Laporan bulanan berversi + laporan investor A4 (Pro) disetujui pemilik & diarsip', '/laporan-investor'],
   ['Pendukung keputusan', 'Ada', 'Fakta → temuan → rekomendasi berbasis aturan', 'ringkasan'],
 ];
 export function MapModule({ onGo }) {
