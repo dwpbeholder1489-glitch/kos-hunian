@@ -15,8 +15,9 @@ import NavIcon from '@/components/NavIcon';
 import { useKos } from '@/components/KosProvider';
 import { tgl, today } from '@/lib/format';
 import { planOf, PLANS, BUSINESS, limitOf } from '@/lib/plan';
-import NotifBell from '@/components/NotifBell';
-import RetailBell from '@/components/RetailBell';
+import { KosBell } from '@/components/NotifBell';
+import { RetailNotifBell } from '@/components/RetailBell';
+import { NotifBellMenu, NotifLive, ActivationCard } from '@/components/NotifCenter';
 import AnnounceBanner from '@/components/AnnounceBanner';
 import { OfflineSync } from '@/components/KasirOffline';
 
@@ -122,7 +123,8 @@ export default function AppLayout({ children }) {
   const fourth = fourthTab(kos);
   const main = mainTabOf(kos);
   const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !(fourth && on(fourth[0])) && !on('/akun') && !on('/bantuan'));
-  const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <NotifBell /> : null) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailBell /> : null);
+  // Lonceng Pusat Notifikasi untuk semua peran; hitungan "perlu ditindaklanjuti" lama ikut bila peran & modulnya sesuai
+  const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <KosBell /> : <NotifBellMenu />) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailNotifBell /> : <NotifBellMenu />);
   // Tombol menu topbar: tablet (icon rail) → menu samping lengkap; desktop → lebarkan/ciutkan sidebar
   const onMenu = () => (window.innerWidth < 1024 ? setSheet('menu') : toggleSide());
   const go = (k) => { setSheet(null); if (k === '+') return router.push('/mulai'); pickKos(k.id); router.push(homeOf(k)); };
@@ -151,6 +153,7 @@ export default function AppLayout({ children }) {
       </header>
       )}
       <OfflineSync />
+      <NotifLive />
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
@@ -163,7 +166,7 @@ export default function AppLayout({ children }) {
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka dengan mengetuk nama bisnis di kiri atas.</span>}</div>
-      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && <HomeTop kos={kos} />}<Suspense fallback={<p className="muted">Memuat…</p>}>{children}</Suspense></> : isDraft(kos) ? (
+      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && <HomeTop kos={kos} />}{path === home && !isDraft(kos) && <ActivationCard />}<Suspense fallback={<p className="muted">Memuat…</p>}>{children}</Suspense></> : isDraft(kos) ? (
         <div className="empty"><h2>{kos.name} masih dalam setup</h2><p className="muted">Menu operasional terbuka setelah pemilik meninjau dan mengaktifkan bisnis di Pusat Konfirmasi.</p>{canArea(kos, 'settings') && <Link href="/konfirmasi"><button className="primary">Buka Pusat Konfirmasi</button></Link>}</div>
       ) : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
         <div className="empty"><h2>Modul ini sedang nonaktif</h2><p className="muted">Data lamanya tetap tersimpan. Pemilik atau pengelola bisa mengaktifkannya lagi di Pusat konfigurasi.</p>{canArea(kos, 'settings') && <Link href="/konfigurasi"><button className="primary">Buka Pusat konfigurasi</button></Link>}</div>

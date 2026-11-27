@@ -19,11 +19,13 @@ export default function Sistem() {
   const [err, setErr] = useState(null);
   const [ev, setEv] = useState(null);   // pemantauan peristiwa (event_reconcile): jumlah per jenis & dokumen tanpa peristiwa
   const [ig, setIg] = useState(null);
+  const [nt, setNt] = useState(null);   // Notification Engine (admin_notif_overview): hanya angka, tanpa isi notifikasi
   const [xp, setXp] = useState(null);   // pemakaian fitur lintas bisnis (admin_experience_overview): agregat tanpa nama   // pemantauan integrasi (admin_integration_overview): hanya angka
   useEffect(() => {
     if (!can(adminMe, 'system.view')) return;
     supabase.rpc('event_reconcile').then(({ data }) => setEv(data || null), () => {});
     supabase.rpc('admin_integration_overview').then(({ data }) => setIg(data || null), () => {});
+    supabase.rpc('admin_notif_overview').then(({ data }) => setNt(data || null), () => {});
     supabase.rpc('admin_experience_overview').then(({ data }) => setXp(data || null), () => {});
     supabase.rpc('admin_system').then(({ data, error }) => (error ? setErr(errMsg(error)) : setDb(data)));
     supabase.auth.getSession().then(({ data }) => fetch('/api/admin/status', { headers: { authorization: 'Bearer ' + data.session?.access_token } }))
@@ -68,6 +70,22 @@ export default function Sistem() {
         <div className="list">{Object.entries(ev.per_jenis || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => <div className="li" key={k}><span className="small">{k}</span><b className="small">{Number(n).toLocaleString('id-ID')}</b></div>)}</div>
         {Object.keys(ev.per_jenis || {}).length === 0 && <span className="small muted">Belum ada peristiwa dalam 7 hari terakhir.</span>}
         <span className="small muted">Hanya jumlah — isi transaksi pelanggan tidak ditampilkan.</span>
+      </section>}
+      {nt && <section className="panel">
+        <h3>Notifikasi & push</h3>
+        <div className="list">
+          <div className="li"><span className="small">Notifikasi dibuat (7 hari)</span><b className="small">{nt.dibuat_7h}</b></div>
+          <div className="li"><span className="small">Antrean push: menunggu / jatuh tempo / diproses</span><b className="small">{nt.antre} / {nt.antre_jatuh_tempo} / {nt.proses}</b></div>
+          <div className="li"><span className="small">Antrean 7 hari per status</span><b className="small">{Object.entries(nt.antrean_7h || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}</b></div>
+          <div className="li"><span className="small">Kiriman per perangkat 7 hari (diterima layanan push ≠ dilihat)</span><b className="small">{Object.entries(nt.kirim_7h || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}</b></div>
+          <div className="li"><span className="small">Perangkat aktif / akun / dipasang di Layar Utama</span><b className="small">{nt.perangkat_aktif} / {nt.akun_perangkat} / {nt.pwa}</b></div>
+          <div className="li"><span className="small">Perangkat per platform</span><b className="small">{Object.entries(nt.per_browser || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}</b></div>
+          <div className="li"><span className="small">Pengiriman instan (pg_net) / jadwal per menit (pg_cron)</span><b className="small">{nt.pg_net ? 'aktif' : 'tidak tersedia'} / {nt.pg_cron ? 'aktif' : 'tidak tersedia'}{!nt.alamat_terdaftar ? ' · alamat aplikasi belum terdaftar (terdaftar otomatis saat cron/pengirim pertama berjalan)' : ''}</b></div>
+          <div className="li"><span className="small">Pengirim terakhir berjalan</span><b className="small">{nt.jalan_terakhir ? when(nt.jalan_terakhir) : '—'}{nt.hasil_terakhir ? ` · ${nt.hasil_terakhir.diterima || 0} diterima, ${nt.hasil_terakhir.ditunda || 0} ditunda, ${nt.hasil_terakhir.kedaluwarsa || 0} kedaluwarsa, ${nt.hasil_terakhir.gagal || 0} gagal` : ''}</b></div>
+          <div className="li"><span className="small">Kunci VAPID</span><b className="small">{nt.kunci_vapid_db ? 'dibuat server (tersimpan di database)' : 'dari env server / belum dibuat'}</b></div>
+          {nt.galat_terakhir && <div className="li"><span className="small">Galat pembuatan notifikasi terakhir (transaksi tetap berjalan)</span><b className="small">{when(nt.galat_terakhir.at)} · {nt.galat_terakhir.pesan}</b></div>}
+        </div>
+        <span className="small muted">Hanya angka & metadata teknis — isi notifikasi dan data bisnis pelanggan tidak ditampilkan.</span>
       </section>}
       {ig && <section className="panel">
         <h3>Integrasi (webhook masuk)</h3>

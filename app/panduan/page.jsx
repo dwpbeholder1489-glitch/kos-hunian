@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -1050,6 +1050,27 @@ const PARTS = [
       <>Bila kepemilikan di bawah 100%, ringkasan memisahkan laba & ekuitas <b>milik Anda</b> dan <b>pemilik lain</b> (kepentingan nonpengendali).</>,
     ], <>Berbeda dengan Ringkasan multi-bisnis yang hanya menjumlahkan. Batasan: tanpa goodwill/biaya investasi; laba belum terjadi berdasarkan perkiraan persen Anda; piutang/utang antarbisnis otomatis hanya untuk periode yang berakhir hari ini atau sesudahnya; bisnis kos mencatat pendapatan sewa saat uang diterima (basis kas) sedangkan toko/jasa saat transaksi terjadi, jadi gabungan kos + toko mencampur dua basis. Laporan pengelolaan internal, bukan laporan konsolidasi yang diaudit.</>, 'warn', null, 'pro'],
   ]],
+  ['AN', 'Notifikasi di HP & komputer (Pusat Notifikasi)', [
+    ['Mengaktifkan notifikasi di perangkat Anda', 'Lonceng › Pengaturan › Aktifkan Notifikasi', [
+      <>Di Beranda muncul kartu <b>Jangan lewatkan aktivitas penting bisnis Anda</b> (bisa <b>Nanti saja</b>). Atau buka lonceng › <b>Pengaturan</b>. PRASARA mendeteksi perangkat Anda dan hanya menampilkan langkah yang cocok.</>,
+      <><b>Android, Windows, Mac, Chromebook</b> (Chrome, Edge, Firefox, Samsung Internet): ketuk <b>Aktifkan Notifikasi</b> → browser bertanya sekali → <b>Izinkan</b>. Memasang PRASARA ke layar utama tidak wajib.</>,
+      <><b>iPhone/iPad</b> (iOS 16.4 ke atas): di Safari ketuk <b>Bagikan</b> → <b>Tambahkan ke Layar Utama</b> → buka PRASARA dari <b>ikon P</b> → masuk → <b>Aktifkan Notifikasi</b> → <b>Izinkan</b>.</>,
+      <>Setelah aktif, pesan <b>“Perangkat baru menerima notifikasi”</b> masuk sebagai bukti. Tombol <b>Kirim notifikasi uji</b> bisa dipakai kapan saja (maks. 5 kali per jam).</>,
+      <>Izin terlanjur ditolak? Buka <b>Bantuan notifikasi</b> untuk cara mengizinkan per browser/HP. Keluar akun di sebuah perangkat otomatis menghentikan notifikasinya.</>,
+    ], <>Tidak perlu aplikasi dari Play Store/App Store, email, atau WhatsApp. Push memakai layanan bawaan browser (gratis). Perangkat yang tidak mendukung tetap bisa memakai PRASARA; notifikasi tersimpan di Pusat Notifikasi.</>, 'info', <ScrNotifAktif />],
+    ['Membaca & mengelola notifikasi', 'Lonceng › Lihat semua notifikasi', [
+      <>Angka di lonceng = <b>belum dibaca</b> + hal yang <b>perlu ditindaklanjuti</b> (pembayaran menunggu, tagihan telat, pengingat toko). Di laptop/tablet lonceng membuka daftar singkat; di HP langsung ke Pusat Notifikasi.</>,
+      <>Pilih kategori (<b>Penjualan, Pembelian, Keuangan, Inventaris, Karyawan, Pelanggan, Pengingat, Sistem & keamanan</b>), cari kata, atau centang <b>Belum dibaca</b>, <b>Arsip</b>, <b>Semua bisnis</b>.</>,
+      <>Ketuk notifikasi → <b>Detail</b> (modul, waktu, prioritas, status pengiriman push) → <b>Buka …</b> ke halaman sumbernya. Notifikasi dari bisnis lain otomatis memindahkan bisnis aktif.</>,
+      <>Tombol <b>⋯</b>: tandai dibaca/belum, arsipkan, hapus. <b>Tandai semua dibaca</b> membersihkan lonceng.</>,
+    ], <>Notifikasi dibuat dari transaksi nyata: pesanan & permintaan dari halaman bisnis, prospek baru, bukti pembayaran penghuni, stok menipis/habis, persetujuan, tugas proyek, penjualan offline perlu dicek, perangkat baru & perubahan hak akses, serta pengingat pagi (tagihan jatuh tempo, pesanan terlambat). Anda hanya menerima yang sesuai izin modul Anda, dan tidak diberi tahu tentang tindakan Anda sendiri. Peristiwa beruntun digabung (mis. “12 penjualan baru”).</>, 'info', <ScrNotifCenter />],
+    ['Kategori, jam tenang, suara & perangkat', 'Lonceng › Pengaturan · Perangkat terhubung', [
+      <>Per kategori pilih <b>Dalam aplikasi</b> (lonceng) dan <b>Push</b> (layar HP/komputer). Bawaan: penjualan & pengeluaran harian tanpa push agar HP tidak terus berbunyi. Atur <b>Push untuk prioritas</b> bila hanya ingin yang penting.</>,
+      <><b>Jam tenang</b>: jam mulai & selesai, zona waktu, hari. Push selain kritis ditahan sampai jam tenang selesai (notifikasi tetap tersimpan).</>,
+      <><b>Suara khusus PRASARA</b> berbunyi saat aplikasi sedang terbuka (ada tombol Coba); saat tertutup HP memakai bunyi notifikasi bawaannya. <b>Getar</b> (Android) dan <b>Sembunyikan nominal di layar kunci</b> (bawaan aktif: “Rp •••”).</>,
+      <><b>Perangkat terhubung</b>: semua HP/laptop yang menerima push akun Anda — matikan sementara, ganti nama, atau <b>Hapus</b> perangkat yang tidak dikenal (maks. 10 aktif).</>,
+    ], <>Kategori & prioritas berlaku per bisnis; jam tenang, suara, dan privasi berlaku untuk semua bisnis Anda. Notifikasi kritis (keamanan akun) selalu masuk dan tidak ditunda.</>, 'info', <ScrNotifSet />],
+  ]],
 ];
 
 const RULES = [
@@ -1120,6 +1141,7 @@ export default function Panduan() {
           <div><b>Pendaftaran penghuni online</b><span><a href="#bagian-N">Langkah 70</a><br />Calon penghuni daftar & bayar DP/lunas dari halaman kos, Anda konfirmasi sekali</span></div>
           <div><b>Tampilan adaptif</b><span><a href="#bagian-AD">Langkah 109–118</a><br />Menu sesuai bisnis, tombol (+), Pusat Pengalaman, dashboard adaptif, Alur kerja: peta proses, aturan karyawan, alur siap pakai, versi & saran; Integrasi: sambungkan formulir website & aplikasi lain; Kinerja: fitur yang benar-benar dipakai</span></div>
           <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–136</a><br />Event, kreatif &amp; produksi: penawaran & scope, anggaran & laba proyek, tagihan termin & pembayaran, klien, milestone, tugas tim, anggota, status</span></div>
+          <div><b>Notifikasi</b><span><a href="#bagian-AN">Langkah 141–143</a><br />Aktifkan di HP/komputer (iPhone lewat Layar Utama), Pusat Notifikasi, kategori, jam tenang, perangkat</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

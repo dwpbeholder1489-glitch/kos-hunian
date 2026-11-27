@@ -1069,3 +1069,48 @@ export function ScrMedia() {
     </Phone>
   );
 }
+
+// Notifikasi: aktivasi (iPhone lewat Layar Utama), kotak masuk, pengaturan — DATA CONTOH
+export function ScrNotifAktif() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Aktifkan notifikasi</h3>
+      <div className="unitbox small" style={{ gap: 4 }}><b>iPhone · Safari</b><span className="muted">Perlu dipasang ke Layar Utama</span></div>
+      <div className="small">1. Ketuk <b>Bagikan</b> ⬆ di Safari</div>
+      <div className="small">2. Pilih <b>Tambahkan ke Layar Utama</b></div>
+      <div className="small">3. Buka PRASARA dari ikon <b>P</b></div>
+      <span className="mini-btn cta">Aktifkan Notifikasi</span>
+      <div className="unitbox small" style={{ gap: 4, borderColor: 'var(--good)' }}><b>Notifikasi aktif di perangkat ini</b><span className="muted">Pesan uji “perangkat baru” sudah masuk.</span></div>
+    </Phone>
+  );
+}
+export function ScrNotifCenter() {
+  const rows = [['Permintaan pesanan baru', 'PSN-0145 · Bu Rina · 3 kg', '2 mnt', 'Penting'], ['Stok menipis', 'Kopi Arabika 500g tersisa 8 pcs', '15 mnt', ''], ['3 penjualan baru', 'Penjualan TRX-018 · ' + rp(45000), '1 jam', ''], ['Menunggu persetujuan Anda', 'Minta batal penjualan TRX-011', '2 jam', 'Penting']];
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Notifikasi</h3>
+      <div className="row small" style={{ gap: 4, flexWrap: 'wrap' }}><span className="chip info">Semua 4</span><span className="chip">Penjualan</span><span className="chip">Inventaris</span><span className="chip">Keuangan</span></div>
+      {rows.map(([t, b, w, p]) => (
+        <div key={t} className="unitbox small" style={{ gap: 2 }}>
+          <div className="row between"><b>{t}</b><span className="muted">{w}</span></div>
+          <span className="muted">{b}</span>{p && <span className="chip warn" style={{ alignSelf: 'flex-start' }}>{p}</span>}
+        </div>
+      ))}
+    </Phone>
+  );
+}
+export function ScrNotifSet() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Pengaturan notifikasi</h3>
+      <div className="row between small"><b>Penjualan</b><span>Aplikasi ✓ · Push ✓</span></div>
+      <div className="row between small"><b>Inventaris</b><span>Aplikasi ✓ · Push ✓</span></div>
+      <div className="row between small"><b>Keuangan</b><span>Aplikasi ✓ · Push –</span></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Jam tenang 22.00–07.00 WIB</b><span className="muted">Sen–Min · kritis tetap dikirim</span></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Perangkat terhubung</b><span>iPhone 14 · Safari (ini) · Aktif</span><span>Laptop kantor · Chrome · Aktif</span></div>
+    </Phone>
+  );
+}

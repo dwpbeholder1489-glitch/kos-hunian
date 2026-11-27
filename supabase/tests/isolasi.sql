@@ -58,6 +58,8 @@ begin
       ('asset_save', format('select public.asset_save(%L, null, ''{"name":"uji","mode":"awal","cost":1000}'')', k)),
       ('recipe_overview', format('select public.recipe_overview(%L)', k)),
       ('food_cost_report', format('select public.food_cost_report(%L, current_date - 30, current_date)', k)),
+      ('notif_settings_get', format('select public.notif_settings_get(%L)', k)),
+      ('notif_settings_set', format('select public.notif_settings_set(%L, ''{"cats":{"penjualan":{"app":false}}}'')', k)),
       ('promo_list', format('select public.promo_list(%L)', k)),
       ('preq_list', format('select public.preq_list(%L)', k)),
       ('consign_overview', format('select public.consign_overview(%L)', k)),

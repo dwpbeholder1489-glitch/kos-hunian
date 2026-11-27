@@ -6,6 +6,7 @@ import { runSummaries } from '@/lib/summaries';
 import { runRetailAlerts } from '@/lib/retailAlerts';
 import { runAutomations } from '@/lib/automation';
 import { adminDb } from '@/lib/reminders';
+import { dispatch } from '@/lib/notifServer';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -34,6 +35,17 @@ export async function GET(req) {
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('integ_logs_purge'); integrasi = r.error ? { ok: false, error: r.error.message } : { ok: true, dihapus: r.data }; } } catch (e) { integrasi = { ok: false, error: e.message }; }
   let pemakaian = { ok: true, skipped: 'belum dikonfigurasi' };
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('exp_usage_purge'); pemakaian = r.error ? { ok: false, error: r.error.message } : { ok: true, dihapus: r.data }; } } catch (e) { pemakaian = { ok: false, error: e.message }; }
+  // Notifikasi: pengingat harian (tagihan jatuh tempo, pesanan terlambat), retensi, lalu kirim antrean push yang tertunda
+  // (cadangan bila pg_net/pg_cron tidak tersedia; sekaligus mendaftarkan alamat aplikasi untuk pg_net)
+  let notifikasi = { ok: true, skipped: 'belum dikonfigurasi' };
+  try {
+    const sb = adminDb();
+    if (sb) {
+      const t = await sb.rpc('notif_daily_tick'); const p = await sb.rpc('notif_purge');
+      const d = await dispatch({ origin, reason: 'cron', budgetMs: 20000 });
+      notifikasi = { ok: !t.error && !p.error && d.ok !== false, harian: t.error ? t.error.message : t.data, retensi: p.error ? p.error.message : p.data, kirim: d };
+    }
+  } catch (e) { notifikasi = { ok: false, error: e.message }; }
   // Lampiran: hapus file yang sudah dihapus pengguna / unggahan yang tidak selesai dari penyimpanan
   let lampiran = { ok: true, skipped: 'belum dikonfigurasi' };
   try {
@@ -70,7 +82,7 @@ export async function GET(req) {
       media = { ok: true, dibersihkan: paths.length };
     }
   } catch (e) { media = { ok: false, error: e.message }; }
-  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && rekap.ok && portal.ok && pengalaman.ok && integrasi.ok && pemakaian.ok && lampiran.ok && lampiranPenawaran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, rekap, portal, pengalaman, integrasi, pemakaian, lampiran, lampiranPenawaran, media };
+  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && rekap.ok && portal.ok && pengalaman.ok && integrasi.ok && pemakaian.ok && notifikasi.ok && lampiran.ok && lampiranPenawaran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, rekap, portal, pengalaman, integrasi, pemakaian, notifikasi, lampiran, lampiranPenawaran, media };
   console.log('[cron daily]', JSON.stringify(res));
   try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });
