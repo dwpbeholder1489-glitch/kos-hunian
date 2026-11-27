@@ -1,6 +1,6 @@
 // Uji logika murni Rekap Bisnis (lib/recap.js): node supabase/tests/rekap_js.mjs  → semua baris "OK", keluar 0.
 import assert from 'node:assert/strict';
-import { periodOf, shiftPeriod, compareOf, seriesOf, derive, statusOf, sectionsFor, exportSheets, pct } from '../../lib/recap.js';
+import { periodOf, shiftPeriod, compareOf, seriesOf, derive, statusOf, sectionsFor, orderedSections, recapChanges, exportSheets, pct } from '../../lib/recap.js';
 
 let ok = 0; const t = (name, fn) => { fn(); ok++; console.log('OK', name); };
 const today = '2026-11-27'; // Jumat
@@ -29,6 +29,12 @@ t('pembanding sepadan: periode berjalan dibanding hari yang sama', () => {
   const c3 = compareOf(periodOf('bulanan', '2026-03-31', today), 'prev'); assert.deepEqual([c3.from, c3.to], ['2026-02-01', '2026-02-28']);
   const y = compareOf(periodOf('tahunan', today, today), 'yoy'); assert.deepEqual([y.from, y.to], ['2025-01-01', '2025-11-27']);
   assert.equal(compareOf(periodOf('harian', today, today), 'none'), null);
+  const leap = compareOf(periodOf('bulanan', '2025-02-01', today), 'yoy');
+  assert.deepEqual([leap.from, leap.to], ['2024-02-01', '2024-02-29']);
+  const future = periodOf('kustom', today, today, { from: '2027-01-01', to: '2028-12-31' });
+  assert.equal(future.from, today); assert.equal(future.to, today);
+  const invalid = periodOf('kustom', today, today, { from: '2026-11-31' });
+  assert.equal(invalid.from, '2026-11-01');
   const w = compareOf(periodOf('mingguan', today, today), 'prev'); assert.deepEqual([w.from, w.to], ['2026-11-16', '2026-11-20']);
 });
 t('seri historis = N periode terakhir, berakhir di periode ini', () => {
@@ -74,11 +80,14 @@ t('status: berjalan, ditutup, belum direkonsiliasi, data belum lengkap', () => {
   assert.equal(statusOf({ berjalan: false, ditutup: true, bulan: [] }, {}).main[0], 'ditutup');
   const s = statusOf({ berjalan: false, ditutup: false, direkonsiliasi: false, hari_jual: 5, hari_ditutup: 3, bulan: [{ rekon: 'belum' }] }, { tanpa_modal: 2 });
   assert.equal(s.main[0], 'belum'); assert.equal(s.hariBelum, 2); assert.equal(s.rekonBelum, 1); assert.equal(s.data[0], 'belum_lengkap'); assert.equal(s.flags.length, 1);
-  assert.equal(statusOf({ berjalan: false, ditutup: true, bulan: [] }, {}, true).data[0], 'arsip');
+  assert.equal(statusOf({ berjalan: false, ditutup: true, bulan: [] }, {}, true).data[0], 'lengkap');
+  assert.equal(statusOf({ berjalan: false, ditutup: true, bulan: [] }, null, true).data[0], 'tidak_tercatat');
+  assert.equal(statusOf({ berjalan: true, bulan: [{ rekon: 'draf' }] }, { tanpa_modal: 1 }).bank, '1 bulan belum selesai');
 });
 t('bagian menyesuaikan jenis bisnis (tanpa indikator yang tidak relevan)', () => {
   const keys = (c) => sectionsFor(c, derive(c)).map((s) => s[0]);
   const r = keys(cur);
+  assert.deepEqual(orderedSections(sectionsFor(cur, derive(cur)), 'retail').slice(0, 3), ['penjualan', 'persediaan', 'laba']);
   assert.ok(r.includes('penjualan') && r.includes('persediaan') && r.includes('utang') && r.includes('pajak') && !r.includes('sewa') && !r.includes('pesanan'));
   const kos = { jenis: 'properti', ringkas: {}, akun: [], kelas: {}, kas: {}, sewa: {}, operasional: {}, pelanggan: { aktif: 0, terdaftar: 0 } };
   const k = keys(kos);
@@ -89,9 +98,20 @@ t('bagian menyesuaikan jenis bisnis (tanpa indikator yang tidak relevan)', () =>
 t('ekspor: lembar ringkasan memuat pembanding & persentase', () => {
   const d = { cur, seri: [{ from: '2026-10-01', to: '2026-10-31', v: { pendapatan: 1, hpp: 0, biaya: 0, laba: 1, transaksi: 1 } }] };
   const sh = exportSheets(d, derive(cur), derive({ ...cur, ringkas: { ...cur.ringkas, pendapatan: 2000 } }), { periodLabel: 'November 2026', cmpLabel: 'bulan lalu', status: 'Aktual' });
-  const r = sh[0].rows.find((x) => x[0] === 'Total pendapatan'); assert.deepEqual(r, ['Total pendapatan', 4000, 2000, 100]);
+  const r = sh[0].rows.find((x) => x[0] === 'Total pendapatan'); assert.deepEqual(r, ['Total pendapatan', 4000, 2000, 2000, 100]);
   assert.ok(sh.some((s) => s.name === 'Persediaan') && sh.some((s) => s.name === 'Antarperiode') && sh.some((s) => s.name === 'Penjualan'));
   sh.forEach((s) => s.rows.forEach((row) => assert.equal(row.length, s.cols.length, s.name)));
   assert.equal(pct(5, 0), null);
+  const zero = exportSheets(d, derive(cur), derive({ ringkas: {} }), { version: 2, location: 'Cabang B', createdAt: '27 November 2026 09.00' })[0].rows;
+  assert.deepEqual(zero.find(([k]) => k === 'Total pendapatan'), ['Total pendapatan', 4000, 0, 4000, null]);
+  assert.equal(zero.find(([k]) => k === 'Versi arsip')[1], 'Versi 2');
+  assert.equal(zero.find(([k]) => k === 'Lokasi')[1], 'Cabang B');
+});
+t('koreksi versi: laba kotor dan bersih dihitung dari versi masing-masing', () => {
+  const rows = recapChanges({ pendapatan: 100, hpp: 30, biaya: 20, laba: 50 }, { pendapatan: 100, hpp: 0, biaya: 20, laba: 80 });
+  assert.equal(rows.find(({ key }) => key === 'laba_kotor').change, -30);
+  assert.equal(rows.find(({ key }) => key === 'laba').change, -30);
+  assert.equal(rows.find(({ key }) => key === 'hpp').percent, null);
+  assert.deepEqual(recapChanges({}, null), []);
 });
 console.log(`\n${ok} uji lulus`);

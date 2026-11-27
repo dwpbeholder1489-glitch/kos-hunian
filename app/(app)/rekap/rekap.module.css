@@ -46,10 +46,11 @@
 .status.good .badge { background: var(--ok-soft); color: var(--okfg); }
 .status.warn .badge { background: var(--wa-soft); color: var(--wa); }
 .dataTag { padding: 3px 10px; border-radius: 20px; border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted); }
-.statusTxt { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
 .statusLinks { display: inline-flex; flex-wrap: wrap; gap: 8px 12px; margin-left: auto; }
 .statusLinks a { font-weight: 600; color: var(--brand-2); }
 .flag { flex-basis: 100%; color: var(--wa); font-size: 12.5px; overflow-wrap: anywhere; }
+
+.flag a { text-decoration: underline; text-underline-offset: 2px; }
 
 /* KPI */
 .kpis { display: grid; grid-template-columns: minmax(0, 2.1fr) repeat(4, minmax(0, 1fr)); gap: 12px; }
@@ -67,11 +68,9 @@
 .kpiH svg:last-child { margin-left: auto; color: var(--muted); flex: none; }
 .kpiV { font-size: clamp(17px, 1.55vw, 24px); font-weight: 800; letter-spacing: -.01em; overflow-wrap: normal; }
 .kpiS { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-.chip { padding: 2px 8px; border-radius: 8px; background: var(--ok-soft); color: var(--okfg); font-weight: 700; }
 .goodKpi { background: color-mix(in srgb, var(--ok-soft) 55%, var(--surface)); }
 .goodKpi .kpiV { color: var(--brand-2); }
 .lossKpi .kpiV { color: var(--ba); }
-.lossKpi .chip { background: var(--ba-soft); color: var(--ba); }
 .delta { display: inline-flex; flex-wrap: wrap; gap: 4px; font-weight: 700; }
 .delta em { font-style: normal; font-weight: 400; color: var(--muted); }
 .up { color: var(--ok); }

@@ -97,6 +97,8 @@ select (:'r'::jsonb #>> '{cur,pembelian,total}')::numeric = 1200000 a_beli_12000
        (:'r'::jsonb #>> '{cur,pelanggan,aktif}')::int = 1 a_pelanggan_aktif_1,
        (:'r'::jsonb #>> '{kini,utang_supplier}')::int = 1 a_utang_1_supplier;
 select jsonb_array_length(:'r'::jsonb -> 'seri') = 2 a_seri_2, (:'r'::jsonb #> '{seri,1,v}') = (:'r'::jsonb #> '{cur,ringkas}') a_seri_akhir_sama,
+       (:'r'::jsonb #> '{cmp_kelengkapan,tanpa_modal}') = '0'::jsonb a_kelengkapan_pembanding,
+       (:'r'::jsonb #>> '{jadwal_arsip,kind}') = 'bulanan' a_bulanan_menunggu,
        (:'r'::jsonb -> 'cmp') is not null a_ada_pembanding, (:'r'::jsonb #>> '{status,berjalan}')::boolean = false a_periode_selesai,
        (:'r'::jsonb ? 'heatmap') a_heatmap_pro, jsonb_typeof(:'r'::jsonb -> 'arsip') = 'null' a_belum_arsip;
 \echo -- cabang (Pro): hanya Cabang B
@@ -157,6 +159,19 @@ select (:'s3'::jsonb ->> 'version')::int = 2 e_versi_2,
        (select (recap_get((:'s1'::jsonb ->> 'id')::uuid) #>> '{data,pengeluaran,operasional}')::numeric) = 150000 e_versi_1_tetap_150000,
        jsonb_array_length(recap_list(:'K')) = 2 e_list_2, (recap_list(:'K') -> 0 ->> 'terbaru')::boolean e_terbaru_ditandai,
        jsonb_array_length(recap_get((:'s1'::jsonb ->> 'id')::uuid) -> 'versi') = 2 e_riwayat_versi;
+select recap_get((:'s3'::jsonb ->> 'id')::uuid) as rev \gset
+select (:'rev'::jsonb #>> '{versi_sebelumnya,version}')::int = 1 e_pembanding_versi_1,
+       (:'rev'::jsonb #>> '{versi_sebelumnya,ringkas,biaya}')::numeric = (:'r'::jsonb #>> '{cur,ringkas,biaya}')::numeric e_pembanding_beban_asli,
+       (:'rev'::jsonb #>> '{data,ringkas,biaya}')::numeric - (:'rev'::jsonb #>> '{versi_sebelumnya,ringkas,biaya}')::numeric = 25000 e_selisih_beban_25000,
+       (:'rev'::jsonb #> '{data,kelengkapan,tanpa_modal}') = '0'::jsonb e_kelengkapan_tersimpan,
+       (biz_recap(:'K', :'p0', :'p1') #>> '{arsip_per_jenis,bulanan,version}')::int = 2 e_arsip_per_jenis,
+       (biz_recap(:'K', :'p0', :'p1') -> 'jadwal_arsip') = 'null'::jsonb e_tidak_lagi_menunggu;
+-- Tutup harian hanya dihitung bila lokasi yang berjualan pada hari tersebut ditutup.
+insert into day_closings(kos_id, branch_id, day, snapshot) values (:'K', :'b1', :'p0'::date + 3, '{}');
+select (biz_recap(:'K', :'p0', :'p1') #>> '{status,hari_ditutup}')::int = 0 e_tutup_lokasi_lain_tidak_dihitung;
+insert into day_closings(kos_id, branch_id, day, snapshot) values (:'K', 'b9b9b9b9-0000-0000-0000-0000000000b2', :'p0'::date + 3, '{}');
+select (biz_recap(:'K', :'p0', :'p1') #>> '{status,hari_ditutup}')::int = 1 e_tutup_lokasi_jual_dihitung;
+
 -- harus ditolak: ubah & hapus arsip
 update recap_snapshots set note = 'x' where kos_id = :'K';
 delete from recap_snapshots where kos_id = :'K';
