@@ -1,4 +1,7 @@
 'use client';
+import PrinterManager from '@/components/PrinterManager';
+import { autoPrint } from '@/lib/printer';
+import { strukText } from '@/lib/struk';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ScanButton } from '@/components/BarcodeScan';
@@ -16,9 +19,11 @@ import { qtyNum, unitsOf, stockText, isLow, unitPrice, breakPrice, uid, PAY, PAY
 import { toBase } from '@/lib/units';
 import { useMedia } from '@/components/Page';
 import { saveCatalog, loadCatalog, isNetErr, enqueue, deviceId, localNumber, pendingStock, pendingOf, online as isOnline } from '@/lib/offline';
-import { useNet, useQueue, AntreanSheet, OfflineStrukSheet, waktu } from '@/components/KasirOffline';
+import { useNet, useQueue, AntreanSheet, OfflineStrukSheet, offlineStruk, waktu } from '@/components/KasirOffline';
 
 // Harga dasar = sama dengan price_resolve di server: daftar harga pelanggan (bila berlaku) › harga outlet/umum
+const printFailed = (error) => toast('Transaksi tersimpan. Cetak otomatis gagal: ' + errMsg(error) + ' Periksa printer lalu buka struk untuk mencetak ulang.');
+
 // (katalog sudah membawa harga outlet lokasi ini). Pratinjau saja — angka resmi dihitung server saat disimpan.
 const listPrice = (d, contactId, pid, unit) => {
   const c = contactId ? d.contacts.find((x) => x.id === contactId) : null;
@@ -219,6 +224,7 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
       <PageHeader title="Kasir" help={<PageHelp page="kasir" />} desc={false} actions={<>
         <span className={'chip ' + (online ? 'good' : 'bad')} title={online ? 'Tersambung ke internet' : 'Tidak ada internet — penjualan disimpan di HP dan dikirim otomatis'}>● {online && !d.offline ? 'Online' : 'Offline'}</span>
         {held.length > 0 && <button type="button" className="sm" onClick={() => setSheet('held')}>Ditahan ({held.length})</button>}
+        <PrinterManager kosId={kosId} />
         {lastSale && <Link href={`/struk/${lastSale}`}><button type="button" className="sm ghost">Struk terakhir</button></Link>}
         {who && <span className="chip info" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>Kasir: {who}</span>}
         <div className="seg">{[['ecer', 'Eceran'], ['grosir', 'Grosir']].map(([k, l]) => <button key={k} className={tier === k ? 'on' : ''} onClick={() => switchTier(k)} aria-pressed={tier === k}>{l}</button>)}</div>
@@ -507,6 +513,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
         lines: cart.map((c) => ({ product_id: c.product_id, name: c.name, unit: c.unit, unit_qty: c.unit_qty, qty: c.qty, price: c.price, serials: splitSerials(c.serials) })) } };
     await enqueue(entry);
     setPayOpen(false);
+    autoPrint(kosId, (paper) => offlineStruk(kos, entry, paper), printFailed);
     onDone({ offline: true, entry, number: entry.view.number, total, method: payload.method, change: total > 0 && cashIn ? Math.max(0, change) : 0 });
   };
   // Perintah dari bilah aksi / keyboard: F10 bayar, F3 diskon
@@ -567,6 +574,12 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
       });
       if (error) throw error;
       if (lead) { const r2 = await supabase.rpc('lead_mark_sold', { p_lead: lead.id, p_sale: txId }); if (r2.error) toast('Penjualan tersimpan, tetapi prospek belum ditandai Jadi: ' + errMsg(r2.error)); }
+      if (!data.duplicate) autoPrint(kosId, async (paper) => {
+        const receipt = await supabase.rpc('sale_detail', { p_sale: data.id || txId });
+        if (receipt.error) throw receipt.error;
+        const { sale, lines, contact } = receipt.data;
+        return strukText(kos, sale, lines || [], contact, paper);
+      }, printFailed);
       onDone({ ...data, change: due > 0 && (method === 'tunai' || method === 'campuran') ? Math.max(0, change) : 0, method: data.method || pMethod, nota: notaAmt > 0 ? { number: nota.number, amount: notaAmt, left: Number(nota.balance) - notaAmt } : null });
     } catch (e) {
       if (/BATAS_DISKON/.test(e?.message || '')) setOv({ msg: errMsg(e), reason: '' });

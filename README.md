@@ -91,3 +91,7 @@ app/(app)/…           beranda, kamar, penghuni, tagihan, pembayaran, pengeluar
 | `SUPABASE_SECRET_KEY` | opsional | email notifikasi (membaca email pemilik kos) — rahasia, hanya di server |
 | `SMTP_USER`, `SMTP_PASS` | opsional | akun Gmail + App Password pengirim email notifikasi & pengingat |
 | `CRON_SECRET` | opsional | mengamankan pengingat harian (`vercel.json`, tiap 07.00 WIB) |
+
+### Printer
+
+Panduan pengaturan thermal 58/80 mm, A4, AirPrint dan penghubung ESC/POS tersedia di [docs/printer.md](docs/printer.md).

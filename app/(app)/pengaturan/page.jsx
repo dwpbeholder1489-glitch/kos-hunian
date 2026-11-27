@@ -1,4 +1,5 @@
 'use client';
+import PrinterManager from '@/components/PrinterManager';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { useEffect, useRef, useState } from 'react';
@@ -68,7 +69,7 @@ export default function Pengaturan() {
 
   return (
     <div className="stack">
-      <PageHeader title="Pengaturan" help={<PageHelp page="pengaturan" />} />
+      <PageHeader title="Pengaturan" help={<PageHelp page="pengaturan" />} actions={<PrinterManager kosId={kos.id} />} />
       <section className="panel"><h3>Profil {noun}</h3>
         <Field label={`Nama ${noun}`}><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} /></Field>
         <Field label="Alamat"><input value={addr} onChange={(e) => setAddr(e.target.value)} disabled={!canEdit} /></Field>

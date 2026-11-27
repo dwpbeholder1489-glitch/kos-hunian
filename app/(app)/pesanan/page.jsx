@@ -1,4 +1,6 @@
 'use client';
+import { notaText } from '@/lib/nota';
+import { autoPrint } from '@/lib/printer';
 import styles from './fnb-pos.module.css';
 import IsianTambahan from '@/components/IsianTambahan';
 import { useBaru } from '@/lib/useBaru';
@@ -16,6 +18,9 @@ import { withApproval, requestApproval } from '@/lib/approval';
 import { uid, qtyNum } from '@/lib/retail';
 import { STATUS, COMPLAINT, PAYM, waktu, hari, sisa, stageLabel, late, linesText, waText, toLocalInput, fromLocalInput, waitPickup, onTheWay, PICKUP, DELIVERY, tgl2, mapsLink, terms, DINE, dineText, COMPLAINT_K } from '@/lib/jasa';
 import { moduleOn } from '@/lib/business';
+
+const printFailed = (error) =>
+  toast('Pembayaran tersimpan. Cetak otomatis gagal: ' + errMsg(error) + ' Buka nota untuk mencetak ulang.');
 
 // Pesanan jasa (blueprint 5.3 Laundry): terima → tahap proses → siap → diambil/diantar, dengan DP/lunas, nota, keluhan
 export default function Pesanan() {
@@ -186,6 +191,14 @@ function NewOrder({ kosId, onClose, onSaved, inline }) {
       payment: (parseRp(pay) || 0) > 0 ? { amount: parseRp(pay), method } : null } });
     setBusy(false);
     if (error) return toast(errMsg(error));
+    if (parseRp(pay) > 0 && !data.duplicate) {
+      autoPrint(kosId, async (paper) => {
+        const { data: order, error: receiptError } = await supabase.from('svc_orders')
+          .select('*, svc_order_lines(*)').eq('id', data.id).single();
+        if (receiptError) throw receiptError;
+        return notaText(kos, { ...order, lines: order.svc_order_lines, paid: parseRp(pay) }, paper);
+      }, printFailed);
+    }
     toast(`Pesanan ${data.number} tersimpan`); onSaved(data.id);
   };
   const cats = [...new Set(svc.map((x) => x.category || 'Lainnya'))];
@@ -480,6 +493,7 @@ function RequestBox({ o, kos, money, onDone }) {
 }
 
 function PayForm({ o, kind, max, onDone }) {
+  const { kos } = useKos();
   const [amt, setAmt] = useState(String(Math.round(max)));
   const [method, setMethod] = useState('tunai');
   const [busy, setBusy] = useState(false);
@@ -488,9 +502,12 @@ function PayForm({ o, kind, max, onDone }) {
     const a = parseRp(amt);
     if (!(a > 0) || a > max) return toast(`Jumlah 1 sampai ${rp(max)}`);
     setBusy(true);
-    const { error } = await supabase.rpc('svc_payment_add', { p_id: id, p_order: o.id, p_amount: a, p_method: method, p_kind: kind });
+    const { data, error } = await supabase.rpc('svc_payment_add', { p_id: id, p_order: o.id, p_amount: a, p_method: method, p_kind: kind });
     setBusy(false);
     if (error) return toast(errMsg(error));
+    if (kind === 'bayar' && !data?.duplicate) {
+      autoPrint(kos.id, (paper) => notaText(kos, { ...o, paid: data.paid }, paper), printFailed);
+    }
     toast(kind === 'bayar' ? `Pembayaran ${rp(a)} tercatat` : `Pengembalian ${rp(a)} tercatat`); onDone();
   };
   return (

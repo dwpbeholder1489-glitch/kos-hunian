@@ -1,5 +1,6 @@
 'use client';
 // Kasir offline (Tahap 4 Retail): pengirim otomatis + bilah status (layout), antrean di HP ini (Kasir), dan daftar periksa pemilik (Penjualan › Offline).
+import { PrintReceiptButton } from '@/components/PrinterManager';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -119,7 +120,7 @@ export function OfflineSync() {
 }
 
 // ---------- struk transaksi yang masih di HP ----------
-export function offlineStruk(kos, e) {
+export function offlineStruk(kos, e, paper = '58') {
   const v = e.view || {};
   const p = e.payload;
   const s = {
@@ -128,21 +129,8 @@ export function offlineStruk(kos, e) {
     pay_split: p.method === 'campuran' ? Object.fromEntries((p.payments || []).map((x) => [x.method, x.amount])) : null,
     paid_amount: p.paid, due_date: p.due, status: 'selesai', tax_amount: 0,
   };
-  return strukText(kos, s, (v.lines || []).map((l) => ({ ...l, line_total: Math.round(l.qty * l.price), serials: l.serials })), v.contact ? { name: v.contact } : null)
+  return strukText(kos, s, (v.lines || []).map((l) => ({ ...l, line_total: Math.round(l.qty * l.price), serials: l.serials })), v.contact ? { name: v.contact } : null, paper)
     + (e.state === 'gagal' ? '\nGagal dicatat di PRASARA' : e.result?.number ? '' : '\nNomor sementara · belum terkirim');
-}
-
-// Cetak hanya teks struk (lembar ini ada di atas halaman Kasir, jadi tidak memakai window.print halaman)
-export function printText(t) {
-  const f = document.createElement('iframe');
-  f.setAttribute('aria-hidden', 'true');
-  Object.assign(f.style, { position: 'fixed', right: 0, bottom: 0, width: 0, height: 0, border: 0 });
-  document.body.appendChild(f);
-  const d = f.contentWindow.document;
-  d.open();
-  d.write('<!doctype html><title>Struk</title><pre style="font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;margin:0">' + t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</pre>');
-  d.close();
-  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch {} setTimeout(() => f.remove(), 3000); }, 50);
 }
 
 export function OfflineStrukSheet({ kos, entry, onClose }) {
@@ -153,7 +141,7 @@ export function OfflineStrukSheet({ kos, entry, onClose }) {
       {failed && <p className="notice bad">Penjualan belum tercatat di PRASARA.</p>}
       <pre className="struk">{text}</pre>
       {!failed && <div className="row">
-        <button className="primary" onClick={() => printText(text)}>Cetak</button>
+        <PrintReceiptButton kosId={kos.id} renderText={(paper) => offlineStruk(kos, entry, paper)} />
         <a href={entry.view?.phone ? waLink(entry.view.phone, '```\n' + text + '\n```') : `https://wa.me/?text=${encodeURIComponent('```\n' + text + '\n```')}`} target="_blank" rel="noreferrer"><button>Kirim via WhatsApp</button></a>
       </div>}
       {!failed && !online() && <span className="small muted">Kirim via WhatsApp butuh internet. Cetak tetap bisa bila printer tersambung ke HP.</span>}

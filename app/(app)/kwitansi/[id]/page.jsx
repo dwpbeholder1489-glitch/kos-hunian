@@ -1,4 +1,5 @@
 'use client';
+import { PrintReceiptButton } from '@/components/PrinterManager';
 import Link from 'next/link';
 import { LogoMark } from '@/components/Logo';
 import { useParams } from 'next/navigation';
@@ -9,19 +10,7 @@ import Locked from '@/components/Locked';
 import { hasFeature } from '@/lib/plan';
 import { rp, tgl, invTitle, METHOD, waLink } from '@/lib/format';
 
-const SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
-function terbilang(n) {
-  n = Math.floor(Math.abs(n));
-  if (n < 12) return SATUAN[n];
-  if (n < 20) return terbilang(n - 10) + ' belas';
-  if (n < 100) return terbilang(Math.floor(n / 10)) + ' puluh' + (n % 10 ? ' ' + terbilang(n % 10) : '');
-  if (n < 200) return 'seratus' + (n - 100 ? ' ' + terbilang(n - 100) : '');
-  if (n < 1000) return terbilang(Math.floor(n / 100)) + ' ratus' + (n % 100 ? ' ' + terbilang(n % 100) : '');
-  if (n < 2000) return 'seribu' + (n - 1000 ? ' ' + terbilang(n - 1000) : '');
-  if (n < 1e6) return terbilang(Math.floor(n / 1000)) + ' ribu' + (n % 1000 ? ' ' + terbilang(n % 1000) : '');
-  if (n < 1e9) return terbilang(Math.floor(n / 1e6)) + ' juta' + (n % 1e6 ? ' ' + terbilang(n % 1e6) : '');
-  return terbilang(Math.floor(n / 1e9)) + ' miliar' + (n % 1e9 ? ' ' + terbilang(n % 1e9) : '');
-}
+import { kwitansiText, receiptNumber, terbilang } from '@/lib/kwitansi';
 
 export default function Kwitansi() {
   const { id } = useParams();
@@ -35,7 +24,7 @@ export default function Kwitansi() {
   if (p.status !== 'terverifikasi') return <Empty title="Pembayaran belum terverifikasi" text="Kwitansi hanya untuk pembayaran yang sudah diterima." />;
 
   const occ = d.occById.get(inv.occupant_id);
-  const no = 'KW-' + p.paid_at.replace(/-/g, '') + '-' + p.id.slice(0, 4).toUpperCase();
+  const no = receiptNumber(p);
   const words = terbilang(p.amount);
   const msg = `Halo ${occ?.name || ''}, terima kasih. Pembayaran Anda sudah kami terima:\n\nNo. ${no}\n${invTitle(inv)} · Kamar ${d.roomCode(inv.room_id)}\nJumlah: ${rp(p.amount)}\nTanggal: ${tgl(p.paid_at)}\nSisa tagihan ini: ${rp(inv.outstanding)}\n\n— ${kos.name}`;
 
@@ -45,7 +34,8 @@ export default function Kwitansi() {
         <Link href="/tagihan"><button className="ghost">← Tagihan</button></Link>
         <div className="row">
           {occ?.phone && <a href={waLink(occ.phone, msg)} target="_blank" rel="noreferrer"><button>Kirim via WhatsApp</button></a>}
-          <button className="primary" onClick={() => window.print()}>Cetak / PDF</button>
+          <PrintReceiptButton kosId={kos.id} renderText={() => kwitansiText(kos, p, inv, occ?.name || '—', d.roomCode(inv.room_id))}>Cetak via printer default</PrintReceiptButton>
+          <button onClick={() => window.print()}>Kwitansi lengkap / PDF</button>
         </div>
       </div>
       <p className="small muted noprint" style={{ margin: 0 }}>Pilih "Simpan sebagai PDF" di jendela cetak untuk mendapat file PDF.</p>

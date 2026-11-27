@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
-import { Sheet, Field, run } from '@/components/ui';
+import { Sheet, Field, run, toast } from '@/components/ui';
 import { rp, today, parseRp, angka, invTitle, METHOD, errMsg } from '@/lib/format';
+import { printVerifiedPayment } from '@/lib/print-payment';
 import { uid } from '@/lib/retail';
 
 export default function PaySheet({ d, inv, onClose }) {
-  const { bump } = useKos();
+  const { kos, bump } = useKos();
   const [amt, setAmt] = useState(inv ? angka(inv.outstanding) : '');
   const [date, setDate] = useState(today());
   const [method, setMethod] = useState('tunai');
@@ -34,12 +35,18 @@ export default function PaySheet({ d, inv, onClose }) {
     }
     if (a > inv.outstanding + 0.5 && !confirm(`Jumlah melebihi sisa tagihan (${rp(inv.outstanding)}). Tetap simpan?`)) return;
     setBusy(true);
-    const ok = await run(() => supabase.from('payments').insert({
-      invoice_id: inv.id, kos_id: inv.kos_id, amount: a, paid_at: date, method, ref: ref.trim() || null, notes: notes.trim() || null,
+    const payment = {
+      id: opId, invoice_id: inv.id, kos_id: inv.kos_id, amount: a, paid_at: date, method, ref: ref.trim() || null, notes: notes.trim() || null,
       status: verified ? 'terverifikasi' : 'menunggu', verified_at: verified ? new Date().toISOString() : null,
-    }), 'Pembayaran dicatat', errMsg);
+    };
+    const ok = await run(() => supabase.from('payments').insert(payment), 'Pembayaran dicatat', errMsg);
     setBusy(false);
-    if (ok) { bump(); onClose(); }
+    if (ok) {
+      if (verified) printVerifiedPayment(kos, d, payment, (error) =>
+        toast('Pembayaran tersimpan. Cetak otomatis gagal: ' + errMsg(error) + ' Buka kwitansi untuk mencetak ulang.'));
+      bump();
+      onClose();
+    }
   }
   return (
     <Sheet title={`Bayar · ${d.occName(inv.occupant_id)}`} onClose={onClose}>

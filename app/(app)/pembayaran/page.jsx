@@ -1,16 +1,17 @@
 'use client';
+import { printVerifiedPayment } from '@/lib/print-payment';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable } from '@/components/Page';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
-import { Loading, Empty, PayChip, Sheet, run } from '@/components/ui';
+import { Loading, Empty, PayChip, Sheet, run, toast } from '@/components/ui';
 import { rp, tgl, thisMonth, bulan, addMonthsYm, invTitle, METHOD, errMsg } from '@/lib/format';
 
 export default function Pembayaran() {
   const d = useData();
-  const { bump } = useKos();
+  const { kos, bump } = useKos();
   const [ym, setYm] = useState(thisMonth());
   const [proof, setProof] = useState(null);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
@@ -21,7 +22,20 @@ export default function Pembayaran() {
 
   const setStatus = async (p, status, msg) => {
     if (status === 'dibatalkan' && !confirm('Batalkan pembayaran ini? Tagihannya akan kembali belum lunas.')) return;
-    if (await run(() => supabase.from('payments').update({ status, verified_at: status === 'terverifikasi' ? new Date().toISOString() : null }).eq('id', p.id), msg, errMsg)) bump();
+    const verifying = status === 'terverifikasi';
+    let changed = false;
+    const ok = await run(async () => {
+      const update = supabase.from('payments').update({ status, verified_at: verifying ? new Date().toISOString() : null }).eq('id', p.id);
+      if (!verifying) return update;
+      const result = await update.eq('status', 'menunggu').select('id').maybeSingle();
+      changed = Boolean(result.data);
+      return result;
+    }, msg, errMsg);
+    if (ok) {
+      if (changed) printVerifiedPayment(kos, d, p, (error) =>
+        toast('Pembayaran terverifikasi. Cetak otomatis gagal: ' + errMsg(error) + ' Buka kwitansi untuk mencetak ulang.'));
+      bump();
+    }
   };
 
   const openProof = async (p) => {
