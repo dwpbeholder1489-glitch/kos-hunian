@@ -271,3 +271,37 @@
   .kpis { gap: 8px; }
 }
 .rows a { color: var(--brand-2); font-weight: 600; }
+
+/* Modul pusat analisis */
+.modnav { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.modnav::-webkit-scrollbar { display: none; }
+.modnav button { flex: none; min-height: 44px; padding: 8px 14px; border: 0; border-bottom: 2.5px solid transparent; border-radius: 0; background: none; color: var(--muted); font-weight: 600; font-size: 13.5px; }
+.modnav button[aria-pressed=true] { color: var(--okfg); border-bottom-color: var(--brand-2); }
+.modGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.modGrid > :first-child:last-child { grid-column: 1 / -1; }
+.stmt { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.stmt th, .stmt td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: right; font-weight: 400; }
+.stmt td { white-space: nowrap; }
+.stmt th:first-child { text-align: left; }
+.stmt thead th { color: var(--muted); font-size: 12px; font-weight: 600; }
+.stmt .sub th, .stmt .sub td { font-weight: 700; background: color-mix(in srgb, var(--ok-soft) 55%, transparent); }
+.stmt .head th { padding-top: 12px; color: var(--muted); font-size: 11.5px; font-weight: 700; letter-spacing: .04em; }
+.ratioGroup { display: grid; gap: 2px; }
+.ratioGroup h3 { margin: 8px 0 2px; font-size: 13px; color: var(--muted); }
+.ratio { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 40px; padding: 6px 2px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; text-align: left; font-size: 13.5px; white-space: normal; }
+.ratio b { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); font-weight: 500; }
+.hub { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.hub li + li { border-top: 1px solid var(--line); }
+.hub a, .hub button, .hub span { display: grid; gap: 2px; width: 100%; min-height: 52px; padding: 9px 2px; border: 0; background: none; color: var(--fg); text-align: left; text-decoration: none; white-space: normal; font-size: 14px; }
+.hub small { color: var(--muted); font-size: 12px; line-height: 1.4; font-weight: 400; }
+.hub span { opacity: .78; }
+.hub b .kind { margin-left: 6px; vertical-align: 1px; }
+@container page (max-width: 900px) {
+  .modGrid { grid-template-columns: minmax(0, 1fr); }
+}
+@container card (max-width: 420px) {
+  .stmt .dcol { display: none; }
+  .stmt { font-size: 12px; }
+  .stmt th, .stmt td { padding: 6px 3px; }
+}

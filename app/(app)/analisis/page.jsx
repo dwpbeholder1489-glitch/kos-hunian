@@ -19,6 +19,7 @@ import { useKuotaEkspor } from '@/lib/ekspor';
 import { COMPARE, HARI, HEALTH_RULES, PRESETS, compareRange, dasarFloor, daysBetween, healthScore, insights, kpis, monthName, presetRange, projection, terms } from '@/lib/bizIntel';
 import { C, Donut, Gauge, GroupBars, Heatmap, NetBars, TrendChart, Waterfall } from './Charts';
 import { DetailSheet, JournalLines } from './Details';
+import { BudgetModule, CashModule, FinancialsModule, InvestModule, MapModule, ReportsModule, TaxModule } from './Modules';
 import styles from './analisis.module.css';
 
 const n = (v) => Number(v || 0);
@@ -49,12 +50,16 @@ export default function Analisis() {
 }
 
 // Filter universal: di URL (bertahan saat pindah halaman & kembali) + cadangan per perangkat
+// Modul pusat analisis (Master Blueprint BI V2.0) — lapisan presentasi atas mesin yang sudah ada
+const MODS = [['ringkasan', 'Ringkasan'], ['keuangan', 'Laporan Keuangan'], ['kas', 'Arus Kas'], ['pajak', 'Pajak'], ['anggaran', 'Anggaran'], ['investasi', 'Investasi & Valuasi'], ['laporan', 'Laporan & Portofolio'], ['peta', 'Peta Modul']];
+
 function readFilter(search, kosId) {
   const get = (k) => search.get(k) || '';
-  let f = { p: get('p'), dari: get('dari'), sampai: get('sampai'), cmp: get('cmp'), cabang: get('cabang'), kat: get('kat') };
+  let f = { p: get('p'), dari: get('dari'), sampai: get('sampai'), cmp: get('cmp'), cabang: get('cabang'), kat: get('kat'), m: get('m') };
   if (!f.p) { try { f = { ...f, ...JSON.parse(localStorage.getItem('prasara-analisis-' + kosId) || '{}') }; } catch { /* abaikan */ } }
   if (!PRESETS.some(([k]) => k === f.p)) f.p = 'bulan';
   if (!COMPARE.some(([k]) => k === f.cmp)) f.cmp = 'prev';
+  if (!MODS.some(([k]) => k === f.m)) f.m = 'ringkasan';
   return f;
 }
 
@@ -343,8 +348,24 @@ function Center({ kos, kosId, ver }) {
   const sheet = detail && <DetailView detail={detail} d={d} k={k} T={T} health={health} ins={ins} proj={proj} extra={extra} kosId={kosId} kas={kas} range={range} retail={kasRetail}
     branchNote={branchNote} reportHref={reportHref} pembukuan={pembukuan} metric={metric} open={open} onClose={() => setDetail(null)} lanjut={lanjut} lock={lock} vs={vs} />;
 
+  const modNav = <nav className={styles.modnav} aria-label="Modul analisis">{MODS.map(([key, label]) =>
+    <button key={key} type="button" aria-pressed={f.m === key} onClick={() => set({ m: key })}>{label}</button>)}</nav>;
+  const modProps = { kosId, range, cmp, ver, owner, jenis: d.jenis, retail: kasRetail };
+  if (f.m !== 'ringkasan') return <div className={styles.page}>
+    {header}{filterSheet}{modNav}{notes}
+    {f.m === 'keuangan' && <FinancialsModule {...modProps} />}
+    {f.m === 'kas' && <CashModule {...modProps} />}
+    {f.m === 'pajak' && <TaxModule {...modProps} />}
+    {f.m === 'anggaran' && <BudgetModule {...modProps} />}
+    {f.m === 'investasi' && <InvestModule {...modProps} />}
+    {f.m === 'laporan' && <ReportsModule onExport={doExport} />}
+    {f.m === 'peta' && <MapModule onGo={(go) => (go.startsWith('/') ? router.push(go) : set({ m: go }))} />}
+    <p className={styles.foot}>Semua angka dari jurnal Pembukuan dan modul operasional (satu sumber). Proyeksi & valuasi ditandai sebagai estimasi.</p>
+  </div>;
+
   return <div className={styles.page}>
     {header}{filterSheet}
+    {modNav}
     {notes}
     {kosong && <div className="notice">Belum ada transaksi tercatat pada {fmtRange(d.from, d.to)}. Angka akan muncul setelah ada penjualan, pembayaran, atau pengeluaran.</div>}
     {mobile ? <>
