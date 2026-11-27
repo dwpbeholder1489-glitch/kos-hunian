@@ -166,7 +166,7 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | Piutang proyek di laporan Umur piutang Pembukuan; persetujuan pembayaran; PPN jasa | Belum |
 | Lampiran untuk PIC/anggota tanpa area proses | Belum — lampiran memakai izin area (ops/settings) |
 
-## 9. Workspace Event — Tahap A (migrasi `20261127170000_event_workspace.sql`, Master Implementation Prompt Event + gambar acuan)
+## 9. Workspace Event — Tahap A (migrasi `20261128100000_event_workspace.sql`, Master Implementation Prompt Event + gambar acuan)
 
 Keputusan pemilik (22 Nov 2026):
 

@@ -91,6 +91,7 @@ const P = {
   '/neraca-saldo': <><path d="M12 3v18M7 21h10M4 7h16M5 7l-3 7h6zm14 0-3 7h6z" /></>,
   '/pembukuan': <><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" /><path d="M9 8h5M9 12h5" /></>,
   '/aset': <><path d="M3 21h18M5 21V8l7-4 7 4v13" /><path d="M9 21v-5h6v5M9 11h.01M15 11h.01" /></>,
+  '/risiko': <><path d="M12 3 2 20h20L12 3z" /><path d="M12 10v4M12 17h.01" /></>,
   '/anggaran': <><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" /></>,
   '/booking-event': <><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V2.5h6V4M9 12l2 2 4-4" /></>,
   '/jadwal': <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18M8 14h2M14 14h2M8 17h2" /></>,

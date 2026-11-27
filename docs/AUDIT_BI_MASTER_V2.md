@@ -33,8 +33,8 @@ tidak membuat mesin akuntansi/BI/investasi kedua. Status: **Ada** = berfungsi & 
 | 9 | Business Performance | KPI toko/kos/jasa/kuliner (food cost), hunian, perputaran stok | KPI laundry per kg, utilisasi mesin, online (CAC/LTV), benchmark industri bersumber | Parsial |
 | 10 | Investment & Capital | Simulasi investasi + realisasi + perbandingan (Pembukuan › Investasi) | Register sumber modal & penggunaan modal, ROIC (butuh pajak & bunga) | Parsial |
 | 11 | Business Valuation | DCF dari arus kas historis (Pembukuan › Valuasi) | Asset-based, multiple EBITDA/revenue dengan pembanding bersumber | Parsial |
-| 12 | Forecast & Scenario | Proyeksi linier pendapatan, skenario investasi | Skenario bull/base/bear tersimpan berversi, stress test laba & kas | Belum (sebagian) |
-| 13 | Risk Management | Faktor risiko aturan tetap (`lib/bizIntel.js`) | Register risiko (probabilitas, dampak, mitigasi, PIC, tinjauan) | Belum |
+| 12 | Forecast & Scenario | Proyeksi linier pendapatan, skenario investasi, skenario Pesimis/Dasar/Optimis 12 bulan + 7 stress test tersimpan berversi (Tahap E) | Musim, rencana investasi/modal di dalam skenario, perbandingan versi vs realisasi | Sebagian besar |
+| 13 | Risk Management | Faktor risiko aturan tetap (`lib/bizIntel.js`), daftar risiko `/risiko` (Tahap F) | Risiko per cabang/proyek, pengingat tinjau lewat lonceng/email | Sebagian besar |
 | 14 | Consolidation | Mode A portofolio `/bisnis` (pilihan eksplisit, Pro), gabungan badan usaha di Pembukuan (tanpa eliminasi) | Mode B konsolidasi formal: struktur kepemilikan, transaksi antarentitas, eliminasi | Parsial (Mode A) |
 | 15 | Monthly Investor Report | Laporan bulanan berversi & terbit; ekspor Analisis Excel/PDF | Laporan riset §32 (cover, daftar isi, MD&A, valuasi, skenario, risiko, lampiran), arsip laporan lintas jenis | Parsial |
 | 16 | Decision Support | Insight fakta/temuan/rekomendasi beralasan, tanpa AI generatif | Confidence level eksplisit per insight | Ada/Parsial |
@@ -63,13 +63,13 @@ belum ada), transaksi antarentitas belum ditandai.
 |---|---|---|---|
 | A | ✅ SELESAI 27 Nov 2026 (migrasi `20261127140000`): daftar pinjaman, bayar = pokok + bunga (akun Beban bunga 6-3000), porsi jatuh tempo ≤ 12 bulan, cakupan bunga | Mesin jurnal | Diputuskan: lewat menu Kas (kos: Pengeluaran › Pinjaman) |
 | B | ✅ SELESAI 27 Nov 2026 (migrasi `20261127150000`): PPh final UMKM 0,5% — aturan berversi, profil pajak, perhitungan bulanan (Rp500 jt OP digabung per NPWP), akrual jurnal, setoran via Kas, jatuh tempo, peringatan batas Rp4,8 M/jangka/kos; ROIC aktif. Belum: PPh badan tarif normal, PPh 21/23/4(2) potong-pungut, e-Bupot | A, PPN | Diputuskan: PPh final UMKM 0,5% |
-| C | ROIC, cakupan bunga, laporan perubahan ekuitas | A, B | — |
+| C | ✅ SELESAI 27 Nov 2026 (migrasi `20261127180000`): laporan perubahan ekuitas (`biz_financials.neraca.ekuitas_mutasi` + `equityChanges`, cek cocok dengan neraca); ROIC & cakupan bunga sudah aktif sejak A/B | A, B | — |
 | D | ✅ SELESAI 27 Nov 2026 (migrasi `20261127160000`): target pendapatan per bulan, status draf → diajukan → disetujui/ditolak (revisi = kembali draf, tutup buku = terkunci), proyeksi akhir bulan (laju harian), dampak ke laba, ringkasan di Analisis › Anggaran. Belum: anggaran kas & CAPEX, anggaran per cabang | `budgets` | Alur bawaan (usulan): pengelola keuangan mengajukan, pemilik menyetujui — bisa diubah bila pemilik memutuskan lain |
-| E | Skenario bull/base/bear & stress test tersimpan berversi (laba, kas, likuiditas) | `biz_financials`, proyeksi | Variabel skenario per jenis bisnis |
-| F | Register risiko (probabilitas × dampak, mitigasi, PIC) | — | Siapa boleh mengisi |
+| E | ✅ SELESAI 27 Nov 2026 (migrasi `20261127170000`): `scenario_baseline` (jurnal, rata 3 bulan penuh + posisi hari ini), rumus `lib/scenario.js` model v1, Pesimis/Dasar/Optimis 12 bulan (laba, kas, kas terendah, kebutuhan dana, rasio lancar), 7 stress test, versi tersimpan tak bisa diubah (`fin_scenarios`). Belum: musim, modal/prive/pembelian aset dalam skenario, pembanding versi vs realisasi | `biz_financials`, proyeksi | Diputuskan: variabel umum + khusus jenis, akses keuangan, Paket Bisnis & Pro |
+| F | ✅ SELESAI 27 Nov 2026 (migrasi `20261127190000`): `risks` + `risk_dismissals`, skor 5×5, strategi, risiko sisa, PIC, tinjau berkala, riwayat; saran dari data (`lib/risk.js`: kas tipis, rugi, pinjaman ≤12 bln > kas, piutang lewat tempo, margin tipis, stress test kas minus). Belum: pengingat tinjau di lonceng/email | — | Diputuskan: dikelola finance/settings, PIC memperbarui risikonya, saran harus diterima, Paket Bisnis & Pro |
 | G | Valuasi multiple & asset-based | C, sumber multiple bersumber | Sumber data pembanding (tidak boleh angka karangan) |
 | H | Laporan riset/investor §32 (PDF A4 bercover, daftar isi, MD&A, lampiran) berversi & arsip | A–G (bagian yang belum ada ditandai) | Format & siapa penyetuju laporan final |
 | I | Konsolidasi formal Mode B (kepemilikan, antarentitas, eliminasi) | Badan usaha (`legal_entities`) | Struktur kepemilikan nyata |
-| J | KPI industri tambahan (laundry per kg, utilisasi, online) | Data operasional yang mencatatnya | Data apa yang mau dicatat |
+| J | ✅ SELESAI 27 Nov 2026 (migrasi `20261127195000`): `industry_kpi` (angka mentah) + `lib/industryKpi.js` — laundry/jasa, kuliner, kos dari data yang SUDAH dicatat; tab Analisis › KPI Industri. Belum (butuh pencatatan baru): utilisasi mesin/kapasitas, berat per kantong, kanal pesanan, jumlah tamu per meja, biaya per kamar | Data operasional yang mencatatnya | Diputuskan pemilik 27 Nov 2026: tayangkan langsung; hanya data yang sudah ada |
 
 Setiap tahap: migrasi baru + uji database + uji logika + render HP/desktop + panduan, baru dinyatakan selesai.

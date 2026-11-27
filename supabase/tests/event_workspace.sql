@@ -19,6 +19,8 @@ insert into kos_members(kos_id,user_id,role) values
 \set OPR 'a7a7a7a7-0000-0000-0000-000000000003'
 \set LUAR 'a7a7a7a7-0000-0000-0000-000000000004'
 select ((now() at time zone 'Asia/Jakarta')::date) as hari \gset
+-- event e2 (hari + 3) bisa jatuh di bulan berikutnya bila uji dijalankan di akhir bulan
+select (case when date_trunc('month', :'hari'::date + 3) = date_trunc('month', :'hari'::date) then 2 else 1 end) as nbulan \gset
 
 \echo == A. Paket: Proyek inti di Dasar, lanjutan di Bisnis; modul Proyek & Kontak aktif untuk event Dasar
 select plan_has(:'KD', 'proyek') and not plan_has(:'KD', 'proyek_lanjut') and plan_has(:'K', 'proyek_lanjut') a_paket,
@@ -90,17 +92,17 @@ select prj_task_save(:'e2', null, jsonb_build_object('title', 'Finalisasi rundow
 select (h->'kpi'->>'active')::int = 3 e_aktif, (h->'kpi'->>'active_prev')::int = 1 e_aktif_lalu,
        (h->'kpi'->>'booking_count')::int = 2 and (h->'kpi'->>'booking_value')::numeric = 50000000 e_booking,
        (h->'kpi'->>'booking_value_prev')::numeric = 5000000 e_booking_lalu,
-       (h->'kpi'->>'events')::int = 2 e_event_bulan_ini,
+       (h->'kpi'->>'events')::int = :nbulan e_event_bulan_ini,
        (h->'kpi'->>'revenue')::numeric = 4000000 e_pendapatan,
        jsonb_array_length(h->'upcoming') = 2 and h->'upcoming'->0->>'name' = 'Konser Musik Lokal' e_mendatang_urut,
        h->'upcoming'->0->>'cover' = 'a7/foto_t.jpg' and h->'upcoming'->0->>'event_status' = 'berlangsung' e_mendatang_isi,
-       jsonb_array_length(h->'calendar') >= 2 e_kalender,
+       jsonb_array_length(h->'calendar') >= :nbulan e_kalender,
        jsonb_array_length(h->'revenue6') = 6 and (h->'revenue6'->5->>'amount')::numeric = 4000000 e_grafik,
        (h->'finance'->>'receivable')::numeric = 4000000 and (h->'finance'->>'revenue')::numeric = 4000000 e_keuangan,   -- DP 4 jt diserahkan, belum dibayar = piutang
        h->'tasks'->0->>'title' = 'Finalisasi rundown' and (h->'tasks'->0->>'can_toggle')::boolean e_tugas_dashboard
 from (select event_home(:'K', null) h) z;
 select (j->>'tasks_total')::int = 1 and j->'tasks'->0->>'title' = 'Finalisasi rundown' and (j->'tasks'->0->>'can_toggle')::boolean e_jadwal_tugas,
-       jsonb_array_length(j->'events') >= 2 and j->'events'->0 ? 'event_status' e_jadwal_event,
+       jsonb_array_length(j->'events') >= :nbulan and j->'events'->0 ? 'event_status' e_jadwal_event,
        jsonb_array_length(j->'team') = 1 and (j->'team'->0->>'open')::int = 1 and (j->'team'->0->>'today')::int = 1 and j->'team'->0->>'name' = 'Belum ditentukan' e_jadwal_tim
 from (select event_schedule(:'K', null) j) z;
 
