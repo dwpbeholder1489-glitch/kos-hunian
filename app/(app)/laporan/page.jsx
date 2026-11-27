@@ -52,11 +52,14 @@ export default function Laporan() {
     const ops = sum('operasional'), modal = sum('modal'), non = sum('non_operasional');
     const billed = d.invoices.filter((i) => i.status !== 'batal' && i.due_date.startsWith(m)).reduce((s, i) => s + i.amount, 0);
     const en = (k) => d.entries.filter((x) => x.kind === k && x.date.startsWith(m)).reduce((s, x) => s + x.amount, 0);
-    const lain = en('pendapatan_lain'), prive = en('prive'), modalIn = en('setoran_modal'), loanIn = en('pinjaman_masuk'), loanOut = en('bayar_pinjaman');
+    const lain = en('pendapatan_lain'), prive = en('prive'), modalIn = en('setoran_modal'), loanIn = en('pinjaman_masuk');
+    // bayar pinjaman = pokok (bukan biaya) + bunga (beban, dicatat di Pengeluaran › Pinjaman)
+    const loanRows = d.entries.filter((x) => x.kind === 'bayar_pinjaman' && x.date.startsWith(m));
+    const bunga = loanRows.reduce((s, x) => s + Number(x.interest || 0), 0), loanOut = loanRows.reduce((s, x) => s + x.amount, 0) - bunga;
     const income = sewa + tambahan + lain + depCut + bkForfeit;
     const laba = income - ops;
-    return { sewa, tambahan, lain, depCut, depIn, depOut, depPaid, bkIn, bkRefund, bkForfeit, income, ops, modal, non, laba, prive, modalIn, loanIn, loanOut,
-      kas: laba - modal - non - prive + modalIn + loanIn - loanOut - depPaid - depCut + depIn - depOut + bkIn - bkRefund - bkForfeit, billed };
+    return { sewa, tambahan, lain, depCut, depIn, depOut, depPaid, bkIn, bkRefund, bkForfeit, income, ops, modal, non, laba, prive, modalIn, loanIn, loanOut, bunga,
+      kas: laba - bunga - modal - non - prive + modalIn + loanIn - loanOut - depPaid - depCut + depIn - depOut + bkIn - bkRefund - bkForfeit, billed };
   };
   const r = calc(ym);
   const months = Array.from({ length: 6 }, (_, k) => addMonthsYm(ym, k - 5));
@@ -69,8 +72,8 @@ export default function Laporan() {
   const exportReport = () => {
     const ms = Array.from({ length: 12 }, (_, k) => addMonthsYm(ym, k - 11));
     downloadCsv(`laporan-${kos.name}-${ym}.csv`, [
-      ['Bulan', 'Pendapatan sewa', 'Pendapatan tambahan', 'Pendapatan lain', 'Potongan deposit', 'Total pendapatan', 'Biaya operasional', 'Laba operasional', 'Belanja modal', 'Non-operasional', 'Diambil pemilik (prive)', 'Setoran modal', 'Pinjaman diterima', 'Bayar pinjaman', 'Deposit diterima', 'Deposit dikembalikan', 'Dibayar dari deposit', 'DP booking diterima', 'DP booking dikembalikan', 'DP booking hangus', 'Arus kas bersih', 'Total ditagihkan'],
-      ...ms.map((m) => { const x = calc(m); return [bulan(m), x.sewa, x.tambahan, x.lain, x.depCut, x.income, x.ops, x.laba, x.modal, x.non, x.prive, x.modalIn, x.loanIn, x.loanOut, x.depIn, x.depOut, x.depPaid + x.depCut, x.bkIn, x.bkRefund, x.bkForfeit, x.kas, x.billed]; }),
+      ['Bulan', 'Pendapatan sewa', 'Pendapatan tambahan', 'Pendapatan lain', 'Potongan deposit', 'Total pendapatan', 'Biaya operasional', 'Laba operasional', 'Belanja modal', 'Non-operasional', 'Diambil pemilik (prive)', 'Setoran modal', 'Pinjaman diterima', 'Bayar pokok pinjaman', 'Beban bunga pinjaman', 'Deposit diterima', 'Deposit dikembalikan', 'Dibayar dari deposit', 'DP booking diterima', 'DP booking dikembalikan', 'DP booking hangus', 'Arus kas bersih', 'Total ditagihkan'],
+      ...ms.map((m) => { const x = calc(m); return [bulan(m), x.sewa, x.tambahan, x.lain, x.depCut, x.income, x.ops, x.laba, x.modal, x.non, x.prive, x.modalIn, x.loanIn, x.loanOut, x.bunga, x.depIn, x.depOut, x.depPaid + x.depCut, x.bkIn, x.bkRefund, x.bkForfeit, x.kas, x.billed]; }),
     ]);
   };
   const exportTx = () => {
@@ -112,11 +115,12 @@ export default function Laporan() {
           <tr><td><b>Total pendapatan</b></td><td className="n"><b>{rp(r.income)}</b></td></tr>
           <tr><td>Biaya operasional</td><td className="n">−{rp(r.ops)}</td></tr>
           <tr className="total"><td>Laba operasional</td><td className="n">{rp(r.laba)}</td></tr>
+          {r.bunga > 0 && <tr><td>Beban bunga pinjaman</td><td className="n">−{rp(r.bunga)}</td></tr>}
           <tr><td className="muted">Belanja modal / renovasi</td><td className="n muted">−{rp(r.modal)}</td></tr>
           <tr><td className="muted">Pengeluaran non-operasional</td><td className="n muted">−{rp(r.non)}</td></tr>
           <tr><td className="muted">Diambil pemilik (prive, bukan biaya)</td><td className="n muted">−{rp(r.prive)}</td></tr>
           {r.modalIn > 0 && <tr><td className="muted">Setoran modal pemilik</td><td className="n muted">+{rp(r.modalIn)}</td></tr>}
-          {(r.loanIn > 0 || r.loanOut > 0) && <tr><td className="muted">Pinjaman (diterima − dibayar)</td><td className="n muted">{rp(r.loanIn - r.loanOut)}</td></tr>}
+          {(r.loanIn > 0 || r.loanOut > 0) && <tr><td className="muted">Pinjaman (diterima − pokok dibayar)</td><td className="n muted">{rp(r.loanIn - r.loanOut)}</td></tr>}
           {r.depIn > 0 && <tr><td className="muted">Deposit diterima (titipan, bukan pendapatan)</td><td className="n muted">+{rp(r.depIn)}</td></tr>}
           {r.depOut > 0 && <tr><td className="muted">Deposit dikembalikan</td><td className="n muted">−{rp(r.depOut)}</td></tr>}
           {r.bkIn > 0 && <tr><td className="muted">DP booking diterima (titipan)</td><td className="n muted">+{rp(r.bkIn)}</td></tr>}

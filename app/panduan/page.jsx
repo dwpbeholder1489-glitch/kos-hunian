@@ -26,7 +26,7 @@ const MENUS_TOKO = [
   ['Mutasi stok', 'Pindahkan barang antar lokasi; pemilik: tambah gudang/cabang dari sini'],
   ['Prospek & tindak lanjut', 'Calon pelanggan/penghuni, tahapan, catatan, jadwal hubungi lagi'],
   ['Halaman bisnis', 'Tautan publik: profil, katalog/kamar, formulir permintaan (Portal, Paket Pro)'],
-  ['Kas & kasbon', 'Saldo kas/bank, biaya, kasbon pelanggan, utang'],
+  ['Kas & kasbon', 'Saldo kas/bank, biaya, kasbon pelanggan, utang, pinjaman & cicilan'],
   ['Barang & stok', 'Barang, satuan, harga, barcode, label, tombol cepat'],
   ['Pelanggan & supplier', 'Kontak, sisa kasbon/utang, riwayat'],
   ['Laporan', 'Laba, barang terlaris dan tidak laku'],
@@ -138,7 +138,8 @@ const PARTS = [
       <>Isi <b>Keterangan</b> agar mudah diingat, lalu <b>Simpan</b>.</>,
     ], <>Renovasi dan beli perabot memakai kategori jenis <b>Modal</b> — tidak mengurangi laba operasional, tetapi tetap mengurangi kas.</>, null, <ScrExpense />],
     ['Uang diambil pemilik & transaksi lain', 'Pengeluaran › Diambil pemilik & lainnya › + Catat', [
-      <>Pilih <b>Jenis</b>: <b>Diambil pemilik (prive)</b>, Setoran modal, Pendapatan lain, Pinjaman diterima, atau Bayar pinjaman.</>,
+      <>Pilih <b>Jenis</b>: <b>Diambil pemilik (prive)</b>, Setoran modal, atau Pendapatan lain.</>,
+      <><b>Pinjaman</b> dicatat di tab <b>Pinjaman</b>: daftarkan pinjamannya, catat <b>Dana diterima</b>, dan saat membayar isi <b>bagian bunga</b> agar laporan memisahkan pokok (mengurangi utang) dan bunga (biaya).</>,
       <>Isi <b>Jumlah</b>, <b>Tanggal</b>, dan keterangan, lalu <b>Simpan</b>.</>,
       <>Laporan memisahkannya: prive mengurangi kas tetapi <b>tidak</b> mengurangi laba.</>,
     ], <><b>Jangan tertukar:</b> gaji pengelola/penjaga adalah <b>biaya kos</b> (tab Biaya kos). Uang yang dipakai pemilik untuk keperluan pribadi adalah <b>prive</b> (tab ini).</>, 'warn', <ScrOwner />],
@@ -279,6 +280,7 @@ const PARTS = [
       <>Biaya toko (listrik, gaji, bensin): <b>+ Biaya</b>, pilih jenis, jumlah, dan dibayar dari kas atau bank. Uang diambil untuk pribadi: pilih <b>Prive</b>.</>,
       <>Tab <b>Kasbon pelanggan</b>: daftar yang masih berutang beserta sisanya. Tekan <b>Terima bayar</b> (boleh dicicil) atau <b>Ingatkan WA</b>.</>,
       <>Tab <b>Utang supplier</b>: tekan <b>Bayar</b> saat melunasi belanja utang.</>,
+      <>Tab <b>Pinjaman</b>: <b>+ Pinjaman baru</b> (pemberi, pokok, bunga %/tahun, tenor, cicilan, jatuh tempo — tombol bantu hitung cicilan anuitas tersedia), lalu <b>Dana diterima</b> saat uang masuk. Setiap bayar: <b>Bayar cicilan</b>, isi jumlah total dan <b>bagian bunga</b> sesuai rekening koran. Pokok mengurangi sisa utang; hanya bunga yang menjadi beban dan mengurangi laba. Catatan pinjaman lama bisa <b>ditautkan</b> ke daftar.</>,
     ], <>Saldo kas & bank dihitung otomatis dari penjualan, belanja, biaya, dan pelunasan. Hitung uang di laci sesekali; kalau beda, ada transaksi yang belum dicatat.</>, null, null],
     ['Laporan toko', 'Menu Laporan', [
       <>Buka <b>Laporan</b>, pilih bulan dengan tombol <b>‹ ›</b>.</>,

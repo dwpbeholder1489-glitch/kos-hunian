@@ -16,6 +16,7 @@ import { uid } from '@/lib/retail';
 import LokasiBar from '@/components/LokasiBar';
 import Lampiran from '@/components/Lampiran';
 import { multiLoc } from '@/lib/business';
+import Pinjaman from '@/components/Pinjaman';
 
 const ACC = { kas: 'Kas (laci)', bank: 'Bank' };
 const TRANSFERS = new Set(['setor_bank', 'tarik_bank', 'pindah_kas']);
@@ -47,7 +48,7 @@ export default function Kas() {
 
 function CashWorkspace({ kos, kosId, ver }) {
   const [tab, setTab] = useState('kas');
-  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['kas', ...(kos.business_type === 'retail' ? ['kasbon'] : []), ...(kos.business_type !== 'kustom' ? ['utang'] : []), 'arus'].includes(t)) setTab(t); } catch {} }, []); // tautan dari dashboard
+  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['kas', ...(kos.business_type === 'retail' ? ['kasbon'] : []), ...(kos.business_type !== 'kustom' ? ['utang'] : []), 'pinjaman', 'arus'].includes(t)) setTab(t); } catch {} }, []); // tautan dari dashboard
   const [q, setQ] = useState('');
   const [history, setHistory] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -172,7 +173,7 @@ function CashWorkspace({ kos, kosId, ver }) {
         <div className="list">{d.loc.map((b) => <div className="li" key={b.id}><span className="small">{b.name}{b.is_main ? ' (utama)' : ''}{!b.active ? ' · nonaktif' : ''}</span><b className="small" style={{ color: Number(b.kas) < 0 ? 'var(--bad)' : undefined }}>{rp(b.kas)}</b></div>)}</div>
         <span className="small muted">Uang laci di tiap lokasi menurut catatan (penjualan tunai, belanja tunai, biaya, kasbon, dan pindah kas). Bank tetap satu untuk seluruh bisnis.</span>
       </section>}
-      <div className={styles.tabs} aria-label="Menu kas">{[['kas', 'Kas & Bank'], ...(jasa ? [] : [['kasbon', 'Kasbon Pelanggan']]), ...(kustom ? [] : [['utang', 'Utang Supplier']]), ['arus', 'Arus Kas']].map(([key, label]) => <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}>{label}</button>)}</div>
+      <div className={styles.tabs} aria-label="Menu kas">{[['kas', 'Kas & Bank'], ...(jasa ? [] : [['kasbon', 'Kasbon Pelanggan']]), ...(kustom ? [] : [['utang', 'Utang Supplier']]), ['pinjaman', 'Pinjaman'], ['arus', 'Arus Kas']].map(([key, label]) => <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}>{label}</button>)}</div>
       {tab === 'kas' && <>
         <aside className={styles.notice}><NavIcon name="info" /><p><b>Saldo</b> mengikuti transaksi, pelunasan, dan catatan kas. Transfer antar akun hanya memindahkan dana.{kustom && <> Sumber catatan diatur di <Link href="/builder?langkah=data">Business Builder</Link>.</>}{jasa && !kustom && <> Sisa bayar pelanggan ada di <Link href="/pesanan">Pesanan</Link>.</>}</p></aside>
         <div className={styles.toolbar}>
@@ -199,6 +200,7 @@ function CashWorkspace({ kos, kosId, ver }) {
               </button>)}</div>}
         </section>
       </>}
+      {tab === 'pinjaman' && <Pinjaman kosId={kosId} />}
       {tab === 'arus' && <CashFlow kosId={kosId} version={`${ver}:${revision}`} />}
 
       {['kasbon', 'utang'].includes(tab) && (() => {
