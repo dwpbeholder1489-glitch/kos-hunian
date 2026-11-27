@@ -1015,6 +1015,16 @@ const PARTS = [
       <>PIC (karyawan mana pun) melihat menu <b>Daftar risiko</b> berisi risiko miliknya saja dan menekan <b>Tulis perkembangan</b> (status + catatan). Hanya pemilik/pengelola yang mengubah nilai atau menutup risiko.</>,
     ], <>Dikelola pemilik atau karyawan berizin Keuangan/Pengaturan. Setiap perubahan, tinjauan, dan perkembangan tercatat di riwayat risiko; pembuatan & penutupan juga di Konfigurasi › Riwayat. Daftar ini catatan pengelolaan internal, bukan penilaian resmi pihak luar.</>, null, null, 'bisnis'],
   ]],
+  ['AK', 'Analisis: Laporan investor (Paket Pro)', [
+    ['Menyusun, menyetujui & mengirim laporan investor', 'Analisis Bisnis › Laporan & Portofolio › Laporan investor', [
+      <>Ketuk <b>+ Laporan baru</b>: judul dan periode (bawaan = triwulan terakhir yang sudah lewat, maks. 2 tahun) → <b>Buat draf</b>.</>,
+      <><b>Ubah isi</b>: pembanding (opsional), tulis <b>Ringkasan eksekutif</b>, <b>Pembahasan & analisis manajemen</b>, <b>Prospek & rencana</b>, dan catatan; pilih <b>skenario</b> & <b>valuasi</b> versi tersimpan yang dilampirkan; centang bagian yang disertakan (laporan keuangan, perubahan ekuitas, arus kas, rasio, KPI industri, skenario, risiko, valuasi, metodologi).</>,
+      <>Pratinjau A4 langsung di bawahnya: sampul, daftar isi, bagian bernomor. Angka draf = angka terkini Pembukuan.</>,
+      <>Bagian keuangan menekan <b>Ajukan ke pemilik</b>; pemilik menekan <b>Finalkan</b> (atau <b>Tolak</b> dengan alasan). Pemilik juga boleh langsung memfinalkan draf.</>,
+      <>Saat final, semua angka <b>dibekukan</b> dan laporan diarsip: tidak bisa diubah atau dihapus walau transaksi lama dikoreksi. Perlu perubahan? <b>Buat revisi</b> (draf baru, laporan final lama tetap utuh).</>,
+      <><b>Cetak / Simpan PDF</b>: di HP pilih “Simpan sebagai PDF”, ukuran A4. Kirim PDF itu ke investor lewat WA/email.</>,
+    ], <>Laporan investor memakai rumus yang sama dengan layar Analisis Bisnis (laba rugi, neraca, rasio, KPI, skenario, risiko, valuasi) dan menulis jelas bahwa ini <b>bukan laporan keuangan yang diaudit</b>; proyeksi & valuasi berlabel estimasi. Paket Bisnis tetap melihat semua bahannya di Analisis Bisnis.</>, 'warn', null, 'pro'],
+  ]],
 ];
 
 const RULES = [
