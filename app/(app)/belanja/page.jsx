@@ -46,7 +46,8 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(false); // false | true | {init}
   const [saran, setSaran] = useState(false);
-  const [month, setMonth] = useState(() => today().slice(0, 7));
+  // ?bulan=YYYY-MM dari tautan halaman lain (mis. drill-down Rekap Bisnis)
+  const [month, setMonth] = useState(() => { try { const b = new URLSearchParams(window.location.search).get('bulan'); return /^\d{4}-\d{2}$/.test(b || '') && b <= today().slice(0, 7) ? b : today().slice(0, 7); } catch { return today().slice(0, 7); } });
   const [dashboard, setDashboard] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
   const [status, setStatus] = useState('all');

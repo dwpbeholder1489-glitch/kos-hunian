@@ -1015,6 +1015,21 @@ const PARTS = [
       <>PIC (karyawan mana pun) melihat menu <b>Daftar risiko</b> berisi risiko miliknya saja dan menekan <b>Tulis perkembangan</b> (status + catatan). Hanya pemilik/pengelola yang mengubah nilai atau menutup risiko.</>,
     ], <>Dikelola pemilik atau karyawan berizin Keuangan/Pengaturan. Setiap perubahan, tinjauan, dan perkembangan tercatat di riwayat risiko; pembuatan & penutupan juga di Konfigurasi › Riwayat. Daftar ini catatan pengelolaan internal, bukan penilaian resmi pihak luar.</>, null, null, 'bisnis'],
   ]],
+  ['AK', 'Rekap Bisnis: hasil & aktivitas per periode', [
+    ['Membaca rekap harian sampai tahunan', 'Rekap Bisnis (tepat di bawah Analisis Bisnis)', [
+      <>Pilih <b>Harian, Mingguan, Bulanan, Kuartalan, Tahunan</b>, atau <b>Kustom</b>; geser periode dengan tombol <b>‹ ›</b> atau ketuk nama periode untuk memilih tanggal/bulan. Batas periode memakai waktu Jakarta.</>,
+      <>Kotak atas: <b>Total pendapatan</b>, <b>HPP</b>, <b>Biaya operasional</b>, <b>Laba bersih</b>, dan <b>Total transaksi</b>, masing-masing dengan perbandingan ke periode sebelumnya. <b>Filter</b> mengganti pembanding (periode sebelumnya / tahun lalu / tanpa) dan lokasi (Paket Pro).</>,
+      <>Grafik <b>Komposisi keuangan</b> (HPP, operasional, laba), <b>Tren pendapatan</b> dan <b>Tren transaksi</b> — pilih <b>Dalam periode</b> (per hari/bulan) atau <b>Antarperiode</b> (6 bulan, 8 minggu, 4 kuartal, 3 tahun terakhir; ketuk titik untuk membuka periode itu).</>,
+      <>Kartu rekap mengikuti jenis bisnis dan modul yang aktif: penjualan per kategori (toko), pesanan & layanan/menu (jasa, kuliner), hunian & tagihan (kos), pembelian per supplier, pergerakan persediaan, piutang & utang, kas & bank, pelanggan, karyawan, aset, pajak, perubahan modal, proyek, dan timeline aktivitas. Di HP kartu tampil sebagai kotak kategori yang dibuka di lembar bawah.</>,
+      <><b>Semua angka, baris tabel, dan titik grafik bisa diketuk</b>: muncul cara hitung, pembanding, <b>transaksi sumber</b> (struk, nota, belanja, pengeluaran, gerak stok, pembayaran) dan <b>baris jurnal</b> dengan tautan bukti, plus tombol ke modul asal dengan periode yang sama (mis. Penjualan tanggal itu, Belanja/Pengeluaran/Pembayaran bulan itu).</>,
+    ], <>Angka uang dari jurnal Pembukuan (sama dengan Laporan & Analisis Bisnis). <b>Kas masuk bukan pendapatan</b> (termasuk setoran modal, pinjaman, pelunasan piutang); setoran modal & prive mengubah modal, bukan laba. Status di atas kartu: <b>Periode berjalan</b> (angka sementara), <b>Belum direkonsiliasi</b>, <b>Sudah direkonsiliasi</b> (rekonsiliasi bank & tutup harian), <b>Sudah ditutup</b> (tutup buku di Pembukuan); <b>Belum lengkap</b> bila ada penjualan tanpa harga modal, bukti bayar menunggu, atau transaksi offline perlu dicek.</>, 'info'],
+    ['Arsip rekap, ekspor & pemberitahuan', 'Rekap Bisnis › Arsip / Ekspor PDF / Excel', [
+      <>Rekap <b>mingguan, bulanan, kuartalan, dan tahunan diarsipkan otomatis</b> setiap pagi setelah periodenya selesai. Periode lain (harian, kustom) bisa diarsipkan lewat <b>Arsip › Arsipkan</b> setelah periodenya lewat.</>,
+      <>Arsip tidak bisa diubah. Bila transaksi periode lama dikoreksi, rekap menandai <b>Data sumber berubah</b> dan membuat <b>versi baru</b> (otomatis untuk 2 bulan terakhir, atau tombol <b>Simpan versi baru</b>); versi lama tetap bisa dibuka dan dibandingkan.</>,
+      <><b>Ekspor PDF / Excel</b> berisi ringkasan + pembanding, laba rugi, tren, antarperiode, kas & bank, penjualan, pembelian, persediaan, utang-piutang, pelanggan, karyawan, aset, pajak & modal (memakai kuota ekspor paket). Ada juga <b>Cetak halaman</b> dan <b>Bagikan ringkasan</b> (WhatsApp/email).</>,
+      <>Arsip otomatis & versi koreksi muncul di <b>Notifikasi</b> (kos) atau <b>Pengingat</b> (toko/jasa) selama 7 hari.</>,
+    ], <>Hanya pemilik & karyawan berizin Keuangan. Penutupan periode tetap dilakukan di Pembukuan (Periode & manual) — Rekap hanya menampilkan statusnya dan tautan ke sana.</>, 'info'],
+  ]],
 ];
 
 const RULES = [

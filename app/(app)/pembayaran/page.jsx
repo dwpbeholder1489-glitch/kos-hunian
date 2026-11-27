@@ -12,7 +12,8 @@ import { rp, tgl, thisMonth, bulan, addMonthsYm, invTitle, METHOD, errMsg } from
 export default function Pembayaran() {
   const d = useData();
   const { kos, bump } = useKos();
-  const [ym, setYm] = useState(thisMonth());
+  // ?bulan=YYYY-MM dari tautan halaman lain (mis. drill-down Rekap Bisnis)
+  const [ym, setYm] = useState(() => { try { const b = new URLSearchParams(window.location.search).get('bulan'); return /^\d{4}-\d{2}$/.test(b || '') && b <= thisMonth() ? b : thisMonth(); } catch { return thisMonth(); } });
   const [proof, setProof] = useState(null);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 

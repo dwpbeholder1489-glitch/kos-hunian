@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
+import RekapNotice from '@/components/RekapNotice';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { Loading, Empty, run } from '@/components/ui';
@@ -43,6 +44,7 @@ export default function Pengingat() {
       <PageHeader title="Pengingat toko" help={<PageHelp page="pengingat" />} />
       {alertCount(a) === 0 && !portal.length && !crmDue && <Empty title="Semua aman" text="Tidak ada stok minus atau menipis, pesanan terlambat, kasbon/utang jatuh tempo, transaksi offline, atau pesanan portal yang perlu dicek." />}
       {crmDue > 0 && <section className="panel"><CrmDue count={crmDue} /></section>}
+      <RekapNotice kos={kos} />
       {!!a.stok_minus?.length && <div className="panel"><StockMinusList key={kosId} rows={a.stok_minus} canOpen={canArea(kos, 'stock')} /></div>}
       {a.offline?.length > 0 && <section className="panel"><h3>📶 Transaksi offline perlu dicek ({a.offline.length})</h3>
         <p className="small muted" style={{ margin: 0 }}>Penjualan saat internet putus yang terkirim dengan temuan (harga berubah, stok minus, diskon lewat batas) atau tidak bisa disimpan.</p>

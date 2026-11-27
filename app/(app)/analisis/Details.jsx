@@ -12,35 +12,36 @@ import styles from './analisis.module.css';
 const n = (v) => Number(v || 0);
 const MAX = 3000;
 
-// kinds: 'pendapatan' | 'hpp' | 'biaya' | 'kas' — baris jurnal yang membentuk angka itu
-async function journal(kosId, from, to, kinds) {
+// kinds: 'pendapatan' | 'hpp' | 'biaya' | 'kas' — baris jurnal yang membentuk angka itu.
+// sys (opsional, dipakai Rekap Bisnis): daftar sys_key akun (piutang, utang, modal, prive, ppn_keluaran, …) — nilai bertanda alami akun
+async function journal(kosId, from, to, kinds, sys) {
   const cash = kinds.includes('kas');
   const rows = [];
   for (let off = 0; off < MAX; off += 500) {
     let q = supabase.from('acct_lines')
       .select('id,debit,credit,source_type,source_id,memo,account:acct_accounts!inner(name,type,sys_key),entry:acct_entries!inner(id,number,entry_date,description,kind,source_type,source_id)')
       .eq('kos_id', kosId).gte('entry.entry_date', from).lte('entry.entry_date', to).order('id', { ascending: false }).range(off, off + 499);
-    q = cash ? q.in('account.sys_key', ['kas', 'bank']) : q.in('account.type', ['pendapatan', 'beban']);
+    q = sys ? q.in('account.sys_key', sys) : cash ? q.in('account.sys_key', ['kas', 'bank']) : q.in('account.type', ['pendapatan', 'beban']);
     const { data, error } = await q;
     if (error) throw error;
     rows.push(...data);
     if (data.length < 500) break;
   }
   const kind = (l) => (l.account.type === 'pendapatan' ? 'pendapatan' : l.account.sys_key === 'hpp' ? 'hpp' : 'biaya');
-  const lines = cash ? rows : rows.filter((l) => kinds.includes(kind(l)));
-  const signed = (l) => (cash ? n(l.debit) - n(l.credit) : (n(l.debit) - n(l.credit)) * (l.account.type === 'pendapatan' ? -1 : 1));
+  const lines = cash || sys ? rows : rows.filter((l) => kinds.includes(kind(l)));
+  const signed = (l) => (cash ? n(l.debit) - n(l.credit) : (n(l.debit) - n(l.credit)) * (['aset', 'beban'].includes(l.account.type) ? 1 : -1));
   return { lines: lines.map((l) => ({ ...l, value: signed(l) })).sort((a, b) => b.entry.entry_date.localeCompare(a.entry.entry_date) || b.id - a.id), capped: rows.length >= MAX };
 }
 
-export function JournalLines({ kosId, from, to, kinds, retail, account, accounts, branchNote }) {
+export function JournalLines({ kosId, from, to, kinds = [], sys, retail, account, accounts, branchNote }) {
   const [st, setSt] = useState(null);
   const [limit, setLimit] = useState(20);
   const [sort, setSort] = useState('tanggal');
   useEffect(() => {
     let on = true; setSt(null);
-    journal(kosId, from, to, kinds).then((r) => on && setSt(r), (e) => on && setSt({ error: e }));
+    journal(kosId, from, to, kinds, sys).then((r) => on && setSt(r), (e) => on && setSt({ error: e }));
     return () => { on = false; };
-  }, [kosId, from, to, kinds.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [kosId, from, to, kinds.join(), (sys || []).join()]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!st) return <Loading rows={4} />;
   if (st.error) return <p className="notice bad" role="alert">{errMsg(st.error)}</p>;
   let lines = account ? st.lines.filter((l) => l.account.name === account) : accounts ? st.lines.filter((l) => accounts.includes(l.account.name)) : st.lines;

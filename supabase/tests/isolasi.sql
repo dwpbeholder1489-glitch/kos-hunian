@@ -25,6 +25,11 @@ begin
   for t in select * from (values
       ('retail_report', format('select public.retail_report(%L, current_date - 30, current_date)', k)),
       ('retail_ledger', format('select public.retail_ledger(%L)', k)),
+      ('biz_recap', format('select public.biz_recap(%L, current_date - 30, current_date)', k)),
+      ('recap_docs', format('select public.recap_docs(%L, ''penjualan'', current_date - 30, current_date)', k)),
+      ('recap_list', format('select public.recap_list(%L)', k)),
+      ('recap_save', format('select public.recap_save(%L, ''bulanan'', current_date - 60, current_date - 31)', k)),
+      ('recap_get', format('select public.recap_get((select id from public.recap_snapshots where kos_id = %L limit 1))', k)),
       ('acct_report', format('select public.acct_report(%L, false, current_date - 30, current_date)', k)),
       ('kasir_catalog', format('select public.kasir_catalog(%L)', k)),
       ('team_list', format('select public.team_list(%L)', k)),
