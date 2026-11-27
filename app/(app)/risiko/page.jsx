@@ -25,6 +25,7 @@ function RiskWorkspace({ kos, kosId, ver }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [sug, setSug] = useState([]);
+  const [sugPartial, setSugPartial] = useState(false);
   const [form, setForm] = useState(null);
   const [open, setOpen] = useState(null);
   const [cell, setCell] = useState(null);
@@ -37,7 +38,9 @@ function RiskWorkspace({ kos, kosId, ver }) {
     setD(data);
     if (data.manager && data.aktif) {
       const [b, s] = await Promise.all([supabase.rpc('scenario_baseline', { p_kos: kosId }), supabase.rpc('risk_signals', { p_kos: kosId })]);
-      setSug(!b.error && !s.error ? suggestions(b.data, s.data) : []);
+      // Sumber yang ditolak (mis. titik awal keuangan untuk pengelola tanpa akses keuangan) dilewati; sumber lain tetap dipakai.
+      setSug(suggestions(b.error ? null : b.data, s.error ? null : s.data, kos.business_type));
+      setSugPartial(Boolean(b.error));
     }
   };
   useEffect(() => { load(); }, [kosId, ver]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -89,6 +92,7 @@ function RiskWorkspace({ kos, kosId, ver }) {
       {pending.length > 0 && <section className="panel">
         <h3>Saran dari data ({pending.length})</h3>
         <p className="small muted">Dihitung dari Pembukuan, piutang, pinjaman, dan stress test. Tidak ada yang masuk daftar sebelum Anda menerimanya.</p>
+        {sugPartial && <p className="small muted">Saran dari Pembukuan (kas, laba, pinjaman, stress test) hanya terlihat oleh anggota bagian keuangan; yang tampil di sini dari tagihan/piutang yang lewat jatuh tempo.</p>}
         <div className="list">{pending.map((s) => <div className="li" key={s.code}><div className="main">
           <b>{s.title}</b><small>{s.why}</small><small className="muted">Usulan: kemungkinan {s.likelihood} × dampak {s.impact} = {s.likelihood * s.impact} ({level(s.likelihood * s.impact).label})</small>
           <div className="row"><button className="sm" onClick={() => setForm({ title: s.title, category: s.category, likelihood: s.likelihood, impact: s.impact, mitigation: s.mitigation, description: s.why, source: 'saran:' + s.code })}>Masukkan ke daftar</button>

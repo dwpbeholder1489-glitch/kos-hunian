@@ -10,7 +10,7 @@ import FiturUpgrade from '@/components/FiturUpgrade';
 import { Loading, Empty, Sheet, Field, toast } from '@/components/ui';
 import { errMsg, tgl, today } from '@/lib/format';
 import { canArea } from '@/lib/business';
-import { REPORT_STATUS as STATUS } from '@/lib/investorReport';
+import { REPORT_STATUS as STATUS, periodIssue } from '@/lib/investorReport';
 
 
 export default function LaporanInvestor() {
@@ -63,7 +63,8 @@ function NewReport({ kosId, onClose, onSaved }) {
     <Field label="Judul"><input value={f.title} maxLength={120} onChange={(e) => setF({ ...f, title: e.target.value })} /></Field>
     <Field label="Dari tanggal"><input type="date" value={f.period_from} onChange={(e) => setF({ ...f, period_from: e.target.value })} /></Field>
     <Field label="Sampai tanggal"><input type="date" value={f.period_to} onChange={(e) => setF({ ...f, period_to: e.target.value })} /></Field>
-    <p className="small muted">Bawaan = triwulan terakhir yang sudah lewat. Maksimal 2 tahun. Pembanding, isi teks, dan bagian bisa diatur setelah dibuat.</p>
-    <button className="primary" disabled={busy || f.title.trim().length < 3 || !f.period_from || !f.period_to} onClick={save}>{busy ? 'Membuat…' : 'Buat draf'}</button>
+    <p className="small muted">Bawaan = triwulan terakhir yang sudah lewat. Maksimal sekitar 1 tahun (400 hari). Pembanding, isi teks, dan bagian bisa diatur setelah dibuat.</p>
+    {periodIssue(f) && <p className="small" style={{ color: 'var(--bad)' }}>{periodIssue(f)}</p>}
+    <button className="primary" disabled={busy || f.title.trim().length < 3 || Boolean(periodIssue(f))} onClick={save}>{busy ? 'Membuat…' : 'Buat draf'}</button>
   </Sheet>;
 }

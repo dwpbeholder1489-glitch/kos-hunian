@@ -95,7 +95,7 @@ export default function ValuationCard({ kosId, ver, owner }) {
       {useM && <>
         <label className={styles.scField}>Dasar<select value={m.basis} onChange={setMv('basis')}>{Object.entries(BASES).map(([k, x]) => <option key={k} value={k}>{x.label}</option>)}</select></label>
         <p className={styles.note}>{BASES[m.basis].hint}. Utang bersih dipakai untuk berpindah antara nilai usaha dan nilai ekuitas.</p>
-        <div className={styles.vlTriple}>{[['low', 'Bawah'], ['mid', 'Tengah'], ['high', 'Atas']].map(([k, l]) => <label key={k} className={styles.scField}>{l} (×)<input type="number" inputMode="decimal" step="any" min="0" value={m[k]} onChange={setMv(k)} /></label>)}</div>
+        <div className={styles.vlTriple}>{[['low', 'Bawah'], ['mid', 'Tengah'], ['high', 'Atas']].map(([k, l]) => <label key={k} className={styles.scField}>{l} (×)<input type="number" inputMode="decimal" step="0.01" min="0.01" value={m[k]} onChange={setMv(k)} /></label>)}</div>
         <label className={styles.scField}>Sumber kelipatan (wajib)<input value={m.source} maxLength={300} onChange={setMv('source')} placeholder="mis. penawaran tertulis calon pembeli, konsultan, berita transaksi" /></label>
         <label className={styles.scField}>Tanggal sumber (opsional)<input type="date" value={m.source_date} onChange={setMv('source_date')} /></label>
         {mErr && (m.low !== '' || m.source) && <p className="notice bad">{mErr}</p>}

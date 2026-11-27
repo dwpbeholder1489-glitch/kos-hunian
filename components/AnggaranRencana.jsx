@@ -58,7 +58,7 @@ export function PlanSummary({ sum, compact }) {
       <div className={s.head}><b>Biaya beranggaran</b><small>Anggaran {n(b.anggaran) > 0 ? rp(b.anggaran) : 'belum diisi'}</small></div>
       <strong>{rp(b.realisasi)}</strong>
       {n(b.anggaran) > 0 && <Bar value={n(b.realisasi)} max={n(b.anggaran)} tone={costPct >= 100 ? 'bad' : costPct >= 80 ? 'warn' : 'good'} />}
-      <small>{costPct != null ? `${angka(Math.round(costPct))}% terpakai` : 'Pengeluaran tercatat'}{!sum.final && b.proyeksi != null ? ` · proyeksi ${rp(b.proyeksi)}` : ''}{n(b.di_luar_anggaran) ? ` · di luar anggaran ${rp(b.di_luar_anggaran)}` : ''}</small>
+      <small>{costPct != null ? `${angka(Math.round(costPct))}% terpakai` : 'Pengeluaran tercatat (menu Pengeluaran — tanpa HPP & penyusutan)'}{!sum.final && b.proyeksi != null ? ` · proyeksi ${rp(b.proyeksi)}` : ''}{n(b.di_luar_anggaran) ? ` · di luar anggaran ${rp(b.di_luar_anggaran)}` : ''}</small>
     </div>
     {!compact || imp.total != null ? <div className={s.block}>
       <div className={s.head}><b>Dampak ke laba</b><small>{proj}</small></div>

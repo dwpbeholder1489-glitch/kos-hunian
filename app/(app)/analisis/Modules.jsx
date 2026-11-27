@@ -69,7 +69,7 @@ export function FinancialsModule({ kosId, range, cmp, retail, owner, ver }) {
         <table className={styles.stmt}><thead><tr><th>Pos (Rp)</th><th>Akhir</th><th>Awal</th></tr></thead>
           <tbody>{balanceLines(b1).map(([key, label, v, kind], i) => kind === 'head' ? <tr key={key} className={styles.head}><th colSpan={3}>{label}</th></tr>
             : <tr key={key} className={kind === 'sub' ? styles.sub : undefined}><th scope="row">{label}</th><td>{num(v)}</td><td>{num(balanceLines(b0)[i][2])}</td></tr>)}</tbody></table>
-        <p className={styles.note}>Pinjaman jatuh tempo ≤ 12 bulan dihitung dari daftar pinjaman (jatuh tempo, cicilan, bunga). {b1.unscheduled > 0 ? `${rp(b1.unscheduled)} pinjaman belum terdaftar atau belum punya jadwal/jatuh tempo sehingga dianggap jangka panjang — lengkapi di Kas › Pinjaman.` : ''}</p>
+        <p className={styles.note}>Pinjaman jatuh tempo ≤ 12 bulan dihitung dari daftar pinjaman (jatuh tempo, cicilan, bunga). {b1.unscheduled > 0 ? `${rp(b1.unscheduled)} pinjaman belum terdaftar atau belum punya jadwal/jatuh tempo sehingga dianggap jangka panjang. Akibatnya kewajiban lancar bisa tercatat terlalu kecil dan rasio lancar terlihat lebih baik dari kenyataan — lengkapi jatuh tempo atau cicilan di Kas › Pinjaman.` : ''}</p>
       </Card>
       {eqc && <Card title="Perubahan Ekuitas" icon="/neraca-saldo" right={<Go href={`/pembukuan?tab=saldo&bulan=${range.to.slice(0, 7)}`}>Neraca saldo</Go>}>
         <p className={styles.note}>{tgl(f.from)} – {tgl(f.to)} · ekuitas = aset − kewajiban · <b className={eqc.cocok ? styles.good : styles.bad}>{eqc.cocok ? '✓ Cocok dengan neraca' : '✗ Tidak cocok dengan neraca — periksa jurnal'}</b></p>
