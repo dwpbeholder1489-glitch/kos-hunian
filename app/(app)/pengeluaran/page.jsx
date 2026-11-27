@@ -103,7 +103,7 @@ export default function Pengeluaran() {
 }
 
 // Pinjaman baru dicatat di tab Pinjaman (pokok + bunga, sisa utang); catatan lama tetap bisa diubah di sini
-const LOAN_KINDS = ['pinjaman_masuk', 'bayar_pinjaman'];
+const LOAN_KINDS = ['pinjaman_masuk', 'bayar_pinjaman', 'bayar_pajak']; // setor pajak lewat Analisis Bisnis › Pajak (butuh masa pajak)
 
 function EntrySheet({ x, onClose }) {
   const { kosId, bump } = useKos();

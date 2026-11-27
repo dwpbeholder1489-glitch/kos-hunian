@@ -12,6 +12,7 @@ import { Empty, Loading } from '@/components/ui';
 import { BLN, errMsg, rp, tgl } from '@/lib/format';
 import { LINE_CLASSES, balanceLines, balanceSheet, fmtRatio, incomeLines, incomeStatement, ratios } from '@/lib/finRatios';
 import { monthName } from '@/lib/bizIntel';
+import PajakPPh from '@/components/PajakPPh';
 import { C, TrendChart } from './Charts';
 import { DetailSheet, JournalLines } from './Details';
 import styles from './analisis.module.css';
@@ -57,7 +58,7 @@ export function FinancialsModule({ kosId, range, cmp, retail, owner, ver }) {
         <tbody>{incomeLines(s).map(([key, label, v, kind]) => <tr key={key} className={kind === 'sub' ? styles.sub : undefined}>
           <th scope="row"><button type="button" className={styles.linkBtn} onClick={() => setSheet({ key, label, v, prev: L0[key] })}>{label}</button></th>
           <td className={v < 0 ? styles.neg : undefined}>{num(v)}</td>{s0 && <><td>{num(L0[key])}</td><td className={styles.dcol}>{pctTxt(kind === 'neg' ? chg(-v, -L0[key]) : chg(v, L0[key]))}</td></>}</tr>)}</tbody></table>
-      <p className={styles.note}>Beban bunga dari pembayaran pinjaman di menu Kas. Pajak penghasilan belum diatur (Tahap B), jadi laba bersih = laba sebelum pajak.</p>
+      <p className={styles.note}>Beban bunga dari pembayaran pinjaman di menu Kas. Pajak penghasilan = PPh final UMKM bila profil pajak diatur di tab Pajak.</p>
     </Card>
     {!f.lengkap ? <FiturUpgrade kosId={kosId} owner={owner} event="REPORT.ADVANCED_REQUESTED" title="Neraca & rasio keuangan tersedia mulai Paket Bisnis" text="Neraca per tanggal dengan cek seimbang, rasio likuiditas, solvabilitas, efisiensi, dan riwayat EBITDA 12 bulan." /> : <>
       <Card title="Neraca" icon="/neraca-saldo" right={<Go href={`/pembukuan?tab=saldo&bulan=${range.to.slice(0, 7)}`}>Neraca saldo</Go>}>
@@ -130,16 +131,20 @@ export function CashModule({ kosId, range, ver, jenis, owner }) {
   </div>;
 }
 
-// ---------- Pajak ----------
-export function TaxModule({ kosId, range, ver, jenis }) {
+// ---------- Pajak: PPh final UMKM (semua jenis bisnis) + PPN (toko) ----------
+export function TaxModule(props) {
+  return <div className={styles.modGrid}>
+    <PajakPPh kosId={props.kosId} year={+props.range.to.slice(0, 4)} styles={styles} />
+    {props.jenis === 'retail' && <PpnCard {...props} />}
+  </div>;
+}
+function PpnCard({ kosId, range, ver }) {
   const month = range.to.slice(0, 7) + '-01';
   const st = useRpc('tax_report', { p_kos: kosId, p_month: month }, [kosId, month, ver]);
-  const plan = <p className={styles.note}><b>Dalam rencana:</b> profil wajib pajak, PPh (final UMKM / badan / potong-pungut), kalender & versi aturan pajak. Angka di sini bukan pengganti pelaporan resmi DJP.</p>;
-  if (jenis !== 'retail') return <Card title="Pajak" icon="/pengaturan"><Empty title="Rekap PPN tersedia untuk toko" text="PPN keluaran/masukan dicatat dari Kasir dan faktur supplier." />{plan}</Card>;
   if (!st) return <Loading rows={4} />;
   if (st.error) return <Fail st={st} />;
   const t = st.data;
-  return <Card title={`Pajak — ${monthName(month.slice(0, 7))}`} icon="/pengaturan" right={<Go href={`/laporan-toko?dari=${month}&sampai=${range.to}`}>Laporan toko</Go>}>
+  return <Card title={`PPN — ${monthName(month.slice(0, 7))}`} icon="/pengaturan" right={<Go href={`/laporan-toko?dari=${month}&sampai=${range.to}`}>Laporan toko</Go>}>
     {!t.setelan?.aktif && <p className={styles.note}>PPN belum diaktifkan di Pengaturan › Pajak, jadi penjualan tercatat tidak kena PPN.</p>}
     <dl className={styles.kvs}>
       <div><dt>Penjualan (DPP)<small>{t.penjualan?.jumlah} nota · tidak kena PPN {rp(t.penjualan?.tidak_kena)}</small></dt><dd>{rp(t.penjualan?.dpp)}</dd></div>
@@ -147,7 +152,6 @@ export function TaxModule({ kosId, range, ver, jenis }) {
       <div><dt>PPN masukan<small>dari faktur supplier diposting</small></dt><dd>{rp(t.ppn_masukan)}</dd></div>
       <div><dt>Selisih (kurang/lebih bayar)</dt><dd className={n(t.selisih) < 0 ? styles.neg : undefined}>{rp(t.selisih)}</dd></div>
     </dl>
-    {plan}
   </Card>;
 }
 
@@ -187,7 +191,7 @@ export function InvestModule({ kosId, ver }) {
       <ul className={styles.hub}>
         <li><Link href="/pembukuan?tab=investment"><b>Simulasi & realisasi investasi</b><small>NPV, IRR, payback, skenario, perbandingan dengan realisasi</small></Link></li>
         <li><Link href="/pembukuan?tab=valuation"><b>Valuasi bisnis (DCF)</b><small>Dari arus kas historis, dengan analisis sensitivitas</small></Link></li>
-        <li><span><b>ROIC, valuasi multiple & asset-based, register modal</b><small>Dalam rencana — ROIC menunggu tarif pajak penghasilan (Tahap B); multiple butuh sumber pembanding</small></span></li>
+        <li><span><b>ROIC, valuasi multiple & asset-based, register modal</b><small>Dalam rencana — multiple butuh sumber pembanding bersumber; ROIC ada di Laporan Keuangan › Rasio</small></span></li>
       </ul>
     </Card>
   </div>;
@@ -213,12 +217,12 @@ export const BLUEPRINT = [
   ['Mesin akuntansi', 'Ada', 'Jurnal otomatis/manual, tutup periode, neraca saldo, rekonsiliasi bank', '/pembukuan'],
   ['Analisis pendapatan', 'Parsial', 'Per produk/pelanggan/cabang; berulang vs tidak belum', 'ringkasan'],
   ['Analisis biaya', 'Parsial', 'Per akun & kategori; tetap/variabel & cost center belum', 'keuangan'],
-  ['Pajak', 'Parsial', 'PPN keluaran/masukan; PPh belum', 'pajak'],
+  ['Pajak', 'Parsial', 'PPh final UMKM 0,5% berversi + setoran, PPN keluaran/masukan; PPh badan normal & potong-pungut belum', 'pajak'],
   ['Arus kas & likuiditas', 'Parsial', 'Per aktivitas, arus kas bebas, rasio likuiditas; proyeksi lintas jenis belum', 'kas'],
   ['Aset, kewajiban & ekuitas', 'Parsial', 'Neraca, aset tetap, umur piutang, pinjaman (pokok/bunga, porsi ≤ 12 bulan); laporan perubahan ekuitas belum', 'keuangan'],
   ['Anggaran', 'Parsial', 'Biaya per kategori; pendapatan/CAPEX & persetujuan belum', 'anggaran'],
   ['Kinerja bisnis', 'Parsial', 'KPI toko/kos/jasa/kuliner; laundry per kg & benchmark belum', 'ringkasan'],
-  ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga; ROIC menunggu PPh (Tahap B)', 'investasi'],
+  ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga, ROIC; register modal belum', 'investasi'],
   ['Valuasi bisnis', 'Parsial', 'DCF; multiple & asset-based belum', 'investasi'],
   ['Proyeksi & skenario', 'Parsial', 'Proyeksi linier; stress test tersimpan belum', 'ringkasan'],
   ['Manajemen risiko', 'Parsial', 'Faktor risiko aturan tetap; register risiko belum', 'ringkasan'],
