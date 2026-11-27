@@ -9,6 +9,7 @@ import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { DataTable } from '@/components/Page';
 import FiturUpgrade from '@/components/FiturUpgrade';
+import BudgetPlan from '@/components/AnggaranRencana';
 import { Loading, Empty, Sheet, Field, run, toast } from '@/components/ui';
 import { rp, angka, errMsg, bulan, thisMonth, addMonthsYm, parseRp, monthEnd, tgl } from '@/lib/format';
 import { canArea } from '@/lib/business';
@@ -113,6 +114,7 @@ function BudgetWorkspace({ kos, kosId, ver }) {
       </div>
       {err ? <p className="notice bad">{/budget_report/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</p> : !d ? <Loading /> : <>
         {!d.aktif && <FiturUpgrade kosId={kosId} owner={owner} event="BUDGET.CREATE_REQUESTED" title="Anggaran & realisasi tersedia mulai Paket Bisnis" text="Pengeluaran per kategori tetap tersedia di paket Anda." />}
+        {d.aktif && <BudgetPlan kosId={kosId} month={ym + '-01'} ver={d} onChanged={muat} />}
         <div className={styles.metrics}>
           {d.aktif && <>
             <BudgetMetric icon="/anggaran" label="Anggaran" value={rp(total)} note={`${angka(budgeted.length)} kategori`} />
@@ -242,13 +244,22 @@ function BudgetComparison({ kosId, ym, rows, active }) {
   </section>;
 }
 
+const HIST = { salin_anggaran: 'Salin anggaran', ubah_anggaran: 'Ubah anggaran', ubah_target_pendapatan: 'Ubah target pendapatan', setujui_anggaran: 'Anggaran disetujui', tolak_anggaran: 'Anggaran ditolak' };
+const money = (v) => v == null ? '—' : rp(v);
+function histText(log) {
+  if (log.action === 'salin_anggaran') return `${angka(log.after?.kategori)} kategori disalin`;
+  if (log.action === 'ubah_target_pendapatan') return `${money(log.before?.target)} → ${money(log.after?.target)}`;
+  if (log.action === 'setujui_anggaran' || log.action === 'tolak_anggaran') return [log.before?.status && `dari ${log.before.status}`, log.reason].filter(Boolean).join(' · ') || '—';
+  return `${money(log.before?.anggaran)} → ${money(log.after?.anggaran)}`;
+}
+
 function BudgetHistory({ kosId, allowed, version }) {
   const [result, setResult] = useState(null);
   useEffect(() => {
     if (!allowed) return;
     const controller = new AbortController();
-    supabase.from('config_history').select('id,action,target,actor,before,after,created_at').eq('kos_id', kosId)
-      .in('action', ['ubah_anggaran', 'salin_anggaran']).order('created_at', { ascending: false }).limit(100).abortSignal(controller.signal)
+    supabase.from('config_history').select('id,action,target,actor,before,after,reason,created_at').eq('kos_id', kosId)
+      .in('action', ['ubah_anggaran', 'salin_anggaran', 'ubah_target_pendapatan', 'setujui_anggaran', 'tolak_anggaran']).order('created_at', { ascending: false }).limit(100).abortSignal(controller.signal)
       .then((response) => { if (!controller.signal.aborted) setResult(response); });
     return () => controller.abort();
   }, [kosId, allowed, version]);
@@ -257,9 +268,9 @@ function BudgetHistory({ kosId, allowed, version }) {
   if (result.error) return <p className="notice bad">{errMsg(result.error)}</p>;
   return <section className={styles.panel}><h2>Riwayat Perubahan Anggaran</h2>
     {result.data.length ? <div className="list">{result.data.map((log) => <div className="li" key={log.id}><div className="main">
-      <b>{log.action === 'salin_anggaran' ? 'Salin anggaran' : 'Ubah anggaran'} · {log.target}</b>
+      <b>{HIST[log.action] || 'Ubah anggaran'} · {log.target}</b>
       <small>{log.actor || 'Sistem'} · {tgl(String(log.created_at).slice(0, 10))}</small>
-      <small>{log.action === 'salin_anggaran' ? `${angka(log.after?.kategori)} kategori disalin` : `${log.before?.anggaran == null ? '—' : rp(log.before.anggaran)} → ${log.after?.anggaran == null ? '—' : rp(log.after.anggaran)}`}</small>
+      <small>{histText(log)}</small>
     </div></div>)}</div> : <Empty title="Belum ada riwayat perubahan anggaran" />}
   </section>;
 }

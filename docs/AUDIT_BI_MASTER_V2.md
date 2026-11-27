@@ -29,7 +29,7 @@ tidak membuat mesin akuntansi/BI/investasi kedua. Status: **Ada** = berfungsi & 
 | 5 | Tax | PPN keluaran/masukan `tax_report`, faktur supplier | **PPh** (profil wajib pajak, PPh final UMKM, potong/pungut), versi aturan pajak, kalender pajak | Parsial (PPN saja) |
 | 6 | Cash Flow & Liquidity | `acct_cashflow` (operasi/investasi/pendanaan), kas per minggu, cadangan kas, proyeksi kas toko | Proyeksi 7/30/90 hari lintas jenis bisnis; kas dibatasi (restricted) | Parsial |
 | 7 | Asset, Liability & Equity | Aset tetap & penyusutan, umur piutang/utang, neraca ringkas & rasio (**baru**: `biz_financials`) | Jadwal pinjaman (pokok/bunga/cicilan), pemisahan pinjaman pendek/panjang, laporan perubahan ekuitas | Parsial |
-| 8 | Budgeting & Planning | `budgets`/`budget_report` (biaya per kategori per bulan) | Anggaran pendapatan/CAPEX/kas, status persetujuan anggaran, forecast at completion | Parsial |
+| 8 | Budgeting & Planning | `budgets`/`budget_report` (biaya per kategori per bulan) | Anggaran CAPEX/kas, anggaran per cabang (target pendapatan, persetujuan & proyeksi akhir bulan SUDAH — Tahap D) | Parsial |
 | 9 | Business Performance | KPI toko/kos/jasa/kuliner (food cost), hunian, perputaran stok | KPI laundry per kg, utilisasi mesin, online (CAC/LTV), benchmark industri bersumber | Parsial |
 | 10 | Investment & Capital | Simulasi investasi + realisasi + perbandingan (Pembukuan › Investasi) | Register sumber modal & penggunaan modal, ROIC (butuh pajak & bunga) | Parsial |
 | 11 | Business Valuation | DCF dari arus kas historis (Pembukuan › Valuasi) | Asset-based, multiple EBITDA/revenue dengan pembanding bersumber | Parsial |
@@ -64,7 +64,7 @@ belum ada), transaksi antarentitas belum ditandai.
 | A | ✅ SELESAI 27 Nov 2026 (migrasi `20261127140000`): daftar pinjaman, bayar = pokok + bunga (akun Beban bunga 6-3000), porsi jatuh tempo ≤ 12 bulan, cakupan bunga | Mesin jurnal | Diputuskan: lewat menu Kas (kos: Pengeluaran › Pinjaman) |
 | B | ✅ SELESAI 27 Nov 2026 (migrasi `20261127150000`): PPh final UMKM 0,5% — aturan berversi, profil pajak, perhitungan bulanan (Rp500 jt OP digabung per NPWP), akrual jurnal, setoran via Kas, jatuh tempo, peringatan batas Rp4,8 M/jangka/kos; ROIC aktif. Belum: PPh badan tarif normal, PPh 21/23/4(2) potong-pungut, e-Bupot | A, PPN | Diputuskan: PPh final UMKM 0,5% |
 | C | ROIC, cakupan bunga, laporan perubahan ekuitas | A, B | — |
-| D | Anggaran pendapatan & kas + status persetujuan, actual vs budget di KPI | `budgets` | Alur persetujuan anggaran |
+| D | ✅ SELESAI 27 Nov 2026 (migrasi `20261127160000`): target pendapatan per bulan, status draf → diajukan → disetujui/ditolak (revisi = kembali draf, tutup buku = terkunci), proyeksi akhir bulan (laju harian), dampak ke laba, ringkasan di Analisis › Anggaran. Belum: anggaran kas & CAPEX, anggaran per cabang | `budgets` | Alur bawaan (usulan): pengelola keuangan mengajukan, pemilik menyetujui — bisa diubah bila pemilik memutuskan lain |
 | E | Skenario bull/base/bear & stress test tersimpan berversi (laba, kas, likuiditas) | `biz_financials`, proyeksi | Variabel skenario per jenis bisnis |
 | F | Register risiko (probabilitas × dampak, mitigasi, PIC) | — | Siapa boleh mengisi |
 | G | Valuasi multiple & asset-based | C, sumber multiple bersumber | Sumber data pembanding (tidak boleh angka karangan) |

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import NavIcon from '@/components/NavIcon';
 import FiturUpgrade from '@/components/FiturUpgrade';
+import { PlanSummary, useBudgetSummary, STATUS as BUDGET_STATUS } from '@/components/AnggaranRencana';
 import { Empty, Loading } from '@/components/ui';
 import { BLN, errMsg, rp, tgl } from '@/lib/format';
 import { LINE_CLASSES, balanceLines, balanceSheet, fmtRatio, incomeLines, incomeStatement, ratios } from '@/lib/finRatios';
@@ -163,14 +164,26 @@ export function BudgetModule({ kosId, range, ver, owner }) {
   if (st.error) return <Fail st={st} />;
   const b = st.data; const rows = b.baris || [];
   const ang = rows.reduce((t, r) => t + n(r.anggaran), 0); const real = rows.filter((r) => r.anggaran != null).reduce((t, r) => t + n(r.realisasi), 0);
-  return <Card title={`Anggaran vs Realisasi — ${monthName(month.slice(0, 7))}`} icon="/anggaran" right={<Go href="/anggaran">Atur anggaran</Go>}>
+  return <>{b.aktif && <BudgetPlanCard kosId={kosId} month={month} ver={ver} />}<Card title={`Anggaran vs Realisasi — ${monthName(month.slice(0, 7))}`} icon="/anggaran" right={<Go href="/anggaran">Atur anggaran</Go>}>
     {!b.aktif && <FiturUpgrade kosId={kosId} owner={owner} event="BUDGET.CREATE_REQUESTED" title="Anggaran tersedia mulai Paket Bisnis" text="Rencana biaya per kategori dibanding realisasi." />}
     {ang > 0 && <p className={styles.note}>Kategori beranggaran: anggaran {rp(ang)} · realisasi {rp(real)} · {real > ang ? `melebihi ${rp(real - ang)}` : `sisa ${rp(ang - real)}`}</p>}
     {rows.length === 0 ? <Empty title="Belum ada pengeluaran berkategori bulan ini" /> :
       <table className={styles.stmt}><thead><tr><th>Kategori (Rp)</th><th>Anggaran</th><th>Realisasi</th><th>Selisih</th></tr></thead>
         <tbody>{rows.map((r) => { const v = r.anggaran == null ? null : n(r.anggaran) - n(r.realisasi);
           return <tr key={r.id}><th scope="row">{r.nama}</th><td>{r.anggaran == null ? '—' : num(r.anggaran)}</td><td>{num(r.realisasi)}</td><td className={v != null && v < 0 ? styles.neg : undefined}>{v == null ? 'belum' : num(v)}</td></tr>; })}</tbody></table>}
-    <p className={styles.note}>Anggaran pendapatan, CAPEX, kas, dan alur persetujuan anggaran: <b>Dalam rencana</b>.</p>
+    <p className={styles.note}>Anggaran CAPEX & anggaran kas: <b>Dalam rencana</b>.</p>
+  </Card></>;
+}
+
+// Target pendapatan, status persetujuan & proyeksi (budget_summary) — ringkas; pengaturan di menu Anggaran
+function BudgetPlanCard({ kosId, month, ver }) {
+  const [st] = useBudgetSummary(kosId, month, ver);
+  if (!st) return <Loading rows={2} />;
+  if (st.error) return <Fail st={st} />;
+  const sum = st.data; const status = sum.rencana?.status || 'draf';
+  return <Card title={`Target & Persetujuan — ${monthName(month.slice(0, 7))}`} icon="/anggaran" right={<span className={styles.note}>{sum.terkunci ? 'Terkunci (tutup buku)' : BUDGET_STATUS[status][0]}</span>}>
+    <PlanSummary sum={sum} compact />
+    {!sum.final && sum.hari_berjalan > 0 && <p className={styles.note}>PROYEKSI = laju harian sampai hari ini dikali jumlah hari sebulan; bukan angka aktual.</p>}
   </Card>;
 }
 
