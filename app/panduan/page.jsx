@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrTurPanduan } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -1076,9 +1076,15 @@ const PARTS = [
       <>Mulai dengan rekomendasi sesuai kategori, hak akses, dan modul aktif. Buka Memulai untuk checklist, Materi untuk pelajaran modul, atau Progres untuk memilih dari delapan tahap transaksi.</>,
       <>Untuk Retail & Grosir, buka Kasir atau Learning Center lalu pilih Coba Kasir DEMO. Tambahkan barang, tekan Bayar DEMO, periksa transaksi, dan lihat bukti latihan. Untuk latihan lanjutan, buka Pusat Praktik dan pilih mode terpandu, mandiri, atau tantangan. Gunakan item contoh, periksa pembayaran dan kembalian, lalu pilih Simpan simulasi untuk melihat bukti DEMO.</>,
       <>Gunakan peta hubungan antarmodul, materi koreksi, dan evaluasi untuk memeriksa kesiapan. Pengingat belajar di Pusat Notifikasi dapat dimatikan dari Progres. Asisten Bisnis mencari jawaban di dokumentasi internal.</>,
-      <>Pilih <b>? Panduan</b> di halaman modul. Sorotan menunjukkan elemen yang sedang dijelaskan. Gunakan Lanjutkan, Jeda, Lewati, atau Ulangi.</>,
-      <>Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>. Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,
-    ], <>Progres transaksi disinkronkan untuk anggota bisnis aktif saat tersambung. Draf, tutorial, dan preferensi pengingat tetap tersedia di peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang dibuka.</>, 'info'],
+      <>Pilih <b>? Panduan</b> di halaman modul untuk tur bersorot (Langkah 148). Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>.</>,
+      <>Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,
+    ], <>Progres transaksi disinkronkan untuk anggota bisnis aktif saat tersambung. Draf latihan dan preferensi pengingat tetap tersedia di peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang dibuka.</>, 'info'],
+    ['Tur panduan interaktif: ulangi onboarding & tur setiap modul', 'Panduan & Bantuan → Tur panduan interaktif · tombol ? Panduan', [
+      <><b>Panduan awal PRASARA</b> (onboarding) muncul di Beranda untuk pengguna baru dan bisa diulang kapan saja: Panduan &amp; Bantuan › Tur panduan interaktif › <b>Mulai / Lanjutkan / Ulangi</b>. Tur menyorot bisnis aktif, menu (menu bawah di HP, menu kiri di tablet & laptop), tombol <b>(+)</b>, pencarian, lonceng, dan tombol ? Panduan.</>,
+      <>Setiap halaman punya tombol <b>? Panduan</b>. Tur menyorot bagian yang BENAR-BENAR tampil untuk bisnis, peran, paket, dan perangkat Anda — judul halaman, tombol yang disebut di langkah (mis. <b>+ Kamar</b>), kotak cari & filter, tab, daftar data, dan dashboard. Langkah yang bagiannya tidak tampil dijelaskan tanpa sorotan.</>,
+      <>Kendali di kartu langkah: <b>Lanjutkan ›</b>, <b>‹ Sebelumnya</b>, <b>Jeda</b> (tombol halaman berubah jadi <b>▶ Lanjutkan panduan</b>), <b>Lewati</b>, <b>Ulangi</b>. Di laptop: panah ← → dan Esc (jeda). Halaman tetap bisa dipakai selama tur berjalan.</>,
+      <>Daftar tur menampilkan status tiap modul (Selesai, Dijeda, Dilewati) dan jumlah yang selesai. Ketuk <b>Mulai</b> pada modul: halamannya terbuka dan tur berjalan otomatis. Saring <b>Belum selesai</b>, atau <b>Atur ulang progres panduan</b> untuk mulai lagi dari nol. Daftar ringkas juga ada di Learning Center › Memulai.</>,
+    ], <>Tur hanya menunjukkan: tidak menekan tombol, mengisi formulir, atau menyimpan apa pun ke data bisnis — jadi aman diulang berkali-kali. Progresnya disimpan di akun Anda per bisnis &amp; peran (tanpa data bisnis), sehingga bisa dilanjutkan dari HP atau laptop lain; saat offline tetap tersimpan di perangkat dan dikirim saat tersambung. Karyawan hanya melihat tur modul yang boleh dibukanya. Pelanggan mendapat tombol Panduan sendiri di halaman bisnis, cek pesanan, dan portal.</>, 'info', <ScrTurPanduan />],
   ]],
 ];
 
@@ -1152,6 +1158,7 @@ export default function Panduan() {
           <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–136</a><br />Event, kreatif &amp; produksi: penawaran & scope, anggaran & laba proyek, tagihan termin & pembayaran, klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Notifikasi</b><span><a href="#bagian-AN">Langkah 141–143</a><br />Aktifkan di HP/komputer (iPhone lewat Layar Utama), Pusat Notifikasi, kategori, jam tenang, perangkat</span></div>
           <div><b>Learning Center</b><span><a href="#langkah-147">Langkah 147</a><br />Belajar, simulasi, evaluasi, dan ulangi panduan</span></div>
+          <div><b>Tur panduan interaktif</b><span><a href="#langkah-148">Langkah 148</a><br />Ulangi onboarding &amp; tur ? Panduan tiap modul</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
