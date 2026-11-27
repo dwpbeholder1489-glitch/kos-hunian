@@ -247,7 +247,7 @@ export const BLUEPRINT = [
   ['Arus kas & likuiditas', 'Parsial', 'Per aktivitas, arus kas bebas, rasio likuiditas; proyeksi lintas jenis belum', 'kas'],
   ['Aset, kewajiban & ekuitas', 'Ada', 'Neraca, laporan perubahan ekuitas, aset tetap, umur piutang, pinjaman (pokok/bunga, porsi ≤ 12 bulan)', 'keuangan'],
   ['Anggaran', 'Parsial', 'Biaya per kategori, target pendapatan, persetujuan & proyeksi akhir bulan; CAPEX & kas belum', 'anggaran'],
-  ['Kinerja bisnis', 'Parsial', 'KPI toko/kos/jasa/kuliner; laundry per kg & benchmark belum', 'ringkasan'],
+  ['Kinerja bisnis', 'Ada', 'KPI toko/kos/jasa/kuliner + KPI industri (laundry per kg, tepat janji, food cost, hunian, tunggakan); benchmark antarbisnis belum', 'industri'],
   ['Investasi & modal', 'Parsial', 'Simulasi NPV/IRR & realisasi, cakupan bunga, ROIC; register modal belum', 'investasi'],
   ['Valuasi bisnis', 'Parsial', 'DCF; multiple & asset-based belum', 'investasi'],
   ['Proyeksi & skenario', 'Ada', 'Pesimis/Dasar/Optimis 12 bulan (laba, kas, likuiditas), stress test, versi tersimpan', 'skenario'],

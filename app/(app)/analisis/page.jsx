@@ -21,6 +21,7 @@ import { C, Donut, Gauge, GroupBars, Heatmap, NetBars, TrendChart, Waterfall } f
 import { DetailSheet, JournalLines } from './Details';
 import { BudgetModule, CashModule, FinancialsModule, InvestModule, MapModule, ReportsModule, TaxModule } from './Modules';
 import ScenarioModule from './Scenario';
+import IndustryModule from './Industry';
 import styles from './analisis.module.css';
 
 const n = (v) => Number(v || 0);
@@ -52,7 +53,7 @@ export default function Analisis() {
 
 // Filter universal: di URL (bertahan saat pindah halaman & kembali) + cadangan per perangkat
 // Modul pusat analisis (Master Blueprint BI V2.0) — lapisan presentasi atas mesin yang sudah ada
-const MODS = [['ringkasan', 'Ringkasan'], ['keuangan', 'Laporan Keuangan'], ['kas', 'Arus Kas'], ['pajak', 'Pajak'], ['anggaran', 'Anggaran'], ['skenario', 'Skenario'], ['investasi', 'Investasi & Valuasi'], ['laporan', 'Laporan & Portofolio'], ['peta', 'Peta Modul']];
+const MODS = [['ringkasan', 'Ringkasan'], ['keuangan', 'Laporan Keuangan'], ['kas', 'Arus Kas'], ['pajak', 'Pajak'], ['anggaran', 'Anggaran'], ['skenario', 'Skenario'], ['industri', 'KPI Industri'], ['investasi', 'Investasi & Valuasi'], ['laporan', 'Laporan & Portofolio'], ['peta', 'Peta Modul']];
 
 function readFilter(search, kosId) {
   const get = (k) => search.get(k) || '';
@@ -359,6 +360,7 @@ function Center({ kos, kosId, ver }) {
     {f.m === 'pajak' && <TaxModule {...modProps} />}
     {f.m === 'anggaran' && <BudgetModule {...modProps} />}
     {f.m === 'skenario' && <ScenarioModule {...modProps} />}
+    {f.m === 'industri' && <IndustryModule {...modProps} />}
     {f.m === 'investasi' && <InvestModule {...modProps} />}
     {f.m === 'laporan' && <ReportsModule onExport={doExport} />}
     {f.m === 'peta' && <MapModule onGo={(go) => (go.startsWith('/') ? router.push(go) : set({ m: go }))} />}

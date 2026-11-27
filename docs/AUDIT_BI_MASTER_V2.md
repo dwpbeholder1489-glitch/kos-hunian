@@ -70,6 +70,6 @@ belum ada), transaksi antarentitas belum ditandai.
 | G | Valuasi multiple & asset-based | C, sumber multiple bersumber | Sumber data pembanding (tidak boleh angka karangan) |
 | H | Laporan riset/investor §32 (PDF A4 bercover, daftar isi, MD&A, lampiran) berversi & arsip | A–G (bagian yang belum ada ditandai) | Format & siapa penyetuju laporan final |
 | I | Konsolidasi formal Mode B (kepemilikan, antarentitas, eliminasi) | Badan usaha (`legal_entities`) | Struktur kepemilikan nyata |
-| J | KPI industri tambahan (laundry per kg, utilisasi, online) | Data operasional yang mencatatnya | Data apa yang mau dicatat |
+| J | ✅ SELESAI 27 Nov 2026 (migrasi `20261127195000`): `industry_kpi` (angka mentah) + `lib/industryKpi.js` — laundry/jasa, kuliner, kos dari data yang SUDAH dicatat; tab Analisis › KPI Industri. Belum (butuh pencatatan baru): utilisasi mesin/kapasitas, berat per kantong, kanal pesanan, jumlah tamu per meja, biaya per kamar | Data operasional yang mencatatnya | Diputuskan pemilik 27 Nov 2026: tayangkan langsung; hanya data yang sudah ada |
 
 Setiap tahap: migrasi baru + uji database + uji logika + render HP/desktop + panduan, baru dinyatakan selesai.
