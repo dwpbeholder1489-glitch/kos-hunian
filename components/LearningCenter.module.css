@@ -58,3 +58,11 @@
 .quiz input { width: 18px; min-height: 18px; flex: none; accent-color: #177443; }
 .quiz label:has(input:checked) { background: color-mix(in srgb, #2ba95f 16%, transparent); }
 @media (max-width: 680px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.item input { width: 70px; flex: none; }
+@media (max-width: 520px) {
+  .item { flex-wrap: wrap; }
+  .item span { flex-basis: 100%; }
+  .shortcuts { display: flex; flex-wrap: wrap; }
+  .shortcuts button { min-width: 90px; }
+}
+.quiz input[type="number"] { width: 100%; min-height: 40px; }

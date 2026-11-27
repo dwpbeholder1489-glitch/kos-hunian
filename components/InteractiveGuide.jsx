@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { canArea, isDraft, tabsFor, typeOf } from '@/lib/business';
-import { helpFor } from '@/lib/learning';
+import { isDraft, pathAllowed, tabsFor, typeOf } from '@/lib/business';
+import { contextualHelp } from '@/lib/learning';
 import { useLearningStorage } from '@/lib/learningStorage';
 import styles from './InteractiveGuide.module.css';
 
@@ -33,33 +33,31 @@ function describeField(el) {
   return { name, hint, required: el.required, element: el };
 }
 
+const LIVE_TOURS = {
+  '/kasir': [['pos-search', 'Cari barang dengan nama, kode, atau barcode.'], ['pos-cart', 'Periksa item, satuan, jumlah, dan total.'], ['pos-pay', 'Bayar membuka pilihan pembayaran. Untuk latihan gunakan Pusat Praktik.']],
+  '/pesanan': [['order-header', 'Pilih pesanan untuk memeriksa tahap pengerjaan.'], ['order-new', 'Pesanan baru membuka formulir layanan dan pelanggan.']],
+  '/tagihan': [['invoice-header', 'Periksa riwayat dan status tagihan sewa.'], ['invoice-new', 'Tagihan tambahan untuk biaya di luar tagihan rutin.']],
+};
 function guideSteps(path, title, kos, customer, wide, help) {
   if (title === 'onboarding') return [
     { selector: customer ? '[data-guide-customer] h1, [data-guide-customer] h2' : '.bizbtn, .side-biz, .topbar', text: customer ? 'Pastikan Anda membuka halaman usaha yang tepat.' : `Ini ruang kerja ${typeOf(kos).name}. Periksa bisnis aktif sebelum membuka menu.` },
     { selector: customer ? '[data-guide-customer] form, .ptabs, [data-guide-customer] main' : wide ? '.side-nav, .topbar' : '.bnav', text: customer ? 'Gunakan pilihan yang tersedia untuk melihat informasi atau memeriksa status.' : isDraft(kos) ? 'Mulai dari Pusat Konfirmasi jika tersedia untuk peran Anda. Menu operasional terbuka setelah bisnis aktif.' : wide ? 'Gunakan navigasi ruang kerja untuk memilih modul yang tersedia bagi peran Anda.' : 'Gunakan menu bawah untuk berpindah halaman. Tombol + membuka aksi cepat sesuai peran Anda.' },
     { selector: '[data-guide-onboarding], [data-guide-customer] [data-guide-button], .side-foot a[href="/bantuan"], .topbar a[href="/bantuan"], .menubtn', text: customer ? 'Buka tombol Panduan kapan saja untuk mengulang langkah halaman ini.' : 'Buka Learning Center untuk melanjutkan materi, latihan, dan evaluasi.' },
   ];
-  const restricted = kos?.business_type === 'jasa' && !canArea(kos, 'sell') && /^\/(pesanan|jasa|antar|dapur)/.test(path);
-  const steps = restricted ? ['Periksa antrean dan tahap yang tersedia untuk tugas Anda.', 'Pilih pesanan untuk melihat rincian pengerjaan. Gunakan tahap yang diizinkan pengelola.'] : help.steps;
-  const text = restricted ? steps : [...steps, ...help.warn];
-  const root = customer ? '[data-guide-customer]' : '[data-guide-page]';
-  const heading = `${root} h1, ${root} h2, ${root} [data-guide-button]`;
-  const lookup = {
-    '/learning-center': ['[data-guide-learning-start]', '[data-guide-learning-progress]', '[data-guide-learning] form'],
-    '/bantuan': ['[data-guide-onboarding]', '[data-guide-page] input[type=search]'],
-    '/kasir': ['.pos-left .seg', '.pos-scan-actions', '.pos-search', '.pos-cart, .cartbar', '.pos-cart, .cartbar'],
-    '/pelanggan/penghuni': ['.ptabs a[href="#tagihan"]', '.ptabs a[href="#riwayat"]', '[data-guide-customer] button.primary'],
-    '/pelanggan/status': [heading, '[data-guide-customer] form label:first-child', '[data-guide-customer] form button'],
-  };
-  const targets = [
-    heading,
-    `${root} input[type=search], ${root} form, ${root} [role=tablist], ${root} nav, ${root} .panel`,
-    `${root} [data-guide-action], ${root} button.primary, ${root} .cta`,
+  if (LIVE_TOURS[path]) return LIVE_TOURS[path].map(([target, text]) => ({ selector: '[data-guide-target="' + target + '"]', text }));
+  if (path === '/pelanggan/status') return [
+    { selector: '[data-guide-customer] form input', text: 'Siapkan kode pesanan dan nomor WhatsApp yang digunakan ketika memesan.' },
+    { selector: '[data-guide-customer] form button[type="submit"]', text: 'Cek status menampilkan perkembangan pesanan.' },
   ];
-  return text.map((line, index) => ({
-    text: line,
-    selectors: [lookup[path]?.[index], targets[index % targets.length], heading].filter(Boolean),
-  }));
+  if (path === '/pelanggan/penghuni') return [
+    { selector: '.ptabs a[href="#tagihan"]', text: help.steps[0] },
+    { selector: '.ptabs a[href="#riwayat"]', text: help.steps[1] },
+  ];
+  if (path === '/learning-center') return [
+    { selector: '[data-guide-learning-start]', text: 'Mulai atau lanjutkan panduan transaksi dari tahap terakhir.' },
+    { selector: '[data-guide-learning-progress]', text: 'Buka tahap tertentu dan periksa progres belajar.' },
+  ];
+  return [...help.steps, ...help.warn].map((text) => ({ selectors: [], text }));
 }
 
 function findTarget({ selector, selectors = [selector] }) {
@@ -74,14 +72,11 @@ function findTarget({ selector, selectors = [selector] }) {
 }
 
 function Spotlight({ active, onClose, onMove, onRestart, customer }) {
-  const dialog = useRef(null);
   const card = useRef(null);
   const [position, setPosition] = useState(null);
   const step = active.steps[active.index];
 
   useLayoutEffect(() => {
-    const el = dialog.current;
-    if (!el.open) el.showModal();
     card.current?.focus({ preventScroll: true });
     function positionTooltip() {
       const target = findTarget(step);
@@ -106,12 +101,15 @@ function Spotlight({ active, onClose, onMove, onRestart, customer }) {
   }, [step]);
 
   useEffect(() => {
-    const node = dialog.current;
-    return () => { if (node.open) node.close(); };
-  }, []);
+    const handler = (event) => {
+      if (event.key === 'Escape' && card.current?.contains(document.activeElement)) onClose('paused');
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
-  return createPortal(<dialog className={styles.overlay} ref={dialog} aria-labelledby="interactive-guide-title" onCancel={(e) => { e.preventDefault(); onClose('paused'); }}>
-    {position && <button type="button" className={styles.spotlight} aria-label="Lanjutkan dari elemen yang disorot" onClick={() => onMove(1)} style={{ top: position.top, left: position.left, width: position.width, height: position.height }} />}
+  return createPortal(<aside className={styles.overlay} aria-labelledby="interactive-guide-title">
+    {position && <div className={styles.spotlight} aria-hidden="true" style={{ top: position.top, left: position.left, width: position.width, height: position.height }} />}
     <div className={styles.tooltip} ref={card} tabIndex={-1} data-top={position?.cardOnTop || undefined}>
       <span className="small muted">Langkah {active.index + 1} dari {active.steps.length}</span>
       <h3 id="interactive-guide-title">{active.title}</h3>
@@ -120,7 +118,7 @@ function Spotlight({ active, onClose, onMove, onRestart, customer }) {
         <button className="ghost" onClick={() => onClose('skipped')}>Lewati</button>
         <button className="ghost" onClick={() => onClose('paused')}>Jeda</button>
         <button className="ghost" onClick={onRestart}>Ulangi</button>
-        {active.index > 0 && <button className="ghost" onClick={() => onMove(-1)}>←</button>}
+        {active.index > 0 && <button className="ghost" onClick={() => onMove(-1)}>Sebelumnya</button>}
         <button className="primary" onClick={() => onMove(1)}>{active.index + 1 === active.steps.length ? 'Selesai' : 'Lanjutkan →'}</button>
       </div>
       {!customer && <div className={styles.buttons}>
@@ -129,7 +127,7 @@ function Spotlight({ active, onClose, onMove, onRestart, customer }) {
         {active.docStep && <Link className="small" href={`/panduan#langkah-${active.docStep}`} onClick={() => onClose('paused')}>Panduan bergambar</Link>}
       </div>}
     </div>
-  </dialog>, document.body);
+  </aside>, document.body);
 }
 
 export function GuideBoundary({ scope, path, kos, customer, customerHelp, children }) {
@@ -141,7 +139,8 @@ export function GuideBoundary({ scope, path, kos, customer, customerHelp, childr
   const onboarding = record.onboarding?.status;
   const displayed = active?.path === path ? active : null;
   const title = kos ? tabsFor(kos).find(([href]) => path === href || path.startsWith(href + '/'))?.[1] : null;
-  const pageHelp = customerHelp || helpFor(path, title);
+  const pageHelp = customerHelp || contextualHelp(kos, path, title);
+  const prompt = !customer && kos && pathAllowed(kos, path) && ready && LIVE_TOURS[path] && !record['page:' + path] && !displayed;
 
   useEffect(() => {
     setActive(null);
@@ -169,13 +168,16 @@ export function GuideBoundary({ scope, path, kos, customer, customerHelp, childr
 
   function start(kind = 'page', { restart = false, help = pageHelp } = {}) {
     const key = kind === 'onboarding' ? kind : `page:${path}`;
-    const steps = guideSteps(path, kind, kos, customer, window.matchMedia('(min-width: 768px)').matches, help);
-    if (!steps.length) return;
+    const content = customer ? help : contextualHelp(kos, path, help.title, help);
+    const steps = guideSteps(path, kind, kos, customer, window.matchMedia('(min-width: 768px)').matches, content);
+    const available = steps.filter((step) => !step.selector || findTarget(step));
+    if (!available.length) available.push(...content.steps.map((text) => ({ selectors: [], text })));
+    if (!available.length) return;
     const saved = record[key];
-    const index = !restart && saved?.status === 'paused' ? Math.min(saved.index || 0, steps.length - 1) : 0;
+    const index = !restart && saved?.status === 'paused' ? Math.min(saved.index || 0, available.length - 1) : 0;
     origin.current = document.activeElement;
     update({ [key]: { status: 'paused', index } });
-    setActive({ path, key, index, steps, docStep: kind === 'page' ? help.step : null, title: kind === 'onboarding' ? 'Panduan awal PRASARA' : help.title });
+    setActive({ path, key, index, steps: available, docStep: kind === 'page' ? help.step : null, title: kind === 'onboarding' ? 'Panduan awal PRASARA' : help.title });
   }
 
   function close(status) {
@@ -185,13 +187,15 @@ export function GuideBoundary({ scope, path, kos, customer, customerHelp, childr
   }
 
   function move(delta, restart = false) {
-    const index = restart ? 0 : displayed.index + delta;
+    let index = restart ? 0 : displayed.index + delta;
+    while (index >= 0 && index < displayed.steps.length && displayed.steps[index].selector && !findTarget(displayed.steps[index])) index += delta < 0 ? -1 : 1;
+    if (index < 0) return;
     if (index >= displayed.steps.length) return close('completed');
     update({ [displayed.key]: { status: 'paused', index } });
     setActive({ ...displayed, index });
   }
 
-  return <GuideContext.Provider value={{ start, ready, onboarding, dismissOnboarding: () => update({ onboarding: { status: 'skipped', index: 0 } }) }}>
+  return <GuideContext.Provider value={{ start, ready, onboarding, prompt, dismissPage: () => update({ ['page:' + path]: { status: 'skipped', index: 0 } }), dismissOnboarding: () => update({ onboarding: { status: 'skipped', index: 0 } }) }}>
     {children}
     {!displayed && field?.element.isConnected && <aside className={styles.field} data-guide-field>
       {fieldOpen && <div id="prasara-field-help" role="status"><b>{field.name}</b><p>{field.hint}{field.required ? ' Kolom wajib diisi.' : ''}</p></div>}
@@ -209,6 +213,15 @@ export function GuideButton({ help, label = '? Panduan' }) {
   const guide = useInteractiveGuide();
   if (!guide) return null;
   return <button type="button" className="helpchip noprint" data-guide-button onClick={() => guide.start('page', help ? { help } : undefined)}>{label}</button>;
+}
+
+export function PageTourPrompt() {
+  const guide = useInteractiveGuide();
+  if (!guide?.prompt) return null;
+  return <div className={styles.buttons}>
+    <button className="helpchip" type="button" onClick={() => guide.start()}>Kenali halaman ini</button>
+    <button className="ghost" type="button" onClick={guide.dismissPage}>Nanti</button>
+  </div>;
 }
 
 export function OnboardingActions({ customer = false }) {

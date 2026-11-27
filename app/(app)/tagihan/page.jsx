@@ -1,4 +1,5 @@
 'use client';
+import { PageTourPrompt } from '@/components/InteractiveGuide';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
 import { useBaru } from '@/lib/useBaru';
@@ -43,7 +44,7 @@ export default function Tagihan() {
 
   return (
     <div className="stack">
-      <PageHeader title="Tagihan" help={<PageHelp page="tagihan" />} actions={<><button className="primary" onClick={() => setSheet({ t: 'extra' })}>+ Tagihan tambahan</button></>} desc={<>Tagihan sewa bulanan dibuat otomatis 7 hari sebelum jatuh tempo.</>} />
+      <div data-guide-target="invoice-header"><PageHeader title="Tagihan" help={<PageHelp page="tagihan" />} actions={<><PageTourPrompt /><button className="primary" onClick={() => setSheet({ t: 'extra' })} data-guide-target="invoice-new">+ Tagihan tambahan</button></>} desc={<>Tagihan sewa bulanan dibuat otomatis 7 hari sebelum jatuh tempo.</>} /></div>
       <div className="seg">{FILTERS.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
       <FilterToolbar q={q} onQ={setQ} placeholder="Cari penghuni, kamar, atau bulan" />
       {list.length === 0 ? <Empty title="Tidak ada tagihan" text={w ? 'Tidak ada tagihan yang cocok dengan pencarian.' : f === 'menunggak' ? 'Tidak ada yang menunggak.' : 'Belum ada tagihan di kategori ini.'} /> : (<>

@@ -1073,12 +1073,12 @@ const PARTS = [
   ]],
   ['AO', 'Learning Center & Panduan Interaktif', [
     ['Belajar bertahap dan mengulang panduan', 'Panduan & Bantuan → Learning Center', [
-      <>Mulai dengan rekomendasi sesuai kategori, hak akses, dan modul aktif. Buka Progres Belajar untuk memilih atau mengulang tahap.</>,
-      <>Pada Simulasi Transaksi, pilih item contoh, masukkan pembayaran, lalu periksa sisa tagihan dan pilih Simpan simulasi. Data contoh terpisah dari data usaha.</>,
-      <>Gunakan peta hubungan antarmodul dan periksa pemahaman melalui evaluasi. Asisten Bisnis mencari jawaban di dokumentasi internal.</>,
+      <>Mulai dengan rekomendasi sesuai kategori, hak akses, dan modul aktif. Buka Memulai untuk checklist, Materi untuk pelajaran modul, atau Progres untuk memilih dari delapan tahap transaksi.</>,
+      <>Buka Pusat Praktik dan pilih mode terpandu, mandiri, atau tantangan. Gunakan item contoh, periksa pembayaran dan kembalian, lalu pilih Simpan simulasi untuk melihat bukti DEMO.</>,
+      <>Gunakan peta hubungan antarmodul, materi koreksi, dan evaluasi untuk memeriksa kesiapan. Pengingat belajar di Pusat Notifikasi dapat dimatikan dari Progres. Asisten Bisnis mencari jawaban di dokumentasi internal.</>,
       <>Pilih <b>? Panduan</b> di halaman modul. Sorotan menunjukkan elemen yang sedang dijelaskan. Gunakan Lanjutkan, Jeda, Lewati, atau Ulangi.</>,
       <>Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>. Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,
-    ], <>Progres belajar dan tutorial tersimpan pada peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang sedang dibuka.</>, 'info'],
+    ], <>Progres transaksi disinkronkan untuk anggota bisnis aktif saat tersambung. Draf, tutorial, dan preferensi pengingat tetap tersedia di peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang dibuka.</>, 'info'],
   ]],
 ];
 

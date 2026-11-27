@@ -10,6 +10,7 @@ import Link from 'next/link';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
+import { PageTourPrompt } from '@/components/InteractiveGuide';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable, FilterToolbar, useMedia } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
@@ -67,7 +68,7 @@ export default function Pesanan() {
 
   return (
     <div className="stack">
-      <PageHeader title="Pesanan" help={<PageHelp page="pesanan" />} actions={<>{money && <button className="primary" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</>} />
+      <div data-guide-target="order-header"><PageHeader title="Pesanan" help={<PageHelp page="pesanan" />} actions={<><PageTourPrompt />{money && <button className="primary" data-guide-target="order-new" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</>} /></div>
       {req.length > 0 && money && f !== 'permintaan' && <div className="notice"><b>{req.length} pesanan dari halaman bisnis</b> menunggu konfirmasi. <button className="sm" onClick={() => setF('permintaan')}>Lihat</button></div>}
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       {T.kul && <div className="seg" aria-label="Tampilan pesanan">{[[false,'Daftar'],[true,'Papan dapur']].map(([board,label]) => <button key={label} aria-pressed={boardView === board} className={boardView === board ? 'on' : ''} onClick={() => setBoardView(board)}>{label}</button>)}</div>}

@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { PageHeader } from '@/components/Page';
+import { learningTrack } from '@/lib/learning';
+import { useLearningStorage } from '@/lib/learningStorage';
+import { TRANSACTION_STAGES } from '@/lib/learningCurriculum';
 import PageHelp from '@/components/PageHelp';
 import { Empty, Loading, toast } from '@/components/ui';
 import { errMsg } from '@/lib/format';
@@ -14,7 +17,7 @@ import { ActivationCard, NotifRow, useOpenNotif } from '@/components/NotifCenter
 const PAGE = 30;
 
 export default function PusatNotifikasi() {
-  const { kosId, list } = useKos();
+  const { kosId, kos, session, list } = useKos();
   const open = useOpenNotif();
   const [cat, setCat] = useState('');
   const [unread, setUnread] = useState(false);
@@ -55,6 +58,7 @@ export default function PusatNotifikasi() {
         actions={<><Link href="/pusat-notifikasi/pengaturan" className="nt-btn">Pengaturan</Link>{total > 0 && !arsip && <button className="primary" onClick={markAll}>Tandai semua dibaca</button>}</>} />
 
       <ActivationCard />
+      {kos && session && <LearningReminder kos={kos} scope={session.user.id + ':' + kosId} />}
 
       <div className="nt-filter" role="tablist" aria-label="Kategori notifikasi">
         <button role="tab" aria-selected={!cat} className={!cat ? 'on' : ''} onClick={() => setCat('')}>Semua{total > 0 && <span className="nt-n">{total}</span>}</button>
@@ -97,4 +101,15 @@ export default function PusatNotifikasi() {
       <p className="small muted">Notifikasi info disimpan 60 hari, lainnya 180 hari. Anda hanya melihat notifikasi untuk modul yang boleh Anda buka.</p>
     </div>
   );
+}
+
+function LearningReminder({ kos, scope }) {
+  const track = learningTrack(kos);
+  const [record] = useLearningStorage(scope, `track:${track.id}:${track.role}`);
+  const [preferences] = useLearningStorage(scope, 'library');
+  const journey = record.journey;
+  if (preferences.reminders === false || !journey?.started || journey.completed) return null;
+  const next = TRANSACTION_STAGES.find((_, i) => !(journey.done || []).includes(i));
+  if (!next) return null;
+  return <section className="panel"><b>Pengingat belajar</b><p>Lanjutkan saat siap. Materi berikutnya: {next}.</p><Link href="/learning-center">Buka Learning Center</Link></section>;
 }

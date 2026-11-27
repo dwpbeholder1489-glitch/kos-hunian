@@ -9,7 +9,7 @@ registerHooks({
   },
 });
 
-const { helpFor, knowledgeFor, learningTrack, quizFor, simulationTotals } = await import('../lib/learning.js');
+const { helpFor, knowledgeFor, learningTrack, quizFor } = await import('../lib/learning.js');
 const { pathAllowed } = await import('../lib/business.js');
 const laundry = { business_type: 'jasa', template_code: 'laundry', modules: [] };
 
@@ -37,12 +37,61 @@ test('knowledge lookup only returns allowed modules and always allows learning i
   assert.equal(helpFor('/learning-center').step, 147);
 });
 
-test('checks partial payment and calculates outstanding amounts without mutating demo fixtures', () => {
-  const items = learningTrack(laundry).items;
-  assert.deepEqual(simulationTotals(items, { 0: 2, 1: 1 }, 'sebagian', '50000'), { total: 81000, paid: 50000, balance: 31000, valid: true });
-  assert.equal(simulationTotals(items, { 0: 2, 1: 1 }, 'sebagian', '81000').valid, false);
-  assert.equal(simulationTotals(items, { 0: 2, 1: 1 }, 'sebagian', '1.5').valid, false);
-  assert.equal(simulationTotals(items, {}, 'lunas', '').valid, false);
-  assert.equal(simulationTotals(items, { 0: 1 }, 'belum', '50000').balance, 24500);
-  assert.deepEqual(learningTrack(laundry).items, [['Laundry Reguler / kg', 24500], ['Laundry Express / kg', 32000]]);
+const { calculateDemo } = await import('../lib/learningDemo.js');
+const { POST } = await import('../app/api/learning/demo/route.js');
+const { curriculum, readiness, TRANSACTION_STAGES } = await import('../lib/learningCurriculum.js');
+
+const transaction = { category: 'retail', person: 0, quantities: [0, 2], discount: 0, method: 'sebagian', tendered: 300000 };
+
+test('demo validates partial and cash change without counting change as revenue', () => {
+  const partial = calculateDemo(transaction);
+  assert.deepEqual([partial.total, partial.received, partial.balance, partial.status], [500000, 300000, 200000, 'Dibayar sebagian']);
+  const cash = calculateDemo({ ...transaction, method: 'tunai', tendered: 600000 });
+  assert.deepEqual([cash.tendered, cash.received, cash.balance, cash.change], [600000, 500000, 0, 100000]);
+  assert.ok(calculateDemo({ ...transaction, discount: 50001 }).error);
+  assert.ok(calculateDemo({ ...transaction, tendered: -1 }).error);
+  assert.ok(calculateDemo({ ...transaction, quantities: [0, 1.5] }).error);
+});
+
+test('demo respects demo catalog variants, tenancy, valid dates and weighted services', () => {
+  assert.equal(calculateDemo({ ...transaction, person: 1 }).total, 480000);
+  assert.ok(calculateDemo({ ...transaction, category: 'properti', quantities: [0, 1] }).error);
+  assert.ok(calculateDemo({ ...transaction, method: 'tempo', tendered: 0, due: '2026-02-29' }).error);
+  assert.equal(calculateDemo({ ...transaction, method: 'tempo', tendered: 0, due: '2028-02-29' }).balance, 500000);
+  assert.equal(calculateDemo({ ...transaction, category: 'laundry', quantities: [1.25, 0], method: 'transfer', tendered: 30625 }).received, 30625);
+});
+
+test('backend route computes only from demo fixtures and respects payload bounds', async () => {
+  const request = (body) => new Request('http://localhost/api/learning/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  const result = await POST(request(JSON.stringify({ ...transaction, production: true, businessId: 'other-business', price: 1 })));
+  assert.equal(result.status, 200);
+  const data = await result.json();
+  assert.equal(data.demo, true);
+  assert.equal(data.total, 500000);
+  assert.equal(data.businessId, undefined);
+  assert.equal((await POST(request('{'))).status, 400);
+  assert.equal((await POST(request(JSON.stringify({ ...transaction, method: 'transfer' })))).status, 422);
+  assert.equal((await POST(request(' '.repeat(4097)))).status, 413);
+});
+
+test('catalog follows operational permissions, unknown modules and custom objects', () => {
+  const retail = { business_type: 'retail', modules: ['r_belanja', 'r_kontak'] };
+  assert.ok(curriculum({ ...retail, my_role: 'kasir' }).some(({ href }) => href === '/kasir'));
+  assert.ok(!curriculum({ ...retail, my_role: 'kasir' }).some(({ href }) => href === '/kas'));
+  assert.ok(curriculum({ ...retail, my_role: 'pengelola', my_areas: ['finance'] }).some(({ href }) => href === '/kas'));
+  assert.ok(!curriculum({ ...retail, my_role: 'pengelola', my_areas: ['finance'] }).some(({ href }) => href === '/kasir'));
+  assert.ok(curriculum({ ...retail, my_role: 'gudang' }).some(({ href }) => href === '/belanja'));
+  assert.ok(!curriculum({ ...retail, modules: null }).some(({ href }) => href === '/belanja'));
+  assert.ok(curriculum({ business_type: 'kustom', modules: [], bb: { active: true, menu: [['klien', 'Klien']] } }).some(({ href }) => href === '/catatan/klien'));
+  assert.equal(TRANSACTION_STAGES.length, 8);
+  assert.equal(readiness([0, 1], true), 'Memahami dasar');
+  assert.equal(readiness([0, 1, 2, 3], true), 'Mampu melakukan simulasi');
+});
+
+test('retail demo checks available quantity and included tax from the active rate', () => {
+  assert.match(calculateDemo({ ...transaction, quantities: [0, 7] }).error, /Stok DEMO/);
+  const demo = calculateDemo({ ...transaction, taxRate: 11 });
+  assert.equal(demo.total, 500000);
+  assert.equal(demo.tax, 49550);
+  assert.ok(calculateDemo({ ...transaction, taxRate: 26 }).error);
 });
