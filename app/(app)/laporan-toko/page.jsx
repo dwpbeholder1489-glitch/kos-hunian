@@ -4,153 +4,231 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import NavIcon from '@/components/NavIcon';
 import Locked from '@/components/Locked';
-import { Loading, Empty, Tile } from '@/components/ui';
-import { rp, angka, tgl, bulan, thisMonth, monthEnd, addMonthsYm, errMsg, today as todayStr } from '@/lib/format';
-import { DayColumns } from '@/components/Charts';
+import { Loading, Empty, Field, Sheet, toast } from '@/components/ui';
+import { rp, angka, tgl, bulan, errMsg, today } from '@/lib/format';
 import { hasFeature } from '@/lib/plan';
 import { PAY } from '@/lib/retail';
 import { canArea, moduleOn } from '@/lib/business';
 import { IndikatorGrosir } from '@/components/AkuntansiDagang';
 import { BrandReport } from '@/components/KatalogLanjut';
 import { useKuotaEkspor } from '@/lib/ekspor';
+import { makeXlsx } from '@/lib/xlsx';
+import { download } from '@/lib/zip';
+import { ReportSource } from './ReportSources';
+import ReportTrend from './ReportTrend';
+import { N, labelRange, pnl, previousRange, reportRange } from './report';
+import styles from './laporan.module.css';
 
-// Unduh CSV yang bisa dibuka Excel (pemisah titik koma)
-function downloadCsv(name, rows) {
-  const cell = (v) => { const s = v == null ? '' : String(v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const csv = '﻿' + rows.map((r) => r.map(cell).join(';')).join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = name;
-  document.body.appendChild(a); a.click(); a.remove();
-}
+const PERIODS = [['day', 'Harian'], ['week', 'Mingguan'], ['month', 'Bulanan'], ['year', 'Tahunan'], ['custom', 'Rentang khusus']];
+const percent = (value) => value == null ? '—' : `${angka(value)}%`;
+const delta = (value, baseline) => baseline === 0 ? '—' : `${value > baseline ? '+' : ''}${angka(Math.round((value - baseline) * 1000 / Math.abs(baseline)) / 10)}%`;
 
-const N = (v) => Number(v) || 0;
-const pnl = (r) => {
-  const omzet = N(r.omzet), hpp = N(r.hpp), kotor = omzet - hpp;
-  const bersih = kotor - N(r.biaya) + N(r.selisih_stok) + N(r.pendapatan_lain);
-  return { omzet, hpp, kotor, bersih, margin: omzet ? Math.round((kotor / omzet) * 1000) / 10 : null };
-};
-const delta = (now, prev) => (prev ? `${now >= prev ? '+' : ''}${Math.round(((now - prev) / Math.abs(prev)) * 100)}% dari bulan lalu` : null);
-
-// Laporan toko bulanan: laba rugi, produk terlaris/paling untung, barang tidak laku
 export default function LaporanToko() {
   const { kos, kosId, ver } = useKos();
-  const [ym, setYm] = useState(thisMonth());
+  if (!kos || !kosId) return <Loading />;
+  if (kos.business_type !== 'retail') return <Empty title="Laporan ini untuk bisnis Retail & Grosir"><Link href="/laporan">Buka laporan bisnis</Link></Empty>;
+  return <Dashboard key={kosId} {...{ kos, kosId, ver }} />;
+}
+
+function Dashboard({ kos, kosId, ver }) {
+  const [period, setPeriod] = useState({ mode: 'month', date: today(), custom: null });
   const [d, setD] = useState(null);
-  const [err, setErr] = useState(null);
+  const [source, setSource] = useState(null);
+  const [editPeriod, setEditPeriod] = useState(false);
   const [sort, setSort] = useState('omzet');
   const [pajak, setPajak] = useState(null);
-  const [kpi, setKpi] = useState(null);   // indikator toko (retail_kpi)
-  const [loss, setLoss] = useState(null);   // perlu diperiksa (loss_watch)
-  const [names, setNames] = useState({});   // laporan PPN keluaran bulan ini (tax_report)
-  const ek = useKuotaEkspor(hasFeature(kos, 'ekspor') ? kosId : null);
-  useEffect(() => { supabase.rpc('member_names', { p_kos: kosId }).then(({ data }) => setNames(data || {})); }, [kosId]);
-  useEffect(() => {
-    setD(null);
-    const pm = addMonthsYm(ym, -1);
-    Promise.all([
-      supabase.rpc('retail_report', { p_kos: kosId, p_from: ym + '-01', p_to: monthEnd(ym) }),
-      supabase.rpc('retail_report', { p_kos: kosId, p_from: pm + '-01', p_to: monthEnd(pm) }),
-    ]).then(([a, b]) => (a.error || b.error ? setErr(errMsg(a.error || b.error)) : setD({ r: a.data, prev: b.data })));
-    setPajak(null); setKpi(null); setLoss(null);
-    if (canArea(kos, 'finance')) supabase.rpc('loss_watch', { p_kos: kosId, p_from: ym + '-01', p_to: monthEnd(ym) }).then(({ data }) => setLoss(data || null));
-    if (canArea(kos, 'finance')) supabase.rpc('retail_kpi', { p_kos: kosId, p_from: ym + '-01', p_to: ym >= thisMonth() ? todayStr() : monthEnd(ym) }).then(({ data }) => setKpi(data || null));
-    if (canArea(kos, 'finance')) supabase.rpc('tax_report', { p_kos: kosId, p_month: ym + '-01' }).then(({ data }) => setPajak(data || null));
-  }, [kosId, ver, ym]);
-  if (kos.business_type !== 'retail') return <Empty title="Laporan ini untuk bisnis Retail & Grosir" />;
-  if (err) return <div className="notice bad">{err.includes('retail_report') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
+  const [kpi, setKpi] = useState(null);
+  const [loss, setLoss] = useState(null);
+  const [names, setNames] = useState({});
+  const [stock, setStock] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const canExport = hasFeature(kos, 'ekspor');
+  const finance = canArea(kos, 'finance');
+  const owner = canArea(kos, 'team');
+  const ek = useKuotaEkspor(canExport ? kosId : null);
+  const range = reportRange(period.mode, period.date, period.custom);
+  const prevRange = previousRange(period.mode, range);
+  const ym = range.from.slice(0, 7);
+  const label = labelRange(range);
+  const key = range.from + ':' + range.to;
+  const requestKey = period.mode + ':' + key + ':' + ver;
+  const query = (name, dates) => supabase.rpc(name, { p_kos: kosId, p_from: dates.from, p_to: dates.to });
 
-  const nav = (
-    <div className="row noprint" style={{ flexWrap: 'nowrap' }}>
-      <button className="sm" onClick={() => setYm(addMonthsYm(ym, -1))} aria-label="Bulan sebelumnya">‹</button>
-      <b style={{ flex: 1, textAlign: 'center' }}>{bulan(ym)}</b>
-      <button className="sm" onClick={() => setYm(addMonthsYm(ym, 1))} disabled={ym >= thisMonth()} aria-label="Bulan berikutnya">›</button>
-    </div>
-  );
-  if (!d) return <div className="stack"><h2>Laporan toko</h2>{nav}<Loading /></div>;
+  useEffect(() => {
+    let active = true;
+    supabase.rpc('member_names', { p_kos: kosId }).then(({ data }) => { if (active) setNames(data || {}); });
+    return () => { active = false; };
+  }, [kosId]);
+  useEffect(() => {
+    let active = true;
+    setPajak(null); setKpi(null); setLoss(null); setStock(null);
+    Promise.all([query('retail_report', range), query('retail_report', prevRange)]).then(([a, b]) => {
+      if (active) setD({ key: requestKey, r: a.data, prev: b.data, error: a.error || b.error });
+    });
+    if (finance) {
+      const end = range.to < today() ? range.to : today();
+      query('loss_watch', { ...range, to: end }).then(({ data }) => { if (active) setLoss(data || null); });
+      query('retail_kpi', { ...range, to: end }).then(({ data }) => { if (active) setKpi(data || null); });
+      if (period.mode === 'month') supabase.rpc('tax_report', { p_kos: kosId, p_month: range.from }).then(({ data }) => { if (active) setPajak(data || null); });
+    }
+    return () => { active = false; };
+  }, [kosId, requestKey, finance]);
+  useEffect(() => {
+    if (!['slow', 'dead'].includes(sort)) return;
+    let active = true;
+    supabase.rpc('stock_health', { p_kos: kosId }).then(({ data, error }) => { if (active) setStock({ data, error }); });
+    return () => { active = false; };
+  }, [kosId, sort, key, ver]);
+  const toolbar = <div className={styles.toolbar + ' noprint'}>
+    <button onClick={() => setEditPeriod(true)}><NavIcon name="calendar" /><b>{label}</b><NavIcon name="down" size={17} /></button>
+    {d?.key === requestKey && !d.error && canExport && <div className={styles.controls}>
+      <button disabled={ek.habis || exporting} onClick={() => exportReport('xlsx')}><NavIcon name="/pengeluaran" />Unduh Excel</button>
+      <button disabled={ek.habis || exporting} onClick={() => exportReport('pdf')}><NavIcon name="/resep" />Unduh PDF</button>
+      <button disabled={ek.habis || exporting} onClick={() => ek.jalankan('cetak_laporan_toko', () => window.print())}><NavIcon name="print" />Cetak</button>
+    </div>}
+  </div>;
+  const periodSheet = editPeriod && <PeriodPicker period={period} range={range} onClose={() => setEditPeriod(false)}
+    onApply={(selected) => { setSource(null); setPeriod(selected); setEditPeriod(false); }} />;
+  const header = <header className={styles.header}>
+    <div><h1>Laporan toko</h1><PageHelp page="laporan-toko" /></div>
+    <p>Analisis penjualan, laba, dan kinerja bisnis Anda.</p>
+    <span className={styles.printPeriod}>{kos.name} · {label}</span>
+  </header>;
+  if (!d || d.key !== requestKey || d.error) return <div className={styles.page}>{header}{toolbar}{periodSheet}
+    {d?.key === requestKey && d.error ? <div className="notice bad" role="alert">{errMsg(d.error)}</div> : <Loading />}</div>;
   const { r, prev } = d;
   const a = pnl(r), b = pnl(prev);
-  const noCost = r.produk.filter((p) => p.no_cost);
-  const prods = [...r.produk].sort((x, y) => N(y[sort]) - N(x[sort])).slice(0, 10);
-  const maxP = Math.max(1, ...prods.map((p) => Math.abs(N(p[sort]))));
-  const maxD = Math.max(1, ...r.harian.map((h) => N(h.omzet)));
-  const canExport = hasFeature(kos, 'ekspor');
+  const end = range.to < today() ? range.to : today();
+  const byProduct = ['omzet', 'laba'].includes(sort);
+  const ranked = byProduct ? [...r.produk].sort((x, y) => N(y[sort]) - N(x[sort])) : (stock?.data?.rows || []).filter((row) => row.kelas === (sort === 'dead' ? 'mati' : 'lambat'));
+  const bridge = [['Biaya operasional', -N(r.biaya), 'expenses'], ['Selisih persediaan', N(r.selisih_stok), 'stock'], ['Pemasukan lain', N(r.pendapatan_lain), 'other']];
+  const grossSource = ['sales', 'returns', 'journal'];
+  const netSource = ['expenses', 'stock', 'other', 'journal', 'sales', 'returns', 'stockJournal'];
+  const open = (title, amount, kinds, extra) => setSource({ title, amount, kinds, ...extra });
+  const reconciliation = { bridge, reconcile: { net: a.bersih }, explanation: 'Selisih = pemasukan lain + selisih persediaan − biaya operasional. Pilih komponen atau baris jurnal untuk memeriksa asalnya.' };
+  const comparison = (title, amount, kinds, extra) => ({ compare: { title, amount, kinds, ...extra, range: prevRange } });
+  const noCost = r.produk.filter((item) => item.no_cost);
+  const drill = (name, amount, kinds, extra) => () => open(name, amount, kinds, extra);
+  const lines = [
+    ['Diskon pada nota', N(r.diskon), ['sales'], { measure: 'discount' }],
+    ['Nilai nota retur', -N(r.retur), ['returns'], { measure: 'grossReturn', explanation: 'Nilai nota dapat mencakup PPN. Penjualan bersih dan HPP memakai retur yang sama dengan penyesuaian PPN.' }],
+    ['Penjualan bersih', a.omzet, grossSource],
+    ['HPP', -a.hpp, grossSource, { measure: 'hpp' }],
+    ['Laba kotor', a.kotor, grossSource, { measure: 'gross' }],
+    ['Biaya operasional', -N(r.biaya), ['expenses'], { explanation: 'Dikurangkan dari laba kotor.' }],
+    ['Selisih persediaan', N(r.selisih_stok), ['stock', 'stockJournal']],
+    ['Pemasukan lain', N(r.pendapatan_lain), ['other', 'journal']],
+    ['Laba bersih', a.bersih, netSource, reconciliation],
+  ];
 
-  const exportCsv = () => downloadCsv(`laporan-toko-${kos.name}-${ym}.csv`, [
-    ['Laporan', kos.name, bulan(ym)], [],
-    ['Penjualan (setelah diskon)', a.omzet], ['Modal barang terjual', a.hpp], ['Laba kotor', a.kotor],
-    ['Biaya operasional', N(r.biaya)], ...r.biaya_rinci.map((x) => ['  ' + x.name, N(x.total)]),
-    ['Selisih stok (opname/rusak)', N(r.selisih_stok)], ['Pemasukan lain', N(r.pendapatan_lain)], ['Laba bersih', a.bersih], [],
-    ['Prive (bukan biaya)', N(r.prive)], ['Setoran modal', N(r.setoran_modal)], ['Belanja barang (bersih setelah retur)', N(r.belanja)], ['Retur ke supplier', N(r.retur_beli)], ['Belanja modal/peralatan', N(r.belanja_modal)], [],
-    ['Produk', 'Terjual (satuan dasar)', 'Penjualan', 'Modal', 'Laba'], ...r.produk.map((p) => [p.name, N(p.qty), N(p.omzet), N(p.hpp), N(p.laba)]), [],
-    ...((r.lokasi || []).length > 1 ? [['Lokasi', 'Transaksi', 'Penjualan', 'Laba kotor', 'Biaya lokasi', 'Kontribusi'], ...r.lokasi.map((x) => [x.name, x.trx, N(x.omzet), N(x.laba), N(x.biaya), N(x.kontribusi)]), []] : []),
-    ['Tanggal', 'Transaksi', 'Penjualan', 'Laba kotor'], ...r.harian.map((h) => [h.d, h.trx, N(h.omzet), N(h.laba)]),
-  ]);
+  async function exportReport(format) {
+    if (ek.habis || exporting) return;
+    const sheets = [
+      { name: 'Laba rugi', cols: ['Indikator', 'Nilai', 'Pembanding'], types: ['t', 'r', 'r'], rows: [
+        ...lines.map(([name, value]) => [name, value, ({ 'Penjualan bersih': b.omzet, HPP: -b.hpp, 'Laba kotor': b.kotor, 'Laba bersih': b.bersih })[name]]),
+        ['Selisih laba bersih dan laba kotor', a.bridge, b.bridge], ['Margin kotor', percent(a.margin), percent(b.margin)],
+        ['Belanja barang setelah retur supplier', N(r.belanja), N(prev.belanja)], ['Pengeluaran di luar operasional', N(r.belanja_modal), N(prev.belanja_modal)],
+      ] },
+      { name: 'Biaya per kategori', cols: ['Kategori', 'Biaya'], types: ['t', 'r'], rows: r.biaya_rinci.map((row) => [row.name, N(row.total)]) },
+      { name: 'Produk', cols: ['Produk', 'Unit bersih', 'Penjualan', 'HPP', 'Laba kotor'], types: ['t', 'n', 'r', 'r', 'r'], rows: r.produk.map((row) => [row.name, N(row.qty), N(row.omzet), N(row.hpp), N(row.laba)]) },
+      { name: 'Harian', cols: ['Tanggal', 'Transaksi', 'Penjualan bersih', 'Laba kotor'], types: ['d', 'n', 'r', 'r'], rows: r.harian.map((row) => [row.d, N(row.trx), N(row.omzet), N(row.laba)]) },
+    ];
+    const base = `Laporan-toko-${range.from}-${range.to}`;
+    setExporting(true);
+    try {
+      if (format === 'xlsx') {
+        ek.jalankan('laporan_toko_xlsx', () => download(makeXlsx([{ name: 'Periode', cols: ['Keterangan', 'Nilai'], types: ['t', 't'], rows: [['Bisnis', kos.name], ['Periode', label], ['Pembanding', labelRange(prevRange)]] }, ...sheets]), base + '.xlsx'));
+      } else {
+        const { makePdf } = await import('@/lib/pdfExport');
+        const file = await makePdf({ title: 'Laporan toko', business: kos.name, type: 'retail', subtitle: `${kos.name} · ${label}`, exported_at: today(), sheets, note: 'Laporan operasional toko berdasarkan transaksi yang tercatat.' });
+        ek.jalankan('laporan_toko_pdf', () => download(file, base + '.pdf'));
+      }
+    } catch (error) { toast(errMsg(error)); }
+    finally { setExporting(false); }
+  }
 
-  const Row = ({ l, v, bold, sub, tone }) => (
-    <div className="li" style={{ padding: sub ? '6px 0 6px 14px' : undefined }}>
-      <span className={sub ? 'small muted' : ''} style={{ fontWeight: bold ? 800 : undefined }}>{l}</span>
-      <span style={{ fontWeight: bold ? 800 : 600, color: tone === 'bad' && v < 0 ? 'var(--bad)' : undefined }}>{v < 0 ? '−' + rp(-v) : rp(v)}</span>
+  const row = (name, value, kinds, extra) => <button className={styles.dataRow} key={name} onClick={drill(name, value, kinds, extra)}>
+    <span>{name}</span><b>{rp(value)}</b><NavIcon name="next" size={14} />
+  </button>;
+
+  return <div className={styles.page}>
+    {header}{toolbar}{periodSheet}
+    {canExport ? (ek.habis ? <p className="small noprint">{ek.q?.message}</p> : ek.info && <p className="small muted noprint">{ek.info}</p>) : <Locked need="dasar" title="Unduh Excel, PDF dan cetak" text="Ekspor laporan toko tersedia mulai Paket Dasar." />}
+    <p className={styles.muted}>Dibandingkan dengan {labelRange(prevRange)}</p>
+    <div className={styles.metrics}>
+      <Metric icon="coins" label="Penjualan bersih" value={rp(a.omzet)} note={`${angka(r.trx)} transaksi`} change={delta(a.omzet, b.omzet)} primary onClick={drill('Penjualan bersih', a.omzet, grossSource, { explanation: 'Nota selesai setelah diskon dan retur, tanpa PPN.', ...comparison('Penjualan periode pembanding', b.omzet, grossSource) })} />
+      <Metric icon="/barang" label="Laba kotor" value={rp(a.kotor)} note={`Margin ${percent(a.margin)}`} change={delta(a.kotor, b.kotor)} onClick={drill('Laba kotor dan margin', a.kotor, grossSource, { explanation: 'Laba kotor = penjualan bersih − HPP. Margin kotor = laba kotor ÷ penjualan bersih.', measure: 'gross', ...comparison('Laba kotor periode pembanding', b.kotor, grossSource, { measure: 'gross' }) })} />
+      <Metric icon="/analisis" label="Laba bersih" value={rp(a.bersih)} note="Setelah biaya dan penyesuaian" change={delta(a.bersih, b.bersih)} onClick={drill('Laba bersih', a.bersih, netSource, { ...reconciliation, ...comparison('Laba bersih periode pembanding', b.bersih, netSource, { bridge: [['Biaya operasional', -N(prev.biaya), 'expenses'], ['Selisih persediaan', N(prev.selisih_stok), 'stock'], ['Pemasukan lain', N(prev.pendapatan_lain), 'other']], reconcile: { net: b.bersih }, explanation: reconciliation.explanation }) })} />
+      <Metric icon="/laporan" label="Laba rugi" note="Rincian penjualan, retur, biaya, dan laba" onClick={() => document.getElementById('laba-rugi-toko')?.scrollIntoView({ block: 'start' })} />
     </div>
-  );
+    {a.bridge !== 0 && <aside className={styles.reconcile}>
+      <NavIcon name="info" /><div><b>Selisih laba bersih dan laba kotor {rp(a.bridge)}</b>
+        <p>Pemasukan lain {rp(r.pendapatan_lain)} · Selisih persediaan {rp(r.selisih_stok)} · Biaya operasional {rp(r.biaya)}.</p></div>
+      <button onClick={drill('Telusuri selisih laba', a.bridge, netSource, reconciliation)}>Telusuri selisih</button>
+    </aside>}
+    {noCost.length > 0 && <aside className={styles.reconcile}><NavIcon name="info" /><div><b>{angka(noCost.length)} produk terjual tanpa harga modal</b><p>Periksa baris nota untuk memastikan laba kotor tercatat dengan tepat.</p></div>
+      <button onClick={drill('Penjualan tanpa HPP', null, ['sales'], { measure: 'missingCost' })}>Telusuri penjualan</button>
+    </aside>}
+    <ReportTrend key={requestKey} kosId={kosId} range={range} daily={r.harian} mode={period.mode} onPoint={(kind, point) =>
+      open({ omzet: 'Penjualan bersih', kotor: 'Laba kotor', hpp: 'HPP', biaya: 'Biaya operasional' }[kind], point[kind],
+        kind === 'biaya' ? ['expenses'] : grossSource, { range: point, measure: kind === 'hpp' ? 'hpp' : kind === 'kotor' ? 'gross' : undefined })} />
+    <div className={styles.dashboardColumns}>
+      <section className={styles.panel} id="produk">
+        <div className={styles.heading}><h2><NavIcon name="trophy" />Performa produk</h2></div>
+        <div className={styles.controls}>{[['omzet', 'Terlaris'], ['laba', 'Paling untung'], ['slow', 'Kurang laku'], ['dead', 'Stok mati']].map(([id, title]) =>
+          <button key={id} aria-pressed={sort === id} onClick={() => setSort(id)}>{title}</button>)}</div>
+        {!byProduct && <p className={styles.muted}>Berdasarkan kesehatan stok saat ini dan riwayat {stock?.data?.aturan?.mati_hari || 90} hari.</p>}
+        {!byProduct && !stock ? <Loading /> : !byProduct && stock.error ? <p role="alert">{errMsg(stock.error)}</p> : ranked.length ?
+          <div className={styles.list}>{ranked.slice(0, 10).map((item, i) => <button key={item.product_id || item.name} className={styles.dataRow}
+            onClick={drill(item.name, byProduct ? N(item[sort]) : N(item.value), byProduct ? ['product', ...(item.product_id ? ['catalog'] : [])] : ['catalog', 'product'], { productId: item.product_id, measure: sort })}>
+            <span><b>{i + 1}. {item.name}</b><small>{byProduct ? `${angka(item.qty)} unit bersih · ${rp(item.omzet)} penjualan` : `Stok ${angka(item.stock)} ${item.base_unit} · ${angka(item.sold90)} terjual dalam 90 hari`}</small></span>
+            <b>{rp(byProduct ? item[sort] : item.value)}</b><NavIcon name="next" size={14} />
+          </button>)}</div> : <p className={styles.muted}>Belum ada barang dalam kelompok ini.</p>}
+      </section>
+      <section className={styles.panel}>
+        <h2><NavIcon name="/layers" />Ringkasan biaya</h2>
+        <div className={styles.list}>
+          {row('Total biaya operasional', N(r.biaya), ['expenses', 'journal'], { measure: 'expense' })}
+          {r.biaya_rinci.map((item) => row(item.name, N(item.total), ['expenses'], { category: item.name }))}
+          {row('Pengeluaran di luar operasional', N(r.belanja_modal), ['expenses'], { measure: 'capital', explanation: 'Meliputi belanja modal dan jenis pengeluaran non-operasional.' })}
+        </div>
+      </section>
+    </div>
+    <section className={styles.panel} id="laba-rugi-toko">
+      <h2><NavIcon name="/pembukuan" />Laba rugi</h2>
+      <div className={styles.list}>{lines.map((args) => row(...args))}</div>
+      <p className={styles.muted}>Diskon dan nilai nota retur ditampilkan sebagai informasi pendukung. Keduanya sudah diperhitungkan dalam penjualan bersih.</p>
+      <details><summary>Arus lain dan pembelian barang</summary>
+        {row('Prive', N(r.prive), ['other'], { cashKind: 'prive' })}
+        {row('Setoran modal', N(r.setoran_modal), ['other'], { cashKind: 'setoran_modal' })}
+        {row('Belanja barang setelah retur supplier', N(r.belanja), ['purchase', 'purchaseReturn'])}
+      </details>
+    </section>
+    <section className={styles.panel}><h2>Cara bayar</h2><div className={styles.list}>{Object.entries(PAY).map(([id, title]) => row(title, N(r.bayar[id]), ['sales'], { payment: id }))}</div></section>
+    {source && <ReportSource key={source.title + ':' + (source.range?.from || '')} kosId={kosId} range={source.range || range} source={source} owner={owner} onChange={setSource} onClose={() => setSource(null)} />}
 
-  return (
-    <div className="stack">
-      <PageHeader title="Laporan toko" help={<PageHelp page="laporan-toko" />} actions={<><div className="row noprint">{canExport ? <><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('laporan_toko', exportCsv)}>Unduh Excel</button><button className="sm" disabled={ek.habis} onClick={() => ek.jalankan('cetak_pdf', () => window.print())}>Cetak / PDF</button></> : null}</div></>} />
-      {canExport && (ek.habis ? <span className="small noprint" style={{ color: 'var(--bad)' }}>{ek.q?.message}</span> : ek.info && <span className="small muted noprint">{ek.info}</span>)}
-      {nav}
-      {!canExport && <Locked need="dasar" title="Unduh Excel & cetak PDF" text="Ekspor laporan toko tersedia mulai Paket Dasar." />}
-      <div className="grid">
-        <Tile label="Penjualan" value={rp(a.omzet)} sub={delta(a.omzet, b.omzet) || `${angka(r.trx)} transaksi`} />
-        <Tile label="Laba kotor" value={rp(a.kotor)} sub={a.margin != null ? `margin ${String(a.margin).replace('.', ',')}%` : '—'} />
-        <Tile label="Laba bersih" value={a.bersih < 0 ? '−' + rp(-a.bersih) : rp(a.bersih)} tone={a.bersih < 0 ? 'bad' : ''} sub={delta(a.bersih, b.bersih) || 'setelah biaya'} />
-      </div>
-      {noCost.length > 0 && <div className="notice">Harga modal belum diisi untuk: {noCost.map((p) => p.name).join(', ')}. Laba barang ini terlihat terlalu tinggi.</div>}
-      {r.trx === 0 && N(r.biaya) === 0 ? <Empty title="Belum ada transaksi bulan ini" /> : <>
-        <section className="panel">
-          <h3>Laba rugi</h3>
-          <div className="list">
-            {N(r.retur) > 0 && <Row l="Penjualan (setelah diskon)" v={a.omzet + N(r.retur)} />}
-            {N(r.retur) > 0 && <Row l={`Retur (${r.retur_n}×)`} v={-N(r.retur)} sub />}
-            <Row l={N(r.retur) > 0 ? 'Penjualan bersih' : 'Penjualan (setelah diskon)'} v={a.omzet} />
-            <Row l="Modal barang terjual" v={-a.hpp} />
-            <Row l="Laba kotor" v={a.kotor} bold />
-            <Row l="Biaya operasional" v={-N(r.biaya)} />
-            {r.biaya_rinci.map((x) => <Row key={x.name} l={x.name} v={-N(x.total)} sub />)}
-            {N(r.selisih_stok) !== 0 && <Row l="Selisih stok (opname, rusak, kedaluwarsa)" v={N(r.selisih_stok)} tone="bad" />}
-            {N(r.pendapatan_lain) > 0 && <Row l="Pemasukan lain" v={N(r.pendapatan_lain)} />}
-            <Row l="Laba bersih" v={a.bersih} bold tone="bad" />
-          </div>
-          <p className="small muted" style={{ margin: 0 }}>Tidak termasuk laba: prive {rp(r.prive)} · setoran modal {rp(r.setoran_modal)} · belanja barang {rp(r.belanja)} (masuk stok{N(r.retur_beli) > 0 ? `, sudah dikurangi retur ke supplier ${rp(r.retur_beli)}` : ''}) · belanja peralatan {rp(r.belanja_modal)}.</p>
-        </section>
-
-        <section className="panel">
-          <h3>Cara bayar</h3>
-          <div className="list">{Object.entries(PAY).map(([k, l]) => <div className="li" key={k}><span>{l}</span><b>{rp(r.bayar[k])}</b></div>)}</div>
-          <span className="small muted">Penjualan bayar campuran sudah dibagi ke tiap cara bayar sesuai rinciannya.</span>
-          {N(r.grosir) > 0 && <span className="small muted">Penjualan harga grosir: {rp(r.grosir)} ({Math.round((N(r.grosir) / Math.max(1, a.omzet)) * 100)}%)</span>}
-        </section>
-
-        {kpi && <Indikator k={kpi} names={names} />}
-        {canArea(kos, 'finance') && <BrandReport kosId={kosId} from={ym + '-01'} to={ym >= thisMonth() ? todayStr() : monthEnd(ym)} ver={ver} />}
-        {canArea(kos, 'finance') && (moduleOn(kos, 'u_penawaran') || moduleOn(kos, 'u_kredit')) && <IndikatorGrosir kosId={kosId} from={ym + '-01'} to={ym >= thisMonth() ? todayStr() : monthEnd(ym)} names={names} ver={ver} />}
+    <details className={styles.panel}>
+      <summary>Indikator toko, PPN, merek, dan lokasi</summary>
+        {kpi && <Indikator k={kpi} names={names} drill={drill} />}
+        {canArea(kos, 'finance') && <BrandReport kosId={kosId} from={range.from} to={end} ver={ver} />}
+        {canArea(kos, 'finance') && (moduleOn(kos, 'u_penawaran') || moduleOn(kos, 'u_kredit')) && <IndikatorGrosir kosId={kosId} from={range.from} to={end} names={names} ver={ver} />}
         {loss && <PerluDiperiksa w={loss} names={names} />}
 
         {pajak && (pajak.setelan?.aktif || Number(pajak.ppn_keluaran) !== 0 || Number(pajak.ppn_masukan) !== 0) && (
           <section className="panel">
             <h3>PPN {bulan(ym)}</h3>
             <div className="list">
-              <div className="li"><span className="small">Penjualan kena PPN (DPP)</span><b className="small">{rp(pajak.penjualan.dpp)}</b></div>
-              <div className="li"><span className="small">PPN dari penjualan</span><b className="small">{rp(pajak.penjualan.ppn)}</b></div>
-              {Number(pajak.retur_ppn) > 0 && <div className="li"><span className="small">Dikurangi PPN retur (DPP {rp(pajak.retur_dpp)})</span><b className="small">−{rp(pajak.retur_ppn)}</b></div>}
-              <div className="li"><span className="small"><b>PPN keluaran bersih</b></span><b>{rp(pajak.ppn_keluaran)}</b></div>
-              {pajak.pembelian && (Number(pajak.ppn_masukan) !== 0 || pajak.setelan?.aktif) && <>
-                <div className="li"><span className="small">PPN masukan dari {pajak.pembelian.jumlah} faktur supplier (DPP {rp(pajak.pembelian.dpp)})</span><b className="small">−{rp(pajak.ppn_masukan)}</b></div>
-                <div className="li"><span className="small"><b>{Number(pajak.selisih) >= 0 ? 'PPN kurang bayar (keluaran − masukan)' : 'PPN lebih bayar (masukan lebih besar)'}</b></span><b>{rp(Math.abs(pajak.selisih))}</b></div>
+              {row('Penjualan kena PPN (DPP)', N(pajak.penjualan.dpp), ['sales'], { measure: 'dpp' })}
+              {row('PPN dari penjualan', N(pajak.penjualan.ppn), ['sales'], { measure: 'tax' })}
+              {N(pajak.retur_ppn) > 0 && row('PPN dari retur penjualan', -N(pajak.retur_ppn), ['returns'], { measure: 'tax' })}
+              {row('PPN keluaran bersih', N(pajak.ppn_keluaran), ['sales', 'returns'], { measure: 'tax' })}
+              {pajak.pembelian && (N(pajak.ppn_masukan) !== 0 || pajak.setelan?.aktif) && <>
+                {row('PPN masukan dari faktur supplier', N(pajak.ppn_masukan), ['invoices'], { measure: 'tax' })}
+                {row(N(pajak.selisih) >= 0 ? 'PPN kurang bayar' : 'PPN lebih bayar', Math.abs(N(pajak.selisih)), ['sales', 'returns', 'invoices'], { measure: 'tax' })}
               </>}
-              <div className="li"><span className="small muted">Penjualan tidak kena PPN</span><span className="small muted">{rp(pajak.penjualan.tidak_kena)}</span></div>
+              {row('Penjualan tidak kena PPN', N(pajak.penjualan.tidak_kena), ['sales'], { measure: 'nonTaxable' })}
             </div>
             <span className="small muted">Harga di kasir sudah termasuk PPN{pajak.setelan?.rate ? ` ${String(pajak.setelan.rate).replace('.', ',')}%` : ''}; angka di atas sudah memisahkannya. Penjualan & laba di laporan ini tanpa PPN. PPN masukan diambil dari faktur supplier yang diposting (Belanja › Faktur supplier){Number(pajak.pembelian?.tanpa_nomor) > 0 ? `; ${pajak.pembelian.tanpa_nomor} faktur belum diisi nomor faktur pajaknya` : ''}. Gunakan sebagai bahan pelaporan pajak bersama konsultan Anda.</span>
           </section>
@@ -160,41 +238,50 @@ export default function LaporanToko() {
           <section className="panel">
             <h3>Per lokasi</h3>
             <div className="list">{r.lokasi.map((x) => (
-              <div className="li" key={x.name} style={{ alignItems: 'flex-start' }}><div className="main"><b className="small">{x.name}</b><span className="small muted">{angka(x.trx)} transaksi · laba kotor {rp(x.laba)}{x.biaya != null ? ` · biaya lokasi ${rp(x.biaya)}` : ''}</span>{x.kontribusi != null && <span className="small">Kontribusi <b style={{ color: Number(x.kontribusi) < 0 ? 'var(--bad)' : undefined }}>{rp(x.kontribusi)}</b></span>}</div><b className="small">{rp(x.omzet)}</b></div>
+              <button className={styles.dataRow} key={x.name} onClick={drill(x.name, N(x.omzet), ['sales'], { branch: x.name, measure: 'branchGross' })}><div className="main"><b className="small">{x.name}</b><span className="small muted">{angka(x.trx)} transaksi · laba kotor {rp(x.laba)}{x.biaya != null ? ` · biaya lokasi ${rp(x.biaya)}` : ''}</span>{x.kontribusi != null && <span className="small">Kontribusi <b style={{ color: Number(x.kontribusi) < 0 ? 'var(--bad)' : undefined }}>{rp(x.kontribusi)}</b></span>}</div><b className="small">{rp(x.omzet)}</b></button>
             ))}</div>
             <span className="small muted">Penjualan sebelum retur menurut lokasi transaksi. Kontribusi = laba kotor − biaya operasional yang dicatat di lokasi itu (biaya bersama seperti gaji pemilik tidak dibagi otomatis).</span>
           </section>
         )}
 
-        {r.harian.length > 1 && (
-          <section className="panel">
-            <h3>Penjualan per hari</h3>
-            <DayColumns title={`Penjualan harian ${bulan(ym)}`} data={r.harian.map((h) => ({ key: h.d, label: tgl(h.d), short: String(+h.d.slice(8)), value: N(h.omzet) }))} />
-          </section>
-        )}
 
-        <section className="panel" id="produk" style={{ scrollMarginTop: 90 }}>
-          <div className="row between"><h3>Produk</h3>
-            <div className="seg">{[['omzet', 'Terlaris'], ['laba', 'Paling untung']].map(([k, l]) => <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}</div></div>
-          {prods.length === 0 ? <span className="small muted">Belum ada penjualan.</span> : <div className="list">{prods.map((p) => (
-            <div className="li" key={p.product_id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
-              <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{p.name}</b><b className="small">{rp(p[sort])}</b></div>
-              <div className="pbar"><span style={{ width: `${(Math.abs(N(p[sort])) / maxP) * 100}%` }} /></div>
-              <span className="small muted">terjual {angka(N(p.qty))} · penjualan {rp(p.omzet)} · laba {rp(p.laba)}{N(p.omzet) ? ` (${Math.round((N(p.laba) / N(p.omzet)) * 100)}%)` : ''}</span>
-            </div>
-          ))}</div>}
-        </section>
-      </>}
+    </details>
+    <section className={styles.panel}>
+      <h2>Barang berstok tanpa penjualan pada periode ini</h2>
+      {r.tidak_laku.length ? <div className={styles.list}>{r.tidak_laku.map((item) =>
+        <button className={styles.dataRow} key={item.id} onClick={drill(item.name, N(item.modal), ['catalog', 'product'], { productId: item.id })}>
+          <span><b>{item.name}</b><small>Stok {angka(item.stock)} {item.base_unit} · terakhir terjual {item.last_sold ? tgl(item.last_sold) : 'belum pernah'}</small></span><b>{rp(item.modal)}</b><NavIcon name="next" size={14} />
+        </button>)}</div> : <p className={styles.muted}>Belum ada barang dalam kelompok ini.</p>}
+    </section>
+  </div>;
+}
 
-      <section className="panel">
-        <h3>Tidak laku bulan ini</h3>
-        <p className="small muted" style={{ margin: 0 }}>Barang yang punya stok tetapi tidak terjual di {bulan(ym)}, diurutkan dari modal tertahan terbesar.</p>
-        {r.tidak_laku.length === 0 ? <span className="small muted">Tidak ada. Semua barang berstok terjual.</span> : <div className="list">{r.tidak_laku.map((t) => (
-          <div className="li" key={t.id}><div className="main"><b className="small">{t.name}</b><span className="small muted">stok {angka(t.stock)} {t.base_unit} · terakhir terjual {t.last_sold ? tgl(t.last_sold) : 'belum pernah'}</span></div><b className="small">{rp(t.modal)}</b></div>
-        ))}</div>}
-      </section>
-    </div>
-  );
+function Metric({ icon, label, value, note, change, primary, onClick }) {
+  return <button className={styles.metric} data-primary={primary || undefined} onClick={onClick}>
+    <span className={styles.metricIcon}><NavIcon name={icon} /></span><span className={styles.metricText}>
+      <b>{label}</b>{value && <strong className={value.length > 15 ? styles.longValue : undefined}>{value}</strong>}
+      <small>{note}</small>{change && <small className={styles.delta}>{change}</small>}
+    </span>
+  </button>;
+}
+
+function PeriodPicker({ period, range, onClose, onApply }) {
+  const [mode, setMode] = useState(period.mode);
+  const [date, setDate] = useState(period.date);
+  const [from, setFrom] = useState(range.from);
+  const [to, setTo] = useState(range.to <= today() ? range.to : today());
+  const isCustom = mode === 'custom';
+  const invalid = isCustom ? !from || !to || from > to || to > today() : !date || date > today();
+  return <Sheet title="Pilih periode laporan" onClose={onClose}>
+    <Field label="Jenis periode"><select value={mode} onChange={(event) => setMode(event.target.value)}>{PERIODS.map(([id, title]) => <option key={id} value={id}>{title}</option>)}</select></Field>
+    {isCustom ? <>
+      <Field label="Tanggal mulai"><input type="date" value={from} max={today()} onChange={(event) => setFrom(event.target.value)} /></Field>
+      <Field label="Tanggal akhir"><input type="date" value={to} min={from} max={today()} onChange={(event) => setTo(event.target.value)} /></Field>
+    </> : <Field label={mode === 'month' ? 'Bulan' : 'Tanggal acuan'}>{mode === 'month'
+      ? <input type="month" value={date.slice(0, 7)} max={today().slice(0, 7)} onChange={(event) => setDate(event.target.value ? event.target.value + '-01' : '')} />
+      : <input type="date" value={date} max={today()} onChange={(event) => setDate(event.target.value)} />}</Field>}
+    <button disabled={invalid} className="primary" onClick={() => onApply({ mode, date: date || today(), custom: { from, to } })}>Terapkan periode</button>
+  </Sheet>;
 }
 
 // Perlu diperiksa (pencegahan kehilangan): aturan tetap & terbuka dari loss_watch — temuan untuk dicek, BUKAN tuduhan
@@ -223,7 +310,7 @@ function PerluDiperiksa({ w, names }) {
 }
 
 // Indikator toko (Bab 17 KPI): dihitung server dari transaksi & kartu stok nyata periode ini
-function Indikator({ k, names }) {
+function Indikator({ k, names, drill }) {
   const n = (v) => Number(v || 0);
   const pct = (v) => (v == null ? '—' : `${String(v).replace('.', ',')}%`);
   const who = (u) => names[u] || (u ? 'karyawan lama' : 'sistem');
@@ -233,15 +320,15 @@ function Indikator({ k, names }) {
       <h3>Indikator toko</h3>
       <span className="small muted">{tgl(k.from)} – {tgl(k.to)} · penjualan tanpa PPN, setelah retur</span>
       <dl className="kv">
-        <dt>Rata-rata belanja per transaksi</dt><dd>{k.rata_keranjang != null ? rp(k.rata_keranjang) : '—'}</dd>
-        <dt>Jenis barang per transaksi</dt><dd>{k.jenis_per_trx != null ? String(k.jenis_per_trx).replace('.', ',') : '—'}</dd>
-        <dt>Margin kotor</dt><dd>{pct(k.margin_pct)}</dd>
-        <dt>Perputaran persediaan</dt><dd>{k.perputaran != null ? `${String(k.perputaran).replace('.', ',')}× · stok cukup ±${angka(k.hari_persediaan)} hari` : 'belum cukup data'}</dd>
-        <dt>Barang aktif yang stoknya habis</dt><dd>{angka(k.stok_habis)} dari {angka(k.barang_aktif)} ({pct(k.stok_habis_pct)})</dd>
-        <dt>Barang sempat habis karena terjual</dt><dd>{angka(k.sempat_habis)}</dd>
-        <dt>Susut (rusak & kedaluwarsa)</dt><dd>{rp(k.susut)} · {pct(k.susut_pct)} dari penjualan</dd>
-        {n(k.selisih_hitung) !== 0 && <><dt>Selisih hitung stok</dt><dd>{n(k.selisih_hitung) > 0 ? 'kurang ' : 'lebih '}{rp(Math.abs(n(k.selisih_hitung)))}</dd></>}
-        <dt>Dibatalkan</dt><dd>{angka(k.batal_n)} · {rp(k.batal)}</dd>
+        <dt>Rata-rata belanja per transaksi</dt><dd><button className={styles.inline} onClick={drill('Rata-rata belanja per transaksi', k.rata_keranjang, ['sales', 'returns'])}>{k.rata_keranjang != null ? rp(k.rata_keranjang) : '—'}</button></dd>
+        <dt>Jenis barang per transaksi</dt><dd><button className={styles.inline} onClick={drill('Jenis barang per transaksi', null, ['sales'])}>{k.jenis_per_trx != null ? angka(k.jenis_per_trx) : '—'}</button></dd>
+        <dt>Margin kotor</dt><dd><button className={styles.inline} onClick={drill('Margin kotor', null, ['sales', 'returns'], { measure: 'gross' })}>{pct(k.margin_pct)}</button></dd>
+        <dt>Perputaran persediaan</dt><dd><Link href="/barang">{k.perputaran != null ? `${angka(k.perputaran)}× · stok cukup ±${angka(k.hari_persediaan)} hari` : 'Belum cukup data'}</Link></dd>
+        <dt>Barang aktif yang stoknya habis</dt><dd><Link href="/barang">{angka(k.stok_habis)} dari {angka(k.barang_aktif)} ({pct(k.stok_habis_pct)})</Link></dd>
+        <dt>Barang sempat habis karena terjual</dt><dd><Link href="/barang">{angka(k.sempat_habis)}</Link></dd>
+        <dt>Susut (rusak & kedaluwarsa)</dt><dd><button className={styles.inline} onClick={drill('Susut persediaan', k.susut, ['stock', 'stockJournal'], { stockKinds: ['rusak', 'kedaluwarsa'] })}>{rp(k.susut)} · {pct(k.susut_pct)} dari penjualan</button></dd>
+        {n(k.selisih_hitung) !== 0 && <><dt>Selisih hitung stok</dt><dd><button className={styles.inline} onClick={drill('Selisih hitung stok', null, ['stock', 'stockJournal'], { stockKinds: ['opname', 'koreksi'] })}>{n(k.selisih_hitung) > 0 ? 'kurang ' : 'lebih '}{rp(Math.abs(n(k.selisih_hitung)))}</button></dd></>}
+        <dt>Dibatalkan</dt><dd><button className={styles.inline} onClick={drill('Penjualan dibatalkan', k.batal, ['sales'], { status: 'batal', measure: 'branchGross' })}>{angka(k.batal_n)} · {rp(k.batal)}</button></dd>
       </dl>
       <span className="small muted">Perputaran = harga pokok terjual ÷ rata-rata nilai persediaan (kartu stok, tanpa barang titipan). Makin tinggi, makin cepat barang berputar.</span>
       {k.kasir.length > 0 && <>
