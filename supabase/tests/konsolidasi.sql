@@ -80,3 +80,14 @@ do $$ begin perform count(*) from consol_groups;
   raise notice 'GAGAL d: tabel terbaca langsung';
 exception when others then raise notice 'OK d: tabel tidak terbaca langsung'; end $$;
 reset role;
+
+\echo == E. Bisnis dalam grup ditutup: grup tetap bisa diubah & dihapus (migrasi 20261128005000)
+\o /dev/null
+select set_config('request.jwt.claim.sub', :'O', false), set_config('request.jwt.claims', '{"sub":"cdcdcdcd-0000-0000-0000-000000000001","email":"kons@x.com"}', false);
+\o
+update kos set closed_at = now() where id = :'B';
+do $$ begin perform consol_group_save(null, 'Grup Tutup', '[{"kos_id":"cdcdcdcd-0000-0000-0000-00000000000a"},{"kos_id":"cdcdcdcd-0000-0000-0000-00000000000b"}]');
+  raise notice 'GAGAL e: bisnis tutup bisa ditambahkan ke grup baru';
+exception when others then raise notice 'OK e: bisnis tutup tidak bisa ditambahkan'; end $$;
+select consol_group_delete(:'g'::uuid)::text = '' e_grup_berisi_bisnis_tutup_bisa_dihapus;
+update kos set closed_at = null where id = :'B';
