@@ -101,10 +101,10 @@ function BudgetWorkspace({ kos, kosId, ver }) {
         <span className={styles.heroArt}><Image src="/anggaran-ringkasan.webp" alt="" fill priority sizes="(max-width: 600px) 36vw, 295px" /></span>
       </section>
       <div className={styles.actions}>
-        <button className={styles.primary} onClick={() => setSheet({ type: 'edit' })} disabled={!d?.aktif || !rows.length || busy}><NavIcon name="plus" />Anggaran Baru</button>
-        <button onClick={() => { if (periodInput.current?.showPicker) { try { periodInput.current.showPicker(); return; } catch {} } setSheet({ type: 'period' }); }} disabled={busy}><NavIcon name="calendar" />Pilih Periode</button>
-        <button onClick={() => setTab('compare')}><NavIcon name="/laporan" />Laporan Anggaran</button>
-        <button onClick={() => setSheet({ type: 'more' })}><NavIcon name="more" />Lainnya</button>
+        <button className={styles.primary} onClick={() => setSheet({ type: 'edit' })} disabled={!d?.aktif || !rows.length || busy}><NavIcon name="plus" /><span>Anggaran Baru</span></button>
+        <button onClick={() => { if (periodInput.current?.showPicker) { try { periodInput.current.showPicker(); return; } catch {} } setSheet({ type: 'period' }); }} disabled={busy}><NavIcon name="calendar" /><span>Pilih Periode</span></button>
+        <button onClick={() => setTab('compare')}><NavIcon name="/laporan" /><span>Laporan Anggaran</span></button>
+        <button onClick={() => setSheet({ type: 'more' })}><NavIcon name="more" /><span>Lainnya</span></button>
       </div>
       <div className={styles.period}>
         <button aria-label="Bulan sebelumnya" onClick={() => changeMonth(previousMonth)} disabled={busy}><NavIcon name="prev" size={17} /></button>
@@ -183,7 +183,7 @@ function BudgetWorkspace({ kos, kosId, ver }) {
 }
 
 function BudgetMetric({ icon, label, value, note }) {
-  return <article className={styles.metric}><span><NavIcon name={icon} /></span><div><b>{label}</b><strong>{value}</strong><small>{note}</small></div></article>;
+  return <article className={styles.metric}><span><NavIcon name={icon} /></span><div><b>{label}</b><strong className={value.length > 15 ? styles.longValue : undefined}>{value}</strong><small>{note}</small></div></article>;
 }
 
 function EditBudget({ rows, initial, busy, onClose, onSave }) {
