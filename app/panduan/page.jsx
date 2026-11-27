@@ -1074,7 +1074,7 @@ const PARTS = [
   ['AO', 'Learning Center & Panduan Interaktif', [
     ['Belajar bertahap dan mengulang panduan', 'Panduan & Bantuan → Learning Center', [
       <>Mulai dengan rekomendasi sesuai kategori, hak akses, dan modul aktif. Buka Memulai untuk checklist, Materi untuk pelajaran modul, atau Progres untuk memilih dari delapan tahap transaksi.</>,
-      <>Buka Pusat Praktik dan pilih mode terpandu, mandiri, atau tantangan. Gunakan item contoh, periksa pembayaran dan kembalian, lalu pilih Simpan simulasi untuk melihat bukti DEMO.</>,
+      <>Untuk Retail & Grosir, buka Kasir atau Learning Center lalu pilih Coba Kasir DEMO. Tambahkan barang, tekan Bayar DEMO, periksa transaksi, dan lihat bukti latihan. Untuk latihan lanjutan, buka Pusat Praktik dan pilih mode terpandu, mandiri, atau tantangan. Gunakan item contoh, periksa pembayaran dan kembalian, lalu pilih Simpan simulasi untuk melihat bukti DEMO.</>,
       <>Gunakan peta hubungan antarmodul, materi koreksi, dan evaluasi untuk memeriksa kesiapan. Pengingat belajar di Pusat Notifikasi dapat dimatikan dari Progres. Asisten Bisnis mencari jawaban di dokumentasi internal.</>,
       <>Pilih <b>? Panduan</b> di halaman modul. Sorotan menunjukkan elemen yang sedang dijelaskan. Gunakan Lanjutkan, Jeda, Lewati, atau Ulangi.</>,
       <>Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>. Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,

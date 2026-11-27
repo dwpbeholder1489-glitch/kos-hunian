@@ -1,0 +1,15 @@
+.workspace { max-width: 1024px; margin: 0 auto; display: grid; gap: 12px; }
+.workspace h1, .workspace h2, .workspace h3, .workspace p { margin: 0; }
+.header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.badge { color: var(--fg); font-size: .85rem; font-weight: 700; }
+.steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.steps li { border: 1px solid var(--line); padding: 6px 10px; border-radius: 8px; font-size: .85rem; }
+.steps li[aria-current] { border-color: var(--brand-2); font-weight: 700; }
+.hint { border-inline-start: 3px solid var(--brand-2); padding: 8px 12px; background: var(--surface); }
+.register { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; gap: 12px; }
+.product { display: grid; gap: 8px; padding: 12px; }
+.active { outline: 1px solid var(--brand-2); outline-offset: -1px; }
+.line { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.summary { display: grid; gap: 6px; margin: 0; }
+.summary dd { margin: 0; font-weight: 700; }
+@media (max-width: 680px) { .register { grid-template-columns: minmax(0, 1fr); } }

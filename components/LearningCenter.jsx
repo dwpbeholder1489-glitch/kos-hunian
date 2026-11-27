@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import NavIcon from '@/components/NavIcon';
 import PageHelp from '@/components/PageHelp';
@@ -121,6 +122,8 @@ export default function LearningCenter({ kos, scope }) {
 }
 
 function LearningContent({ kos, scope, track }) {
+  const router = useRouter();
+  const kasirDemo = track.canPractice && track.id === 'retail';
   const [record, update, ready, progressError] = useLearningStorage(scope, `track:${track.id}:${track.role}`);
   const syncError = useJourneySync({ kosId: kos.id, role: track.role, track: track.id, ready, userId: scope.split(':')[0],
     disabled: isDraft(kos) || Boolean(kos.closed_at || kos.suspended_at), journey: record.journey, update });
@@ -145,6 +148,7 @@ function LearningContent({ kos, scope, track }) {
   const go = (index) => {
     setStage(index);
     saveJourney({ current: index });
+    if (index === 2 && kasirDemo) return router.push('/kasir/demo');
     setView(index === 2 && track.canPractice ? 'simulation' : index === 7 ? 'evaluation' : 'lesson');
   };
   const finish = (indices, extra = {}, step = stage) => {
@@ -154,7 +158,7 @@ function LearningContent({ kos, scope, track }) {
   const passed = library.finished || {};
   const startItems = modules.filter(({ href }) => ['/konfirmasi', '/konfigurasi', '/barang', '/layanan', '/kamar', '/kontak', '/penghuni', track.href].includes(href) || /^\/laporan(?:-|$)/.test(href));
   const hiddenHistory = Object.keys(passed).filter((href) => !modules.some((item) => item.href === href));
-  function advance() { finish([stage], {}, stage + 1); setStage(stage + 1); setView(stage === 1 && track.canPractice ? 'simulation' : stage === 6 ? 'evaluation' : 'lesson'); }
+  function advance() { finish([stage], {}, stage + 1); setStage(stage + 1); if (stage === 1 && kasirDemo) return router.push('/kasir/demo'); setView(stage === 1 && track.canPractice ? 'simulation' : stage === 6 ? 'evaluation' : 'lesson'); }
 
   return <div className={styles.center} data-guide-learning>
     <div className={styles.heading}>
@@ -166,6 +170,13 @@ function LearningContent({ kos, scope, track }) {
     {syncError && !progressError && <p className="notice" role="status">Sinkronisasi belum tersedia. Progres dapat dilanjutkan di peramban ini.</p>}
     {!ready ? <p className="muted">Membaca progres…</p> : <>
       {view === 'home' && <>
+        {kasirDemo && <section className={styles.card}>
+          <h2>Praktik langsung di Kasir</h2>
+          <div className={styles.actions}>
+            <Link className="nt-btn primary" href="/kasir/demo">Coba Kasir DEMO</Link>
+            <Link className="nt-btn" href="/kasir">Buka menu Kasir</Link>
+          </div>
+        </section>}
         <button data-guide-learning-start className={styles.hero} onClick={() => go(destination)}>
           <span className={styles.heroIcon}><NavIcon name="play" size={30} /></span>
           <span><strong>Panduan {track.subject}</strong><small>{next < 0 ? 'Pelajari kembali' : done.length || resume != null ? 'Lanjutkan belajar' : 'Mulai belajar'} · Delapan tahap</small></span>
@@ -224,7 +235,11 @@ function LearningContent({ kos, scope, track }) {
       </section>}
       {view === 'practice' && <section className={styles.card}><h2>Pusat Praktik</h2>
         <p className={styles.demo}><b>MODE DEMO</b> Bukan transaksi nyata</p>
-        {track.canPractice && <button className="primary" onClick={() => go(2)}>Mulai simulasi {track.subject.toLowerCase()}</button>}
+        {kasirDemo && <Link className="nt-btn primary" href="/kasir/demo">Coba Kasir DEMO</Link>}
+        {track.canPractice && <button className={kasirDemo ? 'ghost' : 'primary'} onClick={() => {
+          if (kasirDemo) { setStage(2); saveJourney({ current: 2 }); setView('simulation'); }
+          else go(2);
+        }}>{kasirDemo ? 'Latihan lanjutan dan tantangan' : 'Mulai simulasi ' + track.subject.toLowerCase()}</button>}
         {PRACTICE_TASKS.filter(({ path }) => modules.some(({ href }) => href === path)).map((item) => <button key={item.id} className="ghost" onClick={() => { setTask(item); setView('exercise'); }}>{item.title}{library.exercises?.[item.id] ? ' · Selesai' : ''}</button>)}
         {!track.canPractice && !PRACTICE_TASKS.some(({ path }) => modules.some(({ href }) => href === path)) && <p>Latihan untuk akses Anda belum tersedia. Buka katalog untuk mempelajari modul.</p>}
       </section>}

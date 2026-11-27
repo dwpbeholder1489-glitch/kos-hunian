@@ -34,7 +34,7 @@ function describeField(el) {
 }
 
 const LIVE_TOURS = {
-  '/kasir': [['pos-search', 'Cari barang dengan nama, kode, atau barcode.'], ['pos-cart', 'Periksa item, satuan, jumlah, dan total.'], ['pos-pay', 'Bayar membuka pilihan pembayaran. Untuk latihan gunakan Pusat Praktik.']],
+  '/kasir': [['pos-demo', 'Buka Coba Kasir DEMO untuk berlatih menambahkan barang dan membayar dengan data contoh.'], ['pos-search', 'Cari barang dengan nama, kode, atau barcode.'], ['pos-cart', 'Periksa item, satuan, jumlah, dan total.'], ['pos-pay', 'Bayar membuka pilihan pembayaran untuk keranjang toko ini.']],
   '/pesanan': [['order-header', 'Pilih pesanan untuk memeriksa tahap pengerjaan.'], ['order-new', 'Pesanan baru membuka formulir layanan dan pelanggan.']],
   '/tagihan': [['invoice-header', 'Periksa riwayat dan status tagihan sewa.'], ['invoice-new', 'Tagihan tambahan untuk biaya di luar tagihan rutin.']],
 };
@@ -122,6 +122,7 @@ function Spotlight({ active, onClose, onMove, onRestart, customer }) {
         <button className="primary" onClick={() => onMove(1)}>{active.index + 1 === active.steps.length ? 'Selesai' : 'Lanjutkan →'}</button>
       </div>
       {!customer && <div className={styles.buttons}>
+        {active.path === '/kasir' && <Link className="nt-btn primary" href="/kasir/demo" onClick={() => onClose('paused')}>Coba Kasir DEMO</Link>}
         <Link className="small" href="/learning-center" onClick={() => onClose('paused')}>Learning Center</Link>
         <Link className="small" href="/bantuan" onClick={() => onClose('paused')}>Pusat Bantuan</Link>
         {active.docStep && <Link className="small" href={`/panduan#langkah-${active.docStep}`} onClick={() => onClose('paused')}>Panduan bergambar</Link>}

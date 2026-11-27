@@ -51,7 +51,12 @@ export default function Kasir() {
   const uid = session?.user?.id;
   if (!uid || !kosId) return null;
   const accountKey = uid + ':' + kosId;
-  return <KasirWorkspace key={accountKey} accountKey={accountKey} uid={uid} />;
+  return <div className="stack">
+    <div className="row">
+      <Link className="nt-btn primary" href="/kasir/demo" data-guide-target="pos-demo">Coba Kasir DEMO</Link>
+    </div>
+    <KasirWorkspace key={accountKey} accountKey={accountKey} uid={uid} />
+  </div>;
 }
 
 function KasirWorkspace({ accountKey, uid: accountId }) {
