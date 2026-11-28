@@ -1,5 +1,6 @@
 // Ikon garis sederhana untuk navigasi aplikasi (tanpa pustaka luar)
 const P = {
+  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
   bed: <><path d="M3 18v3m18-3v3M3 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5zm2-7V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5M8 8h3m2 0h3" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   phone: <path d="M7 3H4a1 1 0 0 0-1 1c0 9.4 7.6 17 17 17a1 1 0 0 0 1-1v-3l-5-2-2 2a13 13 0 0 1-7-7l2-2z" />,

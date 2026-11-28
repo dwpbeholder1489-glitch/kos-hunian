@@ -8,7 +8,7 @@ import { pathAllowed } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
 import NavIcon from '@/components/NavIcon';
 import { SheetSegments, SheetStats } from '@/components/SmartDetailSheet';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
@@ -48,6 +48,12 @@ export default function Penghuni() {
   const [sheet, setSheet] = useState(null);
   const add = () => setSheet({ t: 'edit', occ: null });
   useBaru(add);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tunggakan') === '1') {
+      setF('semua');
+      setState('tunggak');
+    }
+  }, []);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const owner = Boolean(user?.id && kos?.owner_id === user.id);
