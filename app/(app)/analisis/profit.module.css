@@ -76,7 +76,7 @@
 .leakL small { color: var(--muted); font-size: 12px; line-height: 1.35; }
 .leakV { display: grid; text-align: right; font-variant-numeric: tabular-nums; }
 .leakV small { color: var(--muted); font-size: 12px; }
-.rate { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.rate { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .rate label { flex: 0 1 380px; display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
 .drv, .mv { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .drv li, .mv li { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
