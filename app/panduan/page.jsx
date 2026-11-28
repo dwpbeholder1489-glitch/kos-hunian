@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrChatPelanggan, ScrTrackingPesanan, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrChatPelanggan, ScrTrackingPesanan, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrPropertiIntel, ScrInventarisKamar } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -44,7 +44,9 @@ const MENUS_JASA = [
 ];
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
-  ['Kamar', 'Peta kamar, harga sewa, fasilitas, dan memasukkan penghuni'],
+  ['Properti & Lokasi', 'Beberapa gedung/lokasi, nilai investasi, okupansi, NOI, ROI, rental yield & proyeksi sewa'],
+  ['Kamar', 'Peta kamar, harga sewa, fasilitas, properti/lantai/luas, dan memasukkan penghuni'],
+  ['Inventaris kamar', 'Perlengkapan tiap kamar dan pemeriksaan check-in/check-out/rutin'],
   ['Penghuni', 'Data penghuni, tunggakan, deposit/uang jaminan, pengingat WhatsApp, dan akhiri sewa'],
   ['Tagihan', 'Tagihan sewa otomatis, tagihan tambahan, dan mencatat pembayaran'],
   ['Pembayaran', 'Memverifikasi pembayaran dan riwayat uang masuk per bulan'],
@@ -1113,6 +1115,26 @@ const PARTS = [
       <><b>Pendorong Omzet</b>: pilih pembanding di filter, lalu baca berapa perubahan pendapatan yang berasal dari jumlah transaksi dan dari nilai rata-rata per transaksi, plus produk/layanan/kamar yang paling naik & turun.</>,
     ], <>Kebocoran bukan tuduhan: hanya yang tercatat yang terlihat — lakukan stok opname rutin. Peluang adalah perkiraan dengan rumus tertulis di layar, bukan uang yang hilang dari kas.</>, 'warn', null, 'bisnis'],
   ]],
+  ['AR', 'Properti: multi-properti, inventaris kamar & Property Intelligence', [
+    ['Mengelola beberapa properti (gedung/lokasi)', 'Properti & Lokasi › Daftar properti & nilai', [
+      <>Buka <b>Properti & Lokasi</b> → <b>+ Tambah properti / lokasi</b> (pemilik). Properti pertama Anda otomatis menjadi <b>Lokasi utama</b>; semua kamar lama tetap di sana.</>,
+      <>Pindahkan kamar ke properti lain: <b>Kamar</b> → ketuk kamar → <b>Ubah data kamar</b> → <b>Properti / lokasi</b>. Di sini juga bisa diisi lantai, luas (m²), dan kapasitas.</>,
+      <>Di halaman Kamar muncul tombol properti di atas daftar untuk menyaring kamar per gedung. Pengeluaran yang dicatat karyawan masuk ke lokasi kerjanya.</>,
+      <>Nama menu menyesuaikan jenis properti: kos = Kamar/Penghuni, kontrakan/apartemen/ruko = Unit/Penyewa, penginapan/villa = Kamar/Unit & Tamu dengan Reservasi.</>,
+    ], <>Jumlah properti mengikuti batas lokasi paket: Dasar 1, Bisnis 3, Pro 10. Properti yang masih punya kamar terisi tidak bisa dinonaktifkan.</>, 'info', null],
+    ['Inventaris kamar & pemeriksaan check-in/check-out', 'Inventaris kamar', [
+      <>Buka <b>Inventaris kamar</b> → ketuk kamar → <b>+ Tambah barang</b> (kasur, lemari, AC, kunci ×2…). Isi perkiraan nilai bila ingin dipakai sebagai dasar potongan kerusakan.</>,
+      <>Saat penghuni masuk/keluar atau pemeriksaan rutin: <b>Periksa kamar</b> → pilih jenis (Check-in, Check-out, Rutin) → tandai kondisi tiap barang (Baik, Perlu perbaikan, Rusak, Hilang) + keterangan → isi nilai kerusakan bila ada → <b>Simpan pemeriksaan</b>.</>,
+      <>Ada kerusakan? Setelah disimpan langsung muncul kotak <b>Deposit</b> penghuni untuk <b>Potong</b> (wajib alasan). Barang rusak bisa dilanjutkan ke <b>Keluhan & perbaikan</b>.</>,
+    ], <>Pemeriksaan yang sudah disimpan tidak bisa diubah (menjadi bukti). Pemeriksaan bertanggal lebih lama yang dicatat belakangan tidak menimpa kondisi terbaru.</>, 'warn', <ScrInventarisKamar />],
+    ['Property Intelligence: okupansi, NOI, ROI, rental yield & proyeksi', 'Properti & Lokasi › Property Intelligence', [
+      <>Pilih periode (Bulan ini, Bulan lalu, 3 bulan, 12 bulan). Kotak angka: <b>Tingkat hunian</b>, <b>Pendapatan</b> & <b>NOI</b> (dengan naik/turun dibanding periode sebelumnya), <b>Tunggakan</b> (per umur 30/60/90 hari), dan perawatan aktif.</>,
+      <><b>NOI</b> = pendapatan usaha − biaya operasional, tanpa penyusutan, bunga pinjaman, pajak, dan belanja modal. Angka dari jurnal — sama dengan Pembukuan dan Analisis Bisnis.</>,
+      <>Isi <b>Nilai investasi</b> (harga beli/bangun + renovasi) dan <b>Nilai pasar</b> tiap properti di tab Daftar properti & nilai. Tanpa nilai ini ROI, rental yield, dan balik modal tidak dihitung — PRASARA tidak mengisi angka bawaan.</>,
+      <><b>Profitabilitas per kamar</b> (uang masuk − biaya perbaikan kamar itu) dan <b>Proyeksi sewa 12 bulan</b>: Konservatif (sewa bertanggal selesai + booking), Dasar (+ sewa tanpa tanggal selesai), Potensi penuh (+ semua kamar kosong tersewa).</>,
+      <>Paket Pro: pilih properti tertentu atau lihat <b>Perbandingan properti</b> (hunian, pendapatan, NOI, ROI per gedung).</>,
+    ], <>Tanda AKTUAL = tercatat; ESTIMASI = disetahunkan dari kurang dari 12 bulan data; PROYEKSI = asumsi tertulis di layar. Paket Dasar: hunian, pendapatan, NOI, tunggakan. Paket Bisnis: per kamar, ROI, yield, balik modal, proyeksi. Paket Pro: per properti.</>, null, <ScrPropertiIntel />, 'bisnis'],
+  ]],
 ];
 
 const RULES = [
@@ -1185,6 +1207,7 @@ export default function Panduan() {
           <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–136</a><br />Event, kreatif &amp; produksi: penawaran & scope, anggaran & laba proyek, tagihan termin & pembayaran, klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Notifikasi</b><span><a href="#bagian-AN">Langkah 141–143</a><br />Aktifkan di HP/komputer (iPhone lewat Layar Utama), Pusat Notifikasi, kategori, jam tenang, perangkat</span></div>
           <div><b>Learning Center</b><span><a href="#langkah-147">Langkah 147</a><br />Belajar, simulasi, evaluasi, dan ulangi panduan</span></div>
+          <div><b>Properti lanjutan</b><span><a href="#bagian-AR">Langkah 152–154</a><br />Multi-properti, inventaris & pemeriksaan kamar, Property Intelligence (NOI, ROI, yield, proyeksi)</span></div>
           <div><b>Chat & tracking pelanggan</b><span><a href="#bagian-AP">Langkah 148–149</a><br />Chat dari portal toko, grosir & cek pesanan jasa; foto/PDF, kartu produk/penawaran/cara bayar, catatan internal, penugasan; kurir, resi & estimasi tiba</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>

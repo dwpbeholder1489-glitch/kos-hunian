@@ -1,0 +1,44 @@
+/* Properti & Lokasi + Property Intelligence. Mobile-first; mengikuti token Design System (globals.css). */
+.page{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:999px;min-height:38px;padding:6px 14px;white-space:nowrap;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--gold-soft);border-color:var(--gold);color:var(--fg);font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;flex-wrap:wrap;gap:3px;padding:3px;border-radius:10px;background:var(--sunk)}
+.seg button{border:0;background:transparent;min-height:36px;padding:6px 12px;color:var(--muted);border-radius:8px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow-sm,0 1px 2px rgba(0,0,0,.1));font-weight:600}
+.bar select{max-width:100%;min-height:38px}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:768px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg,14px);padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi b{font-size:clamp(17px,4.5vw,22px);line-height:1.2;overflow-wrap:anywhere}
+.kpi small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.kpi[data-tone="bad"] b{color:var(--bad)}
+.kpi[data-tone="warn"] b{color:var(--att,#B45309)}
+.kl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.tag{font-size:10px;font-weight:700;letter-spacing:.04em;padding:1px 6px;border-radius:6px;background:var(--gold-soft);color:var(--brand)}
+.tag[data-k="ESTIMASI"]{background:#FEF3C7;color:#92400E}
+.tag[data-k="PROYEKSI"]{background:#E0E7FF;color:#3730A3}
+.delta{font-weight:700;color:var(--good,#15803D)}
+.delta[data-up="false"]{color:var(--bad)}
+.grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1024px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.status{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.status a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:12px;text-decoration:none;color:var(--fg);background:var(--sunk)}
+.status a b{font-size:20px}
+.status a span{font-size:12px;color:var(--muted);text-align:center}
+.status a[data-k="terisi"]{background:#DCFCE7}
+.status a[data-k="kosong"]{background:#DBEAFE}
+.status a[data-k="booking"]{background:#FEF3C7}
+.status a[data-k="rawat"]{background:#EDE9FE}
+.buckets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px}
+@media (min-width:768px){.buckets{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.buckets div{display:flex;flex-direction:column;padding:8px;border-radius:10px;background:var(--sunk);min-width:0}
+.buckets span{font-size:12px;color:var(--muted)}
+.buckets b[data-bad="true"]{color:var(--bad)}
+.props{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:768px){.props{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ph{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ph > div{min-width:0}
+.ph b{overflow-wrap:anywhere;margin-right:6px}
+.ph p{margin:4px 0 0;overflow-wrap:anywhere}

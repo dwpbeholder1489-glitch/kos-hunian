@@ -18,6 +18,10 @@ import NavIcon from '@/components/NavIcon';
 import { SheetPeriod, SheetSegments, SheetStats } from '@/components/SmartDetailSheet';
 import { invoiceTotals } from '@/lib/propertyTotals';
 import styles from './kamar.module.css';
+import { useSearchParams } from 'next/navigation';
+import { termsFor } from '@/lib/propertyTerms';
+
+const propsOf = (kos) => (kos?.locs?.list || []).filter((b) => b.kind === 'cabang');
 
 const statuses = [
   ['terisi', 'Terisi'], ['tersedia', 'Tersedia'], ['perbaikan', 'Perbaikan'], ['tidak_disewakan', 'Tidak disewakan'],
@@ -59,6 +63,8 @@ export default function Kamar() {
   const [filter, setFilter] = useState('');
   const [payment, setPayment] = useState('');
   const [query, setQuery] = useState('');
+  const sp = useSearchParams();
+  const [prop, setProp] = useState(sp.get('properti') || '');
   const [sheet, setSheet] = useState(null);
   const listRef = useRef(null);
   useBaru(() => setSheet({ t: 'edit', room: null }));
@@ -67,6 +73,10 @@ export default function Kamar() {
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const month = thisMonth();
+  const t = termsFor(kos);
+  const props = propsOf(kos);
+  const mainId = props.find((b) => b.is_main)?.id;
+  const inProp = (room) => !prop || (room.branch_id || mainId) === prop;
   const allowed = quickActions.filter(([href]) => pathAllowed(kos, href));
   const counts = Object.fromEntries(statuses.map(([key]) => [key, 0]));
   const byLease = new Map();
@@ -91,7 +101,7 @@ export default function Kamar() {
   const overdue = sum(d.invoices.filter(isOverdue), 'outstanding');
   const term = query.trim().toLocaleLowerCase('id');
   const list = cards.filter(({ room, lease, name, billing, booking }) =>
-    (!filter || room.status === filter) && (!payment || (billing?.state ?? 'none') === payment) &&
+    inProp(room) && (!filter || room.status === filter) && (!payment || (billing?.state ?? 'none') === payment) &&
     (!term || [room.code, name, ROOM_ST[room.status], billing?.state, booking?.name, booking ? 'Dibooking' : '', lease ? payments.find(([key]) => key === billing.state)?.[1] : null]
       .some((value) => value?.toLocaleLowerCase('id').includes(term))));
   const close = () => setSheet(null);
@@ -103,8 +113,8 @@ export default function Kamar() {
 
   return <div className={styles.page} data-no-field-help>
     <header className={styles.heading}>
-      <div><div><h1>Kamar</h1><PageHelp page="kamar" /></div><p>Status, harga, dan riwayat tiap kamar</p></div>
-      <button className="primary" onClick={() => setSheet({ t: 'edit', room: null })}>+ Kamar</button>
+      <div><div><h1>{t.unit}</h1><PageHelp page="kamar" /></div><p>Status, harga, inventaris, dan riwayat tiap {t.unit.toLowerCase()}</p></div>
+      <button className="primary" onClick={() => setSheet({ t: 'edit', room: null })}>+ {t.unit}</button>
     </header>
     <div className={styles.overview}>
       <section className={styles.occupancy} aria-label="Ringkasan okupansi">
@@ -139,6 +149,9 @@ export default function Kamar() {
         <label><NavIcon name="search" size={19} /><input type="search" aria-label="Cari kamar" placeholder="Cari kamar, penghuni, atau status" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
         <button aria-label="Filter status hunian dan pembayaran" onClick={() => setSheet({ t: 'filter' })}><NavIcon name="filter" size={19} />Filter{payment && ' · Aktif'}</button>
       </div>
+      {props.length > 1 && <div className={styles.tabs} role="group" aria-label="Properti">
+        {[['', 'Semua properti'], ...props.map((b) => [b.id, b.name])].map(([key, label]) => <button key={key || 'all'} aria-pressed={prop === key} onClick={() => setProp(key)}>{label}</button>)}
+      </div>}
       {payment && <button className={styles.activeFilter} onClick={() => setPayment('')}>{payments.find(([key]) => key === payment)?.[1]} ×</button>}
       {list.length ? <div className={styles.grid}>{list.map(({ room, lease, name, billing, booking }) =>
         <article key={room.id} className={styles.room} data-status={room.status} data-payment={billing?.state}>
@@ -230,7 +243,11 @@ function RoomDetail({ d, card, go, onClose }) {
     <SheetSegments label="Bagian detail kamar" options={tabs} value={tab} onChange={setTab} />
     {tab === 'detail' && <>
       <PaymentStatus billing={billing} />
-      {(room.facilities?.length > 0 || room.notes || (lease && room.rent != null && room.rent !== lease.rent)) && <dl className="kv">
+      {(room.facilities?.length > 0 || room.notes || room.floor || room.size_m2 || room.capacity || propsOf(kos).length > 1 || (lease && room.rent != null && room.rent !== lease.rent)) && <dl className="kv">
+        {propsOf(kos).length > 1 && <><dt>Properti</dt><dd>{propsOf(kos).find((b) => b.id === room.branch_id)?.name || propsOf(kos).find((b) => b.is_main)?.name || 'Lokasi utama'}</dd></>}
+        {room.floor && <><dt>Lantai</dt><dd>{room.floor}</dd></>}
+        {room.size_m2 && <><dt>Luas</dt><dd>{angka(room.size_m2)} m²</dd></>}
+        {room.capacity && <><dt>Kapasitas</dt><dd>{room.capacity} orang</dd></>}
         {lease && room.rent != null && room.rent !== lease.rent && <><dt>Tarif dasar kamar</dt><dd>{rp(room.rent)}/bln</dd></>}
         {room.facilities?.length > 0 && <><dt>Fasilitas</dt><dd>{room.facilities.join(', ')}</dd></>}
         {room.notes && <><dt>Catatan</dt><dd>{room.notes}</dd></>}
@@ -253,6 +270,7 @@ function RoomDetail({ d, card, go, onClose }) {
       {booking && pathAllowed(kos, '/booking') ? <Link href="/booking" className="notice">Dibooking {booking.name} ({booking.number}), masuk {tgl(booking.check_in)}. Check-in lewat menu Booking.</Link>
         : !booking && moduleOn(kos, 'p_booking') && pathAllowed(kos, '/booking') && room.status !== 'tidak_disewakan' && <Link href={`/booking?kamar=${room.id}`}>Booking kamar ini untuk calon penghuni</Link>}
       {canMaintain && <Link href={`/perbaikan?kamar=${room.id}`}>Catat keluhan / kerusakan kamar ini</Link>}
+      {pathAllowed(kos, '/inventaris') && <Link href={`/inventaris?kamar=${room.id}`}>Inventaris & pemeriksaan masuk/keluar</Link>}
       <button onClick={() => go({ t: 'edit', room })}>Ubah data kamar</button>
     </>}
     {tab === 'occupancy' && <History rows={d.leases.filter((item) => item.room_id === room.id)} empty="Belum ada riwayat penghuni." render={(item) => <>
@@ -280,7 +298,12 @@ function RoomDetail({ d, card, go, onClose }) {
 }
 
 function RoomEdit({ d, room, onClose }) {
-  const { kosId, bump } = useKos();
+  const { kos, kosId, bump } = useKos();
+  const props = propsOf(kos);
+  const [branch, setBranch] = useState(room?.branch_id || '');
+  const [floor, setFloor] = useState(room?.floor || '');
+  const [size, setSize] = useState(room?.size_m2 ? String(room.size_m2) : '');
+  const [cap, setCap] = useState(room?.capacity ? String(room.capacity) : '');
   const isNew = !room;
   const [code, setCode] = useState(room?.code || '');
   const [rent, setRent] = useState(room?.rent ? angka(room.rent) : '');
@@ -292,7 +315,9 @@ function RoomEdit({ d, room, onClose }) {
 
   async function save() {
     if (!code.trim()) return run(() => { throw new Error('Isi kode kamar.'); });
-    const data = { code: code.trim().toUpperCase(), rent: rent.trim() ? parseRp(rent) : null, facilities: fac.split(',').map((s) => s.trim()).filter(Boolean), notes: notes.trim() || null };
+    const data = { code: code.trim().toUpperCase(), rent: rent.trim() ? parseRp(rent) : null, facilities: fac.split(',').map((s) => s.trim()).filter(Boolean), notes: notes.trim() || null,
+      floor: floor.trim() || null, size_m2: size.trim() ? Number(size.replace(',', '.')) || null : null, capacity: cap.trim() ? parseInt(cap, 10) || null : null };
+    if (props.length > 1) data.branch_id = branch || null;
     if (room?.status !== 'terisi') data.status = status;
     setBusy(true);
     const ok = await run(() => isNew ? supabase.from('rooms').insert({ ...data, kos_id: kosId }) : supabase.from('rooms').update(data).eq('id', room.id), isNew ? 'Kamar ditambahkan' : 'Kamar diperbarui', errMsg);
@@ -315,7 +340,14 @@ function RoomEdit({ d, room, onClose }) {
           <select value={status} onChange={(e) => setStatus(e.target.value)}>{['tersedia', 'perbaikan', 'tidak_disewakan'].map((s) => <option key={s} value={s}>{ROOM_ST[s]}</option>)}</select>
         )}
       </Field>
-      <Field label="Fasilitas" hint="Pisahkan dengan koma"><input value={fac} onChange={(e) => setFac(e.target.value)} placeholder="Kasur, lemari, kamar mandi dalam" /></Field>
+      {props.length > 1 && <Field label="Properti / lokasi" hint="Kosong = lokasi utama"><select value={branch} onChange={(e) => setBranch(e.target.value)}>
+        <option value="">{props.find((b) => b.is_main)?.name || 'Lokasi utama'}</option>{props.filter((b) => !b.is_main).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>}
+      <div className="row">
+        <Field label="Lantai (opsional)"><input value={floor} maxLength={20} onChange={(e) => setFloor(e.target.value)} placeholder="mis. 2" /></Field>
+        <Field label="Luas m² (opsional)"><input inputMode="decimal" value={size} onChange={(e) => setSize(e.target.value)} /></Field>
+        <Field label="Kapasitas (orang)"><input inputMode="numeric" value={cap} onChange={(e) => setCap(e.target.value)} /></Field>
+      </div>
+      <Field label="Fasilitas" hint="Pisahkan dengan koma. Daftar barang & kondisinya: menu Inventaris."><input value={fac} onChange={(e) => setFac(e.target.value)} placeholder="Kasur, lemari, kamar mandi dalam" /></Field>
       <Field label="Catatan"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
       <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan'}</button>
       {!isNew && !used && <button className="danger" onClick={del}>Hapus kamar</button>}
