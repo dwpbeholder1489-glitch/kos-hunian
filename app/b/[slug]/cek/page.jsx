@@ -21,12 +21,12 @@ export default function Cek() {
   const [track, setTrack] = useState(null);
   const [chat, setChat] = useState(false);
   useEffect(() => { try { const n = new URLSearchParams(window.location.search).get('no'); if (n) setNo(n); } catch {} }, []);
-  const go = async (e) => {
-    e.preventDefault(); setErr(''); setBusy(true); setTrack(null);
+  const go = async (e, number = no, phone = hp) => {
+    e?.preventDefault(); setErr(''); setBusy(true); setTrack(null);
     try {
-      const r = await fetch('/api/publik/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, number: no, phone: hp }) });
+      const r = await fetch('/api/publik/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, number, phone }) });
       const d = await r.json().catch(() => ({}));
-      if (!d.ok) { setO(null); setCred(null); setErr(d.error || 'Pesanan tidak ditemukan.'); } else { setO(d); setCred({ number: no.trim(), phone: hp }); setChat(false); }
+      if (!d.ok) { setO(null); setCred(null); setErr(d.error || 'Pesanan tidak ditemukan.'); } else { setO(d); setCred({ number: number.trim(), phone }); setNo(number); setChat(false); }
     } catch { setErr('Koneksi terputus. Coba lagi.'); }
     setBusy(false);
   };
@@ -40,13 +40,13 @@ export default function Cek() {
         {err && <div className="notice bad">{err}</div>}
         <button className="cta" type="submit" disabled={busy}>{busy ? 'Memeriksa…' : 'Cek status'}</button>
       </form>
-      {o && cred && <Found slug={slug} o={o} cred={cred} track={track} setTrack={setTrack} chat={chat} setChat={setChat} />}
+      {o && cred && <Found slug={slug} o={o} cred={cred} track={track} setTrack={setTrack} chat={chat} setChat={setChat} onOrder={(number) => go(null, number, cred.phone)} />}
     </main></CustomerGuide>
   );
 }
 
 // Tracking + chat untuk pesanan yang sudah ditemukan
-function Found({ slug, o, cred, track, setTrack, chat, setChat }) {
+function Found({ slug, o, cred, track, setTrack, chat, setChat, onOrder }) {
   const auth = { slug, number: cred.number, phone: cred.phone };
   const key = JSON.stringify(auth);
   useEffect(() => {
@@ -61,7 +61,8 @@ function Found({ slug, o, cred, track, setTrack, chat, setChat }) {
   const t = track || { ...o, type: 'svc_order' };
   return <>
     {o.status === 'batal' && <div className="notice bad">Pesanan dibatalkan{o.void_reason ? `: ${o.void_reason}` : ''}.</div>}
-    {chat ? <CustomerChat endpoint="/api/publik/chat" auth={auth} refId="nomor" back={() => setChat(false)} onOpenReference={() => setChat(false)} />
+    {chat ? <CustomerChat endpoint="/api/publik/chat" auth={auth} refId="nomor" back={() => setChat(false)} onOpenReference={() => setChat(false)}
+      onCard={(kind, payload) => { if (kind === 'pesanan' && payload.number) onOrder(payload.number); }} />
       : <TrackingView track={t} onContact={() => setChat(true)} contactLabel="Chat dengan Bisnis" />}
     {!chat && o.status !== 'batal' && o.status !== 'permintaan' && !o.lunas && <PublicPay slug={slug} note="Setelah membayar, kirim bukti transfer lewat chat agar pembayaran dicatat." />}
     {!chat && o.status === 'permintaan' && <span className="small muted">Total masih perkiraan; dikonfirmasi saat barang diterima.</span>}

@@ -7,6 +7,7 @@ import { fmtDay, fmtTime, presenceText, trackingOf } from '@/lib/tracking';
 import styles from './customer-chat.module.css';
 
 const P = {
+  photo: 'M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M16 9h.01',
   chat: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12ZM8.5 12h.01M12 12h.01M15.5 12h.01',
   box: 'M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5 9-5M12 13v8',
   check: 'm5 12 4 4L19 6',
@@ -87,8 +88,10 @@ function Card({ m, onAction }) {
   const p = m.payload || {};
   if (m.kind === 'produk') return <div className={styles.card}>
     <span className={styles.cardHead}><Ico name="box" size={18} />{p.name}</span>
-    <small>{rp(p.price)} / {p.unit}</small>
-    {onAction && <button type="button" className={styles.cardBtn} onClick={() => onAction('produk', p)}>Lihat produk</button>}
+    {p.unavailable ? <small>Produk sudah tidak tersedia</small> : <>
+      <b>{rp(p.price)} / {p.unit}</b>{p.stock != null && <small>Stok tercatat {p.stock} {p.base_unit}</small>}
+    </>}
+    {onAction && !p.unavailable && <button type="button" className={styles.cardBtn} onClick={() => onAction('produk', p)}>Lihat produk</button>}
   </div>;
   if (m.kind === 'penawaran') return <div className={styles.card}>
     <span className={styles.cardHead}><Ico name="tag" size={18} />Penawaran dari Toko</span>
@@ -96,9 +99,19 @@ function Card({ m, onAction }) {
     {p.valid_until && <small>Berlaku sampai {fmtDay(p.valid_until + 'T12:00:00+07:00')}</small>}
     {onAction && <button type="button" className={styles.cardBtn} onClick={() => onAction('penawaran', p)}>Lihat penawaran</button>}
   </div>;
+  if (m.kind === 'pesanan') return <div className={styles.card}>
+    <span className={styles.cardHead}><Ico name="cart" size={18} />Pesanan {p.number ? '#' + p.number : ''}</span>
+    {p.unavailable ? <small>Pesanan tidak tersedia</small> : <>
+      <small>{p.items} baris · {rp(p.total)} · {String(p.status || '').replaceAll('_',' ')}</small>
+      {p.paid != null && <small>Dibayar {rp(p.paid)} · {p.lunas ? 'Lunas' : 'Belum lunas'}</small>}
+      {onAction && <button className={styles.cardBtn} onClick={() => onAction('pesanan',p)}>Lihat pesanan</button>}
+    </>}
+  </div>;
   if (m.kind === 'pembayaran') return <div className={styles.card}>
-    <span className={styles.cardHead}><Ico name="card" size={18} />Cara pembayaran</span>
+    <span className={styles.cardHead}><Ico name="card" size={18} />{p.number ? 'Tagihan #' + p.number : 'Cara pembayaran'}</span>
     {p.total != null && Number(p.total) > 0 && <small>Total pesanan {rp(p.total)}</small>}
+    {p.paid != null && <small>Sisa pembayaran {rp(Math.max(0,Number(p.total)-Number(p.paid)))}</small>}
+    {p.order_id && onAction && !p.unavailable && <button className={styles.cardBtn} onClick={() => onAction('pesanan',p)}>Lihat pesanan & pembayaran</button>}
     {p.payment_info && <p style={{ fontSize: 14 }}>{p.payment_info}</p>}
     {p.qris && <img className={styles.qris} src={p.qris} alt="QRIS" />}
     {p.rules && <small style={{ whiteSpace: 'pre-wrap' }}>{p.rules}</small>}
@@ -126,8 +139,8 @@ export function MessageList({ messages, side, business, older, loadOlder, openFi
             {m.by && side === 'business' && !note && <span className={styles.by}>{m.by}</span>}
             {m.file && <Attachment m={m} openFile={openFile} />}
             <Card m={m} onAction={onCard} />
-            {m.body && <p>{m.body}</p>}
-            <span className={styles.meta}>{fmtTime(m.created_at)}{mine && !note && <span className={m.read_at ? styles.read : undefined} title={m.read_at ? 'Dibaca' : 'Terkirim'}>{m.read_at ? '✓✓' : '✓'}</span>}{m.pending && ' · mengirim…'}</span>
+            {m.body && <p>{/^https:\/\/[^\s]+$/i.test(m.body) ? <a href={m.body} target="_blank" rel="noreferrer">{m.body}</a> : m.body}</p>}
+            <span className={styles.meta}>{fmtTime(m.created_at)}{mine && !note && !m.pending && <span className={m.read_at ? styles.read : undefined} title={m.read_at ? 'Dibaca' : 'Terkirim'}>{m.read_at ? '✓✓' : '✓'}</span>}{m.pending && ' · mengirim…'}</span>
           </div>
         </div>
       </div>;
@@ -164,7 +177,7 @@ export function Composer({ onSend, onFile, chips, busy, disabled, placeholder = 
       onClick={() => { const r = act(); if (typeof r === 'string') { setDraft(r); requestAnimationFrame(() => { area.current?.focus(); area.current?.setSelectionRange(r.length, r.length); }); } }}>{icon && <Ico name={icon} size={16} />}{label}</button>)}</div>}
     <form className={styles.compose} onSubmit={submit}>
       {onFile && <>
-        <button type="button" className={styles.round} aria-label="Kirim foto atau dokumen" disabled={disabled || busy} onClick={() => (extraMenu ? extraMenu() : file.current?.click())}><Ico name="plus" /></button>
+        <button type="button" className={styles.round} aria-label={extraMenu ? 'Aksi percakapan' : 'Kirim foto atau dokumen'} disabled={disabled || busy} onClick={() => (extraMenu ? extraMenu() : file.current?.click())}><Ico name="plus" /></button>
         <input ref={file} className={styles.hidden} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" tabIndex={-1}
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onFile(f); }} />
       </>}

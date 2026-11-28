@@ -153,3 +153,8 @@
   .hero { padding: 20px 22px; }
   .hero h2 { font-size: 21px; }
 }
+.card { min-width:0;overflow-wrap:anywhere }
+.cardHead svg { flex:none }
+.cardBtn { min-height:40px }
+.qris { width:min(100%,200px) }
+.bubble { overflow-wrap:anywhere }

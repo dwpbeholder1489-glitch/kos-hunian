@@ -157,7 +157,7 @@ export default function CustomerPortal({ initialTab }) {
         {!sent && tab === 'chat' && focus && <>
           <CustomerChat key={focus} endpoint="/api/portal-b2b" auth={{ token }} refId={focus} title={b.name}
             back={() => navigate(focus === 'umum' ? 'pesan' : 'lacak', focus === 'umum' ? null : focus)} whatsapp={waOwner(`Halo ${b.name}, saya ${c.name}.`)}
-            onOpenReference={(ref) => navigate('lacak', ref.id)} onCard={(kind, x) => { if (kind === 'penawaran') navigate('lacak', x.order_id); else if (kind === 'produk') { setQ(x.name); navigate('pesan'); } }} />
+            onOpenReference={(ref) => navigate('lacak', ref.id)} onCard={(kind, x) => { if (kind === 'penawaran' || kind === 'pesanan') navigate('lacak', x.order_id); else if (kind === 'produk') { setQ(x.name); navigate('pesan'); } }} />
         </>}
         {!sent && tab === 'tagihan' && <Bills p={p} openInv={openInv} waOwner={waOwner} />}
         {!sent && tab === 'profil' && (

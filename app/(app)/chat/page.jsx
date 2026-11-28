@@ -49,7 +49,7 @@ export default function ChatPage() {
   };
   const settings = canArea(kos, 'settings');
 
-  const head = <PageHeader title="Chat pelanggan" help={<PageHelp />}
+  const head = <PageHeader title="Chat pelanggan" help={<PageHelp page="chat" />}
     desc="Pesan dari portal toko, portal grosir, dan halaman cek pesanan. Status online & waktu respons yang dilihat pelanggan dihitung dari aktivitas tim di sini."
     actions={settings && <button type="button" className="sm" onClick={() => setSetup(!setup)}>{setup ? 'Tutup setelan' : 'Setelan chat'}</button>} />;
   if (err && !d) return <>{head}<div className="notice bad">{err}</div></>;

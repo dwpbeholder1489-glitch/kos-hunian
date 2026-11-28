@@ -645,7 +645,7 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
     <CustomerChat key={id || 'umum'} endpoint={endpoint} refId={id || 'umum'} title={page.name} back={() => (id ? go('lacak', id) : go('layanan'))}
       whatsapp={page.wa_phone ? waLink(page.wa_phone, `Halo ${page.name}${order ? `, saya ingin menanyakan pesanan ${order.number}` : ''}.`) : null}
       onOpenReference={(ref) => go('lacak', ref.id)} onPay={shop.pay ? () => go('bayar') : undefined}
-      onCard={(kind, p) => { if (kind === 'produk' && products.get(p.product_id)) go('produk', p.product_id); else if (kind === 'penawaran') go('lacak', p.order_id); }} />
+      onCard={(kind, p) => { if (kind === 'produk' && products.get(p.product_id)) go('produk', p.product_id); else if (kind === 'penawaran' || kind === 'pesanan') { refresh(); go('lacak', p.order_id); } }} />
   </>;
   else if (view === 'info') content = <>
     <Bar title="Info Toko" back={() => go('beranda')} />
