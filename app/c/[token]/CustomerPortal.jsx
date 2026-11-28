@@ -2,6 +2,8 @@
 // Portal pelanggan grosir (Tahap 5 Retail, Master Prompt Bagian 15 "B2B Portal"). Link pribadi dari penjual, tanpa akun/sandi.
 // Data dari cportal_get (anon): harga milik pelanggan, status tersedia (tanpa angka stok), piutang & faktur, riwayat pesanan.
 // Pesan / batal lewat /api/portal-b2b (server). Pesanan = "Menunggu konfirmasi" sampai penjual mengonfirmasi (cek stok & batas kredit di sana).
+import CustomerChat from '@/components/commerce/CustomerChat';
+import { TrackingView } from '@/components/commerce/ChatParts';
 import { CustomerGuide } from '@/components/InteractiveGuide';
 import { CUSTOMER_HELP } from '@/lib/customerGuide';
 import { useEffect, useMemo, useState } from 'react';
@@ -32,6 +34,8 @@ export default function CustomerPortal({ initialTab }) {
   const [cat, setCat] = useState('');
   const [checkout, setCheckout] = useState(false);
   const [sent, setSent] = useState(null); // {number, total, kind}
+  const [focus, setFocus] = useState(null); // id pesanan untuk Lacak / Chat ('umum' = chat tanpa pesanan)
+  const [unread, setUnread] = useState({});
   const load = async () => {
     if (!supabase) return setP(null);
     const { data, error } = await supabase.rpc('cportal_get', { p_token: token });
@@ -47,6 +51,15 @@ export default function CustomerPortal({ initialTab }) {
     setCart(saved);
     setLoadedCart(token);
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  // balasan penjual yang belum dibaca (lencana Chat & per pesanan)
+  useEffect(() => {
+    let alive = true;
+    const tick = () => { if (document.hidden) return; fetch('/api/portal-b2b', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, action: 'unread' }) })
+      .then((r) => (r.ok ? r.json() : {})).then((d) => { if (alive && d && !d.error) setUnread(d); }).catch(() => {}); };
+    tick();
+    const timer = setInterval(tick, 30000);
+    return () => { alive = false; clearInterval(timer); };
+  }, [token, tab]);
   useEffect(() => {
     if (loadedCart !== token) return;
     try { localStorage.setItem(cartKey(token), JSON.stringify(cart)); } catch {}
@@ -79,7 +92,8 @@ export default function CustomerPortal({ initialTab }) {
   const openInv = p.invoices.filter((i) => Number(i.open) > 0);
   const waiting = p.orders.filter((o) => o.status === 'penawaran').length;
 
-  const navigate = (next) => {
+  const navigate = (next, id = null) => {
+    setFocus(id);
     setTab(next);
     setSent(null);
     window.scrollTo(0, 0);
@@ -107,7 +121,7 @@ export default function CustomerPortal({ initialTab }) {
             </button>
           ))}
         </nav>
-        {b.phone && <a className={styles.contact} href={waOwner(`Halo ${b.name}, saya ${c.name}.`)} target="_blank" rel="noreferrer"><NavIcon name="/crm" size={19} />Hubungi</a>}
+        <button type="button" className={styles.contact} onClick={() => navigate('chat', 'umum')}><NavIcon name="/crm" size={19} />Chat{unread.umum > 0 && <span className={styles.badge}>{unread.umum}</span>}</button>
       </header>
 
       <main className={`${styles.main} stack ${showCart ? styles.hasCart : ''}`}>
@@ -138,7 +152,13 @@ export default function CustomerPortal({ initialTab }) {
             {showCart && <CartSummary lines={lines} total={total} onCheckout={() => setCheckout(true)} />}
           </div>
         )}
-        {!sent && tab === 'pesanan' && <Orders p={p} token={token} reorder={reorder} onChanged={load} waOwner={waOwner} />}
+        {!sent && tab === 'pesanan' && <Orders p={p} token={token} reorder={reorder} onChanged={load} waOwner={waOwner} unread={unread} go={navigate} />}
+        {!sent && tab === 'lacak' && focus && <OrderTrack token={token} order={p.orders.find((o) => o.id === focus)} unread={unread[focus] || 0} go={navigate} />}
+        {!sent && tab === 'chat' && focus && <>
+          <CustomerChat key={focus} endpoint="/api/portal-b2b" auth={{ token }} refId={focus} title={b.name}
+            back={() => navigate(focus === 'umum' ? 'pesan' : 'lacak', focus === 'umum' ? null : focus)} whatsapp={waOwner(`Halo ${b.name}, saya ${c.name}.`)}
+            onOpenReference={(ref) => navigate('lacak', ref.id)} onCard={(kind, x) => { if (kind === 'penawaran') navigate('lacak', x.order_id); else if (kind === 'produk') { setQ(x.name); navigate('pesan'); } }} />
+        </>}
         {!sent && tab === 'tagihan' && <Bills p={p} openInv={openInv} waOwner={waOwner} />}
         {!sent && tab === 'profil' && (
           <section className="panel">
@@ -329,7 +349,30 @@ function SentPanel({ sent, b, c, waOwner, onSee, onMore }) {
   );
 }
 
-function Orders({ p, token, reorder, onChanged, waOwner }) {
+// Lacak satu pesanan (data penjual: tahap, kurir, resi, estimasi tiba)
+function OrderTrack({ token, order, unread, go }) {
+  const [track, setTrack] = useState(null);
+  const [err, setErr] = useState('');
+  const id = order?.id;
+  useEffect(() => {
+    if (!id) return;
+    let alive = true;
+    const load = () => fetch('/api/portal-b2b', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, action: 'conversation', ref: id, operation: 'track' }) })
+      .then(async (r) => { const d = await r.json().catch(() => ({})); if (!alive) return; if (!r.ok || d.error) setErr(d.error || 'Gagal memuat status.'); else { setErr(''); setTrack(d); } }).catch(() => alive && setErr('Koneksi terputus.'));
+    load();
+    const t = setInterval(() => { if (!document.hidden) load(); }, 20000);
+    return () => { alive = false; clearInterval(t); };
+  }, [id, token]);
+  if (!order) return <section className="panel"><p className="muted">Pesanan tidak ditemukan.</p></section>;
+  return <div className="stack">
+    <button type="button" className="sm" style={{ justifySelf: 'start' }} onClick={() => go('pesanan')}>← Pesanan</button>
+    {err && <div className="notice bad">{err}</div>}
+    {!track && !err && <p className="muted">Memuat status…</p>}
+    {track && <TrackingView track={track} unread={unread} onContact={() => go('chat', id)} contactLabel="Chat dengan Penjual" />}
+  </div>;
+}
+
+function Orders({ p, token, reorder, onChanged, waOwner, unread = {}, go }) {
   const [open, setOpen] = useState(null);
   const [busy, setBusy] = useState(false);
   if (!p.orders.length) return <section className="panel"><p className="muted" style={{ margin: 0 }}>Belum ada pesanan. Pesan dari tab Pesan barang.</p></section>;
@@ -347,7 +390,7 @@ function Orders({ p, token, reorder, onChanged, waOwner }) {
       return (
         <div key={o.id} style={{ borderTop: '1px solid var(--line)' }}>
           <button className="li" style={{ width: '100%', background: 'none', border: 0, textAlign: 'left', font: 'inherit', color: 'inherit', padding: '12px 14px' }} onClick={() => setOpen(open === o.id ? null : o.id)}>
-            <div className="main"><b className="small">{o.number} <span className={'chip ' + ST[o.status][1]} style={{ marginLeft: 4 }}>{ST[o.status][0]}</span></b>
+            <div className="main"><b className="small">{o.number} <span className={'chip ' + ST[o.status][1]} style={{ marginLeft: 4 }}>{ST[o.status][0]}</span>{unread[o.id] > 0 && <span className="chip bad" style={{ marginLeft: 4 }}>{unread[o.id]} pesan baru</span>}</b>
               <span className="small muted">{tgl(o.date)}{o.ref ? ` · ${o.ref}` : ''}{o.kind === 'penawaran' ? ' · minta penawaran' : ''}{o.source === 'staf' ? ' · dibuat penjual' : ''}</span></div>
             <b className="small">{rp(o.total)}</b>
           </button>
@@ -360,8 +403,10 @@ function Orders({ p, token, reorder, onChanged, waOwner }) {
             {o.deliveries.length > 0 && <div className="unitbox small" style={{ gap: 4 }}><b>Pengiriman</b>{o.deliveries.map((d) => <span key={d.number}>{d.number} · {tgl(d.date)} · {DV[d.status] || d.status}{d.recipient ? ` · diterima ${d.recipient}` : ''}{d.invoice ? ` · faktur ${d.invoice}` : ''}</span>)}</div>}
             {o.status === 'penawaran' && <span className="small muted">Penjual belum mengonfirmasi{o.kind === 'penawaran' ? '; harga bisa disesuaikan penjual.' : '. Harga mengikuti harga Anda saat memesan.'}</span>}
             <div className="row" style={{ flexWrap: 'wrap' }}>
+              <button className="sm" onClick={() => go('lacak', o.id)}>Lacak pesanan</button>
+              <button className="sm" onClick={() => go('chat', o.id)}>Chat penjual{unread[o.id] > 0 ? ` (${unread[o.id]})` : ''}</button>
               <button className="sm" onClick={() => reorder(o)}>Pesan lagi</button>
-              {waOwner && <a href={waOwner(`Halo, saya ingin menanyakan pesanan ${o.number}.`)} target="_blank" rel="noreferrer"><button className="sm">Tanya penjual</button></a>}
+              {waOwner && <a href={waOwner(`Halo, saya ingin menanyakan pesanan ${o.number}.`)} target="_blank" rel="noreferrer"><button className="sm">WhatsApp</button></a>}
               {o.status === 'penawaran' && !sent && <button className="sm ghost danger" disabled={busy} onClick={() => cancel(o)}>Batalkan</button>}
             </div>
           </div>}

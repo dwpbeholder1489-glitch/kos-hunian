@@ -39,13 +39,12 @@ function Item({ it, onChange, onRemove }) {
   );
 }
 
-export default function MediaUploader({ kosId, category = 'lainnya', multiple = true, max = 10, replaceId, title, onClose, onDone }) {
+export default function MediaUploader({ kosId, category = 'lainnya', multiple = true, max = 10, replaceId, title, onClose, onDone, initialFiles }) {
   const cam = useRef(null); const gal = useRef(null);
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState(false);
-  const pick = async (e) => {
-    const files = Array.from(e.target.files || []).slice(0, multiple ? max - items.length : 1);
-    e.target.value = '';
+  const addFiles = async (source) => {
+    const files = Array.from(source).slice(0, multiple ? max - items.length : 1);
     const key = DEFAULT_RATIO[category] || 'asli';
     const next = [];
     for (const f of files) {
@@ -54,7 +53,19 @@ export default function MediaUploader({ kosId, category = 'lainnya', multiple = 
       try { const img = await loadImage(f); next.push({ id: Math.random().toString(36).slice(2), file: f, img, opts: { key, ratio: RATIOS.find((r) => r[0] === key)[2], rotate: 0, fx: 0.5, fy: 0.5 }, status: 'new' }); }
       catch (er) { toast(er.message); }
     }
-    setItems((x) => (multiple ? [...x, ...next] : next.slice(0, 1)));
+    setItems((x) => (multiple ? [...x, ...next].slice(0, max) : next.slice(0, 1)));
+  };
+  const initialPending = useRef(initialFiles);
+  useEffect(() => {
+    if (!initialPending.current) return;
+    const files = initialPending.current;
+    initialPending.current = null;
+    addFiles(files);
+  }, []);
+  const pick = (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    addFiles(files);
   };
   const save = async () => {
     setBusy(true);

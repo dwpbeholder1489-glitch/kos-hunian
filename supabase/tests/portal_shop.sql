@@ -84,6 +84,14 @@ begin
   assert result->>'ok' = 'true' and (result->>'total')::numeric = 15000, 'Link grosir lama tetap bisa pesan';
   assert jsonb_array_length(portal_shop_orders(slug, guest)) = 1, 'Riwayat tamu tidak memuat pesanan privat';
 
+  -- Chat pelanggan: uji lengkap di chat_tracking.sql; di sini cukup memastikan pesanan portal bisa dibuka & diisolasi
+  assert not has_function_privilege('anon','cx_customer(jsonb)','execute');
+  assert not has_table_privilege('authenticated','customer_messages','select');
+  assert cx_customer(jsonb_build_object('access','guest','slug',slug,'credential',repeat('c',64),'ref',guest_id,'op','list')) is null;
+  assert cx_customer(jsonb_build_object('access','guest','slug',slug,'credential',guest,'ref',guest_id,'op','send','id',gen_random_uuid(),'body','Pesan uji'))->>'ok' = 'true';
+  assert cx_customer(jsonb_build_object('access','private','credential',private_token,'ref',guest_id,'op','list')) is null;
+  assert (select count(*) from notif_items where kos_id=a and user_id=owner_a::uuid
+    and event_type='CustomerChatMessage' and body not like '%Pesan uji%') = 1;
   perform set_config('request.jwt.claim.sub', owner_a, true);
   assert jsonb_array_length(retail_portal_inbox(a)) = 2, 'Pesanan dan penawaran menunggu tampil';
   assert retail_portal_inbox(b) = '[]'::jsonb, 'Pemberitahuan dibatasi akses bisnis';
@@ -104,6 +112,7 @@ begin
   assert not portal_shop_rate(slug, guest, guest_id, pr, 5), 'Produk belum diterima tidak dapat dinilai';
   perform so_delivery_status(delivery, 'diterima', 'Pembeli uji');
   assert portal_shop_orders(slug, guest) #>> '{0,deliveries,0,status}' = 'diterima', 'Pelacakan menerima status penjual';
+  assert cx_customer(jsonb_build_object('access','guest','slug',slug,'credential',guest,'ref',guest_id,'op','track')) #>> '{deliveries,0,status}' = 'diterima', 'Tracking memakai data aktual';
   perform set_config('request.jwt.claim.sub', '', true);
   assert not portal_shop_rate(slug, repeat('c',64), guest_id, pr, 5), 'Tamu lain tidak dapat menilai';
   assert not portal_shop_rate(slug, guest, guest_id, pr_hidden, 5), 'Produk yang tidak dibeli tidak dapat dinilai';

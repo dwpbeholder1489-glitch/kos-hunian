@@ -1,4 +1,4 @@
--- Uji progres tur panduan (migrasi 20261128130000). Lulus = berakhir tanpa ERROR; semua di-ROLLBACK.
+-- Uji progres tur panduan (migrasi 20261128170000). Lulus = berakhir tanpa ERROR; semua di-ROLLBACK.
 -- Pakai: psql -v ON_ERROR_STOP=1 -d <db> -f supabase/tests/learning_tours.sql
 begin;
 insert into auth.users(id, email) values

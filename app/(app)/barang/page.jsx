@@ -6,10 +6,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import NavIcon from '@/components/NavIcon';
 import styles from './barang.module.css';
+import formStyles from './product-form.module.css';
+import ProductDraftPhotos from './ProductDraftPhotos';
 import { ScanButton } from '@/components/BarcodeScan';
 import ProductPhotoButton from '@/components/ProductPhotoScan';
 import { moduleOn, multiLoc, canArea } from '@/lib/business';
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -19,7 +21,7 @@ import EntityPhotos from '@/components/media/EntityPhotos';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, errMsg, tgl } from '@/lib/format';
-import { qtyNum, unitsOf, stockText, isLow, MOVE } from '@/lib/retail';
+import { qtyNum, unitsOf, stockText, isLow, MOVE, uid } from '@/lib/retail';
 import { isiNum, isiText, measure, toBase, resolveUnit, contentOf, contentChoices, presetsFor, crossDim, unitProblem, BASE_PRESETS } from '@/lib/units';
 import Kedaluwarsa from '@/components/Kedaluwarsa';
 import StokSehat, { availLine } from '@/components/StokSehat';
@@ -89,6 +91,7 @@ function InventoryWorkspace({ kosId, ver, kos }) {
   const [cat, setCat] = useState('');
   const [catSheet, setCatSheet] = useState(false);
   const [variant, setVariant] = useState(null);   // null | 'new' | grup (tambah varian)
+  const [breakAfterCreate, setBreakAfterCreate] = useState(null);
   const [brk, setBrk] = useState(null);   // barang yang harga beli banyaknya diatur
   const [opr, setOpr] = useState(null);   // harga per outlet
   const [hist, setHist] = useState(null); // riwayat harga
@@ -114,6 +117,8 @@ function InventoryWorkspace({ kosId, ver, kos }) {
   const minus = physical.filter((p) => Number(p.stock) < 0);
   const locationMinus = negative.rows?.length ?? 0;
   const knownStock = active.every((p) => p.is_kit || p.stock != null);
+  const priceProduct = brk || (breakAfterCreate && d.products.find((item) => item.id === breakAfterCreate));
+  const closePrices = () => { setBrk(null); setBreakAfterCreate(null); };
   const catalogView = !['kedaluwarsa', 'kesehatan'].includes(f);
   const issues = [
     low.length > 0 && `${angka(low.length)} menipis`,
@@ -208,6 +213,7 @@ function InventoryWorkspace({ kosId, ver, kos }) {
 
   return (
     <div className={styles.page}>
+      {edit !== 'new' && <>
       <section className={styles.hero} aria-label="Inventory Management Center">
         <div className={styles.heroCopy}>
           <h1>{bahan ? 'Bahan & Stok' : 'Barang (Produk)'}</h1>
@@ -281,6 +287,7 @@ function InventoryWorkspace({ kosId, ver, kos }) {
       {retail && (negative.failed || locationMinus > 0) && <div id="stok-minus" className="panel">
         <StockMinusList key={kosId} rows={negative.rows || []} failed={negative.failed} />
       </div>}
+      </>}
       {extra === 'filters' && <Sheet title="Filter Persediaan" onClose={() => setExtra(null)}>
         {filterOptions}
         {!bahan && <button onClick={() => { setExtra(null); setBrandSheet(true); }}>{d.brands.length ? 'Atur merek' : '＋ Merek'}</button>}
@@ -302,9 +309,10 @@ function InventoryWorkspace({ kosId, ver, kos }) {
       {variant && <VariantForm kosId={kosId} cats={d.cats} group={variant === 'new' ? null : variant} onClose={() => setVariant(null)} onSaved={(r) => { setVariant(null); toast(`${r.made.length} varian ${r.name} tersimpan`); reload(); }} />}
       {opr && <OutletPriceSheet p={opr} units={unitsOf(opr, d.units)} locs={kos.locs?.list} kosId={kosId} onClose={() => setOpr(null)} />}
       {hist && <PriceHistorySheet p={hist} kosId={kosId} onClose={() => setHist(null)} />}
-      {brk && <PriceBreakSheet p={brk} units={unitsOf(brk, d.units)} breaks={d.breaks} onClose={() => setBrk(null)} onSaved={() => { setBrk(null); reload(); }} />}
-      {edit && <ProductForm retail={retail} brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
-        onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
+      {priceProduct && <PriceBreakSheet p={priceProduct} units={unitsOf(priceProduct, d.units)} breaks={d.breaks} onClose={closePrices} onSaved={() => { closePrices(); reload(); }} />}
+      {edit && <ProductForm retail={retail} multi={multi} taxEnabled={Boolean(kos?.profile?.tax?.aktif)}
+        canPromo={moduleOn(kos, 'r_promo')} onCategoryAdded={reload} onCreateVariant={!bahan ? () => setVariant('new') : null} canCreateBreaks={!bahan && canArea(kos, 'finance')} brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
+        onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={(id, next) => { setEdit(null); if (next === 'prices') setBreakAfterCreate(id); reload(); }} />}
       {adj && <StockSheet canCorrect={canArea(kos, 'team')} bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); setStockVersion((value) => value + 1); reload(); }} />}
     </div>
   );
@@ -318,11 +326,24 @@ function InventoryThumb({ path, size }) {
   return path ? <ListThumb path={path} size={size} /> : <span className={styles.thumb} style={{ width: size, height: size }}><NavIcon name="/barang" /></span>;
 }
 
+const automaticSku = () => `BRG-${uid().replaceAll('-', '').slice(0, 10).toUpperCase()}`;
 const blankUnit = () => ({ name: '', content_qty: '', content_unit: '', price_retail: '', price_wholesale: '', barcode: '' });
 const money = (v) => (Number(v) > 0 ? angka(v) : '');
 const kgText = (v) => (Number(v) > 0 ? String(Number(v)).replace('.', ',') : '');
 
-function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onBarcodes, onSupplier, onSerial, onKit, onClose, onSaved }) {
+function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled, canPromo, onCategoryAdded, onCreateVariant, canCreateBreaks, cats = [], brands = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onBarcodes, onSupplier, onSerial, onKit, onClose, onSaved }) {
+  const [stage, setStage] = useState(0);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [customUnit, setCustomUnit] = useState(false);
+  const [newCategory, setNewCategory] = useState(null);
+  const [addedCategories, setAddedCategories] = useState([]);
+  const [categoryBusy, setCategoryBusy] = useState(false);
+  const [photoIds, setPhotoIds] = useState([]);
+  const [taxExempt, setTaxExempt] = useState(false);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const sections = useRef([]);
+  const formRef = useRef(null);
+  const saveLock = useRef(false);
   const [catId, setCatId] = useState(p?.category_id || '');
   const [brandId, setBrandId] = useState(p?.brand_id || '');
   const [name, setName] = useState(p?.name || '');
@@ -338,7 +359,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
   const [rows, setRows] = useState(units.length
     ? units.map((u, i) => ({ name: u.name, ...(i === 0 ? { content_qty: '', content_unit: '' } : contentOf(u, p.base_unit)), price_retail: money(u.price_retail), price_wholesale: money(u.price_wholesale), barcode: u.barcode || '' }))
     : [blankUnit()]);
-  const [sku, setSku] = useState(p?.sku || '');
+  const [sku, setSku] = useState(() => p?.sku || (!p && !bahan ? automaticSku() : ''));
   const [track, setTrack] = useState(Boolean(p?.track_expiry));
   const [lead, setLead] = useState(p?.lead_days != null ? String(p.lead_days) : '');
   const [busy, setBusy] = useState(false);
@@ -363,19 +384,83 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
   });
   const needDensity = calc.some((c) => c.needDensity) || densN != null || rows.some((r, i) => i > 0 && crossDim(r.content_unit || b, b));
 
-  const save = async () => {
-    if (!name.trim()) return toast('Isi nama barang.');
-    if (!b) return toast('Pilih atau tulis satuan utama (mis. pcs, kg, liter).');
+  useEffect(() => {
+    if (p) return;
+    window.scrollTo(0, 0);
+    const viewport = window.visualViewport;
+    const form = formRef.current;
+    if (!viewport || !form) return;
+    function adjustForKeyboard() {
+      // iOS shrinks the visual viewport while keeping the layout viewport height.
+      const inset = Math.max(0, Math.round(window.innerHeight - viewport.height));
+      form.style.setProperty('--keyboard-space', viewport.scale === 1 && inset > 100 ? `${inset}px` : '0px');
+    }
+    viewport.addEventListener('resize', adjustForKeyboard);
+    return () => viewport.removeEventListener('resize', adjustForKeyboard);
+  }, [p]);
+
+  useEffect(() => {
+    if (p) return;
+    function escape(event) {
+      if (event.key === 'Escape' && !busy && !categoryBusy && !locationBusy && !document.querySelector('[aria-modal="true"], dialog[open]')) onClose();
+    }
+    window.addEventListener('keydown', escape);
+    return () => window.removeEventListener('keydown', escape);
+  }, [p, busy, categoryBusy, locationBusy, onClose]);
+
+  function openStage(index) {
+    setStage(index);
+    if (index === 2) setAdvancedOpen(true);
+    const section = sections.current[index];
+    section?.focus({ preventScroll: true });
+    section?.scrollIntoView({ block: 'start' });
+  }
+
+  async function addCategory(event) {
+    event.preventDefault();
+    if (categoryBusy || !newCategory?.trim()) return;
+    const name = newCategory.trim();
+    setCategoryBusy(true);
+    let id;
+    const ok = await run(async () => {
+      const result = await supabase.rpc('category_save', { p_kos: kosId, p_id: null, p_name: name });
+      id = result.data;
+      return result;
+    }, 'Kategori ditambahkan', errMsg);
+    setCategoryBusy(false);
+    if (ok && id) {
+      setAddedCategories((current) => [...current, { id, name }]);
+      setCatId(id);
+      setNewCategory(null);
+      onCategoryAdded();
+    }
+  }
+
+  const save = async (next) => {
+    if (saveLock.current || categoryBusy || locationBusy) return;
+    if (!name.trim() || !b) {
+      if (!p) openStage(0);
+      return toast(!name.trim() ? 'Isi nama barang.' : 'Pilih atau tulis satuan utama (mis. pcs, kg, liter).');
+    }
     const bad = calc.find((c, i) => i > 0 && c.error);
-    if (bad) return toast(bad.error);
+    if (bad) {
+      if (!p) {
+        setStage(0);
+        const conversion = sections.current[0]?.querySelector('[data-conversion]');
+        conversion?.focus({ preventScroll: true });
+        conversion?.scrollIntoView({ block: 'start' });
+      }
+      return toast(bad.error);
+    }
     const us = rows.map((r, i) => (i === 0
       ? { name: b, price_retail: parseRp(r.price_retail), price_wholesale: parseRp(r.price_wholesale), barcode: (r.barcode || '').trim() || null }
       : { name: r.name.trim(), content_qty: isiNum(r.content_qty), content_unit: (r.content_unit || b).trim(), price_retail: parseRp(r.price_retail), price_wholesale: parseRp(r.price_wholesale), barcode: (r.barcode || '').trim() || null }))
       .filter((u, i) => i === 0 || !calc[i].empty);
     const st = stock.trim() ? qtyNum(stock) : 0;
-    if (!p && !(st >= 0)) return toast('Stok awal tidak valid.');
+    if (!p && !(st >= 0)) { openStage(1); return toast('Stok awal tidak valid.'); }
     const aliases = [...new Set(packaging.split('\n').map((value) => value.trim()).filter(Boolean))];
     if (retail && (aliases.length > 10 || aliases.some((alias) => alias.length > 100))) return toast('Maksimal 10 nama kemasan, hingga 100 karakter per nama.');
+    saveLock.current = true;
     setBusy(true);
     let pid = p?.id || null;
     const args = { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null, p_density: densN };
@@ -398,58 +483,36 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
     if (ok && pid && (track !== Boolean(p?.track_expiry) || leadN !== (p?.lead_days ?? null))) {
       await run(() => supabase.rpc('product_set_tracking', { p_product: pid, p_track: track, p_lead_days: Number.isFinite(leadN) ? leadN : null }), track && !p?.track_expiry ? 'Tanggal kedaluwarsa dicatat mulai sekarang' : null, errMsg);
     }
+    if (ok && pid && !p && taxEnabled && taxExempt) {
+      await run(() => supabase.rpc('product_set_tax', { p_product: pid, p_exempt: true }), null, errMsg);
+    }
+    if (ok && pid && !p) {
+      let hasMain = false;
+      for (const id of photoIds) {
+        const linked = await run(() => supabase.rpc('media_link', {
+          p_media: id, p_entity: 'product', p_entity_id: pid, p_main: !hasMain,
+        }), null, errMsg);
+        hasMain ||= linked;
+        if (!linked) {
+          toast('Produk tersimpan. Foto yang gagal ditautkan bisa ditambahkan dari Pustaka media lewat Ubah barang.');
+          break;
+        }
+      }
+    }
+    saveLock.current = false;
     setBusy(false);
-    if (ok) onSaved();
+    if (ok) onSaved(pid, next);
   };
   const archive = async () => {
     if (await run(() => supabase.rpc('product_set_active', { p_product: p.id, p_active: !p.active }), p.active ? 'Barang diarsipkan' : 'Barang aktif lagi', errMsg)) onSaved();
   };
-  const presets = presetsFor(b).filter(([nm]) => !rows.some((r, i) => i > 0 && String(r.name).trim().toLowerCase() === nm.toLowerCase()));
+  const unitPresets = presetsFor(b);
+  if (!p && b.toLowerCase() === 'kg') unitPresets.unshift(['200 gram', 200, 'gram']);
+  const presets = unitPresets.filter(([nm]) => !rows.some((r, i) => i > 0 && String(r.name).trim().toLowerCase() === nm.toLowerCase()));
 
-  return (
-    <Sheet title={p ? 'Ubah barang' : 'Tambah barang'} onClose={onClose}>
-      {group && <div className="notice small">Varian dari <b>{group.name}</b> ({group.count} varian). Mengganti nama di sini hanya untuk varian ini.
-        <button className="sm" style={{ marginTop: 6 }} onClick={() => onAddVariant(group)}>+ Tambah varian lain</button></div>}
-      <Field label={bahan ? 'Nama bahan' : 'Nama barang'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={bahan ? 'mis. Deterjen cair' : 'mis. Gula pasir'} /></Field>
-      {retail && <Field label="Nama lain di kemasan (opsional)" hint="Satu nama per baris. Gunakan untuk tulisan di kemasan lama atau baru milik barang ini.">
-        <textarea rows={2} maxLength={1010} value={packaging} onChange={(event) => setPackaging(event.target.value)} />
-      </Field>}
-      {retail && <details>
-        <summary>Informasi untuk portal bisnis</summary>
-        <Field label="Deskripsi produk (opsional)"><textarea rows={3} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
-        <Field label="Komposisi produk (opsional)"><textarea rows={2} maxLength={1000} value={composition} onChange={(e) => setComposition(e.target.value)} /></Field>
-      </details>}
-      {!bahan && brands.length > 0 && <Field label="Merek"><select value={brandId} onChange={(e) => setBrandId(e.target.value)}><option value="">— tanpa merek —</option>{brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>}
-      {!bahan && cats.length > 0 && <Field label="Kategori"><select value={catId} onChange={(e) => setCatId(e.target.value)}><option value="">— tanpa kategori —</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
-      {p && !bahan && <EntityPhotos kosId={kosId} entity="product" entityId={p.id} category="produk" title="Foto barang" max={6} hint="Opsional. Foto utama tampil di katalog halaman bisnis." />}
-
-      <div className="unitbox" style={{ gap: 8 }}>
-        <Field label="Satuan utama" hint="dasar stok & harga modal — satuan terkecil yang Anda hitung"><input value={base} maxLength={20} disabled={baseLocked} placeholder="pilih di bawah atau ketik" onChange={(e) => setBase(e.target.value)} /></Field>
-        {!baseLocked && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{BASE_PRESETS.map((x) => <button key={x} className={'sm' + (b.toLowerCase() === x ? ' primary' : '')} onClick={() => setBase(x)}>{x}</button>)}</div>}
-        {baseLocked && <span className="small muted">Satuan utama tidak bisa diganti karena sudah ada stok — stok, modal, dan riwayat tercatat dalam {p.base_unit}. Tambahkan satuan lain sebagai satuan jual di bawah.</span>}
-        <div className="row">
-          {p?.is_kit ? <span className="small muted">Barang paket: modal & stok dihitung dari barang isinya (Isi paket).</span> : <Field label={p?.consign_contact_id ? `Harga titip per ${b || 'satuan'}` : `Harga modal per ${b || 'satuan'}`} hint={p?.consign_contact_id ? 'Barang titipan: diubah lewat Konsinyasi › Terima titipan' : 'harga beli rata-rata'}><input inputMode="numeric" value={cost} disabled={!!p?.consign_contact_id} onChange={(e) => setCost(e.target.value)} placeholder="mis. 12000" /></Field>}
-          {!p && <Field label={`Stok sekarang (${b || 'satuan'})`}><input inputMode="decimal" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" /></Field>}
-        </div>
-        {!bahan && <div className="row">
-          <Field label={`Harga eceran per ${b || 'satuan'}`}><input inputMode="numeric" value={rows[0].price_retail} onChange={(e) => set(0, { price_retail: e.target.value })} /></Field>
-          <Field label="Harga grosir"><input inputMode="numeric" value={rows[0].price_wholesale} onChange={(e) => set(0, { price_wholesale: e.target.value })} placeholder="boleh kosong" /></Field>
-        </div>}
-        {!bahan && p && onBreaks && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onBreaks(p)}>Harga beli banyak (mis. beli 10 lebih murah) ›</button>}
-        {!bahan && p && onOutlet && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onOutlet(p)}>Harga per outlet ›</button>}
-        {!bahan && p && onHistory && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onHistory(p)}>Riwayat harga ›</button>}
-        {p && onSupplier && !p.is_kit && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onSupplier(p)}>Harga dari supplier & minimal pesan ›</button>}
-        {p && onBarcodes && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onBarcodes(p)}>Barcode tambahan ›</button>}
-        {p && onSerial && !p.is_kit && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onSerial(p)}>{p.track_serial ? 'Nomor seri & garansi ›' : 'Catat nomor seri / IMEI & garansi ›'}</button>}
-        {p && onKit && (p.is_kit || Number(p.stock) === 0) && !p.consign_contact_id && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onKit(p)}>{p.is_kit ? 'Isi paket ›' : 'Jadikan barang paket (isi dari barang lain) ›'}</button>}
-        {!bahan && <div className="row" style={{ alignItems: 'flex-end' }}>
-          <Field label={`Barcode ${b || 'satuan'} (opsional)`}><input inputMode="numeric" value={rows[0].barcode || ''} maxLength={40} onChange={(e) => set(0, { barcode: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} placeholder="scan / ketik angka" /></Field>
-          <ScanButton productUnit={b || 'utama'} onCode={(c) => set(0, { barcode: c })} />
-        </div>}
-      </div>
-
-      <span className="label">{bahan ? 'Satuan beli / pakai lain' : 'Satuan jual lain'}</span>
-      <p className="small muted" style={{ margin: 0 }}>Tulis nama dan isinya saja — sistem menghitung sendiri ke {b || 'satuan utama'}. Contoh: Kemasan 250 gram, Dus isi 24 botol, Karton isi 2 Dus.</p>
+  const conversionFields = <>
+      {p && <><span className="label">{bahan ? 'Satuan beli / pakai lain' : 'Satuan jual lain'}</span>
+        <p className="small muted" style={{ margin: 0 }}>Tulis nama dan isinya saja — sistem menghitung sendiri ke {b || 'satuan utama'}. Contoh: Kemasan 250 gram, Dus isi 24 botol, Karton isi 2 Dus.</p></>}
       {rows.map((r, i) => {
         if (i === 0) return null;
         const c = calc[i];
@@ -458,7 +521,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
         const modal = costN * qn;
         const nm = String(r.name).trim() || 'satuan ini';
         return (
-          <div className="unitbox" key={i}>
+          <div className={p ? "unitbox" : `unitbox ${formStyles.extraUnit}`} key={i}>
             <Field label="Nama satuan / kemasan"><input value={r.name} maxLength={20} onChange={(e) => setUnitName(i, e.target.value)} placeholder="mis. Dus, Kemasan 250 gram" /></Field>
             <div className="row" style={{ flexWrap: 'nowrap' }}>
               <Field label={`Isi 1 ${nm}`}><input inputMode="decimal" value={r.content_qty} onChange={(e) => set(i, { content_qty: e.target.value, auto: false })} placeholder="mis. 24" /></Field>
@@ -485,23 +548,197 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, cats = [], brands 
         <Field label="Berat 1 liter barang ini (kg)" hint="hanya untuk mengubah liter ↔ kg; mis. minyak goreng ± 0,9"><input inputMode="decimal" value={density} onChange={(e) => setDensity(e.target.value)} placeholder="kosong = tidak dikonversi" /></Field>
         <span className="small muted">Berat dan volume tidak pernah dikonversi otomatis. Isi angka ini hanya bila Anda tahu berat 1 liternya (timbang sendiri).</span>
       </div>}
-      {rows.length < 8 && b && <div className="stack" style={{ gap: 6 }}>
+      {p && rows.length < 8 && b && <div className="stack" style={{ gap: 6 }}>
         <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
           {presets.slice(0, 8).map(([nm, q, u]) => <button key={nm} className="sm" onClick={() => addPreset(nm, q, u)}>+ {nm}</button>)}
           <button className="sm primary" onClick={() => setRows([...rows, blankUnit()])}>+ Satuan lain</button>
         </div>
       </div>}
 
-      <Field label="Kode barang (opsional)" hint="kode sendiri, mis. GL-1"><input value={sku} maxLength={40} autoCapitalize="characters" onChange={(e) => setSku(e.target.value)} /></Field>
-      {unitWord && <p className="small" style={{ margin: 0, color: 'var(--warn, var(--bad))' }}>Kode barang berisi "{sku.trim()}" — kalau maksudnya satuan, isi di <b>Satuan utama</b>. Kode barang hanya penanda sendiri dan boleh kosong.</p>}
-      <Field label={`Peringatan stok minimum (${b || 'satuan'})`}><input inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
-      <Field label={`Stok maksimum (${b || 'satuan'}, opsional)`} hint="saran belanja tidak menyarankan melebihi ini; tanda di Kesehatan stok bila lewat"><input inputMode="decimal" value={max} onChange={(e) => setMax(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
+  </>;
+  const expiryFields = <>
       {batch && <div className="unitbox" style={{ gap: 6 }}>
         <label className="row small" style={{ flexWrap: 'nowrap', fontWeight: 700 }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={track} onChange={(e) => setTrack(e.target.checked)} />Catat tanggal kedaluwarsa (susu, roti, obat, makanan…)</label>
         {track && <span className="small muted">Tanggal diisi saat belanja/terima barang. Stok keluar otomatis dari yang paling cepat kedaluwarsa; daftarnya di Barang › Kedaluwarsa.{p && !p.track_expiry && Number(p.stock) > 0 ? ' Stok yang ada sekarang dicatat sebagai "tanggal belum diisi" — isi tanggalnya di tab Kedaluwarsa.' : ''}</span>}
         <Field label="Waktu tunggu dari supplier (hari, opsional)" hint="untuk saran belanja; kosong = 3 hari"><input inputMode="numeric" value={lead} onChange={(e) => setLead(e.target.value.replace(/\D/g, ''))} placeholder="3" /></Field>
       </div>}
-      <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : p ? 'Simpan perubahan' : 'Simpan barang'}</button>
+  </>;
+
+  if (!p) {
+    const title = bahan ? 'Tambah Bahan' : 'Tambah Produk';
+    const categories = [...cats, ...addedCategories.filter((entry) => !cats.some(({ id }) => id === entry.id))];
+    const unitOptions = [...new Set([...BASE_PRESETS, ...(b ? [b] : [])])];
+    const submitting = busy || categoryBusy || locationBusy;
+    return <section className={formStyles.productForm} ref={formRef} aria-label={title} data-no-field-help>
+      <header className={formStyles.heading}>
+        <button type="button" aria-label="Kembali ke daftar barang" onClick={onClose} disabled={busy}>←</button>
+        <div><h1>{title}</h1><p>{bahan ? 'Catat bahan operasional dan persediaannya.' : 'Tambahkan produk baru ke katalog dan persediaan.'}</p></div>
+        <PageHelp page={bahan ? 'bahan' : 'barang'} />
+      </header>
+      <nav className={formStyles.steps} aria-label="Bagian formulir">
+        {[bahan ? 'Data Bahan' : 'Data Produk', 'Harga & Stok', 'Pengaturan'].map((label, index) =>
+          <button type="button" key={label} aria-current={stage === index ? 'step' : undefined} onClick={() => openStage(index)}>
+            <span aria-hidden="true">{index + 1}</span>{label}
+          </button>
+        )}
+      </nav>
+
+      <div className={formStyles.section} tabIndex={-1} ref={(node) => { sections.current[0] = node; }} aria-label="Data produk">
+        {!bahan && <ProductDraftPhotos kosId={kosId} ids={photoIds} setIds={setPhotoIds} disabled={busy} />}
+        <div className={formStyles.card}>
+          <div className={formStyles.fields}>
+            <div className={formStyles.full}><Field label={bahan ? 'Nama Bahan *' : 'Nama Produk *'}>
+              <input required value={name} onChange={(event) => setName(event.target.value)} placeholder={bahan ? 'Contoh: Deterjen cair' : 'Contoh: Minyak Goreng 1 L'} />
+            </Field></div>
+            <div className={formStyles.barcode}>
+              <Field label="SKU / Kode Produk"><input value={sku} maxLength={40} autoCapitalize="characters" onChange={(event) => setSku(event.target.value)} placeholder="Contoh: MG-001" /></Field>
+              <button type="button" className={formStyles.scan} onClick={() => setSku(automaticSku())}>Buat SKU otomatis</button>
+            </div>
+            {!bahan && <div className={formStyles.barcode}>
+              <Field label="Barcode"><input inputMode="numeric" maxLength={40} value={rows[0].barcode} onChange={(event) => set(0, { barcode: event.target.value })} placeholder="Ketik barcode" /></Field>
+              <ScanButton label="Scan Barcode" icon={<NavIcon name="barcode" size={17} />} className={formStyles.scan} productUnit={b || 'utama'} onCode={(barcode) => set(0, { barcode })} />
+            </div>}
+            {!bahan && <div className={formStyles.inlineField}>
+              <Field label="Kategori"><select aria-label="Kategori" value={catId} onChange={(event) => setCatId(event.target.value)}>
+                <option value="">Pilih</option>{categories.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
+              </select></Field>
+              <button type="button" className={formStyles.inlineAction} aria-label="Tambah kategori" aria-expanded={newCategory !== null}
+                onClick={() => setNewCategory(newCategory === null ? '' : null)}>+</button>
+            </div>}
+            <div className={formStyles.inlineField}>
+              {customUnit ? <Field label="Satuan Utama *"><input required maxLength={20} value={base} onChange={(event) => setBase(event.target.value)} placeholder="Nama satuan" autoFocus /></Field>
+                : <Field label="Satuan Utama *"><select aria-label="Satuan Utama" required value={b} onChange={(event) => setBase(event.target.value)}>
+                  <option value="">Pilih satuan</option>{unitOptions.map((unit) => <option key={unit}>{unit}</option>)}
+                </select></Field>}
+              <button type="button" className={formStyles.inlineAction} aria-label={customUnit ? 'Pilih dari satuan umum' : 'Ketik satuan utama sendiri'}
+                aria-pressed={customUnit} onClick={() => setCustomUnit(!customUnit)}>{customUnit ? '−' : '+'}</button>
+            </div>
+            {unitWord && <p className={formStyles.full}>Kode barang berisi “{sku.trim()}”. Gunakan kolom Satuan bila itu satuan stok.</p>}
+            {newCategory !== null && <form className={`${formStyles.inlineField} ${formStyles.full}`} onSubmit={addCategory}>
+              <Field label="Nama kategori baru"><input required maxLength={40} value={newCategory} onChange={(event) => setNewCategory(event.target.value)} autoFocus /></Field>
+              <button className={formStyles.inlineAction} disabled={categoryBusy}>{categoryBusy ? 'Menyimpan…' : 'Tambahkan'}</button>
+            </form>}
+          </div>
+          <section className={formStyles.extraUnits} data-conversion tabIndex={-1} aria-label="Satuan Tambahan">
+            <div className={formStyles.unitHeading}>
+              <h2>Satuan Tambahan</h2>
+              <button type="button" disabled={!b || rows.length >= 8 || busy} onClick={() => setRows((current) => [...current, blankUnit()])}>
+                + Tambah Satuan
+              </button>
+            </div>
+            <small>{!b ? 'Pilih satuan utama dulu.' : b.toLowerCase() === 'kg'
+              ? 'Contoh: 200 gram (⅕ kg). Stok tetap dihitung dalam kg.'
+              : 'Contoh: 1 dus isi 12 pcs. Isi dus mengikuti kemasan barang Anda.'}</small>
+            {rows.length < 8 && presets.length > 0 && <details className={formStyles.unitPresets}>
+              <summary>Pilihan satuan umum</summary>
+              <div>{presets.slice(0, 8).map(([nm, q, u]) =>
+                <button type="button" key={nm} className="sm" disabled={busy} onClick={() => addPreset(nm, q, u)}>+ {nm}</button>
+              )}</div>
+            </details>}
+            {conversionFields}
+            {rows.length >= 8 && <small>Batas 7 satuan tambahan sudah tercapai.</small>}
+          </section>
+        </div>
+      </div>
+
+      <div className={`${formStyles.section} ${formStyles.card}`} tabIndex={-1} ref={(node) => { sections.current[1] = node; }} aria-label="Harga dan stok">
+        <div className={formStyles.fields}>
+          <Field label="Harga Beli"><input inputMode="numeric" value={cost} onChange={(event) => setCost(event.target.value)} placeholder="Rp 0" /></Field>
+          {!bahan && <Field label="Harga Jual"><input inputMode="numeric" value={rows[0].price_retail} onChange={(event) => set(0, { price_retail: event.target.value })} placeholder="Rp 0" /></Field>}
+          <Field label="Stok Awal"><input inputMode="decimal" value={stock} onChange={(event) => setStock(event.target.value)} placeholder="0" /></Field>
+          <Field label="Stok Minimum"><input inputMode="decimal" value={min} onChange={(event) => setMin(event.target.value)} placeholder="0" /></Field>
+        </div>
+        {b && <small>Harga dan stok dicatat per {b}.</small>}
+        <div className={formStyles.tracking}><NavIcon name="/barang" size={28} />
+          <div><b>Pelacakan Stok</b><small>Mutasi persediaan tercatat otomatis.</small></div>
+          <span>Aktif</span>
+        </div>
+      </div>
+
+      <details className={`${formStyles.section} ${formStyles.card} ${formStyles.advanced}`} open={advancedOpen}
+        onToggle={(event) => setAdvancedOpen(event.currentTarget.open)} tabIndex={-1} ref={(node) => { sections.current[2] = node; }}>
+        <summary><NavIcon name="/pengaturan" size={24} /><span><b>Pengaturan Lanjutan</b><small>Grosir, pajak, lokasi stok, dan pengaturan lainnya.</small></span><NavIcon name="down" size={19} /></summary>
+        <div className={formStyles.advancedBody}>
+          <div className={formStyles.fields}>
+            {!bahan && <Field label="Harga Grosir"><input inputMode="numeric" value={rows[0].price_wholesale} onChange={(event) => set(0, { price_wholesale: event.target.value })} placeholder="Opsional" /></Field>}
+            <Field label="Stok Maksimum"><input inputMode="decimal" value={max} onChange={(event) => setMax(event.target.value)} placeholder="Opsional" /></Field>
+            {!bahan && brands.length > 0 && <Field label="Merek"><select value={brandId} onChange={(event) => setBrandId(event.target.value)}>
+              <option value="">Tanpa merek</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+            </select></Field>}
+            {taxEnabled && !bahan && <label className={formStyles.check}><input type="checkbox" checked={taxExempt} onChange={(event) => setTaxExempt(event.target.checked)} />Bebas PPN</label>}
+          </div>
+          {multi && <LokasiBar note="Stok awal dicatat di lokasi kerja aktif." onBusyChange={setLocationBusy} />}
+          {batch && expiryFields}
+          {retail && <details className={formStyles.subDetails}><summary>Informasi katalog</summary><div>
+            <Field label="Nama lain di kemasan" hint="Satu nama per baris."><textarea rows={2} maxLength={1010} value={packaging} onChange={(event) => setPackaging(event.target.value)} /></Field>
+            <Field label="Deskripsi produk"><textarea rows={3} maxLength={2000} value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
+            <Field label="Komposisi produk"><textarea rows={2} maxLength={1000} value={composition} onChange={(event) => setComposition(event.target.value)} /></Field>
+          </div></details>}
+          {!bahan && <div className={formStyles.advancedActions}>
+            {onCreateVariant && <button type="button" disabled={busy} onClick={onCreateVariant}>Tambah Varian</button>}
+            {canCreateBreaks && <button type="button" disabled={submitting} onClick={() => save('prices')}>Simpan &amp; Atur Harga Bertingkat</button>}
+            {canPromo && <Link href="/promo" target="_blank" rel="noopener noreferrer">Atur Diskon di Promo &amp; Bundling</Link>}
+          </div>}
+        </div>
+      </details>
+      <div className={formStyles.formActions}>
+        <button type="button" disabled={busy} onClick={onClose}>Batal</button>
+        <button type="button" className={formStyles.primary} disabled={submitting} onClick={() => save()}>
+          <NavIcon name="done" />{busy ? 'Menyimpan…' : bahan ? 'Simpan Bahan' : 'Simpan Produk'}
+        </button>
+      </div>
+    </section>;
+  }
+
+  return (
+    <Sheet title="Ubah barang" onClose={onClose}>
+      {group && <div className="notice small">Varian dari <b>{group.name}</b> ({group.count} varian). Mengganti nama di sini hanya untuk varian ini.
+        <button className="sm" style={{ marginTop: 6 }} onClick={() => onAddVariant(group)}>+ Tambah varian lain</button></div>}
+      <Field label={bahan ? 'Nama bahan' : 'Nama barang'}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={bahan ? 'mis. Deterjen cair' : 'mis. Gula pasir'} /></Field>
+      {retail && <Field label="Nama lain di kemasan (opsional)" hint="Satu nama per baris. Gunakan untuk tulisan di kemasan lama atau baru milik barang ini.">
+        <textarea rows={2} maxLength={1010} value={packaging} onChange={(event) => setPackaging(event.target.value)} />
+      </Field>}
+      {retail && <details>
+        <summary>Informasi untuk portal bisnis</summary>
+        <Field label="Deskripsi produk (opsional)"><textarea rows={3} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+        <Field label="Komposisi produk (opsional)"><textarea rows={2} maxLength={1000} value={composition} onChange={(e) => setComposition(e.target.value)} /></Field>
+      </details>}
+      {!bahan && brands.length > 0 && <Field label="Merek"><select value={brandId} onChange={(e) => setBrandId(e.target.value)}><option value="">— tanpa merek —</option>{brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>}
+      {!bahan && cats.length > 0 && <Field label="Kategori"><select value={catId} onChange={(e) => setCatId(e.target.value)}><option value="">— tanpa kategori —</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>}
+      {p && !bahan && <EntityPhotos kosId={kosId} entity="product" entityId={p.id} category="produk" title="Foto barang" max={6} hint="Opsional. Foto utama tampil di katalog halaman bisnis." />}
+
+      <div className="unitbox" style={{ gap: 8 }}>
+        <Field label="Satuan utama" hint="dasar stok & harga modal — satuan terkecil yang Anda hitung"><input value={base} maxLength={20} disabled={baseLocked} placeholder="pilih di bawah atau ketik" onChange={(e) => setBase(e.target.value)} /></Field>
+        {!baseLocked && <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{BASE_PRESETS.map((x) => <button key={x} className={'sm' + (b.toLowerCase() === x ? ' primary' : '')} onClick={() => setBase(x)}>{x}</button>)}</div>}
+        {baseLocked && <span className="small muted">Satuan utama tidak bisa diganti karena sudah ada stok — stok, modal, dan riwayat tercatat dalam {p.base_unit}. Tambahkan satuan lain sebagai satuan jual di bawah.</span>}
+        <div className="row">
+          {p?.is_kit ? <span className="small muted">Barang paket: modal & stok dihitung dari barang isinya (Isi paket).</span> : <Field label={p?.consign_contact_id ? `Harga titip per ${b || 'satuan'}` : `Harga modal per ${b || 'satuan'}`} hint={p?.consign_contact_id ? 'Barang titipan: diubah lewat Konsinyasi › Terima titipan' : 'harga beli rata-rata'}><input inputMode="numeric" value={cost} disabled={!!p?.consign_contact_id} onChange={(e) => setCost(e.target.value)} placeholder="mis. 12000" /></Field>}
+        </div>
+        {!bahan && <div className="row">
+          <Field label={`Harga eceran per ${b || 'satuan'}`}><input inputMode="numeric" value={rows[0].price_retail} onChange={(e) => set(0, { price_retail: e.target.value })} /></Field>
+          <Field label="Harga grosir"><input inputMode="numeric" value={rows[0].price_wholesale} onChange={(e) => set(0, { price_wholesale: e.target.value })} placeholder="boleh kosong" /></Field>
+        </div>}
+        {!bahan && p && onBreaks && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onBreaks(p)}>Harga beli banyak (mis. beli 10 lebih murah) ›</button>}
+        {!bahan && p && onOutlet && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onOutlet(p)}>Harga per outlet ›</button>}
+        {!bahan && p && onHistory && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onHistory(p)}>Riwayat harga ›</button>}
+        {p && onSupplier && !p.is_kit && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onSupplier(p)}>Harga dari supplier & minimal pesan ›</button>}
+        {p && onBarcodes && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onBarcodes(p)}>Barcode tambahan ›</button>}
+        {p && onSerial && !p.is_kit && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onSerial(p)}>{p.track_serial ? 'Nomor seri & garansi ›' : 'Catat nomor seri / IMEI & garansi ›'}</button>}
+        {p && onKit && (p.is_kit || Number(p.stock) === 0) && !p.consign_contact_id && <button className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => onKit(p)}>{p.is_kit ? 'Isi paket ›' : 'Jadikan barang paket (isi dari barang lain) ›'}</button>}
+        {!bahan && <div className="row" style={{ alignItems: 'flex-end' }}>
+          <Field label={`Barcode ${b || 'satuan'} (opsional)`}><input inputMode="numeric" value={rows[0].barcode || ''} maxLength={40} onChange={(e) => set(0, { barcode: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} placeholder="scan / ketik angka" /></Field>
+          <ScanButton productUnit={b || 'utama'} onCode={(c) => set(0, { barcode: c })} />
+        </div>}
+      </div>
+
+      {conversionFields}
+
+      <Field label="Kode barang (opsional)" hint="kode sendiri, mis. GL-1"><input value={sku} maxLength={40} autoCapitalize="characters" onChange={(e) => setSku(e.target.value)} /></Field>
+      {unitWord && <p className="small" style={{ margin: 0, color: 'var(--warn, var(--bad))' }}>Kode barang berisi "{sku.trim()}" — kalau maksudnya satuan, isi di <b>Satuan utama</b>. Kode barang hanya penanda sendiri dan boleh kosong.</p>}
+      <Field label={`Peringatan stok minimum (${b || 'satuan'})`}><input inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
+      <Field label={`Stok maksimum (${b || 'satuan'}, opsional)`} hint="saran belanja tidak menyarankan melebihi ini; tanda di Kesehatan stok bila lewat"><input inputMode="decimal" value={max} onChange={(e) => setMax(e.target.value)} placeholder="kosongkan jika tidak perlu" /></Field>
+      {expiryFields}
+      <button className="cta" onClick={() => save()} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan perubahan'}</button>
       {p?.id && <IsianTambahan entity="product" id={p.id} extra={p.extra} area="stock" />}
       {p && <p className="small muted" style={{ margin: 0 }}>Stok diubah lewat tombol Stok, supaya setiap selisih tercatat.</p>}
       {p && <button className="ghost" onClick={archive}>{p.active ? 'Arsipkan barang (tidak dijual lagi)' : 'Aktifkan lagi'}</button>}

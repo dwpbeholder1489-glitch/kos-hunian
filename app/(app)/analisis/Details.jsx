@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Loading, Sheet } from '@/components/ui';
+import { SheetDisclosure, SheetPeriod, SheetStats } from '@/components/SmartDetailSheet';
 import { errMsg, rp, tgl } from '@/lib/format';
 import { SRC, srcHref } from '@/lib/journalSource';
 import styles from './analisis.module.css';
@@ -67,12 +68,12 @@ export function JournalLines({ kosId, from, to, kinds = [], sys, retail, account
 }
 
 // Lembar rincian standar. rows = [[label, nilai, catatan?]]; links = [[href, label]]
-export function DetailSheet({ title, value, sub, formula, rows, children, links, onClose }) {
-  return <Sheet title={title} onClose={onClose}>
+export function DetailSheet({ title, value, sub, period, formula, rows, children, links, onClose }) {
+  return <Sheet title={title} subtitle={sub} icon="/analisis" wide onClose={onClose}>
+    {period && <SheetPeriod>{period}</SheetPeriod>}
     <div className={styles.sheet}>
-      {value != null && <strong className={styles.big}>{value}</strong>}
-      {sub && <p className={styles.note}>{sub}</p>}
-      {formula && <p className={styles.formula}><b>Cara hitung:</b> {formula}</p>}
+      {value != null && <SheetStats items={[['Nilai utama', value]]} />}
+      {formula && <SheetDisclosure title="Cara perhitungan">{formula}</SheetDisclosure>}
       {rows?.length > 0 && <dl className={styles.kvs}>{rows.filter(Boolean).map(([k, v, c]) => <div key={k}><dt>{k}{c && <small>{c}</small>}</dt><dd>{v}</dd></div>)}</dl>}
       {children}
       {links?.length > 0 && <div className={styles.links}>{links.filter(Boolean).map(([h, l]) => <Link key={h + l} href={h}>{l}</Link>)}</div>}

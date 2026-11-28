@@ -1,0 +1,13 @@
+.menu { display:grid; gap:clamp(11px,2.4vw,18px); min-width:0; }
+.menu h3 { display:flex; align-items:center; gap:9px; margin:0 0 3px; padding:7px 10px; border-radius:11px; background:var(--gold-soft); color:var(--fg); font-size:clamp(13px,3.5vw,17px); line-height:1.25; }
+.menu h3 svg,.icon { color:var(--gold-fg); }
+.menu ul { list-style:none; padding:0; margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.menu li + li { border-top:1px solid var(--line); }
+.menu a { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; padding:7px 9px; min-height:48px; text-decoration:none; color:var(--fg); background:var(--surface); }
+.menu a:hover,.menu a:focus-visible { background:var(--bg); }
+.menu a:focus-visible { outline-offset:-2px; }
+.menu svg { flex:none; }
+.icon { display:grid; place-items:center; width:clamp(32px,9vw,42px); aspect-ratio:1; border-radius:10px; background:var(--gold-soft); }
+.copy { display:grid; min-width:0; gap:2px; }
+.copy b { font-size:clamp(13px,3.5vw,16px); line-height:1.2; }
+.copy small { color:var(--muted); font-size:clamp(11px,2.9vw,14px); line-height:1.27; }

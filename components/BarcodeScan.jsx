@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import SmartDetailSheet from './SmartDetailSheet';
 import { playScanSuccess, prepareScanSound } from '@/lib/scan-sound';
 import { createBarcodeReader, loadFallbackDecoder, openBarcodeCamera, previewBarcodeCamera, readBarcodePhoto, stopCamera } from '@/lib/barcode-scanner.mjs';
 import styles from './barcode-scan.module.css';
@@ -29,8 +29,7 @@ function cameraMessage(error) {
 }
 
 function Scanner({ onCode, onClose, productUnit }) {
-  const dialog = useRef(null);
-  const video = useRef(null);
+  const [video, setVideo] = useState(null);
   const switchDecoder = useRef(null);
   const lastCameraCode = useRef({ code: null, at: 0 });
   const busy = useRef(false);
@@ -48,12 +47,7 @@ function Scanner({ onCode, onClose, productUnit }) {
 
   useEffect(() => {
     active.current = true;
-    const element = dialog.current;
-    element.showModal();
-    return () => {
-      element.close();
-      active.current = false;
-    };
+    return () => { active.current = false; };
   }, []);
 
   async function handle(raw, source) {
@@ -114,9 +108,10 @@ function Scanner({ onCode, onClose, productUnit }) {
   }
 
   useEffect(() => {
+    if (!video) return;
     const controller = new AbortController();
     const { signal } = controller;
-    const element = video.current;
+    const element = video;
     let stream;
     let timer;
     let reader;
@@ -207,19 +202,10 @@ function Scanner({ onCode, onClose, productUnit }) {
 
     start();
     return release;
-  }, [attempt, format]);
+  }, [attempt, format, video]);
 
-  return createPortal(
-    <dialog ref={dialog} className={styles.dialog} aria-label="Pindai barcode"
-      onCancel={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }}
-      onKeyDown={(event) => {
-        event.stopPropagation();
-        if (event.key === 'Escape') { event.preventDefault(); onClose(); }
-      }}>
-      <div className="row between">
-        <h2>Pindai barcode</h2>
-        <button type="button" className="sm ghost" onClick={onClose}>Tutup</button>
-      </div>
+  return (
+    <SmartDetailSheet title="Pindai barcode" icon="barcode" onClose={onClose}>
       {productUnit && <div className="row between">
         <span className="small muted">Satuan {productUnit}</span>
         <div className="seg" role="group" aria-label="Jenis kode">
@@ -228,7 +214,7 @@ function Scanner({ onCode, onClose, productUnit }) {
         </div>
       </div>}
       <div className={styles.preview} hidden={!preview && camera.mode === 'error'}>
-        <video ref={video} muted autoPlay playsInline aria-label="Pratinjau kamera" />
+        <video ref={setVideo} muted autoPlay playsInline aria-label="Pratinjau kamera" />
         {preview && <span className={format === 'linear' ? styles.frame : styles.guide} aria-hidden="true" />}
       </div>
       <div className={camera.mode === 'error' ? 'notice bad' : 'small muted'} role="status">{camera.message}</div>
@@ -252,7 +238,6 @@ function Scanner({ onCode, onClose, productUnit }) {
         </label>
         <button type="submit" className="primary" disabled={checking || photoPending || !typed.trim()}>{checking ? 'Memeriksa…' : 'Gunakan kode'}</button>
       </form>
-    </dialog>,
-    document.body,
+    </SmartDetailSheet>
   );
 }

@@ -1,5 +1,8 @@
 // Ikon garis sederhana untuk navigasi aplikasi (tanpa pustaka luar)
 const P = {
+  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
+  bed: <><path d="M3 18v3m18-3v3M3 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5zm2-7V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5M8 8h3m2 0h3" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   phone: <path d="M7 3H4a1 1 0 0 0-1 1c0 9.4 7.6 17 17 17a1 1 0 0 0 1-1v-3l-5-2-2 2a13 13 0 0 1-7-7l2-2z" />,
   photo: <><path d="M3 7h4l2-3h6l2 3h4v13H3z" /><circle cx="12" cy="13" r="3.5" /></>,
   filter: <><path d="M4 6h16M7 12h10M10 18h4" /></>,
@@ -56,6 +59,7 @@ const P = {
   '/tagihan': <><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z" /><path d="M9 7h6M9 11h6M9 15h4" /></>,
   '/pembayaran': <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>,
   '/pengeluaran': <><path d="M12 3v14M6 11l6 6 6-6" /><path d="M4 21h16" /></>,
+  '/laporan-analisis': <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   '/laporan': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   '/laporan-toko': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   '/kasir': <><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M7 20h10M12 16v4M7 8h4" /></>,
@@ -86,6 +90,7 @@ const P = {
   '/media': <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="m21 16-5-5-9 9" /></>,
   '/halaman': <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18" /></>,
   '/crm': <><path d="M4 5h16v11H8l-4 4z" /><path d="M8 10h8" /></>,
+  '/chat': <><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /><path d="M8.5 12h.01M12 12h.01M15.5 12h.01" /></>,
   '/mutasi': <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
   '/buku-besar': <><path d="M12 6a8 8 0 0 0-9-2v15a8 8 0 0 1 9 2 8 8 0 0 1 9-2V4a8 8 0 0 0-9 2z" /><path d="M12 6v15" /></>,
   '/neraca-saldo': <><path d="M12 3v18M7 21h10M4 7h16M5 7l-3 7h6zm14 0-3 7h6z" /></>,

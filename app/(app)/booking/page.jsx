@@ -5,74 +5,173 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable } from '@/components/Page';
+import NavIcon from '@/components/NavIcon';
+import Link from 'next/link';
+import { SheetSegments, SheetStats } from '@/components/SmartDetailSheet';
+import css from './booking.module.css';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
-import { rp, tgl, today, parseRp, errMsg, waLink } from '@/lib/format';
+import { rp, tgl, today, parseRp, errMsg, waLink, bulan, addMonthsYm } from '@/lib/format';
 import { uid } from '@/lib/retail';
 import { FirstDue } from '@/components/LeaseForms';
-import { canArea } from '@/lib/business';
+import { canArea, pathAllowed } from '@/lib/business';
 
 const ACC = [['kas', 'Kas (tunai)'], ['bank', 'Bank / transfer']];
 const addDays = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
-const days = (iso) => Math.round((new Date(iso + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 864e5);
-const when = (iso) => { const n = days(iso); return n === 0 ? 'hari ini' : n === 1 ? 'besok' : n > 0 ? `${n} hari lagi` : `lewat ${-n} hari`; };
+const days = (iso, base = today()) => Math.round((new Date(iso + 'T00:00:00Z') - new Date(base + 'T00:00:00Z')) / 864e5);
+const when = (iso, base) => { const n = days(iso, base); return n === 0 ? 'Hari ini' : n === 1 ? 'Besok' : n > 0 ? `${n} hari lagi` : `Lewat ${-n} hari`; };
+const statusList = [
+  ['aktif', 'Aktif', 'Booking Aktif', 'calendar'],
+  ['selesai', 'Sudah Masuk', 'Sudah Masuk', 'done'],
+  ['batal', 'Batal', 'Dibatalkan', 'info'],
+];
+const remaining = (b) => Math.max(0, b.rent - b.dp_amount);
+const formatBalance = (b) => [
+  ['Tarif Sewa', `${rp(b.rent)}/bln`], ['Uang Tanda Jadi (DP)', rp(b.dp_amount)],
+  ...(b.status === 'aktif' ? [['Sisa sewa saat masuk¹', rp(remaining(b))]] : b.status === 'batal'
+    ? [['DP Dikembalikan', rp(b.refund_amount)]] : []),
+];
 
-// Booking kamar: calon penghuni memesan kamar untuk tanggal masuk tertentu, boleh dengan uang tanda jadi (DP)
+function BookingStatus({ b, now }) {
+  const late = b.status === 'aktif' && days(b.check_in, now) < 0;
+  const soon = b.status === 'aktif' && days(b.check_in, now) <= 3;
+  const expired = b.status === 'aktif' && b.expires_on && b.expires_on < now;
+  const label = b.status === 'selesai' ? 'Sudah Masuk' : b.status === 'batal' ? 'Dibatalkan'
+    : late ? 'Jadwal terlewat' : soon ? 'Segera Masuk' : 'Menunggu';
+  return <span className={css.badges}>
+    <span className={'chip ' + (late || b.status === 'batal' ? 'bad' : soon ? 'gold' : b.status === 'selesai' ? 'good' : 'info')}>
+      <NavIcon name={b.status === 'selesai' ? 'done' : 'clock'} size={14} />{label}
+    </span>
+    {expired && <span className="chip bad">Lewat batas konfirmasi</span>}
+  </span>;
+}
+
 export default function Booking() {
-  const d = useData();
+  const d = useData({ fullRoomHistory: true, requireBookings: true });
   const { kos, kosId } = useKos();
   const [f, setF] = useState('aktif');
+  const [search, setSearch] = useState('');
+  const [arrival, setArrival] = useState('');
+  const [schedule, setSchedule] = useState('');
+  const [now, setNow] = useState(today);
+  const [sheet, setSheet] = useState(null);
   const [neu, setNeu] = useState(null);
-  useBaru(() => setNeu({}));
   const [open, setOpen] = useState(null);
+  useBaru(() => setNeu({}));
   useEffect(() => {
-    try {
-      const sp = new URLSearchParams(window.location.search);
-      const room = sp.get('kamar'), lead = sp.get('lead');
-      if (lead) supabase.from('crm_leads').select('id,name,phone,need').eq('id', lead).maybeSingle().then(({ data }) => data && setNeu({ lead_id: data.id, name: data.name, phone: data.phone || '', note: data.need || '' }));
-      else if (room) setNeu({ room_id: room });
-    } catch {}
+    const tick = () => setNow(today());
+    const id = setInterval(tick, 30000);
+    document.addEventListener('visibilitychange', tick);
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick); };
   }, []);
+  useEffect(() => {
+    if (!kosId) return;
+    const sp = new URLSearchParams(window.location.search);
+    const room = sp.get('kamar'), lead = sp.get('lead');
+    if (!lead) { if (room) setNeu({ room_id: room }); return; }
+    const controller = new AbortController();
+    supabase.from('crm_leads').select('id,name,phone,need').eq('kos_id', kosId).eq('id', lead).abortSignal(controller.signal).maybeSingle()
+      .then(({ data }) => { if (!controller.signal.aborted && data) setNeu({ lead_id: data.id, name: data.name, phone: data.phone || '', note: data.need || '' }); });
+    return () => controller.abort();
+  }, [kosId]);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
-  const list = d.bookings.filter((b) => b.status === f).sort((a, b) => (f === 'aktif' ? a.check_in.localeCompare(b.check_in) : (b.closed_at || '').localeCompare(a.closed_at || '')));
-  const cur = open && d.bookings.find((b) => b.id === open);
-  const chips = (b) => {
-    const late = b.status === 'aktif' && days(b.check_in) < 0;
-    const exp = b.status === 'aktif' && b.expires_on && b.expires_on < today();
-    return <>
-      {b.status === 'aktif' && <span className={'chip ' + (late ? 'bad' : days(b.check_in) <= 3 ? 'gold' : 'info')}>{late ? 'Terlewat' : days(b.check_in) <= 3 ? 'Segera masuk' : 'Menunggu'}</span>}
-      {exp && <span className="chip bad">Lewat batas</span>}
-      {b.status === 'selesai' && <span className="chip good">Sudah masuk</span>}
-      {b.status === 'batal' && <span className="chip void">{b.forfeit_amount > 0 ? 'Batal · DP hangus' : 'Batal'}</span>}
-    </>;
-  };
-  const dpHeld = d.bookings.filter((b) => b.status === 'aktif').reduce((s, b) => s + b.dp_amount, 0);
-
-  return (
-    <div className="stack">
-      <PageHeader title="Booking kamar" help={<PageHelp page="booking" />} actions={<><button className="primary" onClick={() => setNeu({})}>+ Booking</button></>} />
-      <div className="seg">{[['aktif', `Aktif (${d.bookings.filter((b) => b.status === 'aktif').length})`], ['selesai', 'Sudah masuk'], ['batal', 'Batal']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
-      {f === 'aktif' && dpHeld > 0 && <span className="small muted">Uang tanda jadi yang dipegang: <b>{rp(dpHeld)}</b> (bukan pendapatan sampai penghuni masuk atau DP hangus).</span>}
-      {list.length === 0 ? <Empty title={f === 'aktif' ? 'Belum ada booking aktif' : 'Tidak ada data'} text="Catat calon penghuni yang sudah pasti mau masuk agar kamarnya tidak diisi orang lain." /> : (
-        <DataTable rows={list} caption="Daftar booking" onRow={(b) => setOpen(b.id)} rowLabel={(b) => `${b.name} kamar ${d.roomCode(b.room_id)}`}
-          columns={[
-            { key: 'name', label: 'Calon penghuni', sort: (b) => b.name.toLowerCase(), render: (b) => <><b>{b.name}</b><div className="small muted">{b.number}</div></> },
-            { key: 'room', label: 'Kamar', sort: (b) => d.roomCode(b.room_id), render: (b) => d.roomCode(b.room_id) },
-            { key: 'in', label: 'Masuk', sort: (b) => b.check_in, render: (b) => <>{tgl(b.check_in)}{b.status === 'aktif' && <div className="small muted">{when(b.check_in)}</div>}</> },
-            { key: 'rent', label: 'Sewa/bulan', align: 'right', hide: 'tablet', sort: (b) => b.rent, render: (b) => rp(b.rent) },
-            { key: 'dp', label: 'DP', align: 'right', sort: (b) => b.dp_amount, render: (b) => (b.dp_amount > 0 ? rp(b.dp_amount) : <span className="muted">tanpa DP</span>) },
-            { key: 'st', label: 'Status', render: (b) => chips(b) },
-          ]}
-          card={(b) => <>
-            <div className="dt-row"><b className="small">{b.name} · Kamar {d.roomCode(b.room_id)}</b><span className="row" style={{ gap: 4 }}>{chips(b)}</span></div>
-            <span className="small muted">{b.number} · masuk {tgl(b.check_in)}{b.status === 'aktif' ? ` (${when(b.check_in)})` : ''}</span>
-            <span className="small muted">{rp(b.rent)}/bulan{b.dp_amount > 0 ? ` · DP ${rp(b.dp_amount)}` : ' · tanpa DP'}{b.status === 'batal' ? ` · ${b.close_reason}` : ''}</span>
-          </>} />
-      )}
-      {neu && <BookingForm d={d} kosId={kosId} init={neu} onClose={() => setNeu(null)} onSaved={() => setNeu(null)} />}
-      {cur && <Detail d={d} kos={kos} b={cur} onClose={() => setOpen(null)} />}
+  const active = d.bookings.filter((b) => b.status === 'aktif');
+  const counts = Object.fromEntries(statusList.map(([key]) => [key, d.bookings.filter((b) => b.status === key).length]));
+  const q = search.trim().toLocaleLowerCase('id');
+  const list = d.bookings.filter((b) => (f === 'history' ? b.status !== 'aktif' : b.status === f)
+    && (!q || [b.name, b.number, d.roomCode(b.room_id)].some((value) => value.toLocaleLowerCase('id').includes(q)))
+    && (!arrival || b.check_in === arrival)
+    && (!schedule || (schedule === 'late' ? days(b.check_in, now) < 0 : days(b.check_in, now) >= 0 && days(b.check_in, now) <= 7)))
+    .sort((a, b) => f === 'aktif' ? a.check_in.localeCompare(b.check_in) : (b.closed_at || '').localeCompare(a.closed_at || ''));
+  const cur = d.bookings.find((b) => b.id === open);
+  const held = active.filter((b) => b.dp_amount > 0);
+  const dpHeld = held.reduce((sum, b) => sum + b.dp_amount, 0);
+  const setStatus = (key) => { setF(key); setArrival(''); setSchedule(''); };
+  const closeSheet = () => setSheet(null);
+  return <div className={css.page}>
+    {d.err && <div className="notice bad" role="alert">{d.err}</div>}
+    <header className={css.hero}>
+      <div><h1>Booking Kamar</h1><p>Kelola pemesanan kamar, uang tanda jadi (DP), dan status masuk penghuni.</p>
+        <PageHelp page="booking" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Booking <NavIcon name="next" size={15} /></>} /></div>
+    </header>
+    <div className={css.metrics}>{statusList.map(([key, , label, icon]) => <button key={key} data-tone={key} onClick={() => setStatus(key)}>
+      <span><NavIcon name={icon} size={19} /></span><div>{label}<strong>{counts[key]}</strong></div>
+    </button>)}</div>
+    <nav className={css.quick} aria-label="Aksi cepat booking">
+      <button className="primary" onClick={() => setNeu({})}><NavIcon name="plus" />Booking Kamar</button>
+      <Link href="/kamar"><NavIcon name="bed" />Lihat Kamar</Link>
+      <button onClick={() => setSheet('dp')}><NavIcon name="wallet" />Uang Tanda Jadi</button>
+      <button onClick={() => setStatus('history')}><NavIcon name="/catatan" />Riwayat Booking</button>
+      <button onClick={() => setSheet('more')}><NavIcon name="more" />Lainnya</button>
+    </nav>
+    <SheetSegments label="Status booking" options={[...statusList.map(([key, label]) => [key, `${label} (${counts[key]})`]),
+      ...(f === 'history' ? [['history', 'Riwayat']] : [])]} value={f} onChange={setStatus} />
+    <div className={css.tools}>
+      <label><NavIcon name="search" size={18} /><input type="search" aria-label="Cari booking" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama, kode booking, atau kamar" /></label>
+      <button aria-label="Kalender kedatangan" title="Kalender kedatangan" onClick={() => setSheet('calendar')}><NavIcon name="calendar" size={18} /></button>
+      <button onClick={() => setSheet('filter')}><NavIcon name="filter" size={17} /> Filter</button>
     </div>
-  );
+    {(arrival || schedule) && <div className="row">
+      {arrival && <button className="sm" onClick={() => setArrival('')}>Masuk {tgl(arrival)} ×</button>}
+      {schedule && <button className="sm" onClick={() => setSchedule('')}>{schedule === 'late' ? 'Jadwal terlewat' : '7 hari ke depan'} ×</button>}
+    </div>}
+    {list.length ? <div className={css.list} aria-label="Daftar booking">{list.map((b) => <button className={css.card} key={b.id} aria-label={`Detail booking ${b.name} ${b.number}`} onClick={() => setOpen(b.id)}>
+      <span className={css.cardHeader}>
+        <span className={css.avatar}><NavIcon name="/akun" size={25} /></span>
+        <span className={css.identity}><b>{b.name}</b><small>{b.number}</small></span>
+        <BookingStatus b={b} now={now} /><NavIcon name="next" size={17} />
+      </span>
+      <span className={css.meta}><span><NavIcon name="bed" size={17} />Kamar {d.roomCode(b.room_id)}</span>
+        <span><NavIcon name="calendar" size={17} />Masuk: {tgl(b.check_in)}</span>
+        {b.status === 'aktif' && <span className={`chip ${days(b.check_in, now) < 0 ? 'bad' : 'good'}`}>{when(b.check_in, now)}</span>}
+      </span>
+      <span className={css.amounts}>{formatBalance(b).map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}</span>
+    </button>)}</div> : <Empty title="Tidak ada booking yang cocok" text="Ubah pencarian atau filter untuk melihat booking lain." />}
+    {f === 'aktif' && list.length > 0 && <small className="muted">¹ Perkiraan sisa sewa bulan pertama bila DP dipakai saat check-in.</small>}
+    {sheet === 'filter' && <Sheet title="Filter booking" icon="filter" onClose={closeSheet}>
+      <Field label="Status booking"><select value={f} onChange={(event) => setStatus(event.target.value)}>{statusList.map(([key, label]) => <option key={key} value={key}>{label}</option>)}<option value="history">Riwayat</option></select></Field>
+      <Field label="Tanggal masuk"><input type="date" value={arrival} onChange={(event) => setArrival(event.target.value)} /></Field>
+      <Field label="Jadwal kedatangan"><select value={schedule} onChange={(event) => setSchedule(event.target.value)}><option value="">Semua jadwal</option><option value="soon">Hari ini hingga 7 hari ke depan</option><option value="late">Jadwal terlewat</option></select></Field>
+      <div className="row"><button onClick={() => setStatus('aktif')}>Reset</button><button className="primary" onClick={closeSheet}>Lihat {list.length} booking</button></div>
+    </Sheet>}
+    {sheet === 'calendar' && <ArrivalCalendar active={active} now={now} onClose={closeSheet} onDate={(date) => { setStatus('aktif'); setArrival(date); setSearch(''); closeSheet(); }} />}
+    {sheet === 'more' && <Sheet title="Lainnya" onClose={closeSheet}><button onClick={() => setSheet('calendar')}>Kalender kedatangan</button>
+      {pathAllowed(kos, '/halaman') && <Link href="/halaman">Portal Bisnis</Link>}
+      {pathAllowed(kos, '/notifikasi') && <Link href="/notifikasi">Notifikasi</Link>}
+      {pathAllowed(kos, '/pembukuan') && <Link href="/pembukuan?tab=jurnal">Jurnal Pembukuan</Link>}
+    </Sheet>}
+    {sheet === 'dp' && <Sheet title="Uang Tanda Jadi" icon="wallet" onClose={closeSheet}>
+      <SheetStats items={[[ 'DP dipegang', rp(dpHeld) ], ['Booking dengan DP', held.length]]} />
+      <p>DP booking aktif tercatat sebagai uang muka. Saat masuk, DP menjadi deposit atau diperhitungkan pada tagihan pertama.</p>
+      {held.map((b) => <button key={b.id} onClick={() => { closeSheet(); setOpen(b.id); }}>{b.number} · {b.name} · {rp(b.dp_amount)}</button>)}
+      {pathAllowed(kos, '/pembukuan') && <Link href="/pembukuan?tab=jurnal">Telusuri jurnal Pembukuan</Link>}
+    </Sheet>}
+    {neu && <BookingForm d={d} kosId={kosId} init={neu} onClose={() => setNeu(null)} onSaved={() => setNeu(null)} />}
+    {cur && <Detail key={cur.id} d={d} kos={kos} b={cur} now={now} onClose={() => setOpen(null)} />}
+  </div>;
+}
+
+function ArrivalCalendar({ active, now, onClose, onDate }) {
+  const [month, setMonth] = useState(now.slice(0, 7));
+  const first = new Date(month + '-01T00:00:00Z');
+  const start = (first.getUTCDay() + 6) % 7;
+  const duration = days(addMonthsYm(month, 1) + '-01', month + '-01');
+  const arrivals = new Map();
+  for (const { check_in } of active) arrivals.set(check_in, (arrivals.get(check_in) || 0) + 1);
+  return <Sheet title="Kalender kedatangan" icon="calendar" onClose={onClose}>
+    <div className="row between"><button aria-label="Bulan sebelumnya" onClick={() => setMonth(addMonthsYm(month, -1))}>‹</button>
+      <b>{bulan(month)}</b><button aria-label="Bulan berikutnya" onClick={() => setMonth(addMonthsYm(month, 1))}>›</button></div>
+    <div className={css.calendar}>
+      {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((day) => <small key={day}>{day}</small>)}
+      {Array.from({ length: start }, (_, i) => <span key={`pad-${i}`} />)}
+      {Array.from({ length: duration }, (_, i) => {
+        const date = `${month}-${String(i + 1).padStart(2, '0')}`;
+        const count = arrivals.get(date);
+        return <button key={date} data-booked={Boolean(count)} aria-current={date === now ? 'date' : undefined}
+          aria-label={`${tgl(date)}, ${count || 0} kedatangan`} onClick={() => onDate(date)}>{i + 1}{count && <small>{count}</small>}</button>;
+      })}
+    </div>
+    <small className="muted">Angka kecil menunjukkan jumlah booking aktif. Pilih tanggal untuk menyaring daftar.</small>
+  </Sheet>;
 }
 
 function BookingForm({ d, kosId, init, b, onClose, onSaved }) {
@@ -136,20 +235,29 @@ function BookingForm({ d, kosId, init, b, onClose, onSaved }) {
   );
 }
 
-function Detail({ d, kos, b, onClose }) {
+function Detail({ d, kos, b, now, onClose }) {
   const { bump } = useKos();
   const money = canArea(kos, 'finance');
-  const [mode, setMode] = useState(null); // 'checkin' | 'batal' | 'ubah'
+  const [mode, setMode] = useState(null);
   const room = d.roomById.get(b.room_id);
   const occ = d.activeByRoom.get(b.room_id);
+  const first = b.lease_id && d.invoices.filter((i) => i.lease_id === b.lease_id && i.kind === 'sewa' && i.status !== 'batal')
+    .reduce((old, i) => !old || i.period_start < old.period_start ? i : old, null);
   const canIn = b.status === 'aktif' && room?.status === 'tersedia';
   const msg = `Halo ${b.name}, booking kamar ${room?.code} di ${kos.name} sudah kami catat (${b.number}). Tanggal masuk ${tgl(b.check_in)}, sewa ${rp(b.rent)}/bulan${b.dp_amount > 0 ? `, uang tanda jadi ${rp(b.dp_amount)} sudah kami terima` : ''}${b.expires_on ? `. Mohon konfirmasi sebelum ${tgl(b.expires_on)}` : ''}. Terima kasih.`;
   if (mode === 'ubah') return <BookingForm d={d} kosId={kos.id} b={b} onClose={() => setMode(null)} onSaved={() => setMode(null)} />;
   return (
-    <Sheet title={`${b.number} · ${b.name}`} onClose={onClose}>
+    <Sheet title={b.name} subtitle={b.number} icon="calendar" wide onClose={onClose}>
+      <BookingStatus b={b} now={now} />
+      <SheetStats items={formatBalance(b)} />
+      {b.status === 'aktif' && <small className="muted">¹ Bila DP digunakan untuk tagihan pertama. Jika DP menjadi deposit, sisa sewa bulan pertama mengikuti tarif penuh.</small>}
+      {b.status === 'selesai' && <div className="row">
+        <Link href="/penghuni">Buka Penghuni</Link>
+        {first && <Link href={`/tagihan?invoice=${first.id}`}>Tagihan sewa pertama</Link>}
+      </div>}
       <dl className="kv">
         <dt>Kamar</dt><dd>{room?.code}</dd>
-        <dt>Tanggal masuk</dt><dd>{tgl(b.check_in)}{b.status === 'aktif' ? ` (${when(b.check_in)})` : ''}</dd>
+        <dt>Tanggal masuk</dt><dd>{tgl(b.check_in)}{b.status === 'aktif' ? ` (${when(b.check_in, now)})` : ''}</dd>
         {b.months && <><dt>Lama sewa</dt><dd>{b.months} bulan</dd></>}
         <dt>Sewa</dt><dd>{rp(b.rent)}/bulan</dd>
         <dt>Uang tanda jadi</dt><dd>{b.dp_amount > 0 ? `${rp(b.dp_amount)} · ${b.dp_account === 'bank' ? 'bank' : 'kas'} · ${tgl(b.dp_date)}` : '—'}</dd>
@@ -166,12 +274,13 @@ function Detail({ d, kos, b, onClose }) {
         {!canIn && occ && <div className="notice small">Kamar masih ditempati {d.occName(occ.occupant_id)}. Akhiri sewanya dulu (Kamar › Akhiri sewa), lalu Check-in.</div>}
         {!canIn && !occ && room?.status === 'perbaikan' && <div className="notice small">Kamar sedang perbaikan. Selesaikan keluhannya dulu, lalu Check-in.</div>}
         <div className="row">
-          <button className="primary" disabled={!canIn} onClick={() => setMode(mode === 'checkin' ? null : 'checkin')}>Check-in (mulai sewa)</button>
-          <button className="sm" onClick={() => setMode('ubah')}>Ubah</button>
-          {b.phone && <a href={waLink(b.phone, msg)} target="_blank" rel="noreferrer"><button className="sm">WA konfirmasi</button></a>}
+          <button className="primary" disabled={!canIn} onClick={() => setMode(mode === 'checkin' ? null : 'checkin')}>Konfirmasi masuk</button>
+          <button disabled={!canIn} onClick={() => setMode(mode === 'settle' ? null : 'settle')}>Pelunasan saat masuk</button>
+          <button className="sm" onClick={() => setMode('ubah')}>Ubah jadwal</button>
+          {b.phone && <a href={waLink(b.phone, msg)} target="_blank" rel="noreferrer">Hubungi via WhatsApp</a>}
         </div>
-        {mode === 'checkin' && <CheckIn d={d} b={b} onDone={() => { bump(); onClose(); }} />}
-        {(b.dp_amount === 0 || money) ? <button className="sm ghost danger" onClick={() => setMode(mode === 'batal' ? null : 'batal')}>Batalkan booking</button>
+        {['checkin', 'settle'].includes(mode) && <CheckIn key={mode} d={d} b={b} settle={mode === 'settle'} onDone={() => { bump(); onClose(); }} />}
+        {(b.dp_amount === 0 || money) ? <button className="sm ghost danger" onClick={() => setMode(mode === 'batal' ? null : 'batal')}>{b.dp_amount > 0 ? 'Batalkan / kembalikan DP' : 'Batalkan booking'}</button>
           : <span className="small muted">Booking dengan DP hanya bisa dibatalkan pemilik/pengelola.</span>}
         {mode === 'batal' && <Cancel b={b} onDone={() => { bump(); onClose(); }} />}
       </>}
@@ -179,17 +288,24 @@ function Detail({ d, kos, b, onClose }) {
   );
 }
 
-function CheckIn({ d, b, onDone }) {
+function CheckIn({ d, b, settle, onDone }) {
+  const normalizedPhone = (value) => (value || '').replace(/\D/g, '').replace(/^0/, '62');
+  const normalizedName = (value) => value.trim().toLocaleLowerCase('id').replace(/\s+/g, ' ');
+  const matches = normalizedPhone(b.phone).length >= 8 ? d.occupants.filter((o) => normalizedPhone(o.phone) === normalizedPhone(b.phone) && normalizedName(o.name) === normalizedName(b.name)) : [];
+  const reusable = matches.length === 1 && !d.activeByOcc.has(matches[0].id) ? matches[0].id : '';
+
   const [start, setStart] = useState(b.check_in < today() ? today() : b.check_in);
   const [due, setDue] = useState(addDays(b.check_in < today() ? today() : b.check_in, 3));
-  const [paid, setPaid] = useState('');
+  const [paid, setPaid] = useState(() => settle && remaining(b) > 0 ? String(remaining(b)) : '');
   const [method, setMethod] = useState('tunai');
   const [end, setEnd] = useState('');
-  const [occ, setOcc] = useState(''); // '' = penghuni baru dari data booking
+  const [occ, setOcc] = useState(reusable);
   const [apply, setApply] = useState(b.dp_amount > 0);
   const [busy, setBusy] = useState(false);
   const free = d.occupants.filter((o) => !d.activeByOcc.get(o.id));
   const go = async () => {
+    if (!start || !due) return toast('Isi tanggal masuk dan batas bayar.');
+    if (!occ && matches.length) return toast('Penghuni dengan nama dan nomor ini sudah terdaftar. Pilih datanya, atau periksa sewa aktifnya.');
     if (due < start) return toast('Batas bayar tidak boleh sebelum tanggal masuk.');
     const pay = parseRp(paid) || 0;
     if (paid.trim() && !(pay > 0)) return toast('Jumlah pembayaran tidak valid.');
@@ -201,7 +317,7 @@ function CheckIn({ d, b, onDone }) {
   };
   return (
     <div className="unitbox">
-      <Field label="Tanggal masuk" hint="Sewa dihitung mulai tanggal ini"><input type="date" value={start} onChange={(e) => { const v = e.target.value; if (due < v || due === addDays(start, 3)) setDue(addDays(v, 3)); setStart(v); }} /></Field>
+      <Field label="Tanggal masuk" hint="Sewa dihitung mulai tanggal ini"><input type="date" value={start} onChange={(e) => { const v = e.target.value; if (v && (!start || due < v || due === addDays(start, 3))) setDue(addDays(v, 3)); setStart(v); }} /></Field>
       <div className="row">
         <Field label="Sewa bulan pertama sudah dibayar?" hint={`Kosongkan bila belum. Sewa ${rp(b.rent)}/bulan`}><input inputMode="numeric" value={paid} onChange={(e) => setPaid(e.target.value)} placeholder="Rp" /></Field>
         {paid.trim() && <Field label="Cara bayar"><select value={method} onChange={(e) => setMethod(e.target.value)}><option value="tunai">Tunai</option><option value="transfer">Transfer</option><option value="ewallet">QRIS / e-wallet</option></select></Field>}
@@ -209,9 +325,16 @@ function CheckIn({ d, b, onDone }) {
       {!paid.trim() && <button type="button" className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setPaid(String(Math.max(0, Math.round(b.rent - (apply ? b.dp_amount : 0)))))}>Sudah dibayar penuh → isi {rp(Math.max(0, b.rent - (apply ? b.dp_amount : 0)))}</button>}
       {(parseRp(paid) || 0) + (apply ? Number(b.dp_amount) : 0) < Number(b.rent) && <FirstDue start={start} value={due} onChange={setDue} />}
       <Field label="Rencana selesai (opsional)" hint={b.months ? `kosongkan = ${b.months} bulan dari tanggal masuk` : undefined}><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+      {matches.length > 0 && <p className="small muted">Nama dan nomor WhatsApp cocok dengan data penghuni yang sudah ada. Gunakan kembali datanya jika sewa sebelumnya sudah selesai.</p>}
       <Field label="Data penghuni"><select value={occ} onChange={(e) => setOcc(e.target.value)}><option value="">Buat penghuni baru: {b.name}{b.phone ? ` · ${b.phone}` : ''}</option>{free.map((o) => <option key={o.id} value={o.id}>Pakai data lama: {o.name}</option>)}</select></Field>
       {b.dp_amount > 0 && <>
-        <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={apply} onChange={(e) => setApply(e.target.checked)} />Pakai DP {rp(b.dp_amount)} untuk membayar tagihan pertama</label>
+        <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={apply} onChange={(e) => {
+          if (settle && (!paid || Number(paid) === (apply ? remaining(b) : b.rent))) {
+            const next = e.target.checked ? remaining(b) : b.rent;
+            setPaid(next > 0 ? String(next) : '');
+          }
+          setApply(e.target.checked);
+        }} />Pakai DP {rp(b.dp_amount)} untuk membayar tagihan pertama</label>
         <span className="small muted">{apply ? 'DP melunasi tagihan pertama (sisa DP bila ada tetap jadi deposit).' : 'DP disimpan sebagai deposit/uang jaminan penghuni.'}</span>
       </>}
       <button className="cta" disabled={busy} onClick={go}>{busy ? 'Memproses…' : 'Check-in sekarang'}</button>

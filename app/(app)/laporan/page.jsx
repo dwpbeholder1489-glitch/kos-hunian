@@ -100,7 +100,7 @@ export default function Laporan() {
         <div className="row" style={{ justifyContent: 'center' }}><h2>Laporan {bulan(ym)}</h2><PageHelp page="laporan" /></div>
         <button className="sm" onClick={() => setYm(addMonthsYm(ym, 1))} disabled={ym >= thisMonth()} aria-label="Bulan berikutnya">›</button>
       </div>
-      <div className="grid">
+      <div id="penerimaan" className="grid" style={{ scrollMarginTop: 90 }}>
         <Tile tone="hero" label="Laba operasional" value={rp(r.laba)} sub={`Margin ${margin}%`} />
         <Tile label="Pendapatan" value={rp(r.income)} sub={`Tertagih ${collect}% dari tagihan bulan ini`} />
         <Tile label="Biaya operasional" value={rp(r.ops)} />

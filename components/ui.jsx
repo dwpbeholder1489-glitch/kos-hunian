@@ -3,34 +3,21 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PAY_ST } from '@/lib/format';
 import EmptyArt from '@/components/EmptyArt';
+import { useActiveSheet } from './SmartDetailSheet';
 
-export function Sheet({ title, onClose, children }) {
-  useEffect(() => {
-    const k = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, [onClose]);
-  const el = (
-    <div className="sheet-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="row between"><h2>{title}</h2><button className="ghost" onClick={onClose}>Tutup</button></div>
-        {children}
-      </div>
-    </div>
-  );
-  // Dirender di <body> agar tidak terkurung lapisan header/menu (mis. lembar dari tombol di header tertutup menu bawah)
-  return typeof document === 'undefined' ? el : createPortal(el, document.body);
-}
+export { default as Sheet } from './SmartDetailSheet';
 
 let toastSet = null;
 export function toast(m) { toastSet && toastSet(m); }
 export function Toaster() {
   const [m, setM] = useState(null);
+  const sheet = useActiveSheet();
   useEffect(() => {
     toastSet = (x) => { setM(x); clearTimeout(toastSet.h); toastSet.h = setTimeout(() => setM(null), 3200); };
     return () => { toastSet = null; };
   }, []);
-  return m ? <div className="toast" role="status">{m}</div> : null;
+  const toast = m ? <div className={sheet ? 'toast toast-in-sheet' : 'toast'} role="status">{m}</div> : null;
+  return toast && sheet ? createPortal(toast, sheet) : toast;
 }
 
 export function Field({ label, hint, children }) {

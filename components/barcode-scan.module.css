@@ -1,18 +1,3 @@
-.dialog {
-  width: min(calc(100% - 24px), 480px);
-  max-height: calc(100dvh - 24px);
-  margin: auto;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
-  color: var(--fg);
-  overflow-y: auto;
-}
-.dialog[open] { display: grid; gap: 10px; }
-.dialog::backdrop { background: rgb(8 14 10 / 72%); }
-.dialog h2 { margin: 0; font-size: 18px; }
-.dialog [role='status'] { overflow-wrap: anywhere; }
 .preview { position: relative; overflow: hidden; border-radius: 10px; background: #111916; }
 .preview video { display: block; width: 100%; max-height: 42dvh; min-height: 124px; object-fit: contain; }
 .guide { position: absolute; inset: 50% 10% auto; height: 2px; background: #ff625b; box-shadow: 0 0 8px #ff625b; }

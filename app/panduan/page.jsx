@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrTurPanduan } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrChatPelanggan, ScrTrackingPesanan, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrPropertiIntel, ScrInventarisKamar, ScrTurPanduan } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -44,7 +44,9 @@ const MENUS_JASA = [
 ];
 const MENUS = [
   ['Dashboard', 'Ringkasan kas bulan ini, hunian, tagihan, tunggakan, dan jatuh tempo terdekat'],
-  ['Kamar', 'Peta kamar, harga sewa, fasilitas, dan memasukkan penghuni'],
+  ['Properti & Lokasi', 'Beberapa gedung/lokasi, nilai investasi, okupansi, NOI, ROI, rental yield & proyeksi sewa'],
+  ['Kamar', 'Peta kamar, harga sewa, fasilitas, properti/lantai/luas, dan memasukkan penghuni'],
+  ['Inventaris kamar', 'Perlengkapan tiap kamar dan pemeriksaan check-in/check-out/rutin'],
   ['Penghuni', 'Data penghuni, tunggakan, deposit/uang jaminan, pengingat WhatsApp, dan akhiri sewa'],
   ['Tagihan', 'Tagihan sewa otomatis, tagihan tambahan, dan mencatat pembayaran'],
   ['Pembayaran', 'Memverifikasi pembayaran dan riwayat uang masuk per bulan'],
@@ -161,7 +163,11 @@ const PARTS = [
       <>Grafik <b>Tagihan vs terkumpul</b> 6 bulan, <b>Perlu perhatian</b>, <b>Jatuh tempo 7 hari</b>, <b>Status kamar</b>, <b>Aktivitas terbaru</b>, dan <b>Aksi cepat</b>. Di laptop bagian-bagian ini tersusun dalam beberapa kolom; di HP satu kolom.</>,
       <>Tekan <b>Atur dashboard</b> untuk menyembunyikan bagian yang tidak dipakai atau mengubah urutannya (centang / ↑ ↓). Pilihan disimpan di perangkat itu saja; <b>Kembalikan bawaan</b> mengembalikan susunan awal. Dashboard Toko, Jasa/Kuliner, dan bisnis kustom memakai cara yang sama.</>,
     ], 'Kas bersih bukan laba. Untuk laba yang benar, lihat Laporan.', null, <ScrDashboard />],
-    ['Laporan bulanan', 'Laporan', [
+    ['Laporan bulanan', 'Beranda › Laporan & Analisis › Laporan', [
+      <>Buka <Link href="/laporan-analisis">Laporan &amp; Analisis</Link> dari Beranda atau tab <b>Laporan</b> di navigasi bawah.</>,
+      <>Pilih periode harian, bulanan, atau tahunan. Ketuk kartu ringkasan atau titik grafik untuk memeriksa sumber angkanya.</>,
+      <>Pilih <b>Laporan</b>, <b>Analisis Bisnis</b>, atau <b>Rekap Bisnis</b>. Tombol PDF dan Excel membuka menu ekspor Rekap Bisnis untuk periode yang dipilih.</>,
+      <>Grafik hunian memakai rata-rata hari unit terisi per bulan. Kartu tingkat hunian dan tunggakan menunjukkan posisi saat ini.</>,
       <>Pilih bulan dengan tombol <b>‹ ›</b>.</>,
       <><b>Laba operasional</b> = pendapatan − biaya operasional.</>,
       <><b>Arus kas bersih</b> = laba − belanja modal − pengeluaran non-operasional.</>,
@@ -401,10 +407,11 @@ const PARTS = [
       <>Pelanggan membuka tautan tanpa memasang aplikasi, memilih barang/kamar, mengisi nama & WhatsApp, menyetujui dihubungi, lalu <b>Kirim permintaan</b>. Setelah terkirim mereka pindah ke halaman <b>Terkirim</b>: nomor (bisa disalin), status <b>Menunggu konfirmasi</b>, ringkasan, langkah berikutnya, tombol <b>Chat WhatsApp pemilik</b> (pesan sudah berisi nomornya), jam buka, alamat, tautan lokasi, cara bayar (bila Anda izinkan), dan ketentuan. Berlaku untuk pendaftaran penghuni, booking, pesanan jasa/kuliner, pesanan QR meja, reservasi, dan permintaan toko.</>,
       <>Permintaan masuk ke <b>Prospek & tindak lanjut</b> (label <b>Perlu konfirmasi</b>); email ke Anda bila dicentang. Ketuk permintaannya: sistem sudah <b>mengecek otomatis</b> (kamar kosong pada tanggal itu, stok cukup, harga masih sama, No. HP ganda).</>,
       <>Bila cocok tekan <b>Konfirmasi</b>: kos → <b>booking kamar</b> langsung dibuat (bisa sekalian catat DP); toko → <b>keranjang Kasir</b> terisi, prospek otomatis <b>Jadi</b> setelah dibayar. Lalu kabari pelanggan lewat tombol WhatsApp.</>,
+      <>Di detail pesanan portal, pelanggan melihat <b>tracking</b> (Diproses → Disiapkan → Dikirim → Selesai) dan menekan <b>Hubungi Toko</b> untuk chat yang terkait nomor transaksi. Pemilik & kasir membalas dari menu <b>Chat pelanggan</b> (Langkah 148–149).</>,
       <><b>Checkout toko publik</b> tersedia saat katalog dan harga terbit serta modul <b>Penawaran & pesanan pelanggan</b> aktif. Ketuk foto untuk melihat detail, atau ikon keranjang untuk memilih kemasan dan jumlah. Buka <b>Keranjang</b>, centang barang, lalu <b>Checkout</b>. Pilih ambil di toko atau kirim ke alamat, cara bayar, dan isi kontak. Tidak perlu akun atau OTP. Isi foto, deskripsi, dan komposisi dari <b>Barang &amp; stok › Barang</b> agar muncul di detail produk.</>,
       <>Pada <b>Beranda toko</b>, ketuk <b>Pesanan baru</b>, <b>Penawaran baru</b> atau <b>Permintaan baru</b> di bagian <b>Pemberitahuan portal</b> untuk langsung membuka detailnya. Membuka detail tetap menyisakan pemberitahuan sampai kiriman ditindaklanjuti.</>,
       <>Buka <b>Pesanan grosir › Penawaran</b> untuk memeriksa pesanan publik dan mengonfirmasinya. Sampaikan total akhir dan ongkir kepada pembeli. Pembeli membuka <b>Pesanan</b> di browser yang sama untuk melacaknya dan menilai produk setelah diterima. Transfer dan QRIS mengikuti pengaturan toko dan diverifikasi oleh penjual sebelum dicatat.</>,
-      <>Pelanggan toko membuka <b>Minta Penawaran</b>, lalu mencari barang dan memilih satuan serta jumlah. Alternatifnya, unggah daftar, ketik kebutuhan, pilih paket usaha, atau impor keranjang dari ikon keranjang. Ketuk <b>Lanjutkan</b>, isi kontak dan persetujuan, lalu kirim tanpa login. Nomor permintaan tampil di halaman status.</>,
+      <>Pilih produk, satuan, dan jumlah dari katalog dan keranjang. Di keranjang, centang barang yang ingin diajukan dan ketuk <b>Ajukan Penawaran</b>. Jika punya file daftar belanja atau membutuhkan barang di luar katalog, buka <b>Layanan Toko</b>. Isi kontak dan persetujuan, lalu kirim tanpa login. Pantau tanggapan toko melalui <b>Penawaran Saya</b>.</>,
       <>Pemilik membuka <b>Pesanan grosir › Penawaran</b>, meninjau kebutuhan dan lampiran, lalu memakai <b>Ubah</b> untuk menyusun harga. Pilih <b>Kirim penawaran ke portal</b>. Pelanggan meninjau versi terbaru di <b>Riwayat Permintaan</b> pada browser yang sama, lalu mengajukan negosiasi atau menyetujui. Setelah disetujui, penawaran yang sama menjadi pesanan.</>,
       <>Bisnis <b>jasa/laundry</b>: pelanggan yang memilih layanan langsung membuat <b>pesanan</b> (lihat Langkah 66); yang hanya bertanya masuk ke Prospek.</>,
       <><b>Rekening & QRIS untuk pelanggan</b> (semua jenis bisnis, opsional): isi <b>Cara bayar</b> dan unggah <b>QRIS</b> di Pengaturan, lalu nyalakan <b>Tampilkan rekening/QRIS di halaman bisnis</b> (di Halaman bisnis atau Pengaturan). Tampil di halaman, setelah pesanan/permintaan terkirim, di <b>Cek status pesanan</b> (belum lunas), dan di formulir pendaftaran penghuni. Matikan kapan saja bila lebih suka mengirim rekening lewat WhatsApp.</>,
@@ -1076,9 +1083,63 @@ const PARTS = [
       <>Mulai dengan rekomendasi sesuai kategori, hak akses, dan modul aktif. Buka Memulai untuk checklist, Materi untuk pelajaran modul, atau Progres untuk memilih dari delapan tahap transaksi.</>,
       <>Untuk Retail & Grosir, buka Kasir atau Learning Center lalu pilih Coba Kasir DEMO. Tambahkan barang, tekan Bayar DEMO, periksa transaksi, dan lihat bukti latihan. Untuk latihan lanjutan, buka Pusat Praktik dan pilih mode terpandu, mandiri, atau tantangan. Gunakan item contoh, periksa pembayaran dan kembalian, lalu pilih Simpan simulasi untuk melihat bukti DEMO.</>,
       <>Gunakan peta hubungan antarmodul, materi koreksi, dan evaluasi untuk memeriksa kesiapan. Pengingat belajar di Pusat Notifikasi dapat dimatikan dari Progres. Asisten Bisnis mencari jawaban di dokumentasi internal.</>,
-      <>Pilih <b>? Panduan</b> di halaman modul untuk tur bersorot (Langkah 148). Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>.</>,
+      <>Pilih <b>? Panduan</b> di halaman modul untuk tur bersorot (Langkah 155). Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>.</>,
       <>Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,
     ], <>Progres transaksi disinkronkan untuk anggota bisnis aktif saat tersambung. Draf latihan dan preferensi pengingat tetap tersedia di peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang dibuka.</>, 'info'],
+  ]],
+  ['AP', 'Chat & Tracking Pelanggan', [
+    ['Pelanggan: chat dengan bisnis & lacak pesanan', 'Halaman bisnis › Pesanan · Portal grosir › Pesanan · Cek status pesanan', [
+      <>Toko: pelanggan membuka <b>Pesanan</b> di halaman bisnis (browser yang sama saat checkout) › pilih pesanan. Layar <b>Tracking</b> menampilkan status utama, 4 tahap (<b>Diproses → Disiapkan → Dikirim/Diserahkan → Selesai</b>) lengkap dengan tanggal & jam, lalu <b>Detail Pengiriman</b> (kurir, No. resi yang bisa disalin, estimasi tiba) dan <b>Detail Pesanan</b>.</>,
+      <>Grosir (link pribadi /c): <b>Pesanan</b> › buka pesanan › <b>Lacak pesanan</b> atau <b>Chat penjual</b>. Tombol <b>Chat</b> di kepala portal = chat umum tanpa pesanan (tanya stok/harga).</>,
+      <>Jasa, laundry & kuliner: <b>Cek status pesanan</b> (nomor pesanan + No. WhatsApp) › tahap menyesuaikan pesanan (dijemput, diproses/dimasak, siap diambil/diantar/disajikan, selesai) › <b>Chat dengan Bisnis</b>.</>,
+      <>Chat terbuka <b>layar penuh</b> seperti WhatsApp: nama toko & status di atas, pesan bisa digulir sendiri, kolom ketik di bawah. Saat keyboard muncul, kolom ketik naik tepat di atas keyboard (iPhone, Android, dan aplikasi yang dipasang di Layar Utama) dan halaman di belakang tidak ikut bergeser. Kolom ketik memanjang mengikuti pesan; tombol kirim tidak menutup keyboard. Ketuk <b>‹</b> untuk kembali (di laptop juga bisa <b>Esc</b> atau klik di luar panel).</>,
+      <>Ketik pesan, tombol <b>+</b> untuk foto (JPG/PNG/WebP) atau PDF maks. 3 MB. Percakapan baru menampilkan kartu <b>Coba tanyakan</b>; setelah ada pesan, tombol cepat <b>Cek stok · Cara bayar · Estimasi kirim · Lihat pesanan</b> berjajar di atas kolom ketik (geser ke samping) dan mengisi kalimat siap kirim yang bisa diubah. Kartu dari toko (produk, penawaran, cara bayar) bisa diketuk. Bila sedang membaca pesan lama, balasan baru ditandai tombol <b>↓ pesan baru</b>.</>,
+      <>Chat umum di halaman toko: <b>Lainnya › Chat dengan Toko</b>. Bila belum pernah memesan dari browser itu, isi nama & No. WhatsApp sekali. Tombol <b>WA</b> di kepala chat membuka WhatsApp toko bila toko mengisi nomornya. Selama mengetik, tulisan Powered by PRASARA dan Bantuan kolom disembunyikan agar layar lega.</>,
+    ], <>Status <b>Online</b> = ada kasir/pemilik yang membuka aplikasi dalam 3 menit terakhir; <b>"Biasanya membalas …"</b> = median waktu balas 30 hari (tampil bila sudah ada minimal 3 contoh). Estimasi tiba hanya yang diisi toko — bila kosong tertulis <b>Belum ditentukan toko</b>. Pelanggan belum menerima notifikasi push; angka pesan baru tampil di portal.</>, 'info', <ScrChatPelanggan />],
+    ['Pemilik & kasir: kelola chat dan isi tracking', 'Menu Chat pelanggan · Pesanan grosir › detail · Pesanan (jasa) › detail', [
+      <>Buka <b>Chat pelanggan</b> (toko: kelompok Pelanggan; jasa/kuliner: dekat Pesanan). Saring <b>Belum dibaca, Ditugaskan ke saya, Menunggu dibalas, Sedang ditangani, Menunggu pelanggan, Prioritas tinggi, Selesai</b>, atau cari nama/nomor pesanan/No. HP. Pesan pelanggan baru juga masuk ke lonceng notifikasi (tanpa isi pesan).</>,
+      <>Di HP & tablet, percakapan terbuka layar penuh dengan kolom ketik yang tetap di atas keyboard (‹ untuk kembali ke daftar). Di percakapan: <b>Balas pelanggan</b> atau <b>Catatan internal</b> (kuning, tidak pernah terlihat pelanggan). Tombol <b>+</b>: Foto/PDF, <b>Kartu produk</b> (cari barang, harga eceran — atau grosir untuk portal grosir), <b>Kartu penawaran</b> (pesanan berstatus penawaran), <b>Cara bayar</b> (dari Pengaturan › rekening/QRIS).</>,
+      <>Panel <b>Detail</b>: ubah <b>Status</b>, <b>Ditangani oleh</b> (karyawan berakses kasir/operasional — ia mendapat notifikasi), <b>Prioritas tinggi</b>, dan lihat tracking pesanan.</>,
+      <>Tracking toko/grosir: di detail pesanan (atau panel Detail chat) centang <b>Barang sedang disiapkan</b> setelah dikonfirmasi; setelah surat jalan dibuat ketuk <b>Ubah</b> untuk mengisi <b>kurir, No. resi, estimasi tiba</b> (dari–sampai). Jasa memakai tahap pesanan seperti biasa.</>,
+      <>Dari detail pesanan, <b>Chat pelanggan</b> membuka percakapan pesanan itu (tidak mengirim apa pun ke pelanggan). Pemilik bisa mematikan chat dan menyusun <b>Balasan cepat</b> (maks. 10) di <b>Setelan chat</b>.</>,
+    ], <>Semua pesan & lampiran tersimpan privat per bisnis; pelanggan hanya bisa membuka transaksinya sendiri (cookie browser, link pribadi, atau nomor pesanan + No. HP). WhatsApp otomatis dan GPS kurir belum tersedia (Dalam rencana).</>, 'info', <ScrTrackingPesanan />],
+  ]],
+  ['AQ', 'Analisis: Kinerja & Profitabilitas', [
+    ['Membaca profitabilitas, margin, biaya & titik impas', 'Analisis Bisnis › Profitabilitas', [
+      <>Buka <b>Analisis Bisnis</b> → tab <b>Profitabilitas</b>. Periode, pembanding, cabang (Pro), dan kategori produk mengikuti tombol periode/Filter di atas.</>,
+      <>Setiap angka diberi tanda: <b>AKTUAL</b> (tercatat di PRASARA), <b>ESTIMASI</b> (dihitung dari catatan + asumsi tertulis), <b>PROYEKSI</b> (laju periode yang sedang berjalan sampai akhir periode). Kotak <b>Data belum lengkap</b> muncul bila datanya belum cukup (mis. kurang dari 5 transaksi, barang tanpa harga modal, belum ada biaya tetap).</>,
+      <><b>Ringkas</b>: pendapatan bersih, laba bersih, margin bersih, titik impas, tren 12 bulan, komposisi laba, produk paling menguntungkan, efisiensi biaya, kebocoran, dan <b>Insight & rekomendasi</b> (aturan tertulis dengan angka buktinya, bukan tebakan). Ketuk tombol pada rekomendasi untuk langsung ke bagian terkait.</>,
+      <><b>Profitabilitas</b> & <b>Margin</b>: laba kotor dan margin per produk/kategori (toko), per layanan (jasa — laba hanya bila ada resep/bahan), per kamar (kos — uang masuk & hunian), dan per cabang (Pro; biaya tanpa lokasi = baris "Tanpa lokasi"). Ketuk baris untuk melihat transaksi asalnya.</>,
+      <><b>Biaya</b>: biaya tetap vs variabel, rasio HPP & biaya operasional, biaya per transaksi, per kategori pengeluaran (dengan anggaran) dan per akun jurnal. Kategori yang tumbuh jauh lebih cepat dari pendapatan ditandai <b>Peringatan</b>.</>,
+      <><b>Titik Impas</b>: BEP = biaya tetap ÷ rasio margin kontribusi. Biaya tetap = kategori pengeluaran bertanda <b>Biaya tetap bulanan</b> (centang di Anggaran › Atur Anggaran) + penyusutan + bunga; sisanya variabel. Tanpa biaya tetap, BEP tidak dihitung.</>,
+    ], <>Semua angka uang dari jurnal Pembukuan (sama dengan Laporan Keuangan); per produk dari baris penjualan. Paket Dasar: Ringkas, Biaya & Titik Impas untuk bulan ini & bulan lalu. Paket Bisnis: semua bagian + rincian transaksi. Paket Pro: per cabang.</>, null, null, 'bisnis'],
+    ['Kebocoran laba, peluang terlewat & pendorong omzet', 'Analisis Bisnis › Profitabilitas › Kebocoran · Peluang · Pendorong Omzet', [
+      <><b>Kebocoran</b> (menyesuaikan jenis bisnis): toko — diskon manual kasir, jual di bawah modal, barang rusak/kedaluwarsa, selisih stok kurang, kas laci kurang (Aktual); retur, batal, promo (Info); piutang lewat 90 hari (Risiko). Jasa — diskon, ganti rugi, bahan rusak, kerja ulang, batal. Kos — tagihan dibatalkan manual, tunggakan. Ketuk untuk melihat transaksi asalnya.</>,
+      <><b>Peluang</b> (ESTIMASI): penjualan hilang karena stok habis (toko), sewa hilang karena kamar kosong (kos), laba dari pesanan batal (jasa/kuliner), biaya dana piutang terlambat, dan imbal hasil kas menganggur. Dua yang terakhir butuh <b>Suku bunga acuan</b> yang Anda isi sendiri (mis. bunga pinjaman atau deposito) — tidak ada angka bawaan.</>,
+      <><b>Pendorong Omzet</b>: pilih pembanding di filter, lalu baca berapa perubahan pendapatan yang berasal dari jumlah transaksi dan dari nilai rata-rata per transaksi, plus produk/layanan/kamar yang paling naik & turun.</>,
+    ], <>Kebocoran bukan tuduhan: hanya yang tercatat yang terlihat — lakukan stok opname rutin. Peluang adalah perkiraan dengan rumus tertulis di layar, bukan uang yang hilang dari kas.</>, 'warn', null, 'bisnis'],
+  ]],
+  ['AR', 'Properti: multi-properti, inventaris kamar & Property Intelligence', [
+    ['Mengelola beberapa properti (gedung/lokasi)', 'Properti & Lokasi › Daftar properti & nilai', [
+      <>Buka <b>Properti & Lokasi</b> → <b>+ Tambah properti / lokasi</b> (pemilik). Properti pertama Anda otomatis menjadi <b>Lokasi utama</b>; semua kamar lama tetap di sana.</>,
+      <>Pindahkan kamar ke properti lain: <b>Kamar</b> → ketuk kamar → <b>Ubah data kamar</b> → <b>Properti / lokasi</b>. Di sini juga bisa diisi lantai, luas (m²), dan kapasitas.</>,
+      <>Di halaman Kamar muncul tombol properti di atas daftar untuk menyaring kamar per gedung. Pengeluaran yang dicatat karyawan masuk ke lokasi kerjanya.</>,
+      <>Nama menu menyesuaikan jenis properti: kos = Kamar/Penghuni, kontrakan/apartemen/ruko = Unit/Penyewa, penginapan/villa = Kamar/Unit & Tamu dengan Reservasi.</>,
+    ], <>Jumlah properti mengikuti batas lokasi paket: Dasar 1, Bisnis 3, Pro 10. Properti yang masih punya kamar terisi tidak bisa dinonaktifkan.</>, 'info', null],
+    ['Inventaris kamar & pemeriksaan check-in/check-out', 'Inventaris kamar', [
+      <>Buka <b>Inventaris kamar</b> → ketuk kamar → <b>+ Tambah barang</b> (kasur, lemari, AC, kunci ×2…). Isi perkiraan nilai bila ingin dipakai sebagai dasar potongan kerusakan.</>,
+      <>Saat penghuni masuk/keluar atau pemeriksaan rutin: <b>Periksa kamar</b> → pilih jenis (Check-in, Check-out, Rutin) → tandai kondisi tiap barang (Baik, Perlu perbaikan, Rusak, Hilang) + keterangan → isi nilai kerusakan bila ada → <b>Simpan pemeriksaan</b>.</>,
+      <>Ada kerusakan? Setelah disimpan langsung muncul kotak <b>Deposit</b> penghuni untuk <b>Potong</b> (wajib alasan). Barang rusak bisa dilanjutkan ke <b>Keluhan & perbaikan</b>.</>,
+    ], <>Pemeriksaan yang sudah disimpan tidak bisa diubah (menjadi bukti). Pemeriksaan bertanggal lebih lama yang dicatat belakangan tidak menimpa kondisi terbaru.</>, 'warn', <ScrInventarisKamar />],
+    ['Property Intelligence: okupansi, NOI, ROI, rental yield & proyeksi', 'Properti & Lokasi › Property Intelligence', [
+      <>Pilih periode (Bulan ini, Bulan lalu, 3 bulan, 12 bulan). Kotak angka: <b>Tingkat hunian</b>, <b>Pendapatan</b> & <b>NOI</b> (dengan naik/turun dibanding periode sebelumnya), <b>Tunggakan</b> (per umur 30/60/90 hari), dan perawatan aktif.</>,
+      <><b>NOI</b> = pendapatan usaha − biaya operasional, tanpa penyusutan, bunga pinjaman, pajak, dan belanja modal. Angka dari jurnal — sama dengan Pembukuan dan Analisis Bisnis.</>,
+      <>Isi <b>Nilai investasi</b> (harga beli/bangun + renovasi) dan <b>Nilai pasar</b> tiap properti di tab Daftar properti & nilai. Tanpa nilai ini ROI, rental yield, dan balik modal tidak dihitung — PRASARA tidak mengisi angka bawaan.</>,
+      <><b>Profitabilitas per kamar</b> (uang masuk − biaya perbaikan kamar itu) dan <b>Proyeksi sewa 12 bulan</b>: Konservatif (sewa bertanggal selesai + booking), Dasar (+ sewa tanpa tanggal selesai), Potensi penuh (+ semua kamar kosong tersewa).</>,
+      <>Paket Pro: pilih properti tertentu atau lihat <b>Perbandingan properti</b> (hunian, pendapatan, NOI, ROI per gedung).</>,
+    ], <>Tanda AKTUAL = tercatat; ESTIMASI = disetahunkan dari kurang dari 12 bulan data; PROYEKSI = asumsi tertulis di layar. Paket Dasar: hunian, pendapatan, NOI, tunggakan. Paket Bisnis: per kamar, ROI, yield, balik modal, proyeksi. Paket Pro: per properti.</>, null, <ScrPropertiIntel />, 'bisnis'],
+  ]],
+  ['AS', 'Tur panduan interaktif', [
     ['Tur panduan interaktif: ulangi onboarding & tur setiap modul', 'Panduan & Bantuan → Tur panduan interaktif · tombol ? Panduan', [
       <><b>Panduan awal PRASARA</b> (onboarding) muncul di Beranda untuk pengguna baru dan bisa diulang kapan saja: Panduan &amp; Bantuan › Tur panduan interaktif › <b>Mulai / Lanjutkan / Ulangi</b>. Tur menyorot bisnis aktif, menu (menu bawah di HP, menu kiri di tablet & laptop), tombol <b>(+)</b>, pencarian, lonceng, dan tombol ? Panduan.</>,
       <>Setiap halaman punya tombol <b>? Panduan</b>. Tur menyorot bagian yang BENAR-BENAR tampil untuk bisnis, peran, paket, dan perangkat Anda — judul halaman, tombol yang disebut di langkah (mis. <b>+ Kamar</b>), kotak cari & filter, tab, daftar data, dan dashboard. Langkah yang bagiannya tidak tampil dijelaskan tanpa sorotan.</>,
@@ -1158,7 +1219,9 @@ export default function Panduan() {
           <div><b>Proyek</b><span><a href="#bagian-AH">Langkah 132–136</a><br />Event, kreatif &amp; produksi: penawaran & scope, anggaran & laba proyek, tagihan termin & pembayaran, klien, milestone, tugas tim, anggota, status</span></div>
           <div><b>Notifikasi</b><span><a href="#bagian-AN">Langkah 141–143</a><br />Aktifkan di HP/komputer (iPhone lewat Layar Utama), Pusat Notifikasi, kategori, jam tenang, perangkat</span></div>
           <div><b>Learning Center</b><span><a href="#langkah-147">Langkah 147</a><br />Belajar, simulasi, evaluasi, dan ulangi panduan</span></div>
-          <div><b>Tur panduan interaktif</b><span><a href="#langkah-148">Langkah 148</a><br />Ulangi onboarding &amp; tur ? Panduan tiap modul</span></div>
+          <div><b>Properti lanjutan</b><span><a href="#bagian-AR">Langkah 152–154</a><br />Multi-properti, inventaris & pemeriksaan kamar, Property Intelligence (NOI, ROI, yield, proyeksi)</span></div>
+          <div><b>Chat & tracking pelanggan</b><span><a href="#bagian-AP">Langkah 148–149</a><br />Chat dari portal toko, grosir & cek pesanan jasa; foto/PDF, kartu produk/penawaran/cara bayar, catatan internal, penugasan; kurir, resi & estimasi tiba</span></div>
+          <div><b>Tur panduan interaktif</b><span><a href="#bagian-AS">Langkah 155</a><br />Ulangi onboarding &amp; tur ? Panduan tiap modul</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>

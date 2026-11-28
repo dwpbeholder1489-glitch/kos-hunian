@@ -49,7 +49,7 @@ export default async function PublicPage({ params, searchParams }) {
   const view = query?.tampilan;
   const retail = p.type === 'retail';
   const [shop, quoteCatalog] = retail ? await Promise.all([getPublicShop(slug), getPublicQuoteCatalog(slug)]) : [null, null];
-  const quoteViews = ['penawaran', 'permintaan', 'riwayat-penawaran', 'lacak'];
+  const quoteViews = ['layanan', 'penawaran', 'permintaan', 'riwayat-penawaran', 'lacak', 'katalog', 'keranjang', 'produk', 'favorit', 'chat', 'info', 'pesanan'];
   const initialScreen = [typeof view === 'string' ? view : 'beranda', typeof query?.id === 'string' ? query.id : null];
   const help = CUSTOMER_HELP[p.type] || CUSTOMER_HELP.jasa;
   if (shop) {
@@ -96,7 +96,7 @@ export default async function PublicPage({ params, searchParams }) {
         </section>
       )}
       <div id="booking">{quoteCatalog
-        ? <a href={`/b/${p.slug}?tampilan=penawaran`} className="primary">Minta Penawaran</a>
+        ? <a href={`/b/${p.slug}?tampilan=layanan`} className="primary">Layanan Toko</a>
         : <PublicForm page={p} initialReservation={view === 'booking'} />}</div>
       {p.type === 'jasa' && p.order && <a href={`/b/${p.slug}/cek`} className="small" style={{ textAlign: 'center' }}>Sudah memesan? Cek status pesanan →</a>}
       {p.type !== 'properti' && <div id="bayar"><PublicPay slug={p.slug} panel /></div>}

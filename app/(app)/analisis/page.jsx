@@ -22,6 +22,7 @@ import { DetailSheet, JournalLines } from './Details';
 import { BudgetModule, CashModule, FinancialsModule, InvestModule, MapModule, ReportsModule, TaxModule } from './Modules';
 import ScenarioModule from './Scenario';
 import IndustryModule from './Industry';
+import ProfitModule from './Profit';
 import styles from './analisis.module.css';
 
 const n = (v) => Number(v || 0);
@@ -53,7 +54,7 @@ export default function Analisis() {
 
 // Filter universal: di URL (bertahan saat pindah halaman & kembali) + cadangan per perangkat
 // Modul pusat analisis (Master Blueprint BI V2.0) — lapisan presentasi atas mesin yang sudah ada
-const MODS = [['ringkasan', 'Ringkasan'], ['keuangan', 'Laporan Keuangan'], ['kas', 'Arus Kas'], ['pajak', 'Pajak'], ['anggaran', 'Anggaran'], ['skenario', 'Skenario'], ['industri', 'KPI Industri'], ['investasi', 'Investasi & Valuasi'], ['laporan', 'Laporan & Portofolio'], ['peta', 'Peta Modul']];
+const MODS = [['ringkasan', 'Ringkasan'], ['profit', 'Profitabilitas'], ['keuangan', 'Laporan Keuangan'], ['kas', 'Arus Kas'], ['pajak', 'Pajak'], ['anggaran', 'Anggaran'], ['skenario', 'Skenario'], ['industri', 'KPI Industri'], ['investasi', 'Investasi & Valuasi'], ['laporan', 'Laporan & Portofolio'], ['peta', 'Peta Modul']];
 
 function readFilter(search, kosId) {
   const get = (k) => search.get(k) || '';
@@ -232,7 +233,7 @@ function Center({ kos, kosId, ver }) {
   ];
   const topicCard = <section className={`${styles.card} ${styles.topics}`} aria-labelledby="atl">
     <h2 id="atl" className={styles.cardT}><span className={styles.tIco}><NavIcon name="/layers" size={20} /></span>Analisis &amp; Tindak Lanjut</h2>
-    <ul>{TOPICS.map(([key, t, s, ico]) => <li key={key}><button type="button" onClick={() => open({ type: 'topic', key })}>
+    <ul>{TOPICS.map(([key, t, s, ico]) => <li key={key}><button type="button" onClick={() => (key === 'profit' ? set({ m: 'profit' }) : open({ type: 'topic', key }))}>
       <span className={styles.topIco}>{ico}</span>
       <span><b>{t}</b><small>{s}</small></span><NavIcon name="next" size={16} /></button></li>)}</ul>
   </section>;
@@ -355,6 +356,7 @@ function Center({ kos, kosId, ver }) {
   const modProps = { kosId, range, cmp, ver, owner, jenis: d.jenis, retail: kasRetail };
   if (f.m !== 'ringkasan') return <div className={styles.page}>
     {header}{filterSheet}{modNav}{notes}
+    {f.m === 'profit' && <ProfitModule {...modProps} branch={f.cabang} category={f.kat} />}
     {f.m === 'keuangan' && <FinancialsModule {...modProps} />}
     {f.m === 'kas' && <CashModule {...modProps} />}
     {f.m === 'pajak' && <TaxModule {...modProps} />}
@@ -614,9 +616,9 @@ function BranchCard({ d, onPick }) {
 // ---------- Lembar rincian ----------
 function DetailView({ detail, d, k, T, health, ins, proj, extra, kosId, kas, range, retail, branchNote, reportHref, pembukuan, metric, open, onClose, lanjut, lock, vs }) {
   const common = { onClose };
-  if (detail.type === 'metric') return <DetailSheet {...common} title={detail.title} value={detail.value} formula={detail.formula} rows={detail.rows}
+  if (detail.type === 'metric') return <DetailSheet {...common} title={detail.title} period={fmtRange(range.from, range.to)} value={detail.value} formula={detail.formula} rows={detail.rows}
     links={[[reportHref, 'Buka laporan'], [pembukuan('laporan'), 'Laba rugi di Pembukuan']]}>
-    <h3 className={styles.sh}>Transaksi sumber ({fmtRange(range.from, range.to)})</h3>
+    <h3 className={styles.sh}>Transaksi sumber</h3>
     <JournalLines kosId={kosId} from={range.from} to={range.to} kinds={detail.kinds} retail={retail} branchNote={branchNote} />
   </DetailSheet>;
 
@@ -662,7 +664,7 @@ function DetailView({ detail, d, k, T, health, ins, proj, extra, kosId, kas, ran
   }
 
   if (detail.type === 'point') { const p = detail.p; const from = p.mulai; const to = p.grain === 'harian' ? p.mulai : monthEndOf(p.mulai);
-    return <DetailSheet {...common} title={p.label} rows={[[T.omzet, rp(p.pendapatan)], ['HPP', rp(p.hpp)], ['Biaya operasional', rp(p.biaya)], ['Laba bersih', rp(p.laba)], [T.trx, angka(p.transaksi)], [`${T.pelanggan} bertransaksi`, angka(p.pelanggan)]]}
+    return <DetailSheet {...common} title={p.label} period={fmtRange(from, to)} rows={[[T.omzet, rp(p.pendapatan)], ['HPP', rp(p.hpp)], ['Biaya operasional', rp(p.biaya)], ['Laba bersih', rp(p.laba)], [T.trx, angka(p.transaksi)], [`${T.pelanggan} bertransaksi`, angka(p.pelanggan)]]}
       links={[[`/pembukuan?tab=jurnal&bulan=${from.slice(0, 7)}`, 'Jurnal bulan ini'], [reportHref, 'Buka laporan']]}>
       <h3 className={styles.sh}>Transaksi sumber</h3><JournalLines kosId={kosId} from={from} to={to} kinds={['pendapatan', 'hpp', 'biaya']} retail={retail} branchNote={branchNote} />
     </DetailSheet>; }

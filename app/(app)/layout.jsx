@@ -18,6 +18,7 @@ import { planOf, PLANS, BUSINESS, limitOf } from '@/lib/plan';
 import { KosBell } from '@/components/NotifBell';
 import { RetailNotifBell } from '@/components/RetailBell';
 import { NotifBellMenu, NotifLive, ActivationCard } from '@/components/NotifCenter';
+import ChatPresence from '@/components/chat/ChatPresence';
 import AnnounceBanner from '@/components/AnnounceBanner';
 import { OfflineSync } from '@/components/KasirOffline';
 
@@ -25,7 +26,7 @@ import { isKuliner, typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, RO
 import { sectionsFor, fourthTab, mainTabOf, groupIcon, pinsFor } from '@/lib/menu';
 import QuickPanel from '@/components/QuickPanel';
 import HomeTop from '@/components/HomeTop';
-import { createPortal } from 'react-dom';
+import SmartDetailSheet from '@/components/SmartDetailSheet';
 import { logoUrl } from '@/lib/logo';
 import { GuideBoundary, GuideFallback, OnboardingPrompt } from '@/components/InteractiveGuide';
 import { Sidebar, Topbar, Crumbs, toggleSide } from '@/components/AppShell';
@@ -50,11 +51,8 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
   const pins = pinsFor(kos);
   const [open, setOpen] = useState(() => groups.find(([, , , items]) => items.some(([h]) => on(h)))?.[0] || groups[0]?.[0]);
   const home = homeOf(kos);
-  const el = (
-    <div className="drawer-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <aside className="drawer" role="dialog" aria-modal="true" aria-label="Menu">
-        <div className="drawer-h"><span className="logo"><LogoMark size={34} /><span className="logo-t"><b>PRASARA</b><small>Adaptive Business System</small></span></span>
-          <button className="iconbtn" onClick={onClose} aria-label="Tutup menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></div>
+  return (
+    <SmartDetailSheet title="Menu PRASARA" subtitle={kos.name} icon="/operasional" side onClose={onClose}>
         <nav className="drawer-nav" aria-label="Semua menu">
           <Link href={home} className={'drawer-i' + (on(home) ? ' on' : '')} onClick={onClose}><NavIcon name="/beranda" />Beranda</Link>
           {pins.length > 0 && <><span className="drawer-sh">Pintasan</span>{pins.map(([h, l]) => <Link key={'pin' + h} href={h} className={'drawer-i' + (on(h) ? ' on' : '')} onClick={onClose}><NavIcon name={h} />{l}</Link>)}</>}
@@ -79,10 +77,8 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
           <Link href="/akun" className={'drawer-i' + (on('/akun') ? ' on' : '')} onClick={onClose}><NavIcon name="/karyawan" />Akun & tampilan</Link>
         </nav>
         <button className="drawer-biz" onClick={onBiz}><span className="ic" aria-hidden="true">{typeOf(kos).icon}</span><span className="t"><b>{kos.name}</b><small>{isDraft(kos) ? 'Draf · menunggu konfirmasi' : kos.closed_at ? 'Ditutup (arsip)' : 'Bisnis aktif'} · ganti bisnis</small></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>
-      </aside>
-    </div>
+    </SmartDetailSheet>
   );
-  return typeof document === 'undefined' ? el : createPortal(el, document.body);
 }
 
 // Tablet & desktop (≥768px) memakai sidebar + topbar; HP memakai header + menu bawah. Hanya satu yang dirender agar
@@ -123,7 +119,8 @@ export default function AppLayout({ children }) {
   const home = homeOf(kos);
   const fourth = fourthTab(kos);
   const main = mainTabOf(kos);
-  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !(fourth && on(fourth[0])) && !on('/akun') && !on('/bantuan') && !on('/learning-center'));
+  const reportOn = fourth && (on(fourth[0]) || (fourth[0] === '/laporan-analisis' && (path.startsWith('/laporan') || ['/analisis', '/rekap', '/pembukuan'].includes(path))));
+  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !reportOn && !on('/akun') && !on('/bantuan') && !on('/learning-center'));
   // Lonceng Pusat Notifikasi untuk semua peran; hitungan "perlu ditindaklanjuti" lama ikut bila peran & modulnya sesuai
   const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <KosBell /> : <NotifBellMenu />) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailNotifBell /> : <NotifBellMenu />);
   // Tombol menu topbar: tablet (icon rail) → menu samping lengkap; desktop → lebarkan/ciutkan sidebar
@@ -156,6 +153,7 @@ export default function AppLayout({ children }) {
       )}
       <OfflineSync />
       <NotifLive />
+      {!portfolio && (kos.business_type === 'retail' || kos.business_type === 'jasa') && (canArea(kos, 'sell') || canArea(kos, 'ops')) && <ChatPresence kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
@@ -184,7 +182,7 @@ export default function AppLayout({ children }) {
         <Link href={home} className={on(home) ? 'on' : ''} aria-current={on(home) ? 'page' : undefined}><NavIcon name="/beranda" />Beranda</Link>
         <Link href={main[0]} className={mainOn ? 'on' : ''} aria-current={on(main[0]) ? 'page' : undefined}><NavIcon name={main[2]} />{main[1]}</Link>
         <button className="fab" onClick={() => setSheet('quick')} aria-label="Aksi cepat" aria-haspopup="dialog"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
-        {fourth ? <Link href={fourth[0]} className={on(fourth[0]) || path === '/pembukuan' ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
+        {fourth ? <Link href={fourth[0]} className={reportOn || path === '/pembukuan' ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
           : <Link href="/operasional" className={on('/operasional') ? 'on' : ''}><NavIcon name="/layers" />Menu</Link>}
         <Link href="/akun" className={on('/akun') ? 'on' : ''} aria-current={on('/akun') ? 'page' : undefined}><NavIcon name="/akun" />Akun</Link>
       </nav>}
