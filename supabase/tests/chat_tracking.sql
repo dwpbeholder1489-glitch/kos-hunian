@@ -237,6 +237,37 @@ begin
   failed := false; begin perform cx_open_ref(a, 'svc_order', svc); exception when others then failed := true; end;
   assert failed, 'tidak bisa membuka pesanan bisnis lain';
 
+  -- Konteks produk tetap satu pesan dalam chat umum tamu dan harga mengikuti katalog publik.
+  declare
+    request jsonb := jsonb_build_object('access', 'guest', 'slug', 'cx-uji-a', 'credential', guest,
+      'ref', 'umum', 'op', 'send', 'id', gen_random_uuid(), 'body', 'Mohon cek Indomie ini',
+      'product_id', pr, 'product_unit', 'pcs', 'name', 'Budi Tamu', 'phone', '081299990000');
+    product_room uuid;
+    shown jsonb;
+  begin
+    perform set_config('request.jwt.claim.sub', '', true);
+    assert cx_public_product('cx-uji-b', pr, 'pcs') is null, 'Produk lintas bisnis ditolak';
+    assert cx_public_product('cx-uji-a', pr, 'dus') is null, 'Satuan harus termasuk katalog produk';
+    assert not has_function_privilege('anon', 'cx_customer_product(jsonb)', 'execute');
+    assert cx_customer_product(request || '{"slug":"cx-uji-b"}')->>'ok' is null;
+    assert cx_customer_product(request)->>'ok' = 'true';
+    assert cx_customer_product(request)->>'duplicate' = 'true', 'Pesan dengan konteks produk idempoten';
+    shown := cx_customer_product(request || '{"op":"list"}');
+    product_room := (shown #>> '{conversation,id}')::uuid;
+    assert shown->>'signal' is not null and (shown #>> '{product,price}')::numeric = 3200 and shown #>> '{product,available}' = 'true';
+    assert cx_customer_product(request || '{"op":"list"}' || jsonb_build_object('credential', repeat('f',64)))->>'signal' is null;
+    assert (select count(*) from customer_messages where id = (request->>'id')::uuid and conversation_id = product_room) = 1;
+    perform set_config('request.jwt.claim.sub', owner_a, true);
+    shown := cx_thread(product_room, 'list');
+    assert exists (select 1 from jsonb_array_elements(shown->'messages') x
+      where x->>'id' = request->>'id' and x #>> '{product_context,product_id}' = pr::text and (x #>> '{product_context,price}')::numeric = 3200);
+    update public_pages set show_prices = false where kos_id = a;
+    assert cx_public_product('cx-uji-a', pr, 'pcs')->>'price' is null, 'Harga tersembunyi tidak ikut terbuka';
+    shown := cx_thread(product_room, 'list');
+    assert exists (select 1 from jsonb_array_elements(shown->'messages') x
+      where x->>'id' = request->>'id' and x #>> '{product_context,price}' is null), 'Kartu lama mengikuti kebijakan harga saat ini';
+  end;
+
   -- penghapusan pesanan ikut menghapus percakapan
   delete from svc_orders where id = svc;
   assert not exists (select 1 from customer_conversations where id = conv_j), 'percakapan ikut terhapus';

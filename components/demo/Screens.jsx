@@ -1255,3 +1255,17 @@ export function ScrTurPanduan() {
     </Phone>
   );
 }
+
+export function ScrPenerimaanBarang() {
+  return <Phone tab="Penerimaan Barang" tabs={['Pembelian', 'Penerimaan Barang']} name="Toko Contoh">
+    <Title>Cocokkan Pesanan dengan Barang Datang</Title>
+    <p className="small muted">BLJ-261128-001 · Supplier Contoh</p>
+    <div className="panel">
+      <b>Sabun cuci · Dipesan 10 dus</b>
+      <F label="Satuan datang" value="Dus · isi 24 pcs" sel />
+      <div className="row"><F label="Jumlah baik" value="8" /><F label="Jumlah rusak" value="0" /></div>
+      <span className="small">Masuk stok 192 pcs · Belum Diterima 48 pcs (2 dus)</span>
+    </div>
+    <span className="mini-btn cta">Konfirmasi penerimaan</span>
+  </Phone>;
+}

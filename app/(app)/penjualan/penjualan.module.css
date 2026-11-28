@@ -25,7 +25,7 @@
 .hero :global(.helpchip) svg { color: #087632; flex-shrink: 0; }
 
 .actions, .tabs, .metrics, .quick { display: grid; gap: clamp(4px, 1.6vw, 13px); }
-.actions { grid-template-columns: 2.1fr 1.24fr 1fr 1fr; grid-auto-columns: 1fr; }
+.actions { grid-template-columns: 2.1fr 1.24fr 1fr; grid-auto-columns: 1fr; }
 .actions:has(> :nth-child(2):last-child) { grid-template-columns: repeat(2, 1fr); }
 .actions > *, .quick > * {
   display: flex;
@@ -109,7 +109,7 @@
 @container (min-width: 700px) {
   .hero { min-height: 170px; display: flex; align-items: center; }
   .heroArt { width: min(35%, 300px); }
-  .actions { grid-template-columns: 1.25fr repeat(3, 1fr); }
+  .actions { grid-template-columns: 1.25fr repeat(2, 1fr); }
   .actions > *, .actions .primary { flex-direction: row; gap: 8px; min-height: 48px; }
   .tabs { max-width: 600px; }
   .dateRow { max-width: 375px; }

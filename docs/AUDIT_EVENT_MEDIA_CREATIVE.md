@@ -166,7 +166,7 @@ Keputusan EVT-001…003 tetap **Dipilih** (baseline). EVT-004…026 tetap **Prop
 | Piutang proyek di laporan Umur piutang Pembukuan; persetujuan pembayaran; PPN jasa | Belum |
 | Lampiran untuk PIC/anggota tanpa area proses | Belum — lampiran memakai izin area (ops/settings) |
 
-## 9. Workspace Event — Tahap A (migrasi `20261128300000_event_workspace.sql`, Master Implementation Prompt Event + gambar acuan)
+## 9. Workspace Event — Tahap A (migrasi `20261128360000_event_workspace.sql`, Master Implementation Prompt Event + gambar acuan)
 
 Keputusan pemilik (22 Nov 2026):
 
@@ -189,7 +189,7 @@ Keputusan pemilik (22 Nov 2026):
 | Detail event bertab | Tahap B: Ringkasan · Rundown · Tim & Tugas · Keuangan (penawaran, tagihan & pembayaran, anggaran & biaya) · Dokumen & riwayat. Tab Vendor & Inventaris menyusul Tahap C |
 | Inventaris per event, kategori & evaluasi vendor, booking publik, dokumen PDF event (selain rundown), laporan BI event, kustomisasi (+) | Belum — Tahap C–D |
 
-## 10. Event Tahap B — Rundown & Jadwal (migrasi `20261128310000_event_rundown.sql`)
+## 10. Event Tahap B — Rundown & Jadwal (migrasi `20261128370000_event_rundown.sql`)
 
 | Bagian (Master Prompt §11 / Blueprint §5.5, §5.8, EVT-016) | Status |
 |---|---|

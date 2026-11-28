@@ -153,3 +153,24 @@
   .hero { padding: 20px 22px; }
   .hero h2 { font-size: 21px; }
 }
+.card { min-width:0;overflow-wrap:anywhere }
+.cardHead svg { flex:none }
+.cardBtn { min-height:40px }
+.qris { width:min(100%,200px) }
+.bubble { overflow-wrap:anywhere }
+
+.contextProduct { min-width: 0; border: 1px solid var(--cx-line); border-radius: 12px; padding: 8px; background: white; color: var(--cx-ink); }
+.contextProduct > div { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.contextProduct img { width: 45px; height: 45px; flex: none; object-fit: contain; border-radius: 6px; }
+.contextProduct span { min-width: 0; overflow-wrap: anywhere; }
+.contextProduct small { display: block; color: var(--cx-muted); }
+.contextProduct button { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; padding: 5px; min-height: 34px; color: var(--cx-green); background: #f5faf6; border: 0; border-radius: 7px; margin-top: 6px; }
+.pinnedProduct { margin: 8px 12px 0; }
+.productMenu { display: grid; gap: 5px; }
+.productMenu button {
+  display: flex; align-items: center; gap: 10px; text-align: left; width: 100%; min-width: 0; background: #fff;
+  color: #064e3b; border: 1px solid #dce7e0; border-radius: 11px; padding: 9px 10px; min-height: 44px;
+}
+.productMenu button span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.productMenu button small { display: block; color: #526157; }
+.productMenu button svg { flex: none; }

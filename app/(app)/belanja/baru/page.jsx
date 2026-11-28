@@ -14,11 +14,12 @@ export default function NewPurchase() {
   const params = useSearchParams();
   const draft = params.get('draf');
   const previous = params.get('bulan');
+  const order = params.get('pesan') === '1';
   const newlyAdded = params.get('barang');
-  return kosId ? <Workspace key={`${kosId}:${draft || ''}`} kosId={kosId} ver={ver} kos={kos} newlyAdded={newlyAdded} draft={draft} previous={previous} /> : <Loading />;
+  return kosId ? <Workspace key={`${kosId}:${draft || ''}:${order}`} kosId={kosId} ver={ver} kos={kos} newlyAdded={newlyAdded} order={order} draft={draft} previous={previous} /> : <Loading />;
 }
 
-function Workspace({ kosId, ver, kos, newlyAdded, draft, previous }) {
+function Workspace({ kosId, ver, kos, newlyAdded, order, draft, previous }) {
   const router = useRouter();
   const [state, setState] = useState(null);
   const [init, setInit] = useState(undefined);
@@ -38,7 +39,7 @@ function Workspace({ kosId, ver, kos, newlyAdded, draft, previous }) {
   if (draft && !init) return <Empty title="Draf belanja tidak ditemukan" text="Buka kembali saran atau permintaan dari halaman Belanja."><Link href={backHref}>Kembali ke Belanja</Link></Empty>;
 
   return <PurchaseForm kosId={kosId} kos={kos} version={ver} d={state.data} init={init}
-    initialSearch={state.data.products.find((p) => p.id === newlyAdded)?.name}
+    order={order} initialSearch={state.data.products.find((p) => p.id === newlyAdded)?.name}
     onNewProduct={pathAllowed(kos,'/barang') ? (snapshot) => {
       try {
         const key = storePurchasePrefill(kosId,snapshot);

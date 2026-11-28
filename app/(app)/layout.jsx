@@ -157,8 +157,8 @@ export default function AppLayout({ children }) {
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
-      {!portfolio && role === 'pemilik' && <UpgradeSukses kosId={kos.id} skip={/^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
-      {!portfolio && role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
+      {!portfolio && role === 'pemilik' && <UpgradeSukses kosId={kos.id} skip={/^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan|chat)/.test(path)} />}
+      {!portfolio && role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan|chat)/.test(path)} />}
       <AnnounceBanner />
       {!portfolio && <ClosedBar />}
       <main className="wrap" key={kosId} data-guide-page><Crumbs kos={kos} path={path} />{portfolio && !ownsBusiness ? <div className="empty"><h2>Ringkasan ini khusus pemilik bisnis</h2><Link href={home}>Buka bisnis aktif</Link></div> : !portfolio && kos.suspended_at ? (

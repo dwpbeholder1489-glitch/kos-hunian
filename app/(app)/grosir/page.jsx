@@ -14,6 +14,7 @@ import NavIcon from '@/components/NavIcon';
 import styles from './grosir.module.css';
 import PageHelp from '@/components/PageHelp';
 import { DataTable } from '@/components/Page';
+import { SheetEmpty } from '@/components/SmartDetailSheet';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg, waLink } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
@@ -96,6 +97,7 @@ function GrosirWorkspace({ kosId, kos, ver }) {
   const canStock = pathAllowed(kos, '/barang');
   const contentTab = !['harga', 'portal'].includes(tab);
   const documents = d.deliveries.filter((delivery) => delivery.status !== 'gagal');
+  const shortcutOrders = shortcut === 'order' ? quotes : running;
   const selectOrder = (id, mode = null) => {
     setShortcut(null);
     setDetailMode(mode);
@@ -184,18 +186,28 @@ function GrosirWorkspace({ kosId, kos, ver }) {
         <button onClick={() => { setShortcut(null); setTab('harga'); }}>Daftar Harga</button>
         <button onClick={() => { setShortcut(null); setTab('portal'); }}>Portal Pelanggan</button>
       </Sheet>}
-      {['order', 'delivery'].includes(shortcut) && <Sheet title={shortcut === 'order' ? 'Buat Pesanan' : 'Buat Surat Jalan'} onClose={() => setShortcut(null)}>
-        <p>{shortcut === 'order' ? 'Pilih penawaran yang sudah disetujui pelanggan.' : 'Pilih pesanan yang akan dikirim.'}</p>
-        {(shortcut === 'order' ? quotes : running).map((order) => <button key={order.id} onClick={() => selectOrder(order.id, shortcut === 'order' ? 'konfirmasi' : 'kirim')}>
-          {order.number} · {cust.get(order.contact_id)?.name || 'Pelanggan'}
-        </button>)}
-        {shortcut === 'order' && !quotes.length && <p>Belum ada penawaran untuk dikonfirmasi.</p>}
-        {shortcut === 'delivery' && !running.length && <p>Belum ada pesanan yang siap dikirim.</p>}
+      {['order', 'delivery'].includes(shortcut) && <Sheet title={shortcut === 'order' ? 'Buat Pesanan' : 'Buat Surat Jalan'}
+        icon={shortcut === 'order' ? '/penjualan' : '/grosir'} onClose={() => setShortcut(null)}>
+        {shortcutOrders.length > 0 ? <>
+          <p className="small muted">{shortcut === 'order' ? 'Pilih penawaran yang sudah disetujui pelanggan.' : 'Pilih pesanan yang akan dikirim.'}</p>
+          {shortcutOrders.map((order) => <button key={order.id} onClick={() => selectOrder(order.id, shortcut === 'order' ? 'konfirmasi' : 'kirim')}>
+            {order.number} · {cust.get(order.contact_id)?.name || 'Pelanggan'}
+          </button>)}
+        </> : shortcut === 'order' ? <SheetEmpty icon="/penjualan" title="Belum ada penawaran"
+          text={d.products.length ? 'Buat penawaran terlebih dahulu, lalu konfirmasi setelah pelanggan menyetujuinya.' : 'Tambahkan barang ke katalog sebelum membuat penawaran.'}>
+          {d.products.length > 0 && <button className="primary" onClick={() => { setShortcut(null); setForm({}); }}>Buat penawaran</button>}
+          {!d.products.length && pathAllowed(kos, '/barang') && <Link href="/barang">Buka katalog barang</Link>}
+        </SheetEmpty> : <SheetEmpty icon="/grosir" title="Belum ada pesanan siap dikirim"
+          text="Konfirmasi penawaran menjadi pesanan. Setelah itu, pesanan dapat dipilih untuk dibuatkan surat jalan.">
+          <button className="primary" onClick={() => { setShortcut(null); setTab('penawaran'); }}>Lihat penawaran</button>
+        </SheetEmpty>}
       </Sheet>}
-      {shortcut === 'invoice' && <Sheet title="Faktur Grosir" onClose={() => setShortcut(null)}>
+      {shortcut === 'invoice' && <Sheet title="Faktur Grosir" icon="/resep" onClose={() => setShortcut(null)}>
         {documents.length ? documents.map((delivery) => <Link key={delivery.id} href={`/dokumen/grosir/${delivery.order_id}?faktur=${delivery.id}`}>
           Faktur · {delivery.number} · {tgl(delivery.ship_date)}
-        </Link>) : <p>Faktur terbit setelah surat jalan dibuat.</p>}
+        </Link>) : <SheetEmpty icon="/resep" title="Belum ada faktur grosir" text="Faktur terbit setelah surat jalan dibuat.">
+          <button className="primary" onClick={() => setShortcut('delivery')}>Buka surat jalan</button>
+        </SheetEmpty>}
       </Sheet>}
       {form && <OrderForm kosId={kosId} kos={kos} d={d} order={form.order} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); load(); selectOrder(id); }} />}
       {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} initialMode={detailMode} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={bump} />}

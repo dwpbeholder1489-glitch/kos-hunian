@@ -7,12 +7,14 @@
 // branding & bantuan kolom disembunyikan (data-no-field-help dibaca InteractiveGuide).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BusinessHead, Composer, Ico, MessageList, Powered, RefCard, Suggestions, usePendingId } from './ChatParts';
+import SmartDetailSheet from '@/components/SmartDetailSheet';
+import { supabase } from '@/lib/supabase';
+import { ProductChatCard, BusinessHead, Composer, Ico, MessageList, Powered, RefCard, Suggestions, usePendingId } from './ChatParts';
 import { logoUrl } from '@/lib/logo';
 import { isTouch, useChatViewport } from '@/lib/useChatViewport';
 import styles from './customer-chat.module.css';
 
-export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReference, onCard, onPay, title, back, whatsapp }) {
+export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReference, onCard, onPay, title, back, whatsapp, product, orderProduct, quoteProduct, openCatalog }) {
   const [data, setData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [older, setOlder] = useState(false);
@@ -21,7 +23,8 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
   const [who, setWho] = useState({ name: '', phone: '' });
   const [focused, setFocused] = useState(false);
   const [unseen, setUnseen] = useState(0);
-  const [prefill, setPrefill] = useState(null);
+  const [prefill, setPrefill] = useState(() => product ? { text: `Halo, apakah stok ${product.name} satuan ${product.unit} masih tersedia?`, focus: false } : null);
+  const [actionSheet, setActionSheet] = useState(false);
   const [mounted, setMounted] = useState(false);
   const listRef = useRef(null);
   const stick = useRef(true);
@@ -29,8 +32,10 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
   const exhausted = useRef(false);
   const lastOther = useRef(null);
   const files = useRef(new Map());
+  const sessionLoad = useRef(null);
   const pending = usePendingId();
-  const authKey = JSON.stringify(auth);
+  const hasProduct = Boolean(product);
+  const authKey = JSON.stringify(product ? { ...auth, product_id: product.product_id, product_unit: product.unit } : auth);
   const box = useChatViewport(true);
   useEffect(() => setMounted(true), []);
 
@@ -38,11 +43,16 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
     const payload = { action: 'conversation', ...JSON.parse(authKey), ref: refId, operation, ...extra };
     let body = JSON.stringify(payload); let headers = { 'Content-Type': 'application/json' };
     if (file) { body = new FormData(); body.set('request', JSON.stringify(payload)); body.set('file', file); headers = undefined; }
-    const res = await fetch(endpoint, { method: 'POST', headers, body, cache: 'no-store' });
+    const request = () => fetch(endpoint, { method: 'POST', headers, body, cache: 'no-store' });
+    let res = await request();
+    if (res.status === 409 && operation === 'list' && hasProduct) {
+      sessionLoad.current ??= fetch(endpoint, { cache: 'no-store' }).finally(() => { sessionLoad.current = null; });
+      if ((await sessionLoad.current).ok) res = await request();
+    }
     const out = await res.json().catch(() => ({}));
     if (!res.ok || out?.error) throw new Error(out?.error || 'Chat sedang tidak tersedia. Coba lagi.');
     return out;
-  }, [endpoint, authKey, refId]);
+  }, [endpoint, authKey, refId, hasProduct]);
 
   const load = useCallback(async (before) => {
     const out = await call('list', before ? { before } : {});
@@ -66,6 +76,18 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
     document.addEventListener('visibilitychange', tick);
     return () => { alive = false; clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
   }, [load]);
+
+  const signal = data?.signal;
+  useEffect(() => {
+    if (!signal || !supabase) return;
+    const channel = supabase.channel('cx-guest:' + signal)
+      .on('broadcast', { event: 'changed' }, () => {
+        if (!document.hidden) load().catch(() => {});
+      }).subscribe((status) => {
+        if (status === 'SUBSCRIBED' && !document.hidden) load().catch(() => {});
+      });
+    return () => { supabase.removeChannel(channel); };
+  }, [load, signal]);
 
   const toBottom = useCallback((smooth) => {
     const el = listRef.current;
@@ -110,7 +132,7 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
     const p = pending('t:' + text);
     setBusy(true); setError('');
     stick.current = true;
-    setMessages((cur) => cur.some((m) => m.id === p.id) ? cur : [...cur, { id: p.id, sender: 'customer', kind: 'teks', body: text, created_at: new Date().toISOString(), pending: true }]);
+    setMessages((cur) => cur.some((m) => m.id === p.id) ? cur : [...cur, { id: p.id, sender: 'customer', kind: 'teks', body: text, product_context: data?.product, created_at: new Date().toISOString(), pending: true }]);
     try { await call('send', { message: p.id, content: text, ...idExtra }); p.done(); await load(); return true; }
     catch (e) { setError(e.message); setMessages((cur) => cur.filter((m) => m.id !== p.id)); return false; }
     finally { setBusy(false); }
@@ -136,7 +158,17 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
   const so = ref?.type === 'so_order';
   const names = (ref?.lines || []).slice(0, 2).map((l) => l.name).join(', ');
   const ask = (text) => () => text;
-  const chips = [
+  const currentProduct = data ? data.product : product;
+  const productActions = product ? [
+    ['Pesan Produk Ini', currentProduct?.available && orderProduct ? () => orderProduct(currentProduct) : null, 'cart', 'Masukkan satuan ini ke keranjang'],
+    ['Minta Penawaran', currentProduct && quoteProduct ? () => quoteProduct(currentProduct) : null, 'tag', 'Ajukan harga untuk produk ini'],
+    ['Cek Stok', ask(`Halo, apakah stok ${product.name} satuan ${product.unit} masih tersedia?`), 'box'],
+    ['Harga Grosir', ask(`Halo, berapa harga grosir ${product.name} per ${product.unit} dan jumlah minimum pembeliannya?`), 'tag'],
+    ['Cara Pembayaran', () => (onPay ? onPay() : 'Bagaimana cara pembayaran yang tersedia?'), 'card'],
+    ['Pengiriman', ask(`Apakah ${product.name} bisa dikirim? Berapa ongkir dan estimasinya?`), 'truck'],
+    ['Lihat Katalog', openCatalog, 'store'],
+  ] : [];
+  const chips = product ? productActions.filter(([label]) => ['Cek Stok', 'Harga Grosir', 'Pengiriman'].includes(label)) : [
     ...(so && ref.status === 'penawaran' && onOpenReference ? [[ref.quote_ready ? 'Lihat penawaran' : 'Lihat permintaan', () => onOpenReference(ref), 'tag']] : []),
     ...(refId === 'umum' || so ? [['Cek stok', ask(names ? `Halo, apakah stok ${names} masih tersedia?` : 'Halo, apakah barang ini masih tersedia?'), 'box']] : []),
     ['Cara bayar', () => (onPay ? onPay() : 'Bagaimana cara pembayarannya?'), 'card'],
@@ -154,15 +186,17 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
   // laptop: Esc atau klik di luar panel = kembali (seperti menutup jendela chat)
   useEffect(() => {
     if (!back) return;
-    const k = (e) => { if (e.key === 'Escape') back(); };
+    const k = (e) => { if (e.key === 'Escape' && !actionSheet && !e.defaultPrevented) back(); };
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
-  }, [back]);
+  }, [back, actionSheet]);
   const screen = <div className={styles.overlay} style={box ? { top: box.top, height: box.height } : undefined}
     onClick={(e) => { if (back && e.target === e.currentTarget) back(); }}>
     <section className={`${styles.wrap} ${styles.screen}`} aria-label="Chat dengan bisnis" data-no-field-help data-typing={typing || undefined}>
       <BusinessHead business={data?.business} logo={data?.business?.logo ? logoUrl(data.business.logo) : null} title={title} back={back}
         extra={whatsapp && <a className={styles.wa} href={whatsapp} target="_blank" rel="noreferrer" aria-label="Hubungi lewat WhatsApp">WA</a>} />
+      {product && !(typing && short) && <ProductChatCard pinned product={currentProduct || { ...product, unavailable: true }}
+        open={onCard ? () => onCard('produk', product) : null} />}
       {ref && !(typing && short) && <RefCard reference={ref} onOpen={onOpenReference ? () => onOpenReference(ref) : null} />}
       {error && <p role="alert" className={styles.alert}>{error}</p>}
       {off && <p className={styles.info}>Chat sedang dimatikan oleh bisnis. Gunakan kontak lain di halaman bisnis.</p>}
@@ -172,8 +206,8 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
             loadOlder={() => { stick.current = false; load(messages.find((m) => !m.pending)?.id); }} openFile={openFile} onCard={onCard}
             empty={!off && <>
               <div className={styles.hello}><span className={styles.avatar}><Ico name="store" size={15} /></span>
-                <p>{refId === 'umum' ? 'Halo! Ada yang bisa kami bantu? Tanyakan stok, harga, atau apa saja.' : 'Ada pertanyaan tentang pesanan ini? Tulis di sini, toko akan membalas.'}</p></div>
-              <Suggestions items={suggestions} />
+                <p>{product ? 'Tulis pertanyaan Anda tentang produk ini.' : refId === 'umum' ? 'Halo! Ada yang bisa kami bantu? Tanyakan stok, harga, atau apa saja.' : 'Ada pertanyaan tentang pesanan ini? Tulis di sini, toko akan membalas.'}</p></div>
+              {!product && <Suggestions items={suggestions} />}
             </>} />}
         {unseen > 0 && <button type="button" className={styles.newPill} onClick={() => toBottom(true)}><Ico name="down" size={16} />{unseen} pesan baru</button>}
       </div>
@@ -185,9 +219,20 @@ export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReferen
         </div>
       </div>}
       <div className={styles.foot}>
-        <Composer onSend={send} onFile={sendFile} chips={off || empty ? [] : chips} busy={busy} disabled={!data || off} onTyping={setFocused} prefill={prefill} />
+        <Composer onSend={send} onFile={sendFile} chips={off || (empty && !product) || (typing && short) ? [] : chips} extraMenu={product ? () => setActionSheet(true) : undefined} busy={busy} disabled={!data || off} onTyping={setFocused} prefill={prefill} />
         {!typing && <Powered />}
       </div>
+      {actionSheet && <SmartDetailSheet title="Pilih Aksi" icon="plus" onClose={() => setActionSheet(false)}>
+        <div className={styles.productMenu}>{productActions.map(([label, action, icon, subtitle]) => <button type="button" key={label} disabled={!action}
+          onClick={() => {
+            const text = action();
+            if (typeof text === 'string') setPrefill({ text, at: Date.now(), focus: false });
+            setActionSheet(false);
+          }}>
+          <Ico name={icon} /><span><b>{label}</b>{subtitle && <small>{subtitle}</small>}</span><Ico name="next" size={16} />
+        </button>)}
+        <button type="button" onClick={() => { setActionSheet(false); window.dispatchEvent(new Event('cx-pick-file')); }}><Ico name="photo" /><span><b>Kirim Foto atau Dokumen</b></span></button></div>
+      </SmartDetailSheet>}
     </section>
   </div>;
   return mounted ? createPortal(screen, document.body) : null;

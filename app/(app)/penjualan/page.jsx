@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { DataTable } from '@/components/Page';
+import { SheetEmpty } from '@/components/SmartDetailSheet';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg } from '@/lib/format';
 import { PAY, jam, qtyNum, uid, payLabel, splitSerials, unitPrice } from '@/lib/retail';
@@ -104,7 +105,6 @@ export default function Penjualan() {
           <Link href="/kasir" className={styles.primary}><span aria-hidden="true">+</span><NavIcon name="/penjualan" />Transaksi Baru</Link>
           <ScanButton className={styles.action} icon={<NavIcon name="barcode" />} label="Scan Barcode" onCode={(code) => { router.push('/kasir?barcode=' + encodeURIComponent(code)); return true; }} />
         </>}
-        <button className={styles.action} onClick={() => setMenu('import')}><NavIcon name="upload" />Import</button>
         <button className={styles.action} onClick={() => setMenu('menu')}><NavIcon name="more" />Lainnya</button>
       </div>
       <div className={styles.tabs} aria-label="Jenis transaksi">
@@ -178,10 +178,16 @@ export default function Penjualan() {
         <button onClick={() => { setMenu(null); setTab('nota'); }}>Nota Kredit</button>
         {fin && <button onClick={() => { setMenu(null); setTab('offline'); }}>Transaksi Offline</button>}
       </Sheet>}
-      {menu === 'import' && <Sheet title="Import Penjualan" onClose={() => setMenu(null)}><p>Import penjualan masih dalam usulan pengembangan.</p></Sheet>}
-      {menu === 'return' && <Sheet title="Retur Penjualan" onClose={() => setMenu(null)}>
-        <p>Pilih transaksi pada tanggal {tgl(day)}, lalu buka pilihan retur di detail transaksi.</p>
-        {ok.length ? ok.map((sale) => <button key={sale.id} onClick={() => { setMenu(null); setOpen(sale); }}>{sale.number} · {rp(sale.total)}</button>) : <p>Belum ada transaksi selesai pada tanggal ini.</p>}
+      {menu === 'return' && <Sheet title="Retur Penjualan" icon="return" onClose={() => setMenu(null)}>
+        {err ? <SheetEmpty title="Transaksi gagal dimuat" text="Muat ulang penjualan untuk memilih transaksi.">
+          <button className="primary" onClick={() => { setErr(null); setRows(null); load(); }}>Coba lagi</button>
+        </SheetEmpty> : !rows ? <Loading rows={2} /> : ok.length ? <>
+          <p className="small muted">Pilih transaksi pada {tgl(day)}, lalu buka pilihan retur di detail transaksi.</p>
+          {ok.map((sale) => <button key={sale.id} onClick={() => { setMenu(null); setOpen(sale); }}>{sale.number} · {rp(sale.total)}</button>)}
+        </> : <SheetEmpty icon="return" title="Belum ada transaksi yang bisa diretur"
+          text={`Tidak ada penjualan selesai pada ${tgl(day)}. Pilih tanggal transaksi awal sebelum membuat retur.`}>
+          <button className="primary" onClick={() => setMenu(null)}>Kembali ke pilihan tanggal</button>
+        </SheetEmpty>}
       </Sheet>}
       {open && <Detail fin={fin} onReturned={load} s={open} contact={contacts.get(open.contact_id) || open.contact_name} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); load(); }} />}
     </div>

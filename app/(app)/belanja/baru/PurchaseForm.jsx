@@ -22,7 +22,7 @@ const MODES = [
 const netPrice = (l) => parseRp(l.price) - parseRp(l.discount);
 const subtotal = (l) => Math.round((qtyNum(l.qty) || 0) * Math.max(0, netPrice(l)) * 100) / 100;
 
-export default function PurchaseForm({ kosId, kos, version, d, init, initialSearch, onClose, onSaved, onNewProduct }) {
+export default function PurchaseForm({ kosId, kos, version, d, init, order, initialSearch, onClose, onSaved, onNewProduct }) {
   const draft = init?.resume;
   const [stage, setStage] = useState(draft ? 1 : 0);
   const [picker, setPicker] = useState(Boolean(draft));
@@ -36,7 +36,7 @@ export default function PurchaseForm({ kosId, kos, version, d, init, initialSear
   const [method, setMethod] = useState(draft?.method || 'tunai');
   const [due, setDue] = useState(draft?.due || '');
   const [note, setNote] = useState(draft?.note || '');
-  const [mode, setMode] = useState(draft?.mode || (init ? 'pesan' : 'terima'));
+  const [mode, setMode] = useState(draft?.mode || (init || order ? 'pesan' : 'terima'));
   const [expected, setExpected] = useState(draft?.expected || '');
   const [busy, setBusy] = useState(false);
   const [txId] = useState(() => draft?.txId || uid());

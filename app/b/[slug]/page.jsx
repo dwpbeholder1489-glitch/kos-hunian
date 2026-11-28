@@ -49,8 +49,8 @@ export default async function PublicPage({ params, searchParams }) {
   const view = query?.tampilan;
   const retail = p.type === 'retail';
   const [shop, quoteCatalog] = retail ? await Promise.all([getPublicShop(slug), getPublicQuoteCatalog(slug)]) : [null, null];
-  const quoteViews = ['layanan', 'penawaran', 'permintaan', 'riwayat-penawaran', 'lacak', 'katalog', 'keranjang', 'produk', 'favorit', 'chat', 'info', 'pesanan'];
-  const initialScreen = [typeof view === 'string' ? view : 'beranda', typeof query?.id === 'string' ? query.id : null];
+  const quoteViews = ['layanan', 'penawaran', 'permintaan', 'riwayat-penawaran', 'lacak', 'katalog', 'keranjang', 'produk', 'favorit', 'chat', 'chat-produk', 'info', 'pesanan'];
+  const initialScreen = [typeof view === 'string' ? view : 'beranda', typeof query?.id === 'string' ? query.id : null, typeof query?.satuan === 'string' ? query.satuan : null];
   const help = CUSTOMER_HELP[p.type] || CUSTOMER_HELP.jasa;
   const promos = p.type === 'properti' ? await getPublicCampaigns(slug) : [];
   const refCode = typeof query?.ref === 'string' ? query.ref.replace(/[^A-Za-z0-9]/g, '').slice(0, 20).toUpperCase() : '';

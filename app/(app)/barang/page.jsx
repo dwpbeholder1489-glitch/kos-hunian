@@ -111,6 +111,23 @@ function InventoryWorkspace({ kosId, ver, kos }) {
   const [ser, setSer] = useState(null);    // nomor seri
   const [sup, setSup] = useState(null);    // harga supplier
   const thumbs = useThumbs(kosId, 'product', `${ver}:${edit ? 1 : 0}`);
+  const stockSource = params.get('stok');
+  const productSource = params.get('produk');
+  const supplierSource = params.get('pasokan');
+  const sourceId = stockSource || productSource || supplierSource;
+  const sourceType = stockSource ? 'stock' : productSource ? 'product' : 'supplier';
+  const [openedSource, setOpenedSource] = useState('');
+  useEffect(() => {
+    if (!sourceId) { setOpenedSource(''); return; }
+    const key = sourceType + ':' + sourceId;
+    if (!d || openedSource === key) return;
+    const product = d.products.find((item) => item.id === sourceId);
+    if (!product) return;
+    setOpenedSource(key);
+    if (sourceType === 'stock') setAdj(product);
+    if (sourceType === 'product') setEdit(product);
+    if (sourceType === 'supplier' && moduleOn(kos, 'r_belanja')) setSup(product);
+  }, [d, kos, sourceId, sourceType, openedSource]);
   if (err) return <div className="notice bad">{err.includes('products') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
@@ -307,9 +324,7 @@ function InventoryWorkspace({ kosId, ver, kos }) {
         {multi && <Link href="/mutasi">Mutasi Stok</Link>}
         <button onClick={() => { setExtra(null); setCatSheet(true); }}>Atur Kategori</button>
         {!bahan && <button onClick={() => { setExtra(null); setBrandSheet(true); }}>Atur Merek</button>}
-        <button onClick={() => setExtra('import')}>Import Barang</button>
       </Sheet>}
-      {extra === 'import' && <Sheet title="Import Barang" onClose={() => setExtra(null)}><p>Import barang masih berupa usulan pengembangan.</p></Sheet>}
       {brandSheet && <BrandSheet kosId={kosId} brands={d.brands} products={d.products} onClose={() => setBrandSheet(false)} onChanged={reload} />}
       {bcs && <BarcodeSheet p={bcs} units={unitsOf(bcs, d.units)} onClose={() => { setBcs(null); reload(); }} />}
       {kit && <KitSheet kosId={kosId} p={kit === 'new' ? null : kit} products={d.products} units={d.units} finance={canArea(kos, 'finance')} onClose={() => setKit(null)} onSaved={() => { setKit(null); reload(); }} />}

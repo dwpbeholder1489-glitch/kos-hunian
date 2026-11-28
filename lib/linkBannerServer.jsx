@@ -5,6 +5,8 @@ import path from 'node:path';
 import { ImageResponse } from 'next/og';
 import sharp from 'sharp';
 import { adminDb } from '@/lib/reminders';
+import { mediaUrl } from '@/lib/media';
+import { rp } from '@/lib/format';
 import { SITE_URL } from '@/lib/plan';
 import { BANNER_HEIGHT as height, BANNER_WIDTH as width, BANNER_UPLOAD_LIMIT, bannerContent } from '@/lib/linkBanner';
 
@@ -45,18 +47,33 @@ export function readPortalTicket(ticket) {
 export async function getLinkBanner(source, key, context, item = null) {
   const sb = adminDb();
   if (!sb) return null;
-  const { data, error } = await sb.rpc('link_banner_public', { p_source: source, p_key: key, p_context: context, p_item: item });
+  const isProduct = source === 'b' && context === 'produk' && item;
+  const [{ data, error }, product] = await Promise.all([
+    sb.rpc('link_banner_public', { p_source: source, p_key: key, p_context: context, p_item: item }),
+    isProduct ? sb.rpc('cx_public_product', { p_slug: key, p_product: item }) : null,
+  ]);
   if (error) return null;
-  return data;
+  if (!isProduct || !data) return data;
+  if (!product?.data) return product?.error ? data : null;
+  const info = product.data;
+  return { ...data, mode: 'auto', photos: data.photos.filter((photo) => photo.kind === 'item'), productPhoto: info.photo,
+    itemTitle: info.name, itemDescription: info.price == null ? 'Tanyakan harga kepada toko' : `${rp(info.price)} / ${info.unit}` };
 }
 
 export async function linkBannerMetadata(source, key, context, { item, fallbackTitle = 'PRASARA', fallbackDescription, path } = {}) {
   const data = await getLinkBanner(source, key, context, item);
-  const content = data?.enabled ? bannerContent(data, context) : null;
+  const content = data && (data.enabled || data.productPhoto || (context === 'produk' && data.itemTitle)) ? bannerContent(data, context) : null;
   const title = content?.shareTitle || fallbackTitle;
   const description = content?.description || fallbackDescription;
   const image = { ...FALLBACK };
-  if (content) {
+  if (content && !data.enabled && data.productPhoto) {
+    return {
+      title, description,
+      openGraph: { title, description, siteName: 'PRASARA', locale: 'id_ID', type: 'website', url: path, images: [{ url: mediaUrl(data.productPhoto), alt: title }] },
+      twitter: { title, description, card: 'summary_large_image', images: [mediaUrl(data.productPhoto)] },
+    };
+  }
+  if (content && data.enabled) {
     const query = new URLSearchParams({ context });
     if (source === 'b') {
       query.set('slug', key.toLowerCase());

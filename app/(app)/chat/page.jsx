@@ -17,8 +17,9 @@ import styles from '@/components/chat/chat.module.css';
 const FILTERS = [['semua', 'Semua'], ['belum_dibaca', 'Belum dibaca', 'unread'], ['saya', 'Ditugaskan ke saya', 'saya'], ['baru', 'Menunggu dibalas', 'baru'],
   ['ditangani', 'Sedang ditangani', 'ditangani'], ['menunggu_pelanggan', 'Menunggu pelanggan', 'menunggu_pelanggan'], ['tinggi', 'Prioritas tinggi'], ['selesai', 'Selesai']];
 const when = (iso) => {
-  if (!iso) return '';
-  const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date(iso));
+  const date = new Date(iso);
+  if (!iso || !Number.isFinite(date.getTime())) return '';
+  const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date);
   return d === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date()) ? fmtTime(iso) : fmtDay(iso);
 };
 
@@ -35,13 +36,25 @@ export default function ChatPage() {
   const load = useCallback(async () => {
     if (!kosId) return;
     const { data, error } = await supabase.rpc('cx_inbox', { p_kos: kosId, p_filter: filter, p_search: q.trim() || null });
-    if (error) setErr(errMsg(error)); else { setErr(''); setD(data); }
+    if (error || !Array.isArray(data?.rows)) {
+      setErr(error ? errMsg(error) : 'Daftar percakapan belum dapat dimuat.');
+    } else {
+      setErr(''); setD(data);
+    }
   }, [kosId, filter, q]);
   useEffect(() => {
     const t0 = setTimeout(load, q ? 300 : 0);
     const t = setInterval(() => { if (!document.hidden) load(); }, 10000);
     return () => { clearTimeout(t0); clearInterval(t); };
   }, [load, q]);
+  useEffect(() => {
+    if (!kosId || !supabase) return;
+    const channel = supabase.channel('cx-inbox:' + kosId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cx_room_updates' }, () => {
+        if (!document.hidden) load();
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [kosId, load]);
   const pick = (id) => {
     setSel(id);
     const url = new URL(window.location.href); if (id) url.searchParams.set('c', id); else url.searchParams.delete('c');
@@ -49,10 +62,10 @@ export default function ChatPage() {
   };
   const settings = canArea(kos, 'settings');
 
-  const head = <PageHeader title="Chat pelanggan" help={<PageHelp />}
+  const head = <PageHeader title="Chat pelanggan" help={<PageHelp page="chat" />}
     desc="Pesan dari portal toko, portal grosir, dan halaman cek pesanan. Status online & waktu respons yang dilihat pelanggan dihitung dari aktivitas tim di sini."
     actions={settings && <button type="button" className="sm" onClick={() => setSetup(!setup)}>{setup ? 'Tutup setelan' : 'Setelan chat'}</button>} />;
-  if (err && !d) return <>{head}<div className="notice bad">{err}</div></>;
+  if (err && !d) return <>{head}<div className="notice bad">{err} <button type="button" className="sm" onClick={load}>Coba lagi</button></div></>;
   if (!d) return <>{head}<Loading /></>;
   const counts = d.counts || {};
   const showList = wide || !sel;
@@ -67,7 +80,7 @@ export default function ChatPage() {
         <span className={styles.av} aria-hidden="true">{(r.customer || '?').trim()[0]?.toUpperCase()}</span>
         <span className={styles.main}><b>{r.customer}{r.number ? ` · ${r.number}` : ''}</b>
           <span>{r.last_sender === 'business' ? 'Anda: ' : ''}{r.preview || '—'}</span>
-          <span>{r.priority === 'tinggi' && <em className={styles.high}>Prioritas · </em>}{CONV_STATUS[r.status][0]}{r.assigned_name ? ` · ${r.assigned_name}` : ''}</span></span>
+          <span>{r.priority === 'tinggi' && <em className={styles.high}>Prioritas · </em>}{(CONV_STATUS[r.status]?.[0] || 'Status belum tersedia')}{r.assigned_name ? ` · ${r.assigned_name}` : ''}</span></span>
         <span className={styles.side}>{when(r.last_at)}{r.unread > 0 && <span className={styles.count}>{r.unread}</span>}</span>
       </button>)}</div>}
   </div>;
