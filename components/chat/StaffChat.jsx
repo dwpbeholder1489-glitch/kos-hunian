@@ -51,7 +51,10 @@ export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen
 
   const load = useCallback(async (before) => {
     const { data, error } = await supabase.rpc('cx_thread', { p_conv: convId, p_op: 'list', p: before ? { before } : {} });
-    if (error) { setErr(errMsg(error)); return; }
+    if (error || !data?.conversation || !Array.isArray(data.messages)) {
+      setErr(error ? errMsg(error) : 'Percakapan belum dapat dimuat.');
+      return;
+    }
     setErr(''); if (!before) setD(data);
     if (before) exhausted.current = (data.messages || []).length < 40;
     setOlder(!exhausted.current && (data.messages || []).length === 40);
@@ -59,7 +62,7 @@ export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen
       const map = new Map(cur.filter((m) => !m.pending).map((m) => [m.id, m]));
       for (const m of data.messages || []) map.set(m.id, m);
       for (const m of cur) if (m.pending && !map.has(m.id)) map.set(m.id, m);
-      return [...map.values()].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+      return [...map.values()].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '') || a.id.localeCompare(b.id));
     });
   }, [convId]);
   useEffect(() => {
@@ -95,7 +98,7 @@ export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen
   }, [messages, convId, onChanged]);
 
   useEffect(() => {
-    const last = messages.at(-1)?.id;
+    const last = messages[messages.length - 1]?.id;
     if (last && latest.current && last !== latest.current && !stick.current) setUnseen(true);
     latest.current = last || null;
   },[messages]);
@@ -167,7 +170,7 @@ export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen
     setPicker((x) => x?.q === q ? { ...x, rows: data || [], error: error ? errMsg(error) : null } : x);
   };
 
-  if (err && !d) return <div className={styles.thread}><div className="notice bad" style={{ margin: 12 }}>{err}</div></div>;
+  if (err && !d) return <div className={styles.thread}><div className="notice bad" style={{ margin: 12 }}>{err}<button type="button" className="sm" onClick={() => load()}>Coba lagi</button>{onBack && <button type="button" className="sm ghost" onClick={onBack}>Kembali</button>}</div></div>;
   if (!d) return <div className={styles.thread}><p className="muted" style={{ padding: 16 }}>Memuat percakapan…</p></div>;
   const c = d.conversation; const ref = d.reference;
   const quoteOk = ref?.type === 'so_order' && ref.status === 'penawaran' && ref.kind !== 'pesanan';
@@ -281,7 +284,7 @@ export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen
       </Sheet>}
       {panel === 'history' && <Sheet title="Riwayat transaksi" icon="/laporan" onClose={() => setPanel('')}>
         {room?.orders?.length ? room.orders.map((o) => <button key={o.id} onClick={() => openOrder(o.id,o.type)}>
-          {o.number} · {rp(o.total)} · {String(o.status).replaceAll('_',' ')}</button>) : <p>Belum ada transaksi yang tertaut.</p>}
+          {o.number} · {rp(o.total)} · {String(o.status).replace(/_/g, ' ')}</button>) : <p>Belum ada transaksi yang tertaut.</p>}
       </Sheet>}
       {panel?.track && <Sheet title={`Pesanan #${panel.track.number}`} onClose={() => setPanel('')}>
         <TrackingView track={panel.track} extra={<TrackingControls track={panel.track}

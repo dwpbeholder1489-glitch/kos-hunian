@@ -37,7 +37,9 @@ export function Ico({ name, size = 20 }) {
 const initial = (name) => (String(name || '?').trim()[0] || '?').toUpperCase();
 const sizeText = (n) => (n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
 const dayLabel = (iso) => {
-  const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date(iso));
+  const date = new Date(iso);
+  if (!iso || !Number.isFinite(date.getTime())) return '';
+  const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date);
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
   return d === today ? 'Hari ini' : fmtDay(iso);
 };
@@ -102,7 +104,7 @@ function Card({ m, onAction }) {
   if (m.kind === 'pesanan') return <div className={styles.card}>
     <span className={styles.cardHead}><Ico name="cart" size={18} />Pesanan {p.number ? '#' + p.number : ''}</span>
     {p.unavailable ? <small>Pesanan tidak tersedia</small> : <>
-      <small>{p.items} baris · {rp(p.total)} · {String(p.status || '').replaceAll('_',' ')}</small>
+      <small>{p.items} baris · {rp(p.total)} · {String(p.status || '').replace(/_/g, ' ')}</small>
       {p.paid != null && <small>Dibayar {rp(p.paid)} · {p.lunas ? 'Lunas' : 'Belum lunas'}</small>}
       {onAction && <button className={styles.cardBtn} onClick={() => onAction('pesanan',p)}>Lihat pesanan</button>}
     </>}
@@ -131,7 +133,7 @@ export function MessageList({ messages, side, business, older, loadOlder, openFi
       const sep = day !== lastDay; lastDay = day;
       const note = m.kind === 'catatan';
       return <div key={m.id} style={{ display: 'contents' }}>
-        {sep && <span className={styles.day}>{day}</span>}
+        {sep && day && <span className={styles.day}>{day}</span>}
         <div className={`${styles.row} ${mine ? styles.mine : ''}`}>
           {!mine && <span className={styles.avatar} aria-hidden="true">{m.sender === 'business' ? <Ico name="store" size={15} /> : initial(business)}</span>}
           <div className={`${styles.bubble} ${note ? styles.note : ''}`}>
