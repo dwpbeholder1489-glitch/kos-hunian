@@ -31,10 +31,25 @@ export default function Perbaikan() {
   const [neu, setNeu] = useState(null); // { room_id }
   useBaru(() => setNeu({}));
   const [open, setOpen] = useState(null);
+  const [linked, setLinked] = useState(null);
+  const [ticket, setTicket] = useState('');
   const load = () => supabase.from('maint_tickets').select('*').eq('kos_id', kosId).order('created_at', { ascending: false }).limit(300)
     .then(({ data, error }) => (error ? setErr(errMsg(error)) : setRows(data || [])));
   useEffect(() => { load(); }, [kosId, ver]);
-  useEffect(() => { try { const k = new URLSearchParams(window.location.search).get('kamar'); if (k) setNeu({ room_id: k }); } catch {} }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get('kamar');
+    const id = params.get('tiket');
+    if (room) setNeu({ room_id: room });
+    if (/^[0-9a-f-]{36}$/i.test(id || '')) { setTicket(id); setOpen(id); }
+  }, []);
+  useEffect(() => {
+    if (!ticket) return;
+    let active = true;
+    supabase.from('maint_tickets').select('*').eq('kos_id', kosId).eq('id', ticket).maybeSingle()
+      .then(({ data }) => { if (active) setLinked(data); });
+    return () => { active = false; };
+  }, [kosId, ticket, ver]);
   if (err) return <div className="notice bad">{/maint_tickets/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!rows || !d.ready) return <Loading />;
   const cnt = (s) => rows.filter((r) => r.status === s).length;
@@ -43,7 +58,7 @@ export default function Perbaikan() {
   const shown = rows.filter((r) => (f === 'terbuka' ? OPEN.includes(r.status) : r.status === f)
     && (!term || [r.number, r.title, r.room_id ? d.roomCode(r.room_id) : ''].some((x) => (x || '').toLowerCase().includes(term))))
     .sort((a, b) => (f === 'terbuka' ? (a.priority === 'tinggi' ? 0 : 1) - (b.priority === 'tinggi' ? 0 : 1) : 0));
-  const cur = open && rows.find((r) => r.id === open);
+  const cur = open && (rows.find((r) => r.id === open) || (linked?.id === open && linked.kos_id === kosId ? linked : null));
   const done = () => { load(); };
 
   return (

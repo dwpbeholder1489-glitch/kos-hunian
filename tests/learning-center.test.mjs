@@ -95,3 +95,83 @@ test('retail demo checks available quantity and included tax from the active rat
   assert.equal(demo.tax, 49550);
   assert.ok(calculateDemo({ ...transaction, taxRate: 26 }).error);
 });
+
+// ===== Tur panduan interaktif (onboarding & "? Panduan" per modul) =====
+const tour = await import('../lib/tour.js');
+const { readFileSync } = await import('node:fs');
+
+test('tour keys are stable per page, hide record ids, and reject unsafe keys', () => {
+  assert.equal(tour.tourKey('/kasir'), 'page:/kasir');
+  assert.equal(tour.tourKey('/proyek/5b1f2c1e-1111-2222-3333-444455556666'), 'page:/proyek/:id');
+  assert.equal(tour.tourKey('/dokumen/gaji/12?staff=3'), 'page:/dokumen/gaji/:id');
+  assert.equal(tour.tourKey('/kas-jasa'), 'page:/kas-jasa');
+  assert.equal(tour.tourKey('onboarding'), 'onboarding');
+  assert.equal(tour.validTourKey('page:/Kasir;drop'), false);
+  assert.equal(tour.validTourKey('page:/' + 'a'.repeat(96)), false);
+});
+
+test('spotlight only points at a button whose label the guide step actually names', () => {
+  const c = [{ id: 0, label: '+ Kamar' }, { id: 1, label: 'Ubah data kamar' }, { id: 2, label: 'Kamar' }, { id: 3, label: '+ Tagihan tambahan' }, { id: 4, label: 'Simpan' }, { id: 5, label: 'Bayar' }];
+  assert.equal(tour.bestTarget('Tambah kamar baru dengan tombol + Kamar.', c), 0);
+  assert.equal(tour.bestTarget('Biaya di luar sewa: + Tagihan tambahan.', c), 3);
+  assert.equal(tour.bestTarget('Ketuk kamar → Ubah data kamar untuk mengisi harga.', c), 1);
+  assert.equal(tour.bestTarget('Periksa keranjang lalu tekan Bayar.', c), 5);
+  // kata umum / awal kalimat / tanpa tanda "+" tidak boleh menunjuk elemen yang salah
+  assert.equal(tour.bestTarget('Kamar yang pernah disewa tidak bisa dihapus.', c), null);
+  assert.equal(tour.bestTarget('Bayar dulu tagihannya.', c), null);
+  assert.equal(tour.bestTarget('Tekan Simpan.', c), null);
+});
+
+test('page tour adapts to what is on screen and to the role', () => {
+  const help = { title: 'Kamar', steps: ['Tambah kamar baru dengan tombol + Kamar.'], warn: ['Kamar terisi diatur otomatis.'] };
+  const owner = tour.buildPageTour({ help, found: { header: true, search: true, data: true }, candidates: [{ id: 7, label: '+ Kamar' }], role: 'pemilik', roleName: 'Pemilik' });
+  assert.equal(owner[0].target, 'header');
+  assert.deepEqual(owner[1].target, { id: 7 });
+  assert.ok(owner.some((s) => s.target === 'search') && owner.some((s) => s.target === 'data'));
+  assert.ok(!owner.some((s) => s.kind === 'peran'));
+  assert.equal(owner.at(-1).target, 'replay');
+  const staff = tour.buildPageTour({ help, found: {}, candidates: [], role: 'kasir', roleName: 'Kasir' });
+  assert.ok(staff.some((s) => s.kind === 'peran' && /Kasir/.test(s.text)));
+  assert.ok(!staff.some((s) => ['header', 'search', 'data', 'dashboard', 'tabs'].includes(s.target)));
+  const customer = tour.buildPageTour({ help, found: { header: true }, customer: true, role: 'pelanggan' });
+  assert.ok(!customer.some((s) => s.kind === 'peran'));
+  assert.match(customer.at(-1).text, /Panduan/);
+});
+
+test('progress from another device only wins when newer, and catalog counts completions', () => {
+  const local = { 'page:/kasir': { status: 'paused', index: 2, at: '2026-11-27T10:00:00.000Z', runs: 2 } };
+  const older = tour.mergeTours(local, [{ tour: 'page:/kasir', status: 'completed', step: 5, steps: 6, runs: 1, updated_at: '2026-11-27T09:00:00Z' }]);
+  assert.deepEqual(older, {});
+  const newer = tour.mergeTours(local, [{ tour: 'page:/kasir', status: 'completed', step: 5, steps: 6, runs: 1, updated_at: '2026-11-27T11:00:00Z' },
+    { tour: 'page:/x;y', status: 'completed', step: 0, steps: 1, updated_at: '2026-11-27T11:00:00Z' }]);
+  assert.equal(newer['page:/kasir'].status, 'completed');
+  assert.equal(newer['page:/kasir'].runs, 2);
+  assert.equal(Object.keys(newer).length, 1);
+  const s = tour.tourSummary({ onboarding: { status: 'completed' }, 'page:/kasir': { status: 'paused' } }, ['onboarding', 'page:/kasir', 'page:/kas']);
+  assert.equal(s.done, 1);
+  assert.equal(s.total, 3);
+  assert.equal(tour.actionLabel('paused'), 'Lanjutkan');
+  assert.equal(tour.actionLabel('completed'), 'Ulangi');
+  assert.equal(tour.actionLabel(undefined), 'Mulai');
+});
+
+test('replaying a tour cannot change business data: no clicks, submits, or business RPCs', () => {
+  const files = ['components/InteractiveGuide.jsx', 'components/TourCatalog.jsx', 'lib/tour.js', 'lib/tourSync.js'];
+  for (const f of files) {
+    const src = readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+    assert.doesNotMatch(src, /\.click\(|\.submit\(|requestSubmit|dispatchEvent\(\s*new\s+(Mouse|Pointer|Keyboard|Submit)/, f);
+    assert.doesNotMatch(src, /\.from\(['"]/, f + ' tidak boleh menulis tabel langsung');
+  }
+  const sync = readFileSync(new URL('../lib/tourSync.js', import.meta.url), 'utf8');
+  const rpcs = [...sync.matchAll(/rpc\('([a-z_]+)'/g)].map((m) => m[1]);
+  assert.ok(rpcs.length >= 3 && rpcs.every((name) => name.startsWith('learning_tour_')), rpcs.join(','));
+  assert.doesNotMatch(readFileSync(new URL('../components/InteractiveGuide.jsx', import.meta.url), 'utf8'), /@\/lib\/supabase/);
+});
+
+test('tour catalog lists only modules this role may open', async () => {
+  const { pathAllowed: allowed, tabsFor } = await import('../lib/business.js');
+  const cashier = { business_type: 'retail', my_role: 'kasir', modules: [] };
+  const hrefs = tabsFor(cashier).filter(([h]) => allowed(cashier, h)).map(([h]) => h);
+  assert.ok(hrefs.includes('/kasir'));
+  assert.ok(!hrefs.includes('/kas') && !hrefs.includes('/karyawan'));
+});

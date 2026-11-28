@@ -48,7 +48,7 @@
 .chart div:last-child i {background:#15803d}
 .home [data-widget=kpi] :global(.grid) {display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .home [data-widget=kpi] svg {color:#15803d}
-@media(min-width:1024px){.home [data-widget=operasional]{display:none}.home [data-widget=kamar]{grid-column:span 2}}
+@media(min-width:1024px){.home [data-widget=kamar]{grid-column:span 2}}
 @media(max-width:600px){.hero {padding:12px;background:linear-gradient(90deg,#e1f3e9 5%,#e1f3e9e6 40%,transparent 82%),url('/property/hero.webp') center/cover;color:#14251f}.hero img{width:50px;height:50px}.controls{margin:0;flex-basis:100%;width:100%;font-size:12px}.home [data-widget=kpi] :global(.grid){grid-template-columns:repeat(2,minmax(0,1fr))}.modules :is(a,button){padding:5px;min-height:64px}}
 @media(prefers-reduced-motion:no-preference){.hero img{animation:wave 1.8s ease-in-out 2;transform-origin:bottom center}.chart i{animation:grow .55s ease-out;transform-origin:bottom}}
 @keyframes wave{50%{transform:translateY(-4px) rotate(-5deg)}}

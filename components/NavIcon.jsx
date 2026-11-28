@@ -1,5 +1,6 @@
 // Ikon garis sederhana untuk navigasi aplikasi (tanpa pustaka luar)
 const P = {
+  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
   bed: <><path d="M3 18v3m18-3v3M3 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5zm2-7V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5M8 8h3m2 0h3" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   phone: <path d="M7 3H4a1 1 0 0 0-1 1c0 9.4 7.6 17 17 17a1 1 0 0 0 1-1v-3l-5-2-2 2a13 13 0 0 1-7-7l2-2z" />,
@@ -58,6 +59,7 @@ const P = {
   '/tagihan': <><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z" /><path d="M9 7h6M9 11h6M9 15h4" /></>,
   '/pembayaran': <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>,
   '/pengeluaran': <><path d="M12 3v14M6 11l6 6 6-6" /><path d="M4 21h16" /></>,
+  '/laporan-analisis': <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   '/laporan': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   '/laporan-toko': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   '/kasir': <><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M7 20h10M12 16v4M7 8h4" /></>,

@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useKos } from '@/components/KosProvider';
-import { OnboardingActions } from '@/components/InteractiveGuide';
+import TourCatalog from '@/components/TourCatalog';
 import { knowledgeFor } from '@/lib/learning';
 import { HELP_CATS } from '@/lib/help';
 import { BUSINESS } from '@/lib/plan';
@@ -41,7 +41,8 @@ export default function Bantuan() {
   return (
     <div className="stack">
       <h2>Panduan &amp; Bantuan</h2>
-      <section className="panel"><h3>Panduan awal PRASARA</h3><OnboardingActions /></section>
+      <div id="tur"><TourCatalog kos={kos} /></div>
+      <section className="panel" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}><span><b>Learning Center</b><br /><span className="small muted">Materi bertahap, simulasi DEMO, evaluasi, dan progres belajar.</span></span><Link href="/learning-center"><button className="primary">Buka Learning Center</button></Link></section>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ketik pertanyaan, mis. penghuni lama, kwitansi, prive" aria-label="Cari bantuan" />
       {q.trim() ? (
         <section className="panel">

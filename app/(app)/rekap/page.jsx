@@ -81,7 +81,9 @@ function Center({ kos, kosId, ver }) {
   const [detail, setDetail] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
+  const format = search.get('ekspor');
+  const [exportOpen, setExportOpen] = useState(() => ['pdf', 'xlsx'].includes(format));
+  const [exportFormat] = useState(() => ['pdf', 'xlsx'].includes(format) ? format : null);
   const [trendKey, setTrendKey] = useState('pendapatan');
   const [trendMode, setTrendMode] = useState('periode');
   const ek = useKuotaEkspor(kosId);
@@ -142,8 +144,8 @@ function Center({ kos, kosId, ver }) {
       <div className={styles.menuWrap}>
         <button type="button" className={`${styles.btn} ${styles.primary}`} disabled={!src} onClick={() => setExportOpen((x) => !x)} aria-expanded={exportOpen}><Ico d={I.down} size={18} /><span>Ekspor PDF / Excel</span></button>
         {exportOpen && src && <div className={styles.menu} role="menu">
-          <button role="menuitem" onClick={() => { setExportOpen(false); doExport('pdf'); }}>PDF</button>
-          <button role="menuitem" onClick={() => { setExportOpen(false); doExport('xlsx'); }}>Excel (.xlsx)</button>
+          <button role="menuitem" onClick={() => { setExportOpen(false); doExport('pdf'); }} autoFocus={exportFormat === 'pdf'}>PDF</button>
+          <button role="menuitem" onClick={() => { setExportOpen(false); doExport('xlsx'); }} autoFocus={exportFormat === 'xlsx'}>Excel (.xlsx)</button>
           <button role="menuitem" onClick={() => { setExportOpen(false); window.print(); }}>Cetak halaman</button>
           <button role="menuitem" onClick={() => { setExportOpen(false); shareText(); }}>Bagikan ringkasan</button>
           {ek.info && <small>{ek.info}</small>}

@@ -2,6 +2,7 @@
 import { invoiceTotals } from '@/lib/propertyTotals';
 import NavIcon from '@/components/NavIcon';
 import styles from './property.module.css';
+import BillingMenu from './BillingMenu';
 import Persiapan from '@/components/Persiapan';
 import { canArea } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
@@ -248,12 +249,12 @@ function PropertyHome() {
 
   const groups = [
     ['Kamar / Unit', ['/kamar']], ['Penghuni', ['/penghuni']], ['Booking & Pendaftaran', ['/booking']],
-    ['Tagihan & Pembayaran', ['/tagihan', '/pembayaran']], ['Keuangan', ['/pembukuan', '/pengeluaran']],
-    ['Pemeliharaan', ['/perbaikan']], ['Aset & Inventaris', ['/aset']], ['Laporan & Analisis', ['/laporan', '/analisis']],
+    ['Tagihan & Pembayaran', ['/tagihan', '/pembayaran', '/penghuni', '/rekap', '/laporan']], ['Keuangan', ['/pembukuan', '/pengeluaran']],
+    ['Pemeliharaan', ['/perbaikan']], ['Aset & Inventaris', ['/aset']], ['Laporan & Analisis', ['/laporan-analisis']],
   ];
   const shortcuts = groups.map(([label, paths]) => ({label, path: paths.find(has), paths: paths.filter(has)})).filter(x => x.path);
   widgets.push(
-    { id: 'operasional', title: 'Operasional', size: 'full', node: shortcuts.length > 0 && <nav className={styles.operations} aria-label="Operasional properti"><h3>Operasional</h3><div className={styles.modules}>{shortcuts.map(({label,path,paths}) => paths.length > 1 ? <button key={path} onClick={() => setGroup({label,paths})}><NavIcon name={path} /><span>{label}</span></button> : <Link key={path} href={path}><NavIcon name={path} /><span>{label}</span></Link>)}</div></nav> },
+    { id: 'operasional', title: 'Operasional', size: 'full', node: shortcuts.length > 0 && <nav className={styles.operations} aria-label="Operasional properti"><h3>Operasional</h3><div className={styles.modules}>{shortcuts.map(({label,path,paths}) => (label === 'Tagihan & Pembayaran' || paths.length > 1) ? <button key={label} aria-haspopup="dialog" onClick={() => setGroup({label,paths})}><NavIcon name={path} /><span>{label}</span></button> : <Link key={label} href={path}><NavIcon name={path} /><span>{label}</span></Link>)}</div></nav> },
     { id: 'sewa', title: 'Pendapatan sewa', size: 'wide', node: <Widget title="Pendapatan sewa" action={<span className="small muted">6 bulan terakhir</span>}><div className={styles.chart}>{rentTrend.map(m => <div key={m.key}><small>{rp(m.value)}</small><i style={{height: (m.value / Math.max(1, ...rentTrend.map(x => x.value)) * 90) + 'px'}} /><span>{m.short}</span></div>)}</div></Widget> },
     { id: 'keuangan', title: 'Ringkasan keuangan', size: 'normal', node: has('/laporan') && <Widget title="Ringkasan keuangan bulan ini"><dl className={styles.finance}>{[['Pendapatan sewa', rentMonth], ['Pendapatan lain & tambahan', operatingIncome - rentMonth], ['Pengeluaran', cashOut], ['Surplus operasional', operatingIncome - cashOut]].map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{rp(value)}</dd></div>)}</dl></Widget> }
   );
@@ -267,7 +268,7 @@ function PropertyHome() {
     <img src="/retail/prasara-maskot.webp" alt="Maskot PRASARA" />
     <div className={styles.controls}>{periode}{atur}<PageHelp page="beranda" /></div>
   </header>} />
-    {group && <Sheet title={group.label} onClose={() => setGroup(null)}><div className="list">{group.paths.map(path => <Link className="li" href={path} key={path}><NavIcon name={path} />{tabsFor(kos).find(([href]) => href === path)?.[1]}</Link>)}</div></Sheet>}
+    {group?.label === 'Tagihan & Pembayaran' ? <BillingMenu has={has} onClose={() => setGroup(null)} /> : group && <Sheet title={group.label} onClose={() => setGroup(null)}><div className="list">{group.paths.map(path => <Link className="li" href={path} key={path}><NavIcon name={path} />{tabsFor(kos).find(([href]) => href === path)?.[1]}</Link>)}</div></Sheet>}
     {!d.rooms.length && has('/kamar') && <Empty title="Belum ada kamar" text="Tambahkan kamar pertama untuk mulai mengelola hunian."><Link href="/kamar">Ke halaman Kamar</Link></Empty>}
     <Checklist d={d} kosId={kosId} />{canArea(kos,'settings') && <Persiapan kos={kos} />}<CrmHint /><RecHint />
   </div>;

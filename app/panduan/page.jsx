@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrChatPelanggan, ScrTrackingPesanan, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrPropertiIntel, ScrInventarisKamar, ScrTarifKalender, ScrKontrakSewa } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrChatPelanggan, ScrTrackingPesanan, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrPropertiIntel, ScrInventarisKamar, ScrTurPanduan, ScrTarifKalender, ScrKontrakSewa } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -167,7 +167,11 @@ const PARTS = [
       <>Grafik <b>Tagihan vs terkumpul</b> 6 bulan, <b>Perlu perhatian</b>, <b>Jatuh tempo 7 hari</b>, <b>Status kamar</b>, <b>Aktivitas terbaru</b>, dan <b>Aksi cepat</b>. Di laptop bagian-bagian ini tersusun dalam beberapa kolom; di HP satu kolom.</>,
       <>Tekan <b>Atur dashboard</b> untuk menyembunyikan bagian yang tidak dipakai atau mengubah urutannya (centang / ↑ ↓). Pilihan disimpan di perangkat itu saja; <b>Kembalikan bawaan</b> mengembalikan susunan awal. Dashboard Toko, Jasa/Kuliner, dan bisnis kustom memakai cara yang sama.</>,
     ], 'Kas bersih bukan laba. Untuk laba yang benar, lihat Laporan.', null, <ScrDashboard />],
-    ['Laporan bulanan', 'Laporan', [
+    ['Laporan bulanan', 'Beranda › Laporan & Analisis › Laporan', [
+      <>Buka <Link href="/laporan-analisis">Laporan &amp; Analisis</Link> dari Beranda atau tab <b>Laporan</b> di navigasi bawah.</>,
+      <>Pilih periode harian, bulanan, atau tahunan. Ketuk kartu ringkasan atau titik grafik untuk memeriksa sumber angkanya.</>,
+      <>Pilih <b>Laporan</b>, <b>Analisis Bisnis</b>, atau <b>Rekap Bisnis</b>. Tombol PDF dan Excel membuka menu ekspor Rekap Bisnis untuk periode yang dipilih.</>,
+      <>Grafik hunian memakai rata-rata hari unit terisi per bulan. Kartu tingkat hunian dan tunggakan menunjukkan posisi saat ini.</>,
       <>Pilih bulan dengan tombol <b>‹ ›</b>.</>,
       <><b>Laba operasional</b> = pendapatan − biaya operasional.</>,
       <><b>Arus kas bersih</b> = laba − belanja modal − pengeluaran non-operasional.</>,
@@ -1083,9 +1087,9 @@ const PARTS = [
       <>Mulai dengan rekomendasi sesuai kategori, hak akses, dan modul aktif. Buka Memulai untuk checklist, Materi untuk pelajaran modul, atau Progres untuk memilih dari delapan tahap transaksi.</>,
       <>Untuk Retail & Grosir, buka Kasir atau Learning Center lalu pilih Coba Kasir DEMO. Tambahkan barang, tekan Bayar DEMO, periksa transaksi, dan lihat bukti latihan. Untuk latihan lanjutan, buka Pusat Praktik dan pilih mode terpandu, mandiri, atau tantangan. Gunakan item contoh, periksa pembayaran dan kembalian, lalu pilih Simpan simulasi untuk melihat bukti DEMO.</>,
       <>Gunakan peta hubungan antarmodul, materi koreksi, dan evaluasi untuk memeriksa kesiapan. Pengingat belajar di Pusat Notifikasi dapat dimatikan dari Progres. Asisten Bisnis mencari jawaban di dokumentasi internal.</>,
-      <>Pilih <b>? Panduan</b> di halaman modul. Sorotan menunjukkan elemen yang sedang dijelaskan. Gunakan Lanjutkan, Jeda, Lewati, atau Ulangi.</>,
-      <>Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>. Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,
-    ], <>Progres transaksi disinkronkan untuk anggota bisnis aktif saat tersambung. Draf, tutorial, dan preferensi pengingat tetap tersedia di peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang dibuka.</>, 'info'],
+      <>Pilih <b>? Panduan</b> di halaman modul untuk tur bersorot (Langkah 155). Untuk mengulang onboarding, buka <b>Panduan &amp; Bantuan</b>.</>,
+      <>Fokuskan kolom lalu pilih <b>Bantuan kolom</b> atau tekan F1 untuk melihat petunjuk pengisian.</>,
+    ], <>Progres transaksi disinkronkan untuk anggota bisnis aktif saat tersambung. Draf latihan dan preferensi pengingat tetap tersedia di peramban yang sama. Pelanggan mendapat panduan sesuai halaman publik yang dibuka.</>, 'info'],
   ]],
   ['AP', 'Chat & Tracking Pelanggan', [
     ['Pelanggan: chat dengan bisnis & lacak pesanan', 'Halaman bisnis › Pesanan · Portal grosir › Pesanan · Cek status pesanan', [
@@ -1139,7 +1143,15 @@ const PARTS = [
       <>Paket Pro: pilih properti tertentu atau lihat <b>Perbandingan properti</b> (hunian, pendapatan, NOI, ROI per gedung).</>,
     ], <>Tanda AKTUAL = tercatat; ESTIMASI = disetahunkan dari kurang dari 12 bulan data; PROYEKSI = asumsi tertulis di layar. Paket Dasar: hunian, pendapatan, NOI, tunggakan. Paket Bisnis: per kamar, ROI, yield, balik modal, proyeksi. Paket Pro: per properti.</>, null, <ScrPropertiIntel />, 'bisnis'],
   ]],
-  ['AS', 'Properti: sewa fleksibel, kontrak digital, pembelian, referral & kampanye', [
+  ['AS', 'Tur panduan interaktif', [
+    ['Tur panduan interaktif: ulangi onboarding & tur setiap modul', 'Panduan & Bantuan → Tur panduan interaktif · tombol ? Panduan', [
+      <><b>Panduan awal PRASARA</b> (onboarding) muncul di Beranda untuk pengguna baru dan bisa diulang kapan saja: Panduan &amp; Bantuan › Tur panduan interaktif › <b>Mulai / Lanjutkan / Ulangi</b>. Tur menyorot bisnis aktif, menu (menu bawah di HP, menu kiri di tablet & laptop), tombol <b>(+)</b>, pencarian, lonceng, dan tombol ? Panduan.</>,
+      <>Setiap halaman punya tombol <b>? Panduan</b>. Tur menyorot bagian yang BENAR-BENAR tampil untuk bisnis, peran, paket, dan perangkat Anda — judul halaman, tombol yang disebut di langkah (mis. <b>+ Kamar</b>), kotak cari & filter, tab, daftar data, dan dashboard. Langkah yang bagiannya tidak tampil dijelaskan tanpa sorotan.</>,
+      <>Kendali di kartu langkah: <b>Lanjutkan ›</b>, <b>‹ Sebelumnya</b>, <b>Jeda</b> (tombol halaman berubah jadi <b>▶ Lanjutkan panduan</b>), <b>Lewati</b>, <b>Ulangi</b>. Di laptop: panah ← → dan Esc (jeda). Halaman tetap bisa dipakai selama tur berjalan.</>,
+      <>Daftar tur menampilkan status tiap modul (Selesai, Dijeda, Dilewati) dan jumlah yang selesai. Ketuk <b>Mulai</b> pada modul: halamannya terbuka dan tur berjalan otomatis. Saring <b>Belum selesai</b>, atau <b>Atur ulang progres panduan</b> untuk mulai lagi dari nol. Daftar ringkas juga ada di Learning Center › Memulai.</>,
+    ], <>Tur hanya menunjukkan: tidak menekan tombol, mengisi formulir, atau menyimpan apa pun ke data bisnis — jadi aman diulang berkali-kali. Progresnya disimpan di akun Anda per bisnis &amp; peran (tanpa data bisnis), sehingga bisa dilanjutkan dari HP atau laptop lain; saat offline tetap tersimpan di perangkat dan dikirim saat tersambung. Karyawan hanya melihat tur modul yang boleh dibukanya. Pelanggan mendapat tombol Panduan sendiri di halaman bisnis, cek pesanan, dan portal.</>, 'info', <ScrTurPanduan />],
+  ]],
+  ['AT', 'Properti: sewa fleksibel, kontrak digital, pembelian, referral & kampanye', [
     ['Sewa per jam, harian, mingguan, bulanan, tahunan & tarif dinamis', 'Tarif & kalender · Booking kamar · Kamar', [
       <>Buka <b>Tarif & kalender</b> → <b>Tarif</b> → <b>+ Tarif</b>: pilih satuan (per jam, harian, mingguan, bulanan, tahunan), kamar (atau semua), harga, dan minimal sewa. Tanpa tarif bulanan, harga sewa kamar dipakai seperti biasa.</>,
       <><b>Aturan tarif</b>: musim/periode, hari tertentu (mis. Sabtu–Minggu +20%), tanggal khusus (libur, event), dan diskon sewa lama (mis. ≥ 7 malam −10%). Persen minus = diskon.</>,
@@ -1244,8 +1256,9 @@ export default function Panduan() {
           <div><b>Notifikasi</b><span><a href="#bagian-AN">Langkah 141–143</a><br />Aktifkan di HP/komputer (iPhone lewat Layar Utama), Pusat Notifikasi, kategori, jam tenang, perangkat</span></div>
           <div><b>Learning Center</b><span><a href="#langkah-147">Langkah 147</a><br />Belajar, simulasi, evaluasi, dan ulangi panduan</span></div>
           <div><b>Properti lanjutan</b><span><a href="#bagian-AR">Langkah 152–154</a><br />Multi-properti, inventaris & pemeriksaan kamar, Property Intelligence (NOI, ROI, yield, proyeksi)</span></div>
-          <div><b>Sewa fleksibel & pemasaran</b><span><a href="#bagian-AS">Langkah 155–159</a><br />Sewa per jam/harian/mingguan/tahunan, tarif dinamis, kalender, kontrak digital, pembelian & supplier, referral, kampanye & voucher</span></div>
+          <div><b>Sewa fleksibel & pemasaran</b><span><a href="#bagian-AT">Langkah 156–160</a><br />Sewa per jam/harian/mingguan/tahunan, tarif dinamis, kalender, kontrak digital, pembelian & supplier, referral, kampanye & voucher</span></div>
           <div><b>Chat & tracking pelanggan</b><span><a href="#bagian-AP">Langkah 148–149</a><br />Chat dari portal toko, grosir & cek pesanan jasa; foto/PDF, kartu produk/penawaran/cara bayar, catatan internal, penugasan; kurir, resi & estimasi tiba</span></div>
+          <div><b>Tur panduan interaktif</b><span><a href="#bagian-AS">Langkah 155</a><br />Ulangi onboarding &amp; tur ? Panduan tiap modul</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>
         <div className="g-note"><b>Catatan:</b> nama penghuni, nomor, alamat, dan angka di gambar adalah <b>data contoh</b> untuk ilustrasi, bukan data kos Anda.</div>
