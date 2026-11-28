@@ -38,7 +38,7 @@
 
 .actions, .tabs, .metrics, .quick, .content { display: grid; gap: clamp(5px, 1.6vw, 12px); }
 .actions { grid-template-columns: 1.28fr repeat(3, minmax(0, 1fr)); }
-.actions button, .quick > *, .toolbar > button {
+.actions > :is(button,a), .quick > *, .toolbar > button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,7 +56,7 @@
   text-align: center;
   text-decoration: none;
 }
-.actions button { flex-direction: column; min-height: clamp(49px, 14vw, 72px); }
+.actions > :is(button,a) { flex-direction: column; min-height: clamp(49px, 14vw, 72px); }
 .actions svg, .quick svg { color: var(--brand-2); flex: none; width: clamp(16px, 4.25vw, 25px); height: auto; }
 .actions .primary { background: var(--purchase-green); color: #fff; border-color: transparent; }
 .actions .primary svg { color: currentColor; }
@@ -103,7 +103,7 @@
 @container (min-width: 700px) {
   .hero { min-height: 170px; display: flex; align-items: center; }
   .heroArt { width: min(36%, 310px); }
-  .actions button { flex-direction: row; gap: 8px; min-height: 48px; }
+  .actions > :is(button,a) { flex-direction: row; gap: 8px; min-height: 48px; }
   .tabs { max-width: 680px; }
   .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .metricIcon { width: clamp(26px, 4cqw, 44px); }

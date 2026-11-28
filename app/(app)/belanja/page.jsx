@@ -1,6 +1,6 @@
 'use client';
 import { withApproval } from '@/lib/approval';
-import { useBaru } from '@/lib/useBaru';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -14,12 +14,11 @@ import LokasiBar from '@/components/LokasiBar';
 import { canArea, multiLoc, pathAllowed } from '@/lib/business';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg, bulan, monthEnd } from '@/lib/format';
-import { qtyNum, unitsOf, uid } from '@/lib/retail';
-import { toBase } from '@/lib/units';
+import { qtyNum, uid } from '@/lib/retail';
 import { Permintaan, Faktur, FakturSheet, KinerjaSupplier } from '@/components/Pengadaan';
 import RestockGuidance from './RestockGuidance';
 
-const BUY = { tunai: 'Tunai', transfer: 'Transfer', utang: 'Utang ke supplier' };
+import { BUY, loadPurchaseCatalog, purchasePath, storePurchasePrefill } from './purchase-data';
 const REFUND = { potong_utang: 'Potong utang ke supplier', tunai: 'Uang kembali tunai', transfer: 'Uang kembali transfer' };
 const TABS = [['belanja', 'Belanja'], ['permintaan', 'Permintaan'], ['faktur', 'Faktur supplier'], ['supplier', 'Kinerja supplier']];
 const ST = { dipesan: ['Dipesan', 'gold'], sebagian: ['Diterima sebagian', 'info'], batal: ['Batal', 'void'] };
@@ -44,7 +43,6 @@ export default function Belanja() {
 function BelanjaWorkspace({ kosId, kos, ver }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
-  const [form, setForm] = useState(false); // false | true | {init}
   const [saran, setSaran] = useState(false);
   // ?bulan=YYYY-MM dari tautan halaman lain (mis. drill-down Rekap Bisnis)
   const [month, setMonth] = useState(() => { try { const b = new URLSearchParams(window.location.search).get('bulan'); return /^\d{4}-\d{2}$/.test(b || '') && b <= today().slice(0, 7) ? b : today().slice(0, 7); } catch { return today().slice(0, 7); } });
@@ -55,7 +53,9 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
   const [history, setHistory] = useState(false);
   const [menu, setMenu] = useState(null);
   const [revision, setRevision] = useState(0);
-  useBaru(() => setForm(true));
+  const router = useRouter();
+  const legacyNew = useSearchParams().has('baru');
+  useEffect(() => { if (legacyNew) router.replace(purchasePath({ month })); }, [legacyNew, router, month]);
   const [open, setOpen] = useState(null);
   const [linkedPurchase, setLinkedPurchase] = useState(null);
   const [linkError, setLinkError] = useState(false);
@@ -81,18 +81,10 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
     return () => controller.abort();
   }, [kosId, linkedPurchase]);
   const load = async () => {
-    const [b, p, u, c, pl, si] = await Promise.all([
-      supabase.from('purchases').select('*').eq('kos_id', kosId).order('purchase_date', { ascending: false }).order('created_at', { ascending: false }).limit(60),
-      supabase.from('products').select('*').eq('kos_id', kosId).eq('active', true).order('name'),
-      supabase.from('product_units').select('*').eq('kos_id', kosId),
-      supabase.from('contacts').select('*').eq('kos_id', kosId).eq('kind', 'supplier').order('name'),
-      supabase.from('purchase_lines').select('product_id,unit,price,purchase_id').eq('kos_id', kosId).limit(2000),
-      supabase.from('supplier_items').select('contact_id,product_id,unit,price,moq,preferred,lead_days').eq('kos_id', kosId),
-    ]);
-    const e = b.error || p.error || u.error || c.error || pl.error;
-    if (e) return setErr(errMsg(e));
-    setErr(null);
-    setD({ purchases: b.data, products: (p.data || []).filter((x) => !x.is_kit), units: u.data, suppliers: c.data, lines: pl.data, supItems: si.data || [] });
+    try {
+      const data = await loadPurchaseCatalog(kosId);
+      setErr(null); setD(data);
+    } catch (error) { setErr(errMsg(error)); }
   };
   useEffect(() => { load(); }, [kosId, ver, revision]);
   useEffect(() => {
@@ -140,7 +132,14 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
     setMonth(value);
   };
   const locName = (id) => kos.locs?.list?.find((x) => x.id === id)?.name;
-  const fromSuggestion = (init) => { setSaran(false); setForm({ init }); };
+  const newHref = purchasePath({ month });
+  const fromSuggestion = (init) => {
+    try {
+      const draft = storePurchasePrefill(kosId, init);
+      setSaran(false);
+      router.push(purchasePath({ month, draft }));
+    } catch { toast('Formulir belum bisa dibuka. Penyimpanan sesi browser tidak tersedia.'); }
+  };
   const reviewPurchase = async (id) => {
     const { data, error } = await supabase.from('purchases').select('*').eq('kos_id', kosId).eq('id', id).maybeSingle();
     if (error || !data) return toast(error ? errMsg(error) : 'Pesanan supplier tidak ditemukan.');
@@ -160,7 +159,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
         <span className={styles.heroArt}><Image src="/belanja-pembelian.webp" alt="" fill sizes="(max-width: 600px) 37vw, 310px" priority /></span>
       </section>
       <div className={styles.actions}>
-        <button className={styles.primary} onClick={() => setForm(true)} disabled={!d.products.length}><NavIcon name="/penjualan" />＋ Belanja</button>
+        <Link className={styles.primary} href={newHref}><NavIcon name="/penjualan" />＋ Belanja</Link>
         <button onClick={() => setSaran(true)} disabled={!d.products.length}><NavIcon name="/konfirmasi" />Saran Belanja</button>
         <button onClick={() => setMenu('import')}><NavIcon name="upload" />Import</button>
         <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
@@ -169,7 +168,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
       <div className={styles.tabs} aria-label="Menu pembelian">{TABS.map(([key, label]) => (
         <button key={key} onClick={() => setTab(key)} aria-pressed={tab === key}>{label}</button>
       ))}</div>
-      {tab === 'permintaan' && <Permintaan kosId={kosId} d={d} onOrder={(init) => setForm({ init })} />}
+      {tab === 'permintaan' && <Permintaan kosId={kosId} d={d} onOrder={fromSuggestion} />}
       {tab === 'faktur' && <Faktur kosId={kosId} />}
       {tab === 'supplier' && <KinerjaSupplier kosId={kosId} />}
       {tab === 'belanja' && <>
@@ -260,7 +259,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
       {saran && (kos.business_type === 'retail'
         ? <RestockGuidance kosId={kosId} version={ver} onClose={() => setSaran(false)} onPick={fromSuggestion} onReview={reviewPurchase} />
         : <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={fromSuggestion} />)}
-      {form && <PurchaseForm kosId={kosId} d={d} init={form.init} onClose={() => setForm(false)} onSaved={(r) => { setForm(false); if (r.request) setTab('belanja'); toast(r.order_total != null ? `Pesanan ${r.number} tersimpan · stok bertambah saat barang diterima` : `${r.number} tersimpan · ${rp(r.total)}`); setRevision((value) => value + 1); }} />}
+
       {open && <Detail key={open.id} tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
         canOpenOrder={canArea(kos, 'sell') || canArea(kos, 'finance')} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); setRevision((value) => value + 1); }} onFaktur={() => { setFk(open.id); setOpen(null); }} />}
       {fk && <FakturSheet purchaseId={fk} onClose={() => { setFk(null); setRevision((value) => value + 1); }} />}
@@ -307,145 +306,6 @@ function SupplierReceiptScan({ onClose, onInvoices }) {
     {text && <Field label="Teks hasil scan"><textarea rows={7} value={text} onChange={(event) => setText(event.target.value)} /></Field>}
     <button className="primary" onClick={onInvoices}>Buka Faktur Supplier</button>
   </Sheet>;
-}
-
-function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
-  const [date, setDate] = useState(today());
-  const [supplier, setSupplier] = useState(init?.supplier || '');
-  const [newSup, setNewSup] = useState('');
-  const [q, setQ] = useState('');
-  const [lines, setLines] = useState(() => (init?.lines || []).map((l) => ({ key: uid(), expiry: '', lot: '', ...l })));
-  const [method, setMethod] = useState('tunai');
-  const [due, setDue] = useState('');
-  const [note, setNote] = useState('');
-  const [mode, setMode] = useState(init ? 'pesan' : 'terima');
-  const [expected, setExpected] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [txId] = useState(uid);
-
-  const prodById = new Map(d.products.map((p) => [p.id, p]));
-  // Harga beli terakhir untuk barang + satuan (dari belanja yang tidak batal)
-  const rank = new Map(d.purchases.filter((b) => b.status === 'selesai').map((b, i) => [b.id, i])); // 0 = paling baru
-  const lastPrice = (pid, unit) => {
-    let best = null;
-    for (const l of d.lines) if (l.product_id === pid && l.unit === unit && rank.has(l.purchase_id) && (!best || rank.get(l.purchase_id) < rank.get(best.purchase_id))) best = l;
-    return best ? Number(best.price) : null;
-  };
-  // Harga sepakat supplier terpilih (Barang › Harga dari supplier) didahulukan, lalu harga beli terakhir, lalu modal
-  const agreed = (sid, pid, unit) => (d.supItems || []).find((x) => x.contact_id === sid && x.product_id === pid && x.unit === unit);
-  const suggest = (p, u, sid = supplier) => { const a = sid ? agreed(sid, p.id, u.name) : null; return a?.price != null ? Number(a.price) : lastPrice(p.id, u.name) ?? Math.round(Number(p.cost) * Number(u.qty)); };
-  const cheaper = (p, unitCost, sid) => (d.supItems || []).filter((x) => x.product_id === p.id && x.contact_id !== sid && x.price != null).map((x) => { const uu = d.units.find((y) => y.product_id === p.id && y.name === x.unit); return uu ? { ...x, uc: Number(x.price) / Number(uu.qty) } : null; })
-    .filter((x) => x && x.uc < unitCost - 0.5).sort((a, b) => a.uc - b.uc)[0];
-  const pickSupplier = (sid) => {
-    setSupplier(sid);
-    if (sid) setLines(lines.map((l) => { const p = prodById.get(l.product_id); const a = agreed(sid, l.product_id, l.unit); return a?.price != null && p ? { ...l, price: angka(a.price) } : l; }));
-  };
-
-  const w = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const found = w.length ? d.products.filter((p) => w.every((x) => p.name.toLowerCase().includes(x))).slice(0, 6) : [];
-  const addProduct = (p) => {
-    const us = unitsOf(p, d.units);
-    const pref = supplier ? (d.supItems || []).find((x) => x.contact_id === supplier && x.product_id === p.id) : null;
-    const u = (pref && us.find((x) => x.name === pref.unit)) || [...us].sort((a, b) => b.qty - a.qty)[0];
-    const price = suggest(p, u);
-    setLines([...lines, { key: uid(), product_id: p.id, unit: u.name, qty: '1', price: price > 0 ? angka(price) : '' }]);
-    setQ('');
-  };
-  const set = (key, patch) => setLines(lines.map((l) => (l.key === key ? { ...l, ...patch } : l)));
-  const total = lines.reduce((s, l) => s + (qtyNum(l.qty) || 0) * parseRp(l.price), 0);
-
-  const save = async () => {
-    if (!lines.length) return toast('Tambahkan barang yang dibeli.');
-    const bad = lines.find((l) => !(qtyNum(l.qty) > 0) || l.price.trim() === '');
-    if (bad) return toast(`Isi jumlah dan harga beli untuk ${prodById.get(bad.product_id)?.name}.`);
-    setBusy(true);
-    try {
-      let sid = supplier || null;
-      if (!sid && newSup.trim()) {
-        const { data, error } = await supabase.rpc('contact_save', { p_kos: kosId, p_id: null, p_kind: 'supplier', p_name: newSup, p_phone: null });
-        if (error) throw error;
-        sid = data; setSupplier(data);
-      }
-      if (method === 'utang' && !sid) { toast('Pilih supplier atau isi nama supplier baru untuk belanja utang.'); setBusy(false); return; }
-      if (init?.request && !sid) { toast('Pilih supplier atau isi nama supplier baru untuk pesanan ini.'); setBusy(false); return; }
-      const args = {
-        p_id: txId, p_kos: kosId, p_date: date, p_contact: sid,
-        p_lines: lines.map((l) => ({ product_id: l.product_id, unit: l.unit, qty: qtyNum(l.qty), price: parseRp(l.price), expiry: l.expiry || null, lot: l.lot || null })),
-        p_method: method, p_due: method === 'utang' && due ? due : null, p_note: note,
-      };
-      const { data, error } = init?.request
-        ? await supabase.rpc('preq_to_order', { p_request: init.request, p_id: txId, p_contact: sid, p_lines: args.p_lines, p_method: method, p_due: args.p_due, p_expected: expected || null, p_note: note || null })
-        : mode === 'pesan'
-        ? await supabase.rpc('purchase_order_create', { ...args, p_expected: expected || null })
-        : await supabase.rpc('purchase_create', args);
-      if (error) throw error;
-      onSaved(data);
-    } catch (e) { toast(errMsg(e)); }
-    setBusy(false);
-  };
-
-  return (
-    <Sheet title={mode === 'pesan' ? 'Buat pesanan ke supplier' : 'Catat belanja'} onClose={onClose}>
-      {init?.request ? <div className="notice">Dari permintaan <b>{init.requestNo}</b>. Pilih supplier, lalu sesuaikan jumlah dan harga bila perlu.</div> : <div className="seg">{[['terima', 'Barang sudah diterima'], ['pesan', 'Pesan dulu (belum datang)']].map(([k, l]) => <button key={k} className={mode === k ? 'on' : ''} onClick={() => setMode(k)} aria-pressed={mode === k}>{l}</button>)}</div>}
-      {mode === 'pesan' && <p className="small muted" style={{ margin: 0 }}>Stok belum bertambah. Saat barang datang, buka pesanan ini lalu tekan <b>Terima barang</b>.</p>}
-      <div className="row">
-        {!init?.request && <Field label={mode === 'pesan' ? 'Tanggal pesan' : 'Tanggal'}><input type="date" max={today()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>}
-        <Field label="Supplier"><select value={supplier} onChange={(e) => pickSupplier(e.target.value)}><option value="">— tanpa / baru —</option>{d.suppliers.filter((s) => !s.archived_at).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
-      </div>
-      {!supplier && <Field label="Nama supplier baru (opsional)"><input value={newSup} onChange={(e) => setNewSup(e.target.value)} placeholder="mis. CV Sumber Rejeki" /></Field>}
-
-      <span className="label">Barang yang dibeli</span>
-      {lines.map((l) => {
-        const p = prodById.get(l.product_id);
-        const us = unitsOf(p, d.units);
-        const u = us.find((x) => x.name === l.unit) || us[0];
-        const qn = qtyNum(l.qty) || 0, pr = parseRp(l.price);
-        const base = toBase(qn, u.qty);
-        const unitCost = u.qty > 0 ? pr / Number(u.qty) : 0;
-        const newCost = Number(p.stock) > 0 ? (Number(p.stock) * Number(p.cost) + base * unitCost) / (Number(p.stock) + base) : unitCost;
-        return (
-          <div className="unitbox" key={l.key}>
-            <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{p.name}</b><button className="sm ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))}>Hapus</button></div>
-            <div className="row">
-              <Field label="Jumlah"><input inputMode="decimal" value={l.qty} onChange={(e) => set(l.key, { qty: e.target.value })} /></Field>
-              <Field label="Satuan"><select value={l.unit} onChange={(e) => { const nu = us.find((x) => x.name === e.target.value); const s = suggest(p, nu); set(l.key, { unit: e.target.value, price: s > 0 ? angka(s) : '' }); }}>{us.map((x) => <option key={x.name} value={x.name}>{x.name}{Number(x.qty) !== 1 ? ` (${angka(x.qty)} ${p.base_unit})` : ''}</option>)}</select></Field>
-              <Field label={`Harga beli per ${l.unit}`}><input inputMode="numeric" value={l.price} onChange={(e) => set(l.key, { price: e.target.value })} /></Field>
-            </div>
-            {(() => {
-              const a = supplier ? agreed(supplier, p.id, l.unit) : null;
-              const ch = pr > 0 ? cheaper(p, unitCost, supplier) : null;
-              return <>
-                {a?.moq != null && qn > 0 && qn < Number(a.moq) && <span className="small" style={{ color: 'var(--warn)' }}>Minimal pesan di supplier ini {angka(a.moq)} {l.unit}. Tetap bisa disimpan bila memang disepakati lain.</span>}
-                {a?.price != null && pr === Number(a.price) && <span className="small" style={{ color: 'var(--good)' }}>Harga sepakat dengan supplier ini{a.lead_days != null ? ` · kirim ± ${a.lead_days} hari` : ''}</span>}
-                {ch && <span className="small muted">Lebih murah di {d.suppliers.find((x) => x.id === ch.contact_id)?.name}: {rp(ch.price)}/{ch.unit} ({rp(ch.uc)}/{p.base_unit})</span>}
-              </>;
-            })()}
-            {p.track_expiry && <div className="row">
-              <Field label={mode === 'pesan' ? 'Kedaluwarsa (bila sudah tahu)' : 'Tanggal kedaluwarsa'}><input type="date" value={l.expiry || ''} onChange={(e) => set(l.key, { expiry: e.target.value })} /></Field>
-              <Field label="No. batch (opsional)"><input value={l.lot || ''} maxLength={40} onChange={(e) => set(l.key, { lot: e.target.value })} /></Field>
-            </div>}
-            {p.track_expiry && mode !== 'pesan' && !l.expiry && <span className="small" style={{ color: 'var(--warn)' }}>Tanggal kedaluwarsa belum diisi — boleh, tapi barang ini tidak masuk peringatan kedaluwarsa sampai tanggalnya diisi (Barang › Kedaluwarsa). Beda tanggal? Tambahkan barang yang sama sekali lagi.</span>}
-            {qn > 0 && pr > 0 && (mode === 'pesan' ? <span className="small muted">{rp(qn * pr)} · stok bertambah saat diterima</span> : <span className="small muted">{rp(qn * pr)} · stok +{angka(base)} {p.base_unit} · modal {rp(p.cost)} → <b>{rp(newCost)}</b>/{p.base_unit}</span>)}
-          </div>
-        );
-      })}
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="+ Cari barang untuk ditambahkan" aria-label="Cari barang" />
-      {found.length > 0 && <div className="list">{found.map((p) => (
-        <button key={p.id} className="li click" onClick={() => addProduct(p)} style={{ background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' }}>
-          <span>{p.name}</span><span className="small muted">tambah ›</span>
-        </button>
-      ))}</div>}
-      {w.length > 0 && found.length === 0 && <p className="small muted" style={{ margin: 0 }}>Tidak ditemukan. Barang baru ditambahkan dulu di <Link href="/barang">Barang & stok</Link>.</p>}
-
-      <div className="row between" style={{ fontSize: 20 }}><b>Total</b><b>{rp(total)}</b></div>
-      <div className="seg">{Object.entries(BUY).map(([k, l]) => <button key={k} className={method === k ? 'on' : ''} onClick={() => setMethod(k)} aria-pressed={method === k}>{l}</button>)}</div>
-      {mode === 'pesan' && <Field label="Perkiraan datang (opsional)"><input type="date" min={date} value={expected} onChange={(e) => setExpected(e.target.value)} /></Field>}
-      {mode === 'pesan' && method !== 'utang' && <p className="small muted" style={{ margin: 0 }}>Uang keluar dari {method === 'tunai' ? 'kas' : 'bank'} sesuai nilai barang yang diterima.</p>}
-      {method === 'utang' && <Field label="Jatuh tempo (opsional)"><input type="date" value={due} onChange={(e) => setDue(e.target.value)} /></Field>}
-      <Field label="Catatan (opsional)"><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. no. nota supplier" /></Field>
-      <button className="cta" onClick={save} disabled={busy}>{busy ? 'Menyimpan…' : mode === 'pesan' ? `Simpan pesanan · ${rp(total)}` : `Simpan belanja · ${rp(total)}`}</button>
-    </Sheet>
-  );
 }
 
 function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, onFaktur }) {

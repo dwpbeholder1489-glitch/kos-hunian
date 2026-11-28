@@ -31,7 +31,7 @@ export default function Pembelian() {
     <PageHeader title="Pembelian & supplier" help={<PageHelp page="pembelian" />} desc="Catat belanja sesuai jenisnya — semua tetap masuk kas, laporan, dan pembukuan yang sama." />
     <div className={styles.ways}>
       <article className="panel"><b>Persediaan</b><span className="small muted">Barang habis pakai yang disimpan & dipakai bertahap (sabun, tisu, lampu cadangan, gas). Stok & nilai persediaan tercatat; saat dipakai jadi biaya.</span>
-        {stock ? <div className="row"><Link className="primary" href="/belanja?baru=1">Belanja persediaan</Link><Link href="/barang">Daftar persediaan</Link></div>
+        {stock ? <div className="row"><Link className="primary" href="/belanja/baru">Belanja persediaan</Link><Link href="/barang">Daftar persediaan</Link></div>
           : <span className="small muted">Aktifkan modul Belanja di Konfigurasi › Modul.</span>}</article>
       <article className="panel"><b>Biaya langsung</b><span className="small muted">Jasa & barang yang langsung habis (servis pompa, cat ulang kecil, kebersihan). Langsung jadi pengeluaran dengan nama supplier.</span>
         <button className="primary" onClick={() => setForm('biaya')}>Catat biaya langsung</button></article>

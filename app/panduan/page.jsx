@@ -277,7 +277,8 @@ const PARTS = [
       <>Tekan <b>Simpan</b>. Stok berkurang otomatis. Tekan <b>Lihat / kirim struk</b> untuk mencetak atau mengirim struk lewat WhatsApp.</>,
     ], <>Transaksi yang salah dibatalkan dari menu <b>Penjualan</b> (ketuk transaksinya › Batalkan, isi alasan). Barang yang dikembalikan pelanggan: ketuk transaksinya › <b>Retur barang</b>, isi jumlahnya, pilih <b>uang tunai</b>, <b>transfer balik</b>, atau <b>potong kasbon</b>. Stok bertambah lagi dan penjualan berkurang di laporan.</>, null, null],
     ['Belanja ke supplier', 'Menu Belanja', [
-      <>Buka <b>Belanja</b>, tekan <b>+ Belanja</b>. Isi tanggal dan pilih supplier (atau ketik nama supplier baru).</>,
+      <>Buka <b>Belanja</b>, tekan <b>+ Belanja</b>. Pada tahap <b>Detail Pembelian</b>, isi tanggal dan pilih supplier atau ketik nama supplier baru.</>,
+      <>Lanjut ke <b>Barang yang Dibeli</b> untuk mengisi jumlah, satuan, harga, dan diskon per satuan. Periksa subtotal otomatis dan pilih metode pada tahap <b>Pembayaran</b>.</>,
       <>Ketik nama barang di kolom <b>+ Cari barang</b>, ketuk barangnya. Pilih satuan yang dibeli (mis. dus), isi jumlah dan <b>harga beli per satuan</b> itu.</>,
       <>Di bawah setiap barang terlihat stok yang bertambah dan <b>harga modal baru</b> (rata-rata dengan stok lama).</>,
       <>Pilih <b>Tunai</b>, <b>Transfer</b>, atau <b>Utang ke supplier</b> (wajib ada supplier), lalu <b>Simpan belanja</b>.</>,

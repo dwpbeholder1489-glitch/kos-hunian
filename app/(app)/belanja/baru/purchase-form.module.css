@@ -1,0 +1,26 @@
+.purchase { padding-block-end:12px }
+.stage { display:grid;gap:12px;border:0;margin:0;padding:0;min-inline-size:0 }
+.stage legend { font-size:1rem;font-weight:750;padding:0;margin-bottom:8px }
+.stage legend:focus { outline:none }
+.stage > p { margin:0 }
+.choices,.methods,.footerActions { display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr)) }
+.choices button,.methods button { display:flex;align-items:center;gap:8px;min-width:0;padding:clamp(8px,2vw,14px);text-align:start;line-height:1.3;overflow-wrap:anywhere }
+.choices button svg,.methods button svg { flex:none;color:var(--form-green) }
+.choices button[aria-pressed=true],.methods button[aria-pressed=true] { background:var(--form-mint);border-color:var(--form-green) }
+.choices small { display:block;margin-top:4px;color:var(--muted) }
+.methods { grid-template-columns:repeat(3,minmax(0,1fr)) }
+.methods button { justify-content:center;font-size:clamp(.78rem,2.4vw,.95rem) }
+.results,.review { display:grid;gap:6px }
+.results button,.lineHead,.review li,.total { display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;text-align:start }
+.results svg { flex:none;color:var(--form-green) }
+.review { padding:0;margin:0;list-style:none }
+.review li { border-top:1px solid var(--line);padding-block:7px }
+.review strong,.total b { flex:none;font-variant-numeric:tabular-nums }
+.total { padding:9px 10px;background:var(--form-mint);border-radius:10px }
+.footer { display:grid;gap:8px }
+.footerActions { grid-template-columns:minmax(0,1fr) minmax(0,1.55fr) }
+.footerActions button { min-height:46px;min-width:0 }
+@media (max-width:480px) {
+  .choices button,.methods button { flex-direction:column;align-items:flex-start }
+  .methods button { align-items:center;text-align:center }
+}
