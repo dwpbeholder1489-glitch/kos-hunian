@@ -172,3 +172,19 @@
   .photoGrid .uploadArea { min-height: 125px; }
   .formActions { grid-template-columns: 150px minmax(180px, auto); justify-content: end; }
 }
+
+.extraUnits {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 100px;
+}
+.unitHeading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; }
+.unitHeading h2 { margin: 0; font-size: clamp(14px, 3.7vw, 18px); }
+.unitHeading button { min-height: 38px; padding: 5px 8px; color: var(--gold); border-color: var(--gold); font-size: 13px; }
+.extraUnits small { color: var(--muted); line-height: 1.4; }
+.unitPresets summary { cursor: pointer; font-size: 13px; }
+.unitPresets > div { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 6px; }
+.extraUnit :global(.row) > :global(.f) { flex: 1 1 0; }
