@@ -1,6 +1,7 @@
 'use client';
 // Bagian chat & tracking yang dipakai bersama portal pelanggan (CustomerChat) dan panel pemilik/staf (/chat).
 import { useEffect, useRef, useState } from 'react';
+import { mediaUrl } from '@/lib/media';
 import { rp } from '@/lib/format';
 import { uid } from '@/lib/retail';
 import { fmtDay, fmtTime, presenceText, trackingOf } from '@/lib/tracking';
@@ -86,6 +87,19 @@ function Attachment({ m, openFile }) {
   </button>;
 }
 
+export function ProductChatCard({ product, open, pinned = false }) {
+  const photo = mediaUrl(product.photo);
+  return <div className={`${styles.contextProduct} ${pinned ? styles.pinnedProduct : ''}`}>
+    <div>{photo ? <img src={photo} alt="" /> : <Ico name="box" size={25} />}
+      <span><b>{product.name}</b><small>{product.unavailable ? 'Produk sudah tidak tersedia'
+        : product.price == null ? 'Tanyakan harga'
+        : `${rp(product.price)} / ${product.unit}`}</small>
+        {!product.unavailable && typeof product.available === 'boolean' && <small>{product.available ? 'Tersedia' : 'Stok tidak tersedia'}</small>}</span>
+    </div>
+    {open && !product.unavailable && <button type="button" onClick={open}>Lihat Produk <Ico name="next" size={14} /></button>}
+  </div>;
+}
+
 function Card({ m, onAction }) {
   const p = m.payload || {};
   if (m.kind === 'produk') return <div className={styles.card}>
@@ -141,6 +155,7 @@ export function MessageList({ messages, side, business, older, loadOlder, openFi
             {m.by && side === 'business' && !note && <span className={styles.by}>{m.by}</span>}
             {m.file && <Attachment m={m} openFile={openFile} />}
             <Card m={m} onAction={onCard} />
+            {m.product_context && <ProductChatCard product={m.product_context} open={onCard ? () => onCard('produk', m.product_context) : null} />}
             {m.body && <p>{/^https:\/\/[^\s]+$/i.test(m.body) ? <a href={m.body} target="_blank" rel="noreferrer">{m.body}</a> : m.body}</p>}
             <span className={styles.meta}>{fmtTime(m.created_at)}{mine && !note && !m.pending && <span className={m.read_at ? styles.read : undefined} title={m.read_at ? 'Dibaca' : 'Terkirim'}>{m.read_at ? '✓✓' : '✓'}</span>}{m.pending && ' · mengirim…'}</span>
           </div>
@@ -155,7 +170,7 @@ export function MessageList({ messages, side, business, older, loadOlder, openFi
 // tidak menutup keyboard (fokus tetap di kolom), Enter = kirim di laptop / baris baru di HP, chip balasan cepat geser.
 // onTyping(true|false) = kolom sedang difokuskan (dipakai layar chat untuk menyembunyikan branding & bantuan kolom).
 export function Composer({ onSend, onFile, chips, busy, disabled, placeholder = 'Ketik pesan…', extraMenu, mode, onTyping, prefill }) {
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState(() => prefill?.text || '');
   const file = useRef(null);
   const area = useRef(null);
   const fit = () => {
@@ -166,7 +181,7 @@ export function Composer({ onSend, onFile, chips, busy, disabled, placeholder = 
     el.style.overflowY = el.scrollHeight > 130 ? 'auto' : 'hidden';
   };
   useEffect(fit, [draft]);
-  useEffect(() => { if (prefill?.text) { setDraft(prefill.text); requestAnimationFrame(() => { area.current?.focus(); const n = prefill.text.length; area.current?.setSelectionRange(n, n); }); } }, [prefill]);
+  useEffect(() => { if (prefill?.text) { setDraft(prefill.text); if (prefill.focus === false) return; requestAnimationFrame(() => { area.current?.focus(); const n = prefill.text.length; area.current?.setSelectionRange(n, n); }); } }, [prefill]);
   const submit = async (e) => {
     e?.preventDefault();
     const text = draft.trim();
@@ -179,7 +194,9 @@ export function Composer({ onSend, onFile, chips, busy, disabled, placeholder = 
       onClick={() => { const r = act(); if (typeof r === 'string') { setDraft(r); requestAnimationFrame(() => { area.current?.focus(); area.current?.setSelectionRange(r.length, r.length); }); } }}>{icon && <Ico name={icon} size={16} />}{label}</button>)}</div>}
     <form className={styles.compose} onSubmit={submit}>
       {onFile && <>
-        <button type="button" className={styles.round} aria-label={extraMenu ? 'Aksi percakapan' : 'Kirim foto atau dokumen'} disabled={disabled || busy} onClick={() => (extraMenu ? extraMenu() : file.current?.click())}><Ico name="plus" /></button>
+        <button type="button" className={styles.round} aria-label={extraMenu ? 'Aksi percakapan' : 'Kirim foto atau dokumen'} disabled={disabled || busy}
+          onPointerDown={(event) => { if (document.activeElement === area.current) event.preventDefault(); }}
+          onClick={() => (extraMenu ? extraMenu() : file.current?.click())}><Ico name="plus" /></button>
         <input ref={file} className={styles.hidden} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" tabIndex={-1}
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onFile(f); }} />
       </>}

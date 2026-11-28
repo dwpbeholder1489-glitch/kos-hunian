@@ -25,6 +25,9 @@ const icons = {
   pin: 'M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
   check: 'm5 12 4 4L19 6',
   info: 'M12 11v6m0-10h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',
+  telegram: 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z',
+  facebook: 'M14 21v-8h3l.5-4H14V7c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v2H7v4h3v8',
+  link: 'M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7m2.2 5.8a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7',
   share: 'M12 15V2m-4 4 4-4 4 4M7 9H4v12h16V9h-3', menu: 'M4 6h16M4 12h16M4 18h16',
   star: 'm12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z',
 };
@@ -75,10 +78,46 @@ function UnitPicker({ product, unit, onChange, compact, quoteOnly }) {
   </fieldset>;
 }
 
-function ProductSelection({ product, photos, quick, close, add, favorite, toggleFavorite, quoteOnly }) {
-  const [unit, setUnit] = useState(product.units.find((option) => option.available) || product.units[0]);
+function ProductShare({ page, product, photo, unit, quoteOnly, close }) {
+  const [status, setStatus] = useState('');
+  const field = useRef(null);
+  const path = `/b/${encodeURIComponent(page.slug)}?tampilan=produk&id=${encodeURIComponent(product.id)}`;
+  const url = new URL(path, window.location.origin).href;
+  const title = `${product.name} — ${page.name}`;
+  const price = quoteOnly ? 'Tanyakan harga' : `${rp(priceAt(unit, 1))} / ${unit.name}`;
+  async function copy() {
+    try { await navigator.clipboard.writeText(url); setStatus('Tautan produk disalin.'); }
+    catch { field.current?.select(); setStatus('Pilih dan salin tautan dari kolom.'); }
+  }
+  async function share() {
+    if (!navigator.share) { await copy(); return; }
+    try { await navigator.share({ title, url }); }
+    catch (error) { if (error.name !== 'AbortError') await copy(); }
+  }
+  return <SmartDetailSheet title="Bagikan Produk" icon="share" onClose={close}>
+    <div className={styles.shareSheet}>
+      <div className={styles.sharePreview}>
+        <Picture photo={photo} name="" thumb className={styles.thumbnail} />
+        <div><b>{product.name}</b><span>{price}</span><small>{page.name}</small></div>
+      </div>
+      <div className={styles.shareOptions}>
+        <a href={`https://wa.me/?text=${encodeURIComponent(`${title}\n${price}\n${url}`)}`} target="_blank" rel="noopener noreferrer"><Icon name="/crm" />WhatsApp</a>
+        <a href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`} target="_blank" rel="noopener noreferrer"><Icon name="telegram" />Telegram</a>
+        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer"><Icon name="facebook" />Facebook</a>
+        <button type="button" onClick={copy}><Icon name="link" />Salin Link</button>
+        {typeof navigator.share === 'function' && <button type="button" onClick={share}><Icon name="share" />Lainnya</button>}
+      </div>
+      <input aria-label="Tautan produk" ref={field} readOnly value={url} onFocus={(event) => event.target.select()} />
+      {status && <p role="status">{status}</p>}
+    </div>
+  </SmartDetailSheet>;
+}
+
+function ProductSelection({ page, product, photos, quick, close, add, favorite, toggleFavorite, quoteOnly, openChat, initialUnit }) {
+  const [unit, setUnit] = useState(product.units.find((option) => option.name === initialUnit) || product.units.find((option) => option.available) || product.units[0]);
   const [quantity, setQuantity] = useState(1);
   const [activePhoto, setActivePhoto] = useState(0);
+  const [sharing, setSharing] = useState(false);
   const description = product.description || photos[0]?.caption;
   function submit() { add(product, unit, Number(quantity)); }
   const controls = <div className={styles.selectionActions}>
@@ -125,7 +164,14 @@ function ProductSelection({ product, photos, quick, close, add, favorite, toggle
         </div>
       </div>
     </div>
-    <div className={styles.productActions}>{controls}</div>
+    <div className={styles.productActions}>{controls}
+      <div className={styles.productLinks}>
+        <button type="button" onClick={() => openChat(unit)}><Icon name="/crm" />Chat / Tanyakan Produk</button>
+        <button type="button" onClick={() => setSharing(true)}><Icon name="share" />Bagikan</button>
+      </div>
+    </div>
+    {sharing && <ProductShare page={page} product={product} photo={photos[0]}
+      unit={product.units.find((option) => option.available) || product.units[0]} quoteOnly={quoteOnly} close={() => setSharing(false)} />}
   </>;
 }
 
@@ -453,7 +499,7 @@ function Tracking({ order, orders, page, pay, contact, go, error, rate, respond,
 
 function readScreen() {
   const url = new URL(window.location.href);
-  return [url.searchParams.get('tampilan') || 'beranda', url.searchParams.get('id')];
+  return [url.searchParams.get('tampilan') || 'beranda', url.searchParams.get('id'), url.searchParams.get('satuan')];
 }
 
 export default function PublicShop({ page, shop, quoteCatalog, initialScreen, quoteOnly = false }) {
@@ -487,19 +533,22 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   const canQuote = Array.isArray(quoteCatalog);
   const canCheckout = !quoteOnly && chosen.length > 0 && chosen.every((line) => line.u.available);
   const contact = page.wa_phone ? waLink(page.wa_phone, `Halo ${page.name}, saya lihat halaman toko Anda.`) : null;
-  const [view, id] = screen;
+  const [view, id, unitName] = screen;
+  const unitFor = (item) => item?.units.find((option) => option.name === unitName) || item?.units.find((option) => option.available) || item?.units[0];
   const product = products.get(id);
   const order = orders?.find((row) => row.id === id);
 
-  function go(view, id = null) {
+  function go(view, id = null, unit = null) {
     const url = new URL(window.location.href);
     if (quoteOnly && view === 'beranda') { window.location.assign(url.pathname); return; }
     if (view === 'beranda') url.searchParams.delete('tampilan');
     else url.searchParams.set('tampilan', view);
     if (id) url.searchParams.set('id', id);
     else url.searchParams.delete('id');
+    if (unit) url.searchParams.set('satuan', unit);
+    else url.searchParams.delete('satuan');
     if (url.href !== window.location.href) window.history.pushState(null, '', url);
-    setScreen([view, id]);
+    setScreen([view, id, unit]);
     setQuick(null);
     window.scrollTo(0, 0);
   }
@@ -618,12 +667,13 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   if (view === 'layanan' || view === 'penawaran') content = <StoreServices page={page} count={lines.length} unread={unreadGeneral} go={go} canQuote={canQuote} />;
   else if (view === 'permintaan') content = <>
     <Bar title={id === 'daftar' ? 'Daftar Kebutuhan' : id === 'cari' ? 'Cari Barang' : 'Ajukan Penawaran'} subtitle={page.name}
-      back={() => go(id === 'daftar' || id === 'cari' ? 'layanan' : 'keranjang')} />
+      back={() => product ? go('chat-produk', id, unitName) : go(id === 'daftar' || id === 'cari' ? 'layanan' : 'keranjang')} />
     {networkError && <p role="alert" className={styles.error}>{networkError} <button type="button" onClick={refresh}>Coba lagi</button></p>}
-    {canQuote ? <QuoteRequest key={id || 'cart'} page={page} lines={id === 'daftar' || id === 'cari' ? [] : chosen} mode={id} go={go} submit={submit} ready={orders !== null} /> : <p className={styles.empty}>Toko belum menerima pengajuan penawaran dari portal.</p>}
+    {canQuote ? <QuoteRequest key={id || 'cart'} page={page} lines={product ? cartLines([{ product_id: id, unit: unitFor(product).name, qty: 1 }], products) : id === 'daftar' || id === 'cari' ? [] : chosen} mode={id} go={go} submit={submit} ready={orders !== null} /> : <p className={styles.empty}>Toko belum menerima pengajuan penawaran dari portal.</p>}
     <PortalFooter />
   </>;
-  else if (view === 'produk' && product) content = <ProductSelection key={product.id} product={product} photos={photos[product.id] || []}
+  else if (view === 'produk' && product) content = <ProductSelection key={product.id} page={page} product={product} photos={photos[product.id] || []}
+    initialUnit={unitName} openChat={(unit) => go('chat-produk', id, unit.name)}
     close={() => go('katalog')} add={add} quoteOnly={quoteOnly} favorite={favorites.includes(product.id)} toggleFavorite={() => favorite(product.id)} />;
   else if (view === 'keranjang') content = <Cart page={page} lines={lines} chosen={chosen} photos={photos} selected={selected} total={money(chosen)} canCheckout={canCheckout} canQuote={canQuote} quoteOnly={quoteOnly} go={go}
     toggle={(key) => setExcluded((old) => old.includes(key) ? old.filter((item) => item !== key) : [...old, key])}
@@ -641,6 +691,21 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   else if (view === 'riwayat-penawaran') content = <Orders quotes orders={orders?.filter((row) => row.kind === 'penawaran')} photos={photos} error={networkError} refresh={refresh} go={go} />;
   else if (view === 'pesanan') content = <Orders orders={orders} photos={photos} error={networkError} refresh={refresh} go={go} />;
   else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} respond={respond} repeat={repeat} endpoint={endpoint} photos={photos} />;
+  else if (view === 'chat-produk' && product) {
+    const unit = unitFor(product);
+    const context = { product_id: id, name: product.name, unit: unit.name,
+      price: quoteOnly ? null : priceAt(unit, 1), available: quoteOnly ? null : unit.available,
+      photo: photos[id]?.[0]?.thumb || photos[id]?.[0]?.path };
+    content = <CustomerChat key={`product:${id}:${unit.name}`} endpoint={endpoint} refId="umum" title={page.name} product={context}
+      back={() => go('produk', id, unit.name)} whatsapp={page.wa_phone ? waLink(page.wa_phone, `Halo, saya ingin menanyakan ${product.name}.`) : null}
+      orderProduct={quoteOnly ? undefined : () => { add(product, unit, 1); go('keranjang'); }}
+      quoteProduct={canQuote ? () => go('permintaan', id, unit.name) : undefined}
+      onPay={shop.pay ? () => go('bayar') : undefined} openCatalog={() => go('katalog')}
+      onCard={(kind, card) => {
+        if (kind === 'produk' && products.has(card.product_id)) go('produk', card.product_id);
+        else if (kind === 'penawaran' || kind === 'pesanan') { refresh(); go('lacak', card.order_id); }
+      }} />;
+  }
   else if (view === 'chat') content = <>
     <CustomerChat key={id || 'umum'} endpoint={endpoint} refId={id || 'umum'} title={page.name} back={() => (id ? go('lacak', id) : go('layanan'))}
       whatsapp={page.wa_phone ? waLink(page.wa_phone, `Halo ${page.name}${order ? `, saya ingin menanyakan pesanan ${order.number}` : ''}.`) : null}

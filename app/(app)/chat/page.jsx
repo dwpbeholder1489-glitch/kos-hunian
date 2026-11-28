@@ -47,6 +47,14 @@ export default function ChatPage() {
     const t = setInterval(() => { if (!document.hidden) load(); }, 10000);
     return () => { clearTimeout(t0); clearInterval(t); };
   }, [load, q]);
+  useEffect(() => {
+    if (!kosId || !supabase) return;
+    const channel = supabase.channel('cx-inbox:' + kosId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cx_room_updates' }, () => {
+        if (!document.hidden) load();
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [kosId, load]);
   const pick = (id) => {
     setSel(id);
     const url = new URL(window.location.href); if (id) url.searchParams.set('c', id); else url.searchParams.delete('c');

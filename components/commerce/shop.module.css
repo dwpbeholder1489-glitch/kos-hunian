@@ -377,3 +377,25 @@
 .quickContent .stepper input { font-size:16px; }
 .quickContent .unitCards label:not(:has(input:checked)) { background:var(--surface); }
 .quickContent .stepper, .quickContent .stepper input { background:var(--surface); }
+
+.productLinks { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px; margin-top: 10px; }
+.productLinks button {
+  display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px;
+  padding: 5px 8px; border: 1px solid var(--green); border-radius: 10px; background: #f5fbf6;
+  color: var(--dark); font-weight: 700; line-height: 1.2;
+}
+.shareSheet { display: grid; min-width: 0; gap: 12px; }
+.sharePreview {
+  display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #dce7e0;
+  border-radius: 12px; overflow-wrap: anywhere; background: #fff;
+}
+.sharePreview > div { display: grid; min-width: 0; }
+.sharePreview small { color: #58665d; }
+.shareOptions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.shareOptions :is(button, a) {
+  display: grid; justify-items: center; align-content: center; gap: 6px; padding: 7px 3px;
+  min-height: 62px; border: 1px solid #dce7e0; border-radius: 12px; background: #f5faf6;
+  color: #075119; font: inherit; font-weight: 650; text-align: center; text-decoration: none;
+}
+.shareSheet input { width: 100%; min-width: 0; font-size: 16px; }
+.shareSheet p { margin: 0; }
