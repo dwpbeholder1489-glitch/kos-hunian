@@ -14,7 +14,7 @@ import FiturUpgrade from '@/components/FiturUpgrade';
 import { PageHeader, useMedia } from '@/components/Page';
 import { Empty, Loading, Sheet, toast } from '@/components/ui';
 import { BLN, angka, errMsg, rp, tgl, today } from '@/lib/format';
-import { canArea, isKuliner } from '@/lib/business';
+import { canArea, isKuliner, pathAllowed } from '@/lib/business';
 import { useKuotaEkspor } from '@/lib/ekspor';
 import { COMPARE, HARI, HEALTH_RULES, PRESETS, compareRange, dasarFloor, daysBetween, healthScore, insights, kpis, monthName, presetRange, projection, terms } from '@/lib/bizIntel';
 import { C, Donut, Gauge, GroupBars, Heatmap, NetBars, TrendChart, Waterfall } from './Charts';
@@ -23,6 +23,7 @@ import { BudgetModule, CashModule, FinancialsModule, InvestModule, MapModule, Re
 import ScenarioModule from './Scenario';
 import IndustryModule from './Industry';
 import ProfitModule from './Profit';
+import StockReorder from './StockReorder';
 import styles from './analisis.module.css';
 
 const n = (v) => Number(v || 0);
@@ -373,6 +374,7 @@ function Center({ kos, kosId, ver }) {
     {header}{filterSheet}
     {modNav}
     {notes}
+    {retail && canArea(kos, 'stock') && pathAllowed(kos, '/belanja') && <StockReorder kosId={kosId} version={ver} />}
     {kosong && <div className="notice">Belum ada transaksi tercatat pada {fmtRange(d.from, d.to)}. Angka akan muncul setelah ada penjualan, pembayaran, atau pengeluaran.</div>}
     {mobile ? <>
       {healthCard}
