@@ -53,7 +53,7 @@ where bm.kos_id = k.id and bm.module_code = 'u_proyek' and not bm.active
 -- Pelanggan & vendor (contacts) untuk bisnis kustom (event): modul r_kontak berlaku juga untuk kustom
 update public.modules set applies_to = (select array_agg(distinct x) from unnest(applies_to || '{kustom}'::text[]) x) where code = 'r_kontak';
 insert into public.business_modules(kos_id, module_code, active, updated_by)
-select k.id, 'r_kontak', k.category_code = 'event', 'sistem' from public.kos k where k.business_type = 'kustom'
+select k.id, 'r_kontak', coalesce(k.category_code = 'event', false), 'sistem' from public.kos k where k.business_type = 'kustom'
 on conflict (kos_id, module_code) do update set active = excluded.active or business_modules.active;
 
 -- Penawaran upgrade: Proyek inti kini dari Dasar; fitur lanjutan → Bisnis
