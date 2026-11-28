@@ -21,6 +21,12 @@ export default function BillingPanel({ project, onChange }) {
   const load = () => supabase.rpc('prj_billing', { p_project: project.id }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setD(data))));
   useEffect(() => { load(); }, [project.id, project.status]); // eslint-disable-line react-hooks/exhaustive-deps
   const done = () => { setSheet(null); load(); onChange?.(); };
+  // Dari Beranda Event "Buat Invoice": /proyek/[id]#tagihan-baru langsung membuka formulir tagihan
+  useEffect(() => {
+    if (!d || typeof window === 'undefined' || window.location.hash !== '#tagihan-baru') return;
+    try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch {}
+    if (d.allowed && !['batal', 'penawaran'].includes(d.status)) setSheet({ inv: {} });
+  }, [d]);
   const created = (id) => { done(); if (id) router.push(`/proyek/tagihan/${id}`); };
   if (err) return <section className="panel"><span className="label">Tagihan & pembayaran</span><span className="small" style={{ color: 'var(--bad)' }}>{err}</span></section>;
   if (!d) return <section className="panel"><span className="label">Tagihan & pembayaran</span><span className="small muted">Memuat…</span></section>;

@@ -4,6 +4,11 @@ begin;
 -- id catatan kasir offline milik bisnis target (dibaca sebelum berganti peran) untuk uji kirim ulang/tandai
 select set_config('uji.off', coalesce((select id::text from public.pos_offline where kos_id = :'K' and status <> 'tersimpan' limit 1), gen_random_uuid()::text), true),
        set_config('uji.off_ok', coalesce((select id::text from public.pos_offline where kos_id = :'K' limit 1), gen_random_uuid()::text), true);
+-- id rundown milik bisnis target (dibaca sebelum berganti peran) agar RPC benar-benar diuji, bukan ditolak oleh izin tabel
+select set_config('uji.rd_prj', coalesce((select project_id::text from public.prj_rundown_items where kos_id = :'K' limit 1),
+                                         (select id::text from public.prj_projects where kos_id = :'K' limit 1), gen_random_uuid()::text), true),
+       set_config('uji.rd_item', coalesce((select id::text from public.prj_rundown_items where kos_id = :'K' limit 1), gen_random_uuid()::text), true),
+       set_config('uji.rd_ver', coalesce((select id::text from public.prj_rundown_versions where kos_id = :'K' limit 1), gen_random_uuid()::text), true);
 set local role authenticated;
 select set_config('uji.kos', :'K', true), set_config('request.jwt.claim.sub', :'U', true), set_config('request.jwt.claims', json_build_object('sub', :'U', 'aal', 'aal1')::text, true);
 create temp table hasil(uji text, lolos boolean) on commit drop;
@@ -178,7 +183,21 @@ begin
       ('prj_invoice_create', format('select public.prj_invoice_create((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"description":"dibajak"}'')', k)),
       ('prj_payment_add', format('select public.prj_payment_add((select id from public.prj_projects where kos_id = %L limit 1), ''{"amount":1,"account":"kas"}'')', k)),
       ('prj_invoice_get', format('select public.prj_invoice_get((select id from public.prj_invoices where kos_id = %L limit 1))', k)),
-      ('prj_payment_void', format('select public.prj_payment_void((select id from public.prj_payments where kos_id = %L limit 1), ''dibajak'')', k))
+      ('prj_payment_void', format('select public.prj_payment_void((select id from public.prj_payments where kos_id = %L limit 1), ''dibajak'')', k)),
+      ('event_home', format('select public.event_home(%L, null)', k)),
+      ('event_schedule', format('select public.event_schedule(%L, null)', k)),
+      ('prj_rundown', format('select public.prj_rundown(%L::uuid)', current_setting('uji.rd_prj'))),
+      ('prj_rundown_save', format('select public.prj_rundown_save(%L, null, ''{"start_time":"10:00","title":"dibajak"}'')', current_setting('uji.rd_prj'))),
+      ('prj_rundown_bulk', format('select public.prj_rundown_bulk(%L::uuid, ''[{"start_time":"10:00","title":"dibajak"}]'')', current_setting('uji.rd_prj'))),
+      ('prj_rundown_delete', format('select public.prj_rundown_delete(%L::uuid)', current_setting('uji.rd_item'))),
+      ('prj_rundown_shift', format('select public.prj_rundown_shift(%L::uuid, current_date, ''00:00'', 10)', current_setting('uji.rd_prj'))),
+      ('prj_rundown_status', format('select public.prj_rundown_status(%L::uuid, ''selesai'')', current_setting('uji.rd_item'))),
+      ('prj_rundown_version_save', format('select public.prj_rundown_version_save(%L::uuid, ''dibajak'')', current_setting('uji.rd_prj'))),
+      ('prj_rundown_version_get', format('select public.prj_rundown_version_get(%L::uuid)', current_setting('uji.rd_ver'))),
+      ('prj_rundown_restore', format('select public.prj_rundown_restore(%L::uuid, ''dibajak'')', current_setting('uji.rd_ver'))),
+      ('event_agenda', format('select public.event_agenda(%L, null)', k)),
+      ('prj_stage_set', format('select public.prj_stage_set((select id from public.prj_projects where kos_id = %L limit 1), ''persiapan'')', k)),
+      ('prj_event_info_set', format('select public.prj_event_info_set((select id from public.prj_projects where kos_id = %L limit 1), ''{"guests":1}'')', k))
     ) v(name, q) loop
     begin
       execute t.q;

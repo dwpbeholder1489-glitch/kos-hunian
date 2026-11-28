@@ -509,6 +509,39 @@ export function ScrTagihanProyek() {
   );
 }
 
+// Beranda Event (Langkah 139) — DATA CONTOH
+export function ScrBerandaEvent() {
+  return (
+    <Phone bare>
+      <h3>Beranda Event</h3>
+      <span className="small muted">DATA CONTOH</span>
+      <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Event Aktif</span><span className="v">4</span><span className="s">▲ +1 dari awal bulan</span></div>
+        <div className="tile" style={{ flex: 1 }}><span className="label">Booking Masuk</span><span className="v">{rp(85000000)}</span><span className="s">2 event dikonfirmasi</span></div>
+      </div>
+      <span className="label">Event Mendatang</span>
+      <div className="row between small"><span><b>Wedding Rina &amp; Bayu</b><br />Sab, 12 Des · Gedung Serbaguna</span><span className="chip good">Terkonfirmasi</span></div>
+      <div className="row between small"><span><b>Seminar UMKM 2026</b><br />Kam, 17 Des · 300 peserta</span><span className="chip gold">Menunggu Konfirmasi</span></div>
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}><span className="mini-btn cta">Buat Event</span><span className="mini-btn">Buat Invoice</span><span className="mini-btn">Kelola Tim</span></div>
+      <div className="row between small"><span>☐ Konfirmasi vendor dekorasi</span><span className="chip bad">Hari ini</span></div>
+    </Phone>
+  );
+}
+
+// Rundown event (Langkah 143) — DATA CONTOH
+export function ScrRundown() {
+  return (
+    <Phone bare>
+      <h3>Rundown · Wedding Rina &amp; Bayu</h3>
+      <span className="small muted">DATA CONTOH · versi 2 · Disetujui klien</span>
+      <div className="row between small"><span><b>08:00–09:30</b> Persiapan pengantin<br /><span className="muted">Rias · PIC Sari</span></span><span className="chip good">Selesai</span></div>
+      <div className="row between small" style={{ background: 'var(--gold-soft)', borderRadius: 8, padding: 6 }}><span><b>09:30–10:30</b> Akad nikah<br /><span className="muted">Ballroom · Cue: musik instrumental</span></span><span className="chip gold">Berjalan</span></div>
+      <div className="row between small"><span><b>11:00–12:30</b> Resepsi<br /><span className="muted">PIC MC Andi</span></span><span className="chip void">Rencana</span></div>
+      <div className="row" style={{ gap: 6 }}><span className="mini-btn cta">Selesai ✓</span><span className="mini-btn">Geser jadwal</span><span className="mini-btn">Cetak</span></div>
+    </Phone>
+  );
+}
+
 export function ScrResep() {
   return (
     <Phone bare>

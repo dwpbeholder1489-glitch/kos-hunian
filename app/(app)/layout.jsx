@@ -22,7 +22,7 @@ import ChatPresence from '@/components/chat/ChatPresence';
 import AnnounceBanner from '@/components/AnnounceBanner';
 import { OfflineSync } from '@/components/KasirOffline';
 
-import { isKuliner, typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, pathModuleOff, moduleOn, isDraft, SETUP_STATUS } from '@/lib/business';
+import { isKuliner, typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, ROLES, canArea, pathModuleOff, moduleOn, isDraft, SETUP_STATUS, isEvent } from '@/lib/business';
 import { sectionsFor, fourthTab, mainTabOf, groupIcon, pinsFor } from '@/lib/menu';
 import QuickPanel from '@/components/QuickPanel';
 import HomeTop from '@/components/HomeTop';
@@ -166,7 +166,7 @@ export default function AppLayout({ children }) {
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka dengan mengetuk nama bisnis di kiri atas.</span>}</div>
-      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && <HomeTop kos={kos} />}{path === home && !isDraft(kos) && <ActivationCard />}<Suspense fallback={<p className="muted">Memuat…</p>}><GuideFallback />{path === home && <OnboardingPrompt />}<div data-guide-content style={{ display: "contents" }}>{children}</div></Suspense></> : isDraft(kos) ? (
+      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && !isEvent(kos) && <HomeTop kos={kos} />}{path === home && !isDraft(kos) && <ActivationCard />}<Suspense fallback={<p className="muted">Memuat…</p>}><GuideFallback />{path === home && <OnboardingPrompt />}<div data-guide-content style={{ display: "contents" }}>{children}</div></Suspense></> : isDraft(kos) ? (
         <div className="empty"><h2>{kos.name} masih dalam setup</h2><p className="muted">Menu operasional terbuka setelah pemilik meninjau dan mengaktifkan bisnis di Pusat Konfirmasi.</p>{canArea(kos, 'settings') && <Link href="/konfirmasi"><button className="primary">Buka Pusat Konfirmasi</button></Link>}</div>
       ) : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
         <div className="empty"><h2>Modul ini sedang nonaktif</h2><p className="muted">Data lamanya tetap tersimpan. Pemilik atau pengelola bisa mengaktifkannya lagi di Pusat konfigurasi.</p>{canArea(kos, 'settings') && <Link href="/konfigurasi"><button className="primary">Buka Pusat konfigurasi</button></Link>}</div>

@@ -17,7 +17,7 @@ import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import CrmTimeline from '@/components/CrmTimeline';
 import { rp, tgl, errMsg, waLink, angka, parseRp, today } from '@/lib/format';
 import { diffText } from '@/lib/riwayat';
-import { canArea, moduleOn } from '@/lib/business';
+import { canArea, moduleOn, isEvent } from '@/lib/business';
 
 const KIND = { pelanggan: 'Pelanggan', supplier: 'Supplier' };
 const TIPE = { umum: 'Umum', reseller: 'Reseller', distributor: 'Distributor', institusi: 'Institusi' };
@@ -25,22 +25,25 @@ const phoneKey = (phone) => String(phone || '').replace(/\D/g, '').replace(/^(62
 const initials = (name) => name.trim().split(/\s+/).map((word) => word[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 const ST = { batal: 'Batal', dipesan: 'Dipesan', sebagian: 'Sebagian' };
 
-// Pelanggan & supplier: daftar, saldo kasbon/utang, riwayat transaksi, ubah nama & nomor
-export default function Kontak() {
+// Pelanggan & supplier: daftar, saldo kasbon/utang, riwayat transaksi, ubah nama & nomor.
+// Bisnis event (workspace Event): menu "Pelanggan (Client)" = hanya pelanggan, menu "Vendor" (mode='vendor') = hanya supplier
+// — data kontak yang SAMA (tanpa tabel vendor terpisah).
+export default function Kontak({ mode }) {
   const { kosId, kos, ver, user, bump } = useKos();
   if (!kosId || !kos || !user) return <Loading />;
   const fin = canArea(kos, 'finance');
-  return <ContactsWorkspace key={`${kosId}:${user.id}:${fin}`} {...{ kosId, kos, ver, fin, bump }} />;
+  const only = mode === 'vendor' ? 'supplier' : isEvent(kos) ? 'pelanggan' : null;
+  return <ContactsWorkspace key={`${kosId}:${user.id}:${fin}:${only}`} {...{ kosId, kos, ver, fin, bump, only }} />;
 }
 
-function ContactsWorkspace({ kosId, kos, ver, fin, bump }) {
+function ContactsWorkspace({ kosId, kos, ver, fin, bump, only }) {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
-  const [tab, setTab] = useState(fin ? 'pelanggan' : 'supplier');
-  useEffect(() => { if (new URLSearchParams(window.location.search).get('tab') === 'supplier') setTab('supplier'); }, []);
+  const [tab, setTab] = useState(only || (fin ? 'pelanggan' : 'supplier'));
+  useEffect(() => { if (!only && new URLSearchParams(window.location.search).get('tab') === 'supplier') setTab('supplier'); }, [only]);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
-  useBaru(() => setOpen({ kind: !fin || new URLSearchParams(window.location.search).get('tab') === 'supplier' ? 'supplier' : 'pelanggan' }));
+  useBaru(() => setOpen({ kind: only || (!fin || new URLSearchParams(window.location.search).get('tab') === 'supplier' ? 'supplier' : 'pelanggan') }));
   const viewedLink = useRef(null);
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('kontak');
@@ -96,18 +99,19 @@ function ContactsWorkspace({ kosId, kos, ver, fin, bump }) {
     <div className={styles.page}>
       <section className={styles.hero} aria-label="Customer & Supplier Management Center">
         <div className={styles.heroCopy}>
-          <h1>Pelanggan &amp; Supplier</h1>
-          <p>Kelola data kontak, sisa kasbon dan utang, serta riwayat transaksi.</p>
+          <h1>{only === 'supplier' && isEvent(kos) ? 'Vendor' : only === 'supplier' ? 'Supplier' : only ? 'Pelanggan (Client)' : <>Pelanggan &amp; Supplier</>}</h1>
+          <p>{only === 'supplier' ? 'Vendor & pemasok: kontak, utang, dan riwayat belanja. Biaya vendor ditandai ke event di halaman setiap event.'
+            : only ? 'Klien event: kontak, piutang, dan riwayat transaksi.' : 'Kelola data kontak, sisa kasbon dan utang, serta riwayat transaksi.'}</p>
           <PageHelp page="kontak" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Kontak <NavIcon name="next" size={14} /></>} />
         </div>
-        <span className={styles.heroArt}><Image src="/pelanggan-supplier.webp" alt="" fill sizes="(max-width: 600px) 36vw, 300px" priority /></span>
+        <span className={styles.heroArt}><Image src={only === 'supplier' && isEvent(kos) ? '/event/vendor.webp' : '/pelanggan-supplier.webp'} alt="" fill sizes="(max-width: 600px) 36vw, 300px" priority /></span>
       </section>
       <div className={styles.actions}>
-        {fin && <button onClick={() => setOpen({ kind: 'pelanggan' })}><NavIcon name="/penghuni" />＋ Pelanggan</button>}
-        <button onClick={() => setOpen({ kind: 'supplier' })}><NavIcon name="/barang" />＋ Supplier</button>
+        {fin && only !== 'supplier' && <button onClick={() => setOpen({ kind: 'pelanggan' })}><NavIcon name="/penghuni" />＋ Pelanggan</button>}
+        {only !== 'pelanggan' && <button onClick={() => setOpen({ kind: 'supplier' })}><NavIcon name="/barang" />＋ {only && isEvent(kos) ? 'Vendor' : 'Supplier'}</button>}
         <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
       </div>
-      {fin && <div className={styles.tabs} aria-label="Jenis kontak">{['pelanggan', 'supplier'].map((kind) => (
+      {fin && !only && <div className={styles.tabs} aria-label="Jenis kontak">{['pelanggan', 'supplier'].map((kind) => (
         <button key={kind} onClick={() => changeTab(kind)} aria-pressed={tab === kind}>{KIND[kind]} ({angka(counts[kind])})</button>
       ))}</div>}
       <div className={styles.metrics}>

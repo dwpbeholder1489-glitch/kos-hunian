@@ -17,6 +17,14 @@ import { rp, tglShort, today, errMsg } from '@/lib/format';
 import { KIND, STATUS, PRIO, Chip, Progress, ProjectForm, jadwal } from '@/components/Proyek';
 import { QuoteForm, qStatus } from '@/components/Penawaran';
 import { ProfitTable } from '@/components/ProyekBiaya';
+import { EV_ST, termOf } from '@/lib/event';
+import ListThumb from '@/components/media/ListThumb';
+import { EventHero, EventActions, EventMetrics, evStyles as ev } from '@/components/EventPage';
+import NavIcon from '@/components/NavIcon';
+import { isEvent } from '@/lib/business';
+
+// Status tampil: event memakai status event otomatis (Draft…Berlangsung), jenis lain status proyek
+const StChip = ({ p }) => (p.kind === 'event' && EV_ST[p.event_status] ? <span className={'chip ' + EV_ST[p.event_status][1]}>{EV_ST[p.event_status][0]}</span> : <Chip map={STATUS} v={p.status} />);
 
 const TABS = [['aktif', 'Berjalan'], ['selesai', 'Selesai'], ['batal', 'Batal']];
 const tabOf = (s) => (s === 'selesai' ? 'selesai' : s === 'batal' ? 'batal' : 'aktif');
@@ -35,7 +43,7 @@ export default function Proyek() {
   useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (t === 'penawaran' || t === 'laba') setView(t); } catch {} }, []);
   const load = () => supabase.rpc('prj_list', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : (setErr(null), setD(data))));
   useEffect(() => { load(); }, [kosId, ver]); // eslint-disable-line react-hooks/exhaustive-deps
-  useBaru(() => setForm({}));
+  useBaru((v) => { if (v === 'penawaran') { setView('penawaran'); setQform(true); } else setForm({}); });
   const rows = useMemo(() => {
     if (!d) return [];
     const s = q.trim().toLowerCase();
@@ -51,18 +59,30 @@ export default function Proyek() {
   const t7 = new Date(Date.parse(t0 + 'T12:00:00Z') + 7 * 864e5).toISOString().slice(0, 10);
   const minggu = aktif.filter((p) => p.start_date && p.start_date >= t0 && p.start_date <= t7).length;
   const nilai = d.fin ? aktif.filter((p) => p.status !== 'penawaran').reduce((n, p) => n + Number(p.value || 0), 0) : null;
+  const T = termOf(kos);
   const toggle = async (t) => { if (await run(() => supabase.rpc('prj_task_status', { p_id: t.id, p_status: t.status === 'proses' ? 'selesai' : 'proses' }), t.status === 'proses' ? 'Tugas selesai' : 'Tugas mulai dikerjakan', errMsg)) load(); };
+  const evBiz = isEvent(kos);
   return (
-    <div className="stack">
-      <PageHeader title="Proyek" help={<PageHelp page="proyek" />} actions={view === 'penawaran'
-        ? d.allowed && <button className="primary" onClick={() => setQform(true)}>+ Penawaran baru</button>
-        : canNew && <button className="primary" onClick={() => setForm({})}>+ Proyek baru</button>} />
-      {!d.allowed && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.REQUESTED" title="Proyek tersedia mulai Paket Bisnis"
-        text={d.projects.length ? 'Proyek yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan proyeknya diselesaikan atau dibatalkan. Membuat & mengubah proyek butuh Paket Bisnis.'
-          : 'Kelola setiap acara & pekerjaan klien sebagai proyek: klien, PIC, jadwal, milestone & rencana termin, tugas tiap anggota tim, lampiran, dan riwayat.'} />}
-      {(d.can_quote || d.fin) && <div className="seg">{[['proyek', 'Proyek'], ...(d.can_quote ? [['penawaran', `Penawaran${d.quotes_open ? ` (${d.quotes_open} berjalan)` : ''}`]] : []), ...(d.fin ? [['laba', 'Laba proyek']] : [])]
+    <div className={ev.page}>
+      <EventHero title={T.list} art={evBiz ? 'kegiatan' : 'jadwal'}
+        desc={evBiz ? 'Semua acara Anda: jadwal, klien, status, persiapan tim, dan nilai kontrak.' : 'Setiap pekerjaan klien di satu tempat: jadwal, milestone, tugas tim, tagihan, dan laba.'}
+        help={<PageHelp page="proyek" label={<><NavIcon name="/buku-besar" size={17} /> Panduan {T.One} <NavIcon name="next" size={14} /></>} />} />
+      <EventActions items={[
+        view === 'penawaran' ? d.allowed && d.lanjut && { key: 'pnw', primary: true, icon: 'plus', label: '+ Penawaran baru', onClick: () => setQform(true) }
+          : canNew && { key: 'baru', primary: true, icon: 'plus', label: `+ ${T.One} baru`, onClick: () => setForm({}) },
+        evBiz && { key: 'booking', icon: '/booking-event', label: 'Booking', href: '/booking-event' },
+        d.can_quote && { key: 'penawaran', icon: '/kontrak', label: 'Penawaran', onClick: () => setView('penawaran'), note: !d.lanjut ? 'Paket Bisnis' : undefined },
+        evBiz ? { key: 'jadwal', icon: '/jadwal', label: 'Jadwal', href: '/jadwal' } : d.fin && { key: 'laba', icon: 'coins', label: `Laba ${T.one}`, onClick: () => setView('laba') },
+      ]} />
+      {!d.allowed && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.REQUESTED" plan="dasar" title={`${T.list} tersedia mulai Paket Dasar`}
+        text={d.projects.length ? `${T.One} yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan diselesaikan atau dibatalkan. Membuat & mengubah ${T.one} butuh Paket Dasar.`
+          : `Kelola setiap acara & pekerjaan klien sebagai ${T.one}: klien, PIC, jadwal, milestone & rencana termin, tugas tiap anggota tim, tagihan DP & pelunasan, lampiran, dan riwayat.`} />}
+      {(d.can_quote || d.fin) && <div className="seg">{[['proyek', T.One], ...(d.can_quote ? [['penawaran', `Penawaran${d.quotes_open ? ` (${d.quotes_open} berjalan)` : ''}`]] : []), ...(d.fin ? [['laba', `Laba ${T.one}`]] : [])]
         .map(([k, l]) => <button key={k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}</div>}
-      {view === 'penawaran' ? <QuoteTab kosId={kosId} ver={ver} onNew={() => setQform(true)} allowed={d.allowed} />
+      {(view === 'penawaran' || view === 'laba') && d.allowed && !d.lanjut && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.ADVANCED.REQUESTED"
+        title={view === 'penawaran' ? 'Penawaran ke klien — Paket Bisnis' : `Laba per ${T.one} — Paket Bisnis`}
+        text={`Paket Bisnis menambah penawaran berisi scope, harga & termin (disetujui klien → ${T.one} otomatis dikonfirmasi), perubahan scope, anggaran per kategori, komitmen vendor, dan laba per ${T.one}. Data yang sudah ada tetap bisa dibuka.`} />}
+      {view === 'penawaran' ? <QuoteTab kosId={kosId} ver={ver} onNew={() => setQform(true)} allowed={d.allowed && d.lanjut} />
         : view === 'laba' ? <ProfitTab kosId={kosId} ver={ver} /> : <>
 
       {d.mine.length > 0 && <section className="panel" style={{ gap: 6 }}>
@@ -76,16 +96,16 @@ export default function Proyek() {
         {d.mine.length > 8 && <span className="small muted">… dan {d.mine.length - 8} tugas lain di halaman proyeknya.</span>}
       </section>}
 
-      {d.projects.length > 0 && <div className="grid">
-        <Tile label="Proyek berjalan" value={aktif.filter((p) => p.status === 'berjalan').length} sub={`${aktif.filter((p) => p.status === 'penawaran').length} masih penawaran`} />
-        <Tile label="Mulai 7 hari ke depan" value={minggu} sub="sesuai tanggal mulai" />
-        <Tile label="Tugas terlambat" value={telat} tone={telat ? 'bad' : ''} sub="lewat tenggat, belum selesai" />
-        {nilai != null && <Tile label="Nilai kontrak berjalan" value={rp(nilai)} sub="proyek berjalan (bukan penawaran)" />}
-      </div>}
+      {d.projects.length > 0 && <EventMetrics label={`Ringkasan ${T.one}`} items={[
+        { key: 'jalan', tone: 'green', icon: 'ticket', label: `${T.One} berjalan`, value: aktif.filter((p) => p.status === 'berjalan').length, caption: `${aktif.filter((p) => p.status === 'penawaran').length} belum dikonfirmasi` },
+        { key: 'minggu', tone: 'blue', icon: 'calendar', label: 'Mulai 7 hari ke depan', value: minggu, caption: 'sesuai tanggal acara', href: '/jadwal' },
+        { key: 'telat', tone: telat ? 'red' : 'gold', icon: 'clock', label: 'Tugas terlambat', value: telat, caption: 'lewat tenggat, belum selesai', href: '/jadwal' },
+        nilai != null && { key: 'nilai', tone: 'gold', icon: 'coins', label: 'Nilai kontrak berjalan', value: rp(nilai), caption: `${T.one} dikonfirmasi` },
+      ]} />}
 
       {d.projects.length === 0 ? (
-        <Empty title="Belum ada proyek" text={d.can_create ? 'Buat proyek untuk setiap acara atau pekerjaan klien. Semua jadwal, tahap, tugas tiap orang, dan dokumennya ada di satu tempat — tidak tercecer di chat.' : 'Belum ada proyek yang melibatkan Anda. Proyek akan muncul di sini saat Anda ditambahkan sebagai anggota atau diberi tugas.'}>
-          {canNew && <button className="primary" onClick={() => setForm({})}>+ Buat proyek pertama</button>}
+        <Empty title={`Belum ada ${T.one}`} text={d.can_create ? `Buat ${T.one} untuk setiap acara atau pekerjaan klien. Semua jadwal, tahap, tugas tiap orang, dan dokumennya ada di satu tempat — tidak tercecer di chat.` : `Belum ada ${T.one} yang melibatkan Anda. ${T.One} akan muncul di sini saat Anda ditambahkan sebagai anggota atau diberi tugas.`}>
+          {canNew && <button className="primary" onClick={() => setForm({})}>+ Buat {T.one} pertama</button>}
         </Empty>
       ) : <>
         <div className="seg">{TABS.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l} ({d.projects.filter((p) => tabOf(p.status) === k).length})</button>)}</div>
@@ -94,16 +114,16 @@ export default function Proyek() {
         {rows.length === 0 ? <Empty title="Tidak ada proyek" text="Coba ubah pencarian atau filter." art={false} /> :
           <DataTable rows={rows} caption="Daftar proyek" onRow={(p) => router.push(`/proyek/${p.id}`)} rowLabel={(p) => p.name}
             columns={[
-              { key: 'name', label: 'Proyek', sort: (p) => p.name.toLowerCase(), main: true, render: (p) => <><b>{p.name}</b><div className="small muted">{p.number} · {KIND[p.kind]}{p.client ? ` · ${p.client}` : ''}</div></> },
+              { key: 'name', label: T.One, sort: (p) => p.name.toLowerCase(), main: true, render: (p) => <div className="row" style={{ flexWrap: 'nowrap', gap: 10 }}>{p.cover && <ListThumb path={p.cover} size={44} />}<div style={{ minWidth: 0 }}><b>{p.name}</b><div className="small muted">{p.number} · {p.kind === 'event' && p.category ? p.category : KIND[p.kind]}{p.client ? ` · ${p.client}` : ''}</div></div></div> },
               { key: 'date', label: 'Jadwal', sort: (p) => p.start_date || p.end_date || '9999', render: (p) => <span className="small">{jadwal(p)}</span> },
               { key: 'pic', label: 'PIC', hide: 'tablet', render: (p) => <span className="small">{p.manager || '—'}</span> },
               { key: 'prog', label: 'Progres', sort: (p) => p.progress ?? -1, render: (p) => <><Progress pct={p.progress} />{p.tasks_late > 0 && <div className="small" style={{ color: 'var(--bad)' }}>{p.tasks_late} tugas terlambat</div>}</> },
               ...(d.fin ? [{ key: 'val', label: 'Nilai', align: 'right', hide: 'tablet', sort: (p) => Number(p.value || 0), render: (p) => (p.value != null ? rp(p.value) : <span className="muted">—</span>) }] : []),
-              { key: 'st', label: 'Status', render: (p) => <Chip map={STATUS} v={p.status} /> },
+              { key: 'st', label: 'Status', render: (p) => <StChip p={p} /> },
             ]}
             card={(p) => <>
-              <div className="dt-row"><b>{p.name}</b><Chip map={STATUS} v={p.status} /></div>
-              <span className="small muted">{p.number} · {KIND[p.kind]}{p.client ? ` · ${p.client}` : ''}</span>
+              <div className="dt-row"><span className="row" style={{ flexWrap: 'nowrap', gap: 10, minWidth: 0 }}>{p.cover && <ListThumb path={p.cover} size={40} />}<b>{p.name}</b></span><StChip p={p} /></div>
+              <span className="small muted">{p.number} · {p.kind === 'event' && p.category ? p.category : KIND[p.kind]}{p.client ? ` · ${p.client}` : ''}</span>
               <span className="small">{jadwal(p)}{p.manager ? ` · PIC ${p.manager}` : ''}</span>
               <Progress pct={p.progress} />
               {(() => {

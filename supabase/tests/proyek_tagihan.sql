@@ -137,7 +137,7 @@ do $$ declare m text; begin
 end $$;
 select set_config('request.jwt.claim.sub', :'OWN', false) \g /dev/null
 reset role;
-update kos set plan = 'dasar' where id = :'K';
+update kos set plan = 'gratis', trial_until = (now() at time zone 'Asia/Jakarta')::date - 1 where id = :'K';
 set role authenticated;
 do $$ declare m text; begin
   begin perform prj_invoice_create(current_setting('t.p1')::uuid, '{"amount":1000,"description":"Tambahan"}'::jsonb); exception when others then m := sqlerrm; end;

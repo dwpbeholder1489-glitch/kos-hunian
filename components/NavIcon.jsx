@@ -17,6 +17,7 @@ const P = {
 
   plus: <path d="M12 5v14M5 12h14" />,
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></>,
+  ticket: <><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2.5a2.5 2.5 0 0 0 0-5Z" /><path d="M15 5v14" strokeDasharray="2 2.2" /><path d="m9 9.2.9 1.8 2 .3-1.45 1.4.35 2L9 13.8l-1.8.9.35-2L6.1 11.3l2-.3Z" /></>,
   gift: <path d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12m0-12H8a2.5 2.5 0 1 1 2.4-3.3L12 9Zm0 0h4a2.5 2.5 0 1 0-2.4-3.3L12 9Z" />,
   done: <><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></>,
   barcode: <path d="M3 4v16m4-16v16m5-16v16m4-16v16m5-16v16" />,
@@ -98,6 +99,10 @@ const P = {
   '/aset': <><path d="M3 21h18M5 21V8l7-4 7 4v13" /><path d="M9 21v-5h6v5M9 11h.01M15 11h.01" /></>,
   '/risiko': <><path d="M12 3 2 20h20L12 3z" /><path d="M12 10v4M12 17h.01" /></>,
   '/anggaran': <><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" /></>,
+  '/booking-event': <><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V2.5h6V4M9 12l2 2 4-4" /></>,
+  '/jadwal': <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18M8 14h2M14 14h2M8 17h2" /></>,
+  '/vendor': <><path d="M4 10h16l-1.5-5h-13z" /><path d="M5 10v10h14V10M9 20v-5h6v5" /></>,
+  '/event': <><path d="M3 11 12 4l9 7" /><path d="M5 10v10h14V10" /></>,
   '/proyek': <><rect x="3" y="6" width="18" height="14" rx="2" /><path d="M8 6V4h8v2M3 12h18M10 12v2h4v-2" /></>,
   '/aktivitas': <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   '/analisis': <><path d="M3 20h18M4 16l5-5 4 3 7-8" /><path d="M16 6h4v4" /></>,
