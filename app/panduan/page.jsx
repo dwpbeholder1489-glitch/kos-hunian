@@ -1133,6 +1133,8 @@ const PARTS = [
     ['Inventaris kamar & pemeriksaan check-in/check-out', 'Inventaris kamar', [
       <>Buka <b>Inventaris kamar</b> → ketuk kamar → <b>+ Tambah barang</b> (kasur, lemari, AC, kunci ×2…). Isi perkiraan nilai bila ingin dipakai sebagai dasar potongan kerusakan.</>,
       <>Saat penghuni masuk/keluar atau pemeriksaan rutin: <b>Periksa kamar</b> → pilih jenis (Check-in, Check-out, Rutin) → tandai kondisi tiap barang (Baik, Perlu perbaikan, Rusak, Hilang) + keterangan → isi nilai kerusakan bila ada → <b>Simpan pemeriksaan</b>.</>,
+      <>Buka <b>Lainnya → Template Inventaris</b> untuk menyimpan nama dan jumlah barang dari satu kamar dan menerapkannya ke beberapa kamar sekaligus.</>,
+      <>Gunakan <b>Serah Terima Inventaris</b> untuk memilih kontrak, memeriksa setiap barang, mencatat persetujuan langsung penghuni, melampirkan foto, dan mengunduh berita acara PDF.</>,
       <>Ada kerusakan? Setelah disimpan langsung muncul kotak <b>Deposit</b> penghuni untuk <b>Potong</b> (wajib alasan). Barang rusak bisa dilanjutkan ke <b>Keluhan & perbaikan</b>.</>,
     ], <>Pemeriksaan yang sudah disimpan tidak bisa diubah (menjadi bukti). Pemeriksaan bertanggal lebih lama yang dicatat belakangan tidak menimpa kondisi terbaru.</>, 'warn', <ScrInventarisKamar />],
     ['Property Intelligence: okupansi, NOI, ROI, rental yield & proyeksi', 'Properti & Lokasi › Property Intelligence', [

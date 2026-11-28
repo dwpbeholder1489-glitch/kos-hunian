@@ -40,7 +40,7 @@ export default function Perbaikan() {
     const params = new URLSearchParams(window.location.search);
     const room = params.get('kamar');
     const id = params.get('tiket');
-    if (room) setNeu({ room_id: room });
+    if (room) setNeu({ room_id: room, title: params.get('judul')?.slice(0, 96) });
     if (/^[0-9a-f-]{36}$/i.test(id || '')) { setTicket(id); setOpen(id); }
   }, []);
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function Perbaikan() {
 }
 
 function NewTicket({ d, kosId, init, onClose, onSaved }) {
-  const [p, setP] = useState({ room_id: init.room_id || '', category: 'lainnya', title: '', detail: '', priority: 'sedang', assigned_to: '', room_blocked: false });
+  const [p, setP] = useState({ room_id: init.room_id || '', category: 'lainnya', title: init.title ? 'Perbaikan ' + init.title : '', detail: '', priority: 'sedang', assigned_to: '', room_blocked: false });
   const [busy, setBusy] = useState(false);
   const [id] = useState(uid);
   const set = (k, v) => setP({ ...p, [k]: v });

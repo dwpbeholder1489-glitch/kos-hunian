@@ -322,7 +322,7 @@ on conflict (code) do nothing;
 
 -- ---------- Lampiran kontrak (mesin attachments) ----------
 alter table public.attachments drop constraint if exists attachments_entity_check;
-alter table public.attachments add constraint attachments_entity_check check (entity in ('bb_record', 'svc_order', 'maint_ticket', 'occupant', 'expense', 'project', 'contract'));
+alter table public.attachments add constraint attachments_entity_check check (entity in ('bb_record', 'svc_order', 'maint_ticket', 'occupant', 'expense', 'project', 'room_item', 'room_inspection', 'contract'));
 create or replace function public._prasara_patch(p_sig text, p_old text, p_new text)
 returns void language plpgsql as $$
 declare d text;

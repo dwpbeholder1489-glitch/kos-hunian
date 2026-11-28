@@ -1,4 +1,4 @@
--- Uji Properti Tahap 2: pembelian hybrid, referral, kampanye/voucher, kontrak (migrasi 20261128180000 & 20261128190000).
+-- Uji Properti Tahap 2: pembelian hybrid, referral, kampanye/voucher, kontrak (migrasi 20261128250000 & 20261128260000).
 -- Database baru (semua migrasi + harness/mock_supabase.sql). Lulus = setiap kolom t, notice *_OK, tanpa GAGAL.
 \set ON_ERROR_STOP off
 insert into auth.users(id,email) values ('d2d2d2d2-0000-0000-0000-000000000001','t2@x.com'), ('d2d2d2d2-0000-0000-0000-000000000002','penjaga2@x.com') on conflict do nothing;

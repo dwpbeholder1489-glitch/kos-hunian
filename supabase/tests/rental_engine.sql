@@ -1,4 +1,4 @@
--- Uji Universal Rental Engine (migrasi 20261128171000). Database baru (semua migrasi + harness/mock_supabase.sql).
+-- Uji Universal Rental Engine (migrasi 20261128240000). Database baru (semua migrasi + harness/mock_supabase.sql).
 -- Lulus = setiap kolom bernilai t, notice *_OK, tanpa GAGAL.
 \set ON_ERROR_STOP off
 insert into auth.users(id,email) values ('f1f1f1f1-0000-0000-0000-000000000001','re@x.com'), ('f1f1f1f1-0000-0000-0000-000000000002','luar2@x.com') on conflict do nothing;
