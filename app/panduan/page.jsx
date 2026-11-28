@@ -112,6 +112,8 @@ const PARTS = [
   ['B', 'Rutin setiap bulan', [
     ['Cek tagihan yang terbit', 'Tagihan', [
       <>Tagihan sewa terbit sendiri <b>7 hari sebelum jatuh tempo</b>. Anda tidak perlu membuatnya.</>,
+      <>Ketuk kartu ringkasan atau gunakan filter untuk menelusuri tagihan. Pilih tampilan <b>Per tagihan</b> atau <b>Per penghuni</b>.</>,
+      <>Buka <b>Catat Pembayaran</b> untuk melunasi beberapa tagihan penghuni yang sama. Unduh invoice PDF di <b>Detail</b>.</>,
       <><b>Belum lunas</b>: masih ada sisa. <b>Menunggak</b>: lewat jatuh tempo.</>,
       <>Ketuk tagihan untuk melihat rincian dan riwayat pembayarannya.</>,
     ], null, null, <ScrInvoices />],

@@ -17,7 +17,7 @@ import { Sheet, Field, Loading, Empty, InvChip, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet, MoveRoomSheet } from '@/components/LeaseForms';
 import PaySheet from '@/components/PaySheet';
 import { rp, tgl, invTitle, errMsg, waLink, today, thisMonth, METHOD, PAY_ST } from '@/lib/format';
-import { message, caraBayar } from '@/lib/templates';
+import InvoiceReminder, { hasReminderPhone as hasPhone } from '@/components/InvoiceReminder';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import css from './penghuni.module.css';
@@ -27,7 +27,6 @@ const states = [['tunggak', 'Tunggakan'], ['belum', 'Belum lunas'], ['pending', 
 const dates = [['late', 'Lewat jatuh tempo'], ['today', 'Jatuh tempo hari ini'], ['soon', 'Dalam 7 hari ke depan'], ['later', 'Lebih dari 7 hari']];
 const digit = (value) => String(value || '').replace(/\D/g, '').replace(/^0/, '62');
 const total = (rows) => rows.reduce((sum, row) => sum + row.outstanding, 0);
-const hasPhone = (occ) => /^[1-9]\d{7,14}$/.test(digit(occ.phone));
 function groupBy(rows, key) {
   const grouped = new Map();
   for (const row of rows) {
@@ -147,7 +146,7 @@ export default function Penghuni() {
         <button className="sm" onClick={() => setSheet({ t: 'detail', id: lease.occupant_id })}>Buka profil</button>
       </div>} />
     </Sheet>}
-    {sheet?.t === 'reminder' && owner && <Reminder key={sheet.id || 'bulk'} kos={kos} d={d}
+    {sheet?.t === 'reminder' && owner && <InvoiceReminder key={sheet.id || 'bulk'} kos={kos} d={d}
       records={sheet.id ? records.filter(({ occ, open }) => occ.id === sheet.id && hasPhone(occ) && open.length) : eligible}
       onClose={sheet.id ? () => setSheet({ t: 'detail', id: sheet.id }) : close} />}
     {sheet?.t === 'detail' && detail && <OccDetail key={detail.occ.id} d={d} record={detail} owner={owner} go={setSheet} onClose={close} />}
@@ -164,33 +163,6 @@ function Entries({ rows, empty, render }) {
   if (!rows.length) return <p className="muted">{empty}</p>;
   return <><ul className={css.entries}>{rows.slice(0, limit).map((row) => <li key={row.id}>{render(row)}</li>)}</ul>
     {rows.length > limit && <button onClick={() => setLimit(limit + 12)}>Tampilkan lebih banyak</button>}</>;
-}
-
-function Reminder({ kos, d, records, onClose }) {
-  const [confirmedSet, setConfirmedSet] = useState(null);
-  const [opened, setOpened] = useState([]);
-  const drafts = records.map(({ occ, lease, open }) => {
-    const text = message('reminder', kos.wa_reminder_tpl, {
-      nama: occ.name, kos: kos.name, kamar: lease ? d.roomCode(lease.room_id) : '',
-      rincian: open.map((i) => `• ${invTitle(i)} · Kamar ${d.roomCode(i.room_id)} · jatuh tempo ${tgl(i.due_date)}: ${rp(i.outstanding)}`).join('\n'),
-      total: rp(total(open)), cara_bayar: caraBayar(kos.payment_info),
-    });
-    return { id: occ.id, occ, text, open };
-  });
-  const signature = JSON.stringify(drafts.map(({ id, occ, text }) => [id, occ.phone, text]));
-  const confirmed = confirmedSet === signature;
-  return <Sheet title="Pengingat tagihan" icon="message" subtitle="Konfirmasi oleh pemilik" onClose={onClose}>
-    <p>Periksa penerima dan isi pesan. Setelah konfirmasi, buka draf masing-masing penerima dan tekan Kirim di WhatsApp.</p>
-    <SheetStats items={[[ 'Penerima', drafts.length ], ['Total belum dibayar', rp(drafts.reduce((sum, row) => sum + total(row.open), 0))]]} />
-    <Entries rows={drafts} empty="Tidak ada penerima yang memiliki nomor WhatsApp dan tagihan terbuka." render={({ id, occ, text }) => <div className={css.entry}>
-      <b>{occ.name}</b><small>{occ.phone}</small>
-      <details><summary>Pratinjau pesan</summary><p className={css.preview}>{text}</p></details>
-      {confirmed && <a href={waLink(occ.phone, text)} target="_blank" rel="noreferrer" onClick={() => setOpened((prev) => prev.includes(id) ? prev : [...prev, id])}>
-        {opened.includes(id) ? 'Buka lagi di WhatsApp' : 'Buka draf WhatsApp'}</a>}
-    </div>} />
-    {!confirmed && <button className="primary" disabled={!drafts.length} onClick={() => { setConfirmedSet(signature); setOpened([]); }}>Konfirmasi {drafts.length} penerima</button>}
-    {confirmed && <small>{opened.filter((id) => drafts.some((row) => row.id === id)).length} dari {drafts.length} draf dibuka.</small>}
-  </Sheet>;
 }
 
 function OccDetail({ d, record, owner, go, onClose }) {
