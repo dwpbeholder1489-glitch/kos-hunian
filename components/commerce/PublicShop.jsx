@@ -23,6 +23,8 @@ const icons = {
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7m4-7v7',
   pin: 'M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
   check: 'm5 12 4 4L19 6',
+  info: 'M12 11v6m0-10h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',
+  share: 'M12 15V2m-4 4 4-4 4 4M7 9H4v12h16V9h-3', menu: 'M4 6h16M4 12h16M4 18h16',
   star: 'm12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z',
 };
 const links = [
@@ -49,25 +51,30 @@ function Bar({ title, subtitle, back, children }) {
   </header>;
 }
 
-function Stepper({ quantity, setQuantity }) {
+function Stepper({ quantity, setQuantity, cart = false }) {
+  const [draft, setDraft] = useState(null);
   return <div className={styles.stepper}>
-    <button type="button" aria-label="Kurangi jumlah" onClick={() => setQuantity(Math.max(1, Number(quantity) - 1))}>−</button>
-    <input aria-label="Jumlah" type="number" inputMode="decimal" min="0.001" max="1000000" step="0.001" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-    <button type="button" aria-label="Tambah jumlah" onClick={() => setQuantity(Math.min(1000000, Math.floor(Number(quantity)) + 1))}>+</button>
+    <button type="button" aria-label="Kurangi jumlah" onClick={() => { setDraft(null); setQuantity(Math.max(1, Number(quantity) - 1)); }}>−</button>
+    <input aria-label="Jumlah" type="number" inputMode="decimal" min="0.001" max="1000000" step="0.001" value={draft ?? quantity} onBlur={() => setDraft(null)} onChange={(event) => {
+      const value = event.target.value;
+      if (cart) setDraft(value);
+      setQuantity(value);
+    }} />
+    <button type="button" aria-label="Tambah jumlah" onClick={() => { setDraft(null); setQuantity(Math.min(1000000, Math.floor(Number(quantity)) + 1)); }}>+</button>
   </div>;
 }
 
-function UnitPicker({ product, unit, onChange, compact }) {
+function UnitPicker({ product, unit, onChange, compact, quoteOnly }) {
   return <fieldset className={compact ? styles.unitCards : styles.unitList}>
     <legend className={compact ? styles.sr : undefined}>Pilih Kemasan</legend>
     {product.units.map((option) => <label key={option.name}>
-      <span><b>{option.name}{Number(option.qty) !== 1 ? ` (${option.qty} ${product.base_unit})` : ''}</b><span>{rp(priceAt(option, 1))}</span></span>
+      <span><b>{option.name}{option.qty > 1 ? ` (${option.qty} ${product.base_unit})` : ''}</b><span>{quoteOnly ? 'Minta harga' : rp(priceAt(option, 1))}</span></span>
       <input type="radio" name={compact ? 'quick-unit' : 'detail-unit'} checked={unit.name === option.name} onChange={() => onChange(option)} />
     </label>)}
   </fieldset>;
 }
 
-function ProductSelection({ product, photos, quick, close, add, favorite, toggleFavorite }) {
+function ProductSelection({ product, photos, quick, close, add, favorite, toggleFavorite, quoteOnly }) {
   const [unit, setUnit] = useState(product.units.find((option) => option.available) || product.units[0]);
   const [quantity, setQuantity] = useState(1);
   const [activePhoto, setActivePhoto] = useState(0);
@@ -93,7 +100,7 @@ function ProductSelection({ product, photos, quick, close, add, favorite, toggle
     <div className={styles.sheetContent}>
       <header><Picture photo={photos[0]} name="" thumb className={styles.thumbnail} /><div><b id="quick-product">{product.name}</b>{product.packaging && <small>{product.packaging}</small>}</div>
         <button type="button" aria-label="Tutup pilihan kemasan" onClick={close} autoFocus><Icon name="close" /></button></header>
-      <UnitPicker product={product} unit={unit} onChange={setUnit} compact />
+      <UnitPicker product={product} unit={unit} onChange={setUnit} quoteOnly={quoteOnly} compact />
       {controls}
     </div>
   </dialog>;
@@ -109,10 +116,10 @@ function ProductSelection({ product, photos, quick, close, add, favorite, toggle
       <div>
         <h2>{product.name}</h2>
         <div className={styles.tags}>{[product.category, product.brand].filter(Boolean).map((tag, i) => <span key={i}>{tag}</span>)}</div>
-        <div className={styles.priceRow}><span><strong>{rp(priceAt(unit, Number(quantity)))}</strong> / {unit.name}</span>
+        {!quoteOnly && <div className={styles.priceRow}><span><strong>{rp(priceAt(unit, Number(quantity)))}</strong> / {unit.name}</span>
           <span className={unit.available ? styles.available : styles.unavailable}>{unit.available ? '✓ Tersedia' : 'Stok tidak tersedia'}</span>
-        </div>
-        <UnitPicker product={product} unit={unit} onChange={setUnit} />
+        </div>}
+        <UnitPicker product={product} unit={unit} onChange={setUnit} quoteOnly={quoteOnly} />
         <div className={styles.accordions}>
           {description && <details><summary>Deskripsi Produk</summary><p>{description}</p></details>}
           <details><summary>Informasi Produk</summary><dl>
@@ -128,11 +135,11 @@ function ProductSelection({ product, photos, quick, close, add, favorite, toggle
         </div>
       </div>
     </div>
-    <div className={styles.dock}>{controls}</div>
+    <div className={styles.productActions}>{controls}</div>
   </>;
 }
 
-function Catalog({ page, items, photos, go, contact, openQuick, favorites, toggleFavorite, count, current, initialMode }) {
+function Catalog({ page, items, photos, go, contact, openQuick, favorites, toggleFavorite, count, current, initialMode, focusSearch, quoteOnly }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('new');
@@ -142,10 +149,11 @@ function Catalog({ page, items, photos, go, contact, openQuick, favorites, toggl
   useEffect(() => { if (current === 'katalog') catalog.current?.scrollIntoView({ block: 'start' }); }, [current]);
   const categories = [...new Set(items.map((product) => product.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'id'));
   const matches = items.filter((product) => (!category || product.category === category) &&
-    (!mode || (mode === 'promo' ? product.units.some((unit) => unit.breaks.some((tier) => Number(tier.price) < Number(unit.price))) : favorites.includes(product.id))) &&
+    (!mode || (mode === 'promo' ? quoteOnly || product.units.some((unit) => unit.breaks.some((tier) => Number(tier.price) < Number(unit.price)))
+      : mode === 'paket' ? product.package : favorites.includes(product.id))) &&
     [product.name, product.sku, product.brand].some((value) => value?.toLowerCase().includes(search.trim().toLowerCase())));
   if (sort === 'name') matches.sort((a, b) => a.name.localeCompare(b.name, 'id'));
-  if (sort === 'price') matches.sort((a, b) => priceAt(a.units[0], 1) - priceAt(b.units[0], 1));
+  if (sort === 'price' && !quoteOnly) matches.sort((a, b) => priceAt(a.units[0], 1) - priceAt(b.units[0], 1));
   const cover = mediaUrl(page.media?.cover?.path) ||
     (/\bsembako\b/i.test([page.tagline, page.about, ...categories].join(' ')) ? '/portal-grosir.webp' : null);
   const logo = logoUrl(page.logo);
@@ -165,17 +173,17 @@ function Catalog({ page, items, photos, go, contact, openQuick, favorites, toggl
     <div className={styles.shortcuts}>
       <button type="button" className={mode === '' ? styles.active : ''} onClick={() => browse('')}><Icon name="/penjualan" size={25} />Belanja</button>
       <button type="button" className={mode === 'promo' ? styles.active : ''} onClick={() => browse('promo')}><Icon name="/promo" size={23} />Promo</button>
-      <button type="button" onClick={() => go('penawaran')}><Icon name="/tagihan" size={23} /><span>Minta<br /> Penawaran</span></button>
+      <button type="button" onClick={() => go('layanan')}><Icon name="/tagihan" size={23} />Layanan Toko</button>
       <button type="button" onClick={() => go('info')}><Icon name="/bisnis" size={23} />Info Toko</button>
     </div>
     <section ref={catalog} className={styles.catalog}>
-      <label className={styles.search}><Icon name="search" /><input type="search" placeholder="Cari nama barang, kode, merek..." aria-label="Cari produk" value={search} onChange={(e) => setSearch(e.target.value)} /></label>
+      <label className={styles.search}><Icon name="search" /><input autoFocus={focusSearch} type="search" placeholder="Cari nama barang, kode, merek..." aria-label="Cari produk" value={search} onChange={(e) => setSearch(e.target.value)} /></label>
       <div className={styles.filters}>
         <button type="button" aria-pressed={!category} onClick={() => setCategory('')}><Icon name="/operasional" size={16} />Semua</button>
         {categories.map((name) => <button type="button" key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name}</button>)}
       </div>
-      <div className={styles.catalogHead}><h2>{mode === 'promo' ? 'Harga beli banyak' : mode === 'favorit' ? 'Produk Favorit' : 'Katalog Produk'}</h2>
-        <select aria-label="Urutkan produk" value={sort} onChange={(e) => setSort(e.target.value)}><option value="new">Terbaru</option><option value="name">Nama A–Z</option><option value="price">Harga terendah</option></select>
+      <div className={styles.catalogHead}><h2>{mode === 'promo' ? quoteOnly ? 'Belanja Grosir' : 'Harga beli banyak' : mode === 'paket' ? 'Paket Usaha' : mode === 'favorit' ? 'Produk Favorit' : 'Katalog Produk'}</h2>
+        <select aria-label="Urutkan produk" value={sort} onChange={(e) => setSort(e.target.value)}><option value="new">Terbaru</option><option value="name">Nama A–Z</option>{!quoteOnly && <option value="price">Harga terendah</option>}</select>
         <button type="button" aria-label="Tampilan kisi" aria-pressed={!list} onClick={() => setList(false)}><Icon name="/operasional" size={18} /></button>
         <button type="button" aria-label="Tampilan daftar" aria-pressed={list} onClick={() => setList(true)}><Icon name="/catatan" size={18} /></button>
       </div>
@@ -189,11 +197,11 @@ function Catalog({ page, items, photos, go, contact, openQuick, favorites, toggl
             <span><b>{product.name}</b>{product.packaging && <small>{product.packaging}</small>}</span>
           </button>
           <button className={`${styles.favorite} ${favorite ? styles.favorited : ''}`} type="button" aria-label={`Favorit ${product.name}`} aria-pressed={favorite} onClick={() => toggleFavorite(product.id)}><Icon name="heart" size={18} /></button>
-          <div className={styles.cardFoot}><strong>{rp(priceAt(unit, 1))}</strong>
+          <div className={styles.cardFoot}><strong>{quoteOnly ? 'Minta harga' : rp(priceAt(unit, 1))}</strong>
             {inStock ? <button type="button" className={styles.primary} aria-label={`Tambah ${product.name}`} onClick={() => openQuick(product)}><Icon name="/penjualan" /></button> : <small>Habis</small>}
           </div>
         </article>;
-      })}</div> : <p className={styles.empty}>{mode === 'promo' ? 'Belum ada harga beli banyak.' : mode === 'favorit' ? 'Belum ada produk favorit.' : 'Tidak ada produk yang cocok.'}</p>}
+      })}</div> : <p className={styles.empty}>{mode === 'promo' ? 'Belum ada harga beli banyak.' : mode === 'favorit' ? 'Belum ada produk favorit.' : mode === 'paket' ? 'Belum ada paket usaha di katalog.' : 'Tidak ada produk yang cocok.'}</p>}
     </section>
     <nav className={`${styles.dock} ${styles.nav}`} aria-label="Navigasi portal">{links.map(([screen, label, icon]) =>
       <button key={screen} type="button" aria-current={current === screen ? 'page' : undefined} onClick={() => screen === 'katalog' ? (go(screen), browse('')) : screen === 'beranda' ? (setMode(''), go(screen)) : go(screen)}>
@@ -203,23 +211,96 @@ function Catalog({ page, items, photos, go, contact, openQuick, favorites, toggl
   </>;
 }
 
-function Cart({ lines, selected, toggle, setQty, photos, total, canCheckout, proceed, clear, go }) {
-  return <>
-    <Bar title="Keranjang Belanja" back={() => go('beranda')}>
-      {lines.length > 0 && <button type="button" aria-label="Hapus barang terpilih" onClick={clear} disabled={!lines.some((line) => selected(lineKey(line)))}><Icon name="trash" /></button>}
-    </Bar>
-    {lines.length ? <div className={styles.cart}>{lines.map((line) => <div className={styles.cartItem} key={lineKey(line)}>
-      <input type="checkbox" aria-label={`Pilih ${line.pr.name} (${line.unit})`} checked={selected(lineKey(line))} onChange={() => toggle(lineKey(line))} />
-      <button className={styles.cartProduct} type="button" onClick={() => go('produk', line.pr.id)}>
-        <Picture photo={photos[line.pr.id]?.[0]} name="" thumb className={styles.thumbnail} />
-        <span><b>{line.pr.name}</b><small>{line.unit}{line.u.qty > 1 ? ` (${line.u.qty} ${line.pr.base_unit})` : ''}</small><strong>{rp(line.total)}</strong>{!line.u.available && <small className={styles.unavailable}>Stok tidak tersedia</small>}</span>
+function PortalFooter() {
+  return <footer className={styles.powered}>Powered by <b>PRASARA</b></footer>;
+}
+
+const serviceLinks = [
+  ['Belanja Grosir', 'Pembelian jumlah besar dengan harga lebih hemat', '/barang', 'katalog', 'grosir'],
+  ['Daftar Kebutuhan', 'Kirim daftar belanja (Excel, PDF, atau foto)', '/catatan', 'permintaan', 'daftar'],
+  ['Paket Usaha', 'Pilihan paket kebutuhan usaha Anda', '/operasional', 'katalog', 'paket'],
+  ['Cari Barang', 'Ajukan barang di luar katalog', 'search', 'permintaan', 'cari'],
+  ['Penawaran Saya', 'Lihat status dan harga yang diajukan', '/tagihan', 'riwayat-penawaran'],
+  ['Hubungi Toko', 'Konsultasikan kebutuhan Anda langsung via chat', '/crm', 'chat'],
+];
+
+function StoreServices({ page, count, unread, go, canQuote }) {
+  const logo = logoUrl(page.logo);
+  return <div className={styles.storeServices}>
+    <header className={styles.serviceHeader}>
+      <span className={styles.serviceLogo}>{logo ? <img src={logo} alt="" /> : <Icon name="/penjualan" />}</span>
+      <div className={styles.serviceIdentity}><b>{page.name}</b>{page.tagline && <small>{page.tagline}</small>}</div>
+      <button type="button" aria-label="Cari di katalog" onClick={() => go('katalog', 'cari')}><Icon name="search" /></button>
+      <button type="button" className={styles.cartShortcut} aria-label={`Keranjang Belanja (${count})`} onClick={() => go('keranjang')}><Icon name="/penjualan" />{count > 0 && <i>{count}</i>}</button>
+      <details className={styles.serviceMenu}><summary aria-label="Menu toko"><Icon name="menu" /></summary><div>
+        <button type="button" onClick={() => go('beranda')}>Beranda Toko</button>
+        <button type="button" onClick={() => go('pesanan')}>Pesanan Saya</button>
+        <button type="button" onClick={() => go('info')}>Info Toko</button>
+      </div></details>
+    </header>
+    <section className={styles.serviceHero}>
+      <div><h1>Layanan Toko</h1><p>Solusi belanja untuk kebutuhan pribadi dan usaha Anda.</p></div>
+      <img src="/retail/prasara-maskot.webp" alt="" />
+    </section>
+    <div className={styles.serviceGrid}>{serviceLinks.map(([title, description, icon, screen, mode], index) =>
+      <button type="button" key={title} className={index >= 4 ? styles.serviceWide : undefined} disabled={screen === 'permintaan' && !canQuote} onClick={() => go(screen, mode)}>
+        <span className={styles.serviceIcon}><Icon name={icon} /></span>
+        <span><b>{title}</b><small>{description}</small></span>
+        {screen === 'chat' && unread > 0 && <span className={styles.unreadBadge}>{unread}</span>}
+        <Icon name="next" size={16} />
       </button>
-      <Stepper quantity={line.qty} setQuantity={(qty) => { if (Number(qty) > 0) setQty(line.product_id, line.unit, qty); }} />
-    </div>)}</div> : <p className={styles.empty}>Keranjang masih kosong.</p>}
-    <div className={`${styles.dock} ${styles.summary}`}><div><small>Total ({lines.filter((line) => selected(lineKey(line))).length} Produk)</small><strong>{rp(total)}</strong></div>
-      <button type="button" className={styles.primary} disabled={!canCheckout} onClick={proceed}>Lanjut ke Checkout</button>
+    )}</div>
+    <p className={styles.serviceHelp}>{canQuote ? <>Butuh harga khusus? Tambahkan barang ke keranjang, lalu pilih <b>Ajukan Penawaran.</b></> : <>Toko belum menerima pengajuan penawaran dari portal. Hubungi toko untuk menanyakan harga khusus.</>}</p>
+    <PortalFooter />
+  </div>;
+}
+
+function Cart({ page, lines, chosen, selected, toggle, toggleAll, setQty, photos, total, canCheckout, canQuote, quoteOnly, proceed, clear, go, share }) {
+  const [showHelp, setShowHelp] = useState(true);
+  const selectAll = useRef(null);
+  const all = lines.length > 0 && chosen.length === lines.length;
+  useEffect(() => {
+    if (selectAll.current) selectAll.current.indeterminate = chosen.length > 0 && !all;
+  }, [chosen.length, all]);
+  return <div className={styles.cartScreen}>
+    <header className={styles.cartHeader}>
+      <button type="button" aria-label="Kembali ke katalog" onClick={() => go('katalog')}><Icon name="back" /></button>
+      <div><h1>Keranjang Belanja</h1><small>{page.name}</small></div>
+      <button type="button" aria-label="Bagikan tautan toko" onClick={share}><Icon name="share" /></button>
+      <button type="button" aria-label="Hapus barang terpilih" onClick={clear} disabled={!chosen.length}><Icon name="trash" /></button>
+    </header>
+    <div className={styles.cartLayout}>
+      <div className={styles.cartItems}>
+        {canQuote && showHelp && <div className={styles.cartHelp}><span className={styles.serviceIcon}><Icon name="/promo" size={21} /></span>
+          <p>{quoteOnly ? <>Pilih barang lalu <b>Ajukan Penawaran</b> untuk meminta harga dari toko.</> : <>Pilih lanjutan sesuai kebutuhan Anda. <b>Checkout</b> untuk pembelian langsung atau <b>Ajukan Penawaran</b> untuk harga khusus.</>}</p>
+          <button type="button" aria-label="Sembunyikan petunjuk" onClick={() => setShowHelp(false)}><Icon name="close" size={20} /></button>
+        </div>}
+        {lines.length ? <>
+          <div className={styles.cartSelect}><label><input ref={selectAll} type="checkbox" checked={all} onChange={toggleAll} />Pilih Semua ({lines.length})</label>
+            <button type="button" className={styles.textAction} onClick={clear} disabled={!chosen.length}>Hapus yang dipilih</button>
+          </div>
+          <div className={styles.cart}>{lines.map((line) => <div className={styles.cartItem} key={lineKey(line)}>
+            <input type="checkbox" aria-label={`Pilih ${line.pr.name} (${line.unit})`} checked={selected(lineKey(line))} onChange={() => toggle(lineKey(line))} />
+            <button className={styles.cartProduct} type="button" onClick={() => go('produk', line.pr.id)}>
+              <Picture photo={photos[line.pr.id]?.[0]} name="" thumb className={styles.thumbnail} />
+              <span><b>{line.pr.name}</b><small>Satuan: {line.unit}{line.u.qty > 1 ? ` (${line.u.qty} ${line.pr.base_unit})` : ''}</small>
+                {!quoteOnly && <strong>{rp(line.total)}</strong>}{!quoteOnly && !line.u.available && <small className={styles.unavailable}>Stok tidak tersedia</small>}</span>
+            </button>
+            <Stepper cart quantity={line.qty} setQuantity={(qty) => { if (Number(qty) >= 0.001 && Number(qty) <= 1000000) setQty(line.product_id, line.unit, qty); }} />
+            <button type="button" className={styles.removeItem} aria-label={`Hapus ${line.pr.name} (${line.unit})`} onClick={() => setQty(line.product_id, line.unit, 0)}><Icon name="trash" size={17} /></button>
+          </div>)}</div>
+        </> : <div className={styles.emptyCart}><Icon name="/penjualan" size={36} /><h2>Keranjang masih kosong</h2><button className={styles.textAction} type="button" onClick={() => go('katalog')}>Buka katalog</button></div>}
+      </div>
+      <div className={styles.cartActions}>
+        <div className={styles.cartTotal}><span><Icon name="/barang" size={20} />Total {chosen.length} pilihan barang</span>
+          <strong>{quoteOnly ? 'Harga menyusul' : rp(total)}</strong></div>
+        {!quoteOnly && <button type="button" className={styles.primary} disabled={!canCheckout} onClick={proceed}><Icon name="/penjualan" /><span>Lanjut ke Checkout</span><Icon name="next" size={18} /></button>}
+        {canQuote && <><button type="button" className={styles.outlineAction} disabled={!chosen.length} onClick={() => go('permintaan')}><Icon name="/catatan" /><span>Ajukan Penawaran</span><Icon name="next" size={18} /></button>
+        <p className={styles.cartNote}><Icon name="info" size={18} /><span>Ajukan penawaran untuk meminta harga khusus, terutama untuk pembelian dalam jumlah besar.</span></p></>}
+      </div>
     </div>
-  </>;
+    <PortalFooter />
+  </div>;
 }
 
 function Checkout({ page, pay, lines, back, submit, ready }) {
@@ -263,7 +344,7 @@ function Checkout({ page, pay, lines, back, submit, ready }) {
       </fieldset>
       {!lines.length && <p className={styles.empty}>Pilih barang di keranjang untuk melanjutkan.</p>}
       {error && <p role="alert" className={styles.error}>{error}</p>}
-      <div className={`${styles.dock} ${styles.summary} ${styles.checkoutDock}`}>
+      <div className={styles.checkoutDock}>
         <div><small>Total Barang</small><strong>{rp(money(lines))}</strong></div>
         <button type="submit" className={styles.primary} disabled={!ready || !lines.length || busy}>{busy ? 'Mengirim…' : 'Buat Pesanan'}</button>
       </div>
@@ -275,7 +356,7 @@ function Orders({ orders, error, refresh, go, photos, quotes = false }) {
   const [filter, setFilter] = useState('Semua');
   const visible = orders?.filter((order) => filter === 'Semua' || orderStatus(order) === filter);
   return <>
-    <Bar title={quotes ? "Riwayat Permintaan" : "Pesanan Saya"} back={() => go(quotes ? 'penawaran' : 'beranda')} />
+    <Bar title={quotes ? "Penawaran Saya" : "Pesanan Saya"} back={() => go(quotes ? 'layanan' : 'beranda')} />
     <div className={styles.filters}>{orderFilters.map((status) => <button type="button" key={status} aria-pressed={filter === status} onClick={() => setFilter(status)}>{status}</button>)}</div>
     {error && <p role="alert" className={styles.error}>{error} <button type="button" onClick={refresh}>Coba lagi</button></p>}
     {!orders && !error && <p className={styles.empty}>Memuat pesanan…</p>}
@@ -387,9 +468,16 @@ function readScreen() {
 
 export default function PublicShop({ page, shop, quoteCatalog, initialScreen, quoteOnly = false }) {
   const photos = page.media?.items || {};
-  const products = useMemo(() => new Map(shop.items.map((item) => [item.id, item])), [shop.items]);
+  const items = useMemo(() => {
+    if (quoteOnly) return quoteCatalog.map((item) => ({
+      ...item,
+      units: item.units.map((unit) => ({ ...unit, price: 0, available: true, breaks: [] })),
+    }));
+    const packages = new Set(quoteCatalog?.filter((item) => item.package).map((item) => item.id));
+    return shop.items.map((item) => ({ ...item, package: item.package || packages.has(item.id) }));
+  }, [quoteOnly, quoteCatalog, shop.items]);
+  const products = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
   const [screen, setScreen] = useState(initialScreen || ['beranda', null]);
-  const [repeatQuote, setRepeatQuote] = useState(null);
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [initialized, setInitialized] = useState(false);
@@ -406,7 +494,8 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   const lines = cartLines(cart, products);
   const selected = (key) => !excluded.includes(key);
   const chosen = lines.filter((line) => selected(lineKey(line)));
-  const canCheckout = chosen.length > 0 && chosen.every((line) => line.u.available);
+  const canQuote = Array.isArray(quoteCatalog);
+  const canCheckout = !quoteOnly && chosen.length > 0 && chosen.every((line) => line.u.available);
   const contact = page.wa_phone ? waLink(page.wa_phone, `Halo ${page.name}, saya lihat halaman toko Anda.`) : null;
   const [view, id] = screen;
   const product = products.get(id);
@@ -431,6 +520,7 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
       const saved = JSON.parse(localStorage.getItem(storage) || '{}');
       if (Array.isArray(saved?.cart)) setCart(saved.cart.filter((line) => line && typeof line.product_id === 'string'));
       if (Array.isArray(saved?.favorites)) setFavorites(saved.favorites);
+      if (Array.isArray(saved?.excluded)) setExcluded(saved.excluded);
     } catch {}
     setInitialized(true);
     window.addEventListener('popstate', restore);
@@ -438,8 +528,8 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   }, [storage]);
   useEffect(() => {
     if (!initialized) return;
-    try { localStorage.setItem(storage, JSON.stringify({ cart, favorites })); } catch {}
-  }, [storage, initialized, cart, favorites]);
+    try { localStorage.setItem(storage, JSON.stringify({ cart, favorites, excluded })); } catch {}
+  }, [storage, initialized, cart, favorites, excluded]);
   useEffect(() => {
     if (!notice) return;
     const timeout = setTimeout(() => setNotice(''), 2800);
@@ -458,9 +548,9 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
     return pendingLoad.current;
   }
   useEffect(() => {
-    if (!['checkout', 'penawaran', 'permintaan', 'pesanan', 'riwayat-penawaran', 'lacak', 'chat', 'info'].includes(view)) return;
+    if (!['checkout', 'layanan', 'penawaran', 'permintaan', 'pesanan', 'riwayat-penawaran', 'lacak', 'chat', 'info'].includes(view)) return;
     refresh();
-    if (view !== 'lacak' && view !== 'pesanan' && view !== 'riwayat-penawaran' && view !== 'info') return;
+    if (view !== 'lacak' && view !== 'pesanan' && view !== 'riwayat-penawaran' && view !== 'info' && view !== 'layanan' && view !== 'penawaran') return;
     const timer = setInterval(() => { if (!document.hidden) refresh(); }, 15000);
     return () => clearInterval(timer);
   }, [view, endpoint]); // refresh memakai endpoint yang sama selama tampilan aktif
@@ -492,7 +582,7 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
       const keys = new Set(payload.lines.map(lineKey));
       setCart((old) => old.filter((line) => !keys.has(lineKey(line))));
     }
-    setRepeatQuote(null);
+    if (pendingLoad.current) await pendingLoad.current;
     await refresh();
     go('lacak', data.id);
   }
@@ -515,18 +605,42 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
     await refresh();
     setNotice('Penilaian tersimpan.');
   }
-  if (view === 'penawaran' || view === 'permintaan') return <main className={styles.quotePage} data-screen="penawaran">
-    {networkError && <p role="alert" className={styles.error}>{networkError} <button type="button" onClick={refresh}>Coba lagi</button></p>}
-    <QuoteRequest page={page} products={quoteCatalog || shop.items} cart={quoteOnly ? null : chosen} go={go} submit={submit} ready={orders !== null} repeat={repeatQuote} />
-  </main>;
+  async function shareStore() {
+    const url = new URL(window.location.pathname, window.location.href).href;
+    try {
+      if (navigator.share) await navigator.share({ title: page.name, url });
+      else { await navigator.clipboard.writeText(url); setNotice('Tautan toko disalin'); }
+    } catch (error) {
+      if (error.name !== 'AbortError') setNotice('Tautan toko tidak dapat dibagikan');
+    }
+  }
+  function repeat(previous) {
+    const available = (previous.lines || []).filter((line) => products.get(line.product_id)?.units.some((unit) => unit.name === line.unit));
+    if (!available.length) { go('layanan'); return; }
+    setCart((current) => available.reduce((next, line) => {
+      const existing = next.find((entry) => lineKey(entry) === lineKey(line));
+      return updateCart(next, line.product_id, line.unit, Math.max(Number(line.qty), existing?.qty || 0));
+    }, current));
+    setExcluded([]);
+    go('keranjang');
+  }
   let content;
-  if (view === 'produk' && product) content = <ProductSelection key={product.id} product={product} photos={photos[product.id] || []}
-    close={() => go('katalog')} add={add} favorite={favorites.includes(product.id)} toggleFavorite={() => favorite(product.id)} />;
-  else if (view === 'keranjang') content = <Cart lines={lines} photos={photos} selected={selected} total={money(chosen)} canCheckout={canCheckout} go={go}
+  if (view === 'layanan' || view === 'penawaran') content = <StoreServices page={page} count={lines.length} unread={unreadGeneral} go={go} canQuote={canQuote} />;
+  else if (view === 'permintaan') content = <>
+    <Bar title={id === 'daftar' ? 'Daftar Kebutuhan' : id === 'cari' ? 'Cari Barang' : 'Ajukan Penawaran'} subtitle={page.name}
+      back={() => go(id === 'daftar' || id === 'cari' ? 'layanan' : 'keranjang')} />
+    {networkError && <p role="alert" className={styles.error}>{networkError} <button type="button" onClick={refresh}>Coba lagi</button></p>}
+    {canQuote ? <QuoteRequest key={id || 'cart'} page={page} lines={id === 'daftar' || id === 'cari' ? [] : chosen} mode={id} go={go} submit={submit} ready={orders !== null} /> : <p className={styles.empty}>Toko belum menerima pengajuan penawaran dari portal.</p>}
+    <PortalFooter />
+  </>;
+  else if (view === 'produk' && product) content = <ProductSelection key={product.id} product={product} photos={photos[product.id] || []}
+    close={() => go('katalog')} add={add} quoteOnly={quoteOnly} favorite={favorites.includes(product.id)} toggleFavorite={() => favorite(product.id)} />;
+  else if (view === 'keranjang') content = <Cart page={page} lines={lines} chosen={chosen} photos={photos} selected={selected} total={money(chosen)} canCheckout={canCheckout} canQuote={canQuote} quoteOnly={quoteOnly} go={go}
     toggle={(key) => setExcluded((old) => old.includes(key) ? old.filter((item) => item !== key) : [...old, key])}
+    toggleAll={() => setExcluded(chosen.length === lines.length ? lines.map(lineKey) : [])}
     setQty={(...args) => setCart((old) => updateCart(old, ...args))} proceed={() => go('checkout')}
-    clear={() => setCart((old) => old.filter((line) => !selected(lineKey(line))))} />;
-  else if (view === 'checkout') content = <>
+    clear={() => setCart((old) => old.filter((line) => !selected(lineKey(line))))} share={shareStore} />;
+  else if (view === 'checkout' && !quoteOnly) content = <>
     <Checkout page={page} pay={shop.pay} lines={chosen} back={() => go('keranjang')} submit={submit} ready={orders !== null && canCheckout} />
     {networkError && <p role="alert" className={styles.error}>{networkError} <button type="button" onClick={refresh}>Coba lagi</button></p>}
   </>;
@@ -536,9 +650,9 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   </>;
   else if (view === 'riwayat-penawaran') content = <Orders quotes orders={orders?.filter((row) => row.kind === 'penawaran')} photos={photos} error={networkError} refresh={refresh} go={go} />;
   else if (view === 'pesanan') content = <Orders orders={orders} photos={photos} error={networkError} refresh={refresh} go={go} />;
-  else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} respond={respond} repeat={(previous) => { setRepeatQuote(previous); go('penawaran'); }} endpoint={endpoint} photos={photos} />;
+  else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} respond={respond} repeat={repeat} endpoint={endpoint} photos={photos} />;
   else if (view === 'chat') content = <>
-    <CustomerChat key={id || 'umum'} endpoint={endpoint} refId={id || 'umum'} title={page.name} back={() => (id ? go('lacak', id) : go('info'))}
+    <CustomerChat key={id || 'umum'} endpoint={endpoint} refId={id || 'umum'} title={page.name} back={() => (id ? go('lacak', id) : go('layanan'))}
       whatsapp={page.wa_phone ? waLink(page.wa_phone, `Halo ${page.name}${order ? `, saya ingin menanyakan pesanan ${order.number}` : ''}.`) : null}
       onOpenReference={(ref) => go('lacak', ref.id)} onPay={shop.pay ? () => go('bayar') : undefined}
       onCard={(kind, p) => { if (kind === 'produk' && products.get(p.product_id)) go('produk', p.product_id); else if (kind === 'penawaran') go('lacak', p.order_id); }} />
@@ -551,16 +665,16 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
       {contact && <a className={styles.waLink} href={contact} target="_blank" rel="noreferrer">atau hubungi lewat WhatsApp</a>}
       {page.links?.filter((link) => /^https?:\/\//i.test(link.url)).map((link) => <p key={link.url}><a href={link.url} target="_blank" rel="noreferrer">{link.label}</a></p>)}
       <button type="button" onClick={() => go('favorit')}><Icon name="heart" />Produk Favorit</button>
-      <button type="button" onClick={() => go('penawaran')}><Icon name="/tagihan" />Minta Penawaran</button>
+      <button type="button" onClick={() => go('layanan')}><Icon name="/tagihan" />Layanan Toko</button>
       <a href="/panduan">Panduan PRASARA</a>
     </section>
     <PublicGallery items={page.media?.gallery} title="Galeri Toko" />
   </>;
-  else content = <Catalog key={view === 'favorit' ? 'favorit' : 'catalog'} page={page} items={shop.items} photos={photos} go={go} contact={contact} favorites={favorites} toggleFavorite={favorite}
-    count={lines.length} current={['katalog', 'favorit'].includes(view) ? 'katalog' : 'beranda'} openQuick={setQuick} initialMode={view === 'favorit' ? 'favorit' : ''} />;
-  return <main className={styles.portal} data-screen={view}>
+  else content = <Catalog key={view === 'favorit' ? 'favorit' : id || 'catalog'} page={page} items={items} photos={photos} go={go} contact={contact} favorites={favorites} toggleFavorite={favorite}
+    count={lines.length} current={['katalog', 'favorit'].includes(view) ? 'katalog' : 'beranda'} openQuick={setQuick} initialMode={view === 'favorit' ? 'favorit' : view === 'katalog' && id === 'grosir' ? 'promo' : view === 'katalog' && id === 'paket' ? 'paket' : ''} quoteOnly={quoteOnly} focusSearch={view === 'katalog' && id === 'cari'} />;
+  return <main className={styles.portal} data-screen={view} data-no-field-help>
     {content}
-    {quick && <ProductSelection key={quick.id} quick product={quick} photos={photos[quick.id] || []} close={() => setQuick(null)} add={add} />}
+    {quick && <ProductSelection key={quick.id} quick quoteOnly={quoteOnly} product={quick} photos={photos[quick.id] || []} close={() => setQuick(null)} add={add} />}
     {notice && <div className={styles.notice} role="status"><span>{notice}</span>{notice.endsWith('ke keranjang') && <button type="button" onClick={() => { setNotice(''); go('keranjang'); }}>Lihat</button>}</div>}
   </main>;
 }
