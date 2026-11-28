@@ -1098,6 +1098,21 @@ const PARTS = [
       <>Dari detail pesanan, <b>Chat pelanggan</b> membuka percakapan pesanan itu (tidak mengirim apa pun ke pelanggan). Pemilik bisa mematikan chat dan menyusun <b>Balasan cepat</b> (maks. 10) di <b>Setelan chat</b>.</>,
     ], <>Semua pesan & lampiran tersimpan privat per bisnis; pelanggan hanya bisa membuka transaksinya sendiri (cookie browser, link pribadi, atau nomor pesanan + No. HP). WhatsApp otomatis dan GPS kurir belum tersedia (Dalam rencana).</>, 'info', <ScrTrackingPesanan />],
   ]],
+  ['AQ', 'Analisis: Kinerja & Profitabilitas', [
+    ['Membaca profitabilitas, margin, biaya & titik impas', 'Analisis Bisnis › Profitabilitas', [
+      <>Buka <b>Analisis Bisnis</b> → tab <b>Profitabilitas</b>. Periode, pembanding, cabang (Pro), dan kategori produk mengikuti tombol periode/Filter di atas.</>,
+      <>Setiap angka diberi tanda: <b>AKTUAL</b> (tercatat di PRASARA), <b>ESTIMASI</b> (dihitung dari catatan + asumsi tertulis), <b>PROYEKSI</b> (laju periode yang sedang berjalan sampai akhir periode). Kotak <b>Data belum lengkap</b> muncul bila datanya belum cukup (mis. kurang dari 5 transaksi, barang tanpa harga modal, belum ada biaya tetap).</>,
+      <><b>Ringkas</b>: pendapatan bersih, laba bersih, margin bersih, titik impas, tren 12 bulan, komposisi laba, produk paling menguntungkan, efisiensi biaya, kebocoran, dan <b>Insight & rekomendasi</b> (aturan tertulis dengan angka buktinya, bukan tebakan). Ketuk tombol pada rekomendasi untuk langsung ke bagian terkait.</>,
+      <><b>Profitabilitas</b> & <b>Margin</b>: laba kotor dan margin per produk/kategori (toko), per layanan (jasa — laba hanya bila ada resep/bahan), per kamar (kos — uang masuk & hunian), dan per cabang (Pro; biaya tanpa lokasi = baris "Tanpa lokasi"). Ketuk baris untuk melihat transaksi asalnya.</>,
+      <><b>Biaya</b>: biaya tetap vs variabel, rasio HPP & biaya operasional, biaya per transaksi, per kategori pengeluaran (dengan anggaran) dan per akun jurnal. Kategori yang tumbuh jauh lebih cepat dari pendapatan ditandai <b>Peringatan</b>.</>,
+      <><b>Titik Impas</b>: BEP = biaya tetap ÷ rasio margin kontribusi. Biaya tetap = kategori pengeluaran bertanda <b>Biaya tetap bulanan</b> (centang di Anggaran › Atur Anggaran) + penyusutan + bunga; sisanya variabel. Tanpa biaya tetap, BEP tidak dihitung.</>,
+    ], <>Semua angka uang dari jurnal Pembukuan (sama dengan Laporan Keuangan); per produk dari baris penjualan. Paket Dasar: Ringkas, Biaya & Titik Impas untuk bulan ini & bulan lalu. Paket Bisnis: semua bagian + rincian transaksi. Paket Pro: per cabang.</>, null, null, 'bisnis'],
+    ['Kebocoran laba, peluang terlewat & pendorong omzet', 'Analisis Bisnis › Profitabilitas › Kebocoran · Peluang · Pendorong Omzet', [
+      <><b>Kebocoran</b> (menyesuaikan jenis bisnis): toko — diskon manual kasir, jual di bawah modal, barang rusak/kedaluwarsa, selisih stok kurang, kas laci kurang (Aktual); retur, batal, promo (Info); piutang lewat 90 hari (Risiko). Jasa — diskon, ganti rugi, bahan rusak, kerja ulang, batal. Kos — tagihan dibatalkan manual, tunggakan. Ketuk untuk melihat transaksi asalnya.</>,
+      <><b>Peluang</b> (ESTIMASI): penjualan hilang karena stok habis (toko), sewa hilang karena kamar kosong (kos), laba dari pesanan batal (jasa/kuliner), biaya dana piutang terlambat, dan imbal hasil kas menganggur. Dua yang terakhir butuh <b>Suku bunga acuan</b> yang Anda isi sendiri (mis. bunga pinjaman atau deposito) — tidak ada angka bawaan.</>,
+      <><b>Pendorong Omzet</b>: pilih pembanding di filter, lalu baca berapa perubahan pendapatan yang berasal dari jumlah transaksi dan dari nilai rata-rata per transaksi, plus produk/layanan/kamar yang paling naik & turun.</>,
+    ], <>Kebocoran bukan tuduhan: hanya yang tercatat yang terlihat — lakukan stok opname rutin. Peluang adalah perkiraan dengan rumus tertulis di layar, bukan uang yang hilang dari kas.</>, 'warn', null, 'bisnis'],
+  ]],
 ];
 
 const RULES = [

@@ -22,6 +22,7 @@ import { DetailSheet, JournalLines } from './Details';
 import { BudgetModule, CashModule, FinancialsModule, InvestModule, MapModule, ReportsModule, TaxModule } from './Modules';
 import ScenarioModule from './Scenario';
 import IndustryModule from './Industry';
+import ProfitModule from './Profit';
 import styles from './analisis.module.css';
 
 const n = (v) => Number(v || 0);
@@ -53,7 +54,7 @@ export default function Analisis() {
 
 // Filter universal: di URL (bertahan saat pindah halaman & kembali) + cadangan per perangkat
 // Modul pusat analisis (Master Blueprint BI V2.0) — lapisan presentasi atas mesin yang sudah ada
-const MODS = [['ringkasan', 'Ringkasan'], ['keuangan', 'Laporan Keuangan'], ['kas', 'Arus Kas'], ['pajak', 'Pajak'], ['anggaran', 'Anggaran'], ['skenario', 'Skenario'], ['industri', 'KPI Industri'], ['investasi', 'Investasi & Valuasi'], ['laporan', 'Laporan & Portofolio'], ['peta', 'Peta Modul']];
+const MODS = [['ringkasan', 'Ringkasan'], ['profit', 'Profitabilitas'], ['keuangan', 'Laporan Keuangan'], ['kas', 'Arus Kas'], ['pajak', 'Pajak'], ['anggaran', 'Anggaran'], ['skenario', 'Skenario'], ['industri', 'KPI Industri'], ['investasi', 'Investasi & Valuasi'], ['laporan', 'Laporan & Portofolio'], ['peta', 'Peta Modul']];
 
 function readFilter(search, kosId) {
   const get = (k) => search.get(k) || '';
@@ -232,7 +233,7 @@ function Center({ kos, kosId, ver }) {
   ];
   const topicCard = <section className={`${styles.card} ${styles.topics}`} aria-labelledby="atl">
     <h2 id="atl" className={styles.cardT}><span className={styles.tIco}><NavIcon name="/layers" size={20} /></span>Analisis &amp; Tindak Lanjut</h2>
-    <ul>{TOPICS.map(([key, t, s, ico]) => <li key={key}><button type="button" onClick={() => open({ type: 'topic', key })}>
+    <ul>{TOPICS.map(([key, t, s, ico]) => <li key={key}><button type="button" onClick={() => (key === 'profit' ? set({ m: 'profit' }) : open({ type: 'topic', key }))}>
       <span className={styles.topIco}>{ico}</span>
       <span><b>{t}</b><small>{s}</small></span><NavIcon name="next" size={16} /></button></li>)}</ul>
   </section>;
@@ -355,6 +356,7 @@ function Center({ kos, kosId, ver }) {
   const modProps = { kosId, range, cmp, ver, owner, jenis: d.jenis, retail: kasRetail };
   if (f.m !== 'ringkasan') return <div className={styles.page}>
     {header}{filterSheet}{modNav}{notes}
+    {f.m === 'profit' && <ProfitModule {...modProps} branch={f.cabang} category={f.kat} />}
     {f.m === 'keuangan' && <FinancialsModule {...modProps} />}
     {f.m === 'kas' && <CashModule {...modProps} />}
     {f.m === 'pajak' && <TaxModule {...modProps} />}
