@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
 import { DataTable, FilterToolbar } from '@/components/Page';
+import { SheetEmpty } from '@/components/SmartDetailSheet';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import CrmTimeline from '@/components/CrmTimeline';
 import { rp, tgl, errMsg, waLink, angka, parseRp, today } from '@/lib/format';
@@ -104,7 +105,6 @@ function ContactsWorkspace({ kosId, kos, ver, fin, bump }) {
       <div className={styles.actions}>
         {fin && <button onClick={() => setOpen({ kind: 'pelanggan' })}><NavIcon name="/penghuni" />＋ Pelanggan</button>}
         <button onClick={() => setOpen({ kind: 'supplier' })}><NavIcon name="/barang" />＋ Supplier</button>
-        <button onClick={() => setMenu('import')}><NavIcon name="upload" />Import Kontak</button>
         <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
       </div>
       {fin && <div className={styles.tabs} aria-label="Jenis kontak">{['pelanggan', 'supplier'].map((kind) => (
@@ -157,18 +157,19 @@ function ContactsWorkspace({ kosId, kos, ver, fin, bump }) {
       {menu === 'more' && <Sheet title="Lainnya" onClose={() => setMenu(null)}>
         {fin && <button onClick={() => setMenu('duplicates')}>Tinjau Duplikasi Pelanggan</button>}
         <button onClick={() => { setArsip(!arsip); setFilter('all'); setMenu(null); }}>{arsip ? 'Kembali ke daftar aktif' : 'Lihat Arsip Kontak'}</button>
-        <button onClick={() => setMenu('import')}>Import Kontak</button>
       </Sheet>}
       {menu === 'duplicates' && fin && <Sheet title="Kemungkinan Duplikasi Pelanggan" onClose={() => setMenu(null)}>
-        <p>Nomor yang sama dapat dipakai oleh lebih dari satu orang. Periksa detail identitas, riwayat, dan saldo setiap kontak.</p>
+        {duplicateGroups.length > 0 && <p>Nomor yang sama dapat dipakai oleh lebih dari satu orang. Periksa detail identitas, riwayat, dan saldo setiap kontak.</p>}
         {duplicateGroups.length ? duplicateGroups.map((group) => <section className="panel" key={group[0].id}>
           <b>{group[0].phone}</b>
           {group.map((row) => <button key={row.id} onClick={() => { setMenu(null); setOpen(row); }}>{row.name} · {angka(row.trx || 0)} transaksi · {rp(row.balance)}</button>)}
-        </section>) : <p>Tidak ada nomor yang sama pada pelanggan aktif.</p>}
+        </section>) : <SheetEmpty icon="/penghuni" title="Tidak ada nomor yang sama"
+          text="Kontak pelanggan aktif tidak memiliki nomor WhatsApp yang tercatat lebih dari sekali.">
+          <button className="primary" onClick={() => setMenu(null)}>Kembali ke daftar kontak</button>
+        </SheetEmpty>}
         {duplicateGroups.length > 0 && <button onClick={viewDuplicates}>Tampilkan di Daftar</button>}
-        <p className="small muted">Penggabungan kontak masih berupa usulan. Peninjauan ini tidak memindahkan transaksi atau saldo.</p>
+        {duplicateGroups.length > 0 && <p className="small muted">Peninjauan hanya menampilkan kontak dan saldo masing-masing.</p>}
       </Sheet>}
-      {menu === 'import' && <Sheet title="Import Kontak" onClose={() => setMenu(null)}><p>Import kontak masih berupa usulan pengembangan.</p></Sheet>}
       {open && <Detail c={open} fin={fin} kosId={kosId} kos={kos} onTasksChanged={bump} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} onReload={load} />}
     </div>
   );

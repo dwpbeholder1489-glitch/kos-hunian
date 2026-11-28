@@ -21,10 +21,11 @@ export async function loadPurchaseCatalog(kosId, { picker = false } = {}) {
   return { purchases: b.data, products: p.data.filter((x) => !x.is_kit), units: u.data, suppliers: c.data, lines: pl.data, supItems: si.data || [], categories: cats.data || [], barcodes: barcodes.data || [] };
 }
 
-export function purchasePath({ month, draft } = {}) {
+export function purchasePath({ month, draft, order } = {}) {
   const params = new URLSearchParams();
   if (month) params.set('bulan', month);
   if (draft) params.set('draf', draft);
+  if (order) params.set('pesan', '1');
   const query = params.toString();
   return '/belanja/baru' + (query ? '?' + query : '');
 }

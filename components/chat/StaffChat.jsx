@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import RoomOrder from './RoomOrder';
 import NavIcon from '@/components/NavIcon';
 import { Field, Sheet, toast } from '@/components/ui';
+import { SheetEmpty } from '@/components/SmartDetailSheet';
 import { errMsg, rp, waLink } from '@/lib/format';
 import { CONV_STATUS, fmtDay } from '@/lib/tracking';
 import { BusinessHead, Composer, Ico, MessageList, RefCard, TrackingView, usePendingId } from '@/components/commerce/ChatParts';
@@ -267,7 +268,10 @@ export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen
       {panel === 'order' && <RoomOrder conv={c} kosId={kosId} onClose={() => setPanel('')} onSaved={() => { setPanel(''); load(); onChanged?.(); }} />}
       {panel === 'replies' && <Sheet title="Balasan Cepat" icon="message" onClose={() => setPanel('')}>
         {(d.replies || []).length ? d.replies.map((r,i) => <button key={i} onClick={() => { setPrefill({text:r}); setPanel(''); }}>{r}</button>) :
-          <p>Belum ada balasan tersimpan. Tambahkan di Setelan chat.</p>}
+          <SheetEmpty icon="message" title="Belum ada balasan cepat"
+            text="Tambahkan balasan yang sering dipakai melalui Setelan chat, atau tulis pesan langsung.">
+            <button className="primary" onClick={() => setPanel('')}>Kembali ke chat</button>
+          </SheetEmpty>}
       </Sheet>}
       {panel === 'bill' && <Sheet title="Kirim tagihan" icon="wallet" onClose={() => setPanel('')}>
         {(room?.orders || []).filter((o) => !['penawaran','batal'].includes(o.status)).map((o) => <button key={o.id} disabled={busy}
@@ -284,7 +288,10 @@ export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen
       </Sheet>}
       {panel === 'history' && <Sheet title="Riwayat transaksi" icon="/laporan" onClose={() => setPanel('')}>
         {room?.orders?.length ? room.orders.map((o) => <button key={o.id} onClick={() => openOrder(o.id,o.type)}>
-          {o.number} · {rp(o.total)} · {String(o.status).replace(/_/g, ' ')}</button>) : <p>Belum ada transaksi yang tertaut.</p>}
+          {o.number} · {rp(o.total)} · {String(o.status).replace(/_/g, ' ')}</button>) : <SheetEmpty icon="/laporan" title="Belum ada transaksi tertaut"
+          text="Pesanan yang terhubung ke percakapan ini akan muncul di sini.">
+          <button className="primary" onClick={() => setPanel('')}>Kembali ke chat</button>
+        </SheetEmpty>}
       </Sheet>}
       {panel?.track && <Sheet title={`Pesanan #${panel.track.number}`} onClose={() => setPanel('')}>
         <TrackingView track={panel.track} extra={<TrackingControls track={panel.track}

@@ -12,6 +12,7 @@ import PageHelp from '@/components/PageHelp';
 import { DataTable } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
 import { canArea, multiLoc, pathAllowed } from '@/lib/business';
+import { SheetEmpty } from '@/components/SmartDetailSheet';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg, bulan, monthEnd } from '@/lib/format';
 import { qtyNum, uid } from '@/lib/retail';
@@ -135,6 +136,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
   };
   const locName = (id) => kos.locs?.list?.find((x) => x.id === id)?.name;
   const newHref = purchasePath({ month });
+  const canReceive = canArea(kos, 'stock');
   const fromSuggestion = (init) => {
     try {
       const draft = storePurchasePrefill(kosId, init);
@@ -163,7 +165,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
       <div className={styles.actions}>
         <Link className={styles.primary} href={newHref}><NavIcon name="/penjualan" />＋ Belanja</Link>
         <button onClick={() => setSaran(true)} disabled={!d.products.length}><NavIcon name="/konfirmasi" />Saran Belanja</button>
-        <button onClick={() => setMenu('import')}><NavIcon name="upload" />Import</button>
+        <button onClick={() => setMenu('receive')}><NavIcon name="/grosir" />Penerimaan Barang</button>
         <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
       </div>
       {linkError && <div className="notice bad">Pesanan supplier rujukan tidak bisa dibuka di bisnis aktif.</div>}
@@ -225,8 +227,6 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
                 <button onClick={() => setMenu('scan')}><NavIcon name="barcode" />Scan Nota Supplier</button>
                 {canReport && <Link href="/laporan-toko"><NavIcon name="/laporan" />Laporan Belanja</Link>}
                 {canContact && <Link href="/kontak?tab=supplier"><NavIcon name="/penghuni" />Supplier</Link>}
-                <button onClick={() => setMenu('frequent')}><NavIcon name="/layers" />Produk Sering Dibeli</button>
-                <button onClick={() => setMenu('settings')}><NavIcon name="/pengaturan" />Pengaturan Pembelian</button>
               </div>
             </section>
           </div>
@@ -246,23 +246,35 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
       {menu === 'more' && <Sheet title="Lainnya" onClose={() => setMenu(null)}>
         <button onClick={() => setMenu('receive')}>Penerimaan Barang</button>
         <button onClick={() => setMenu('scan')}>Scan Nota Supplier</button>
-        <button onClick={() => setMenu('frequent')}>Produk Sering Dibeli</button>
-        <button onClick={() => setMenu('settings')}>Pengaturan Pembelian</button>
+        <button onClick={() => { setMenu(null); setTab('faktur'); }}>Faktur Supplier</button>
+        {canContact && <Link href="/kontak?tab=supplier">Daftar Supplier</Link>}
       </Sheet>}
-      {menu === 'receive' && <Sheet title="Penerimaan Barang" onClose={() => setMenu(null)}>
-        {!ready ? <p>Daftar pesanan belum tersedia.</p> : waiting.length ? waiting.map((item) => (
-          <button key={item.id} onClick={() => { setMenu(null); setMatchOnOpen(item.id); setOpen(item); }}>{item.number} · {sup.get(item.contact_id) || 'Tanpa supplier'}{item.expected_date ? ` · ${tgl(item.expected_date)}` : ''}</button>
-        )) : <p>Tidak ada pesanan yang menunggu penerimaan.</p>}
+      {menu === 'receive' && <Sheet title="Penerimaan Barang" icon="/grosir" onClose={() => setMenu(null)}>
+        {summaryError ? <SheetEmpty title="Pesanan gagal dimuat" text="Muat ulang daftar pesanan untuk melanjutkan.">
+          <button className="primary" onClick={() => { setSummaryError(null); setRevision((value) => value + 1); }}>Coba lagi</button>
+        </SheetEmpty> : !ready ? <Loading rows={2} /> : waiting.length ? <>
+          <p className="small muted">{canReceive ? 'Pilih pesanan yang barangnya sudah datang.' : 'Pilih pesanan untuk melihat rinciannya.'}</p>
+          <div className={styles.recent}>{waiting.map((item) => (
+            <button key={item.id} onClick={() => { setMenu(null); setMatchOnOpen(item.id); setOpen(item); }}>
+              <span className={styles.recentIcon}><NavIcon name="/grosir" size={19} /></span>
+              <span className={styles.recentCopy}>
+                <b>{sup.get(item.contact_id) || 'Tanpa supplier'}</b>
+                <small>{item.number} · {ST[item.status][0]}{item.expected_date ? ` · Perkiraan ${tgl(item.expected_date)}` : ''}</small>
+              </span>
+              <NavIcon name="next" size={16} />
+            </button>
+          ))}</div>
+        </> : <SheetEmpty icon="/grosir" title="Belum ada pesanan untuk diterima"
+          text={canReceive ? 'Pesanan yang disimpan dengan pilihan Pesan dulu akan muncul di sini saat menunggu kedatangan barang.' : 'Pesanan pemasok yang masih menunggu barang akan muncul di sini.'}>
+          {canReceive && <Link href={purchasePath({ month, order: true })}>Buat pesanan pemasok</Link>}
+        </SheetEmpty>}
       </Sheet>}
       {menu === 'scan' && <SupplierReceiptScan onClose={() => setMenu(null)} onInvoices={() => { setMenu(null); setTab('faktur'); }} />}
-      {['import', 'frequent', 'settings'].includes(menu) && <Sheet title={{ import: 'Import Belanja', frequent: 'Produk Sering Dibeli', settings: 'Pengaturan Pembelian' }[menu]} onClose={() => setMenu(null)}>
-        <p>Fitur ini masih berupa usulan pengembangan.</p>
-      </Sheet>}
       {saran && (kos.business_type === 'retail'
         ? <RestockGuidance kosId={kosId} version={ver} onClose={() => setSaran(false)} onPick={fromSuggestion} onReview={reviewPurchase} />
         : <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={fromSuggestion} />)}
 
-      {open && <Detail key={open.id} units={d.units} canReceive={canArea(kos, 'stock')} matchOnOpen={matchOnOpen === open.id} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
+      {open && <Detail key={open.id} units={d.units} canReceive={canReceive} matchOnOpen={matchOnOpen === open.id} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
         canOpenOrder={canArea(kos, 'sell') || canArea(kos, 'finance')} onClose={() => { setMatchOnOpen(null); setOpen(null); }} onChanged={() => { setMatchOnOpen(null); setOpen(null); setRevision((value) => value + 1); }} onFaktur={() => { setFk(open.id); setMatchOnOpen(null); setOpen(null); }} />}
       {fk && <FakturSheet purchaseId={fk} onClose={() => { setFk(null); setRevision((value) => value + 1); }} />}
     </div>

@@ -286,7 +286,7 @@ const PARTS = [
     ], <>Harga beli terakhir terisi otomatis. Belanja yang salah dibatalkan dari daftar Belanja: stok dikurangi lagi dan harga modal dikembalikan. Retur ke supplier mengurangi stok dan menghitung ulang harga modal; utang atau kas ikut berubah dan jurnal pembukuan dibuat otomatis. Retur tidak bisa dibatalkan, dan belanja yang sudah diretur tidak bisa dibatalkan lagi.</>, null, null],
     ['Pesan dulu, terima kemudian', 'Menu Belanja › Pesan dulu', [
       <>Saat memesan ke supplier tetapi barang belum datang: <b>+ Belanja</b> › pilih <b>Pesan dulu (belum datang)</b>, isi barang dan harga, lalu <b>Simpan pesanan</b>. Stok belum bertambah.</>,
-      <>Pesanan tampil berlabel <b>Dipesan</b>. Kotak <b>Pesanan belum datang</b> menunjukkan jumlahnya.</>,
+      <>Pesanan tampil berlabel <b>Dipesan</b>. Jika daftar <b>Penerimaan Barang</b> masih kosong, ketuk <b>Buat pesanan pemasok</b> untuk membuka formulir dengan pilihan <b>Pesan dulu</b> terpilih.</>,
       <>Saat barang datang, buka <b>Penerimaan Barang</b> dan pilih pesanan supplier. Pindai barcode atau pilih produk, lalu isi jumlah baik dan rusak dalam satuan katalog seperti dus, renteng, atau pcs. Isi harga datang jika berbeda dan tekan <b>Konfirmasi penerimaan</b>.</>,
       <>Sisa yang tidak akan dikirim: <b>Tutup pesanan</b>. Pesanan yang tidak jadi sama sekali: <b>Batalkan pesanan</b>.</>,
     ], <>Dari 10 dus yang dipesan, 8 dus baik menambah stok dan 2 dus berstatus <b>Belum Diterima</b>. Buka <b>Riwayat penerimaan</b> di pesanan untuk meninjau barang rusak, barang berlebih, dan selisih harga. Stok, harga modal, kas, dan utang dihitung dari barang baik yang cocok dengan sisa pesanan.</>, null, <ScrPenerimaanBarang />],

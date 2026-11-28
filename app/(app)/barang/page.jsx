@@ -307,9 +307,7 @@ function InventoryWorkspace({ kosId, ver, kos }) {
         {multi && <Link href="/mutasi">Mutasi Stok</Link>}
         <button onClick={() => { setExtra(null); setCatSheet(true); }}>Atur Kategori</button>
         {!bahan && <button onClick={() => { setExtra(null); setBrandSheet(true); }}>Atur Merek</button>}
-        <button onClick={() => setExtra('import')}>Import Barang</button>
       </Sheet>}
-      {extra === 'import' && <Sheet title="Import Barang" onClose={() => setExtra(null)}><p>Import barang masih berupa usulan pengembangan.</p></Sheet>}
       {brandSheet && <BrandSheet kosId={kosId} brands={d.brands} products={d.products} onClose={() => setBrandSheet(false)} onChanged={reload} />}
       {bcs && <BarcodeSheet p={bcs} units={unitsOf(bcs, d.units)} onClose={() => { setBcs(null); reload(); }} />}
       {kit && <KitSheet kosId={kosId} p={kit === 'new' ? null : kit} products={d.products} units={d.units} finance={canArea(kos, 'finance')} onClose={() => setKit(null)} onSaved={() => { setKit(null); reload(); }} />}

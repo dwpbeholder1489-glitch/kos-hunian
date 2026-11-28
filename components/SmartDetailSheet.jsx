@@ -27,6 +27,8 @@ export default function SmartDetailSheet({
   const [mounted, setMounted] = useState(false);
   const dialog = useRef(null);
   const panel = useRef(null);
+  const heading = useRef(null);
+  const closeButton = useRef(null);
   const dismissStart = useRef(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -46,6 +48,7 @@ export default function SmartDetailSheet({
     resize();
     sheets.push(element);
     element.showModal();
+    if (document.activeElement === closeButton.current) heading.current?.focus({ preventScroll: true });
     updateActiveSheet();
     viewport?.addEventListener('resize', resize);
     viewport?.addEventListener('scroll', resize);
@@ -92,8 +95,8 @@ export default function SmartDetailSheet({
           onLostPointerCapture={(event) => endDrag(event, false)}><span /></div>
         <header className={styles.header}>
           {icon && <span className={styles.icon}><NavIcon name={icon} /></span>}
-          <div><h2 id={titleId}>{title}</h2>{subtitle && <p id={descriptionId}>{subtitle}</p>}</div>
-          <button type="button" className={styles.close} onClick={onClose}><span aria-hidden="true">×</span> Tutup</button>
+          <div><h2 id={titleId} ref={heading} tabIndex={-1}>{title}</h2>{subtitle && <p id={descriptionId}>{subtitle}</p>}</div>
+          <button type="button" className={styles.close} ref={closeButton} onClick={onClose}><span aria-hidden="true">×</span> Tutup</button>
         </header>
         <div className={`sheet ${styles.content}`}>{children}</div>
         <div className={styles.assist} data-smart-sheet-assist />
@@ -126,4 +129,13 @@ export function SheetDisclosure({ title, children }) {
     <summary><NavIcon name="info" size={18} /><span>{title}</span><NavIcon name="down" size={16} /></summary>
     <div>{children}</div>
   </details>;
+}
+
+export function SheetEmpty({ icon = '/catatan', title, text, children }) {
+  return <div className={styles.empty}>
+    <span className={styles.emptyIcon} aria-hidden="true"><NavIcon name={icon} size={25} /></span>
+    <h3>{title}</h3>
+    <p>{text}</p>
+    {children && <div className={styles.emptyActions}>{children}</div>}
+  </div>;
 }
