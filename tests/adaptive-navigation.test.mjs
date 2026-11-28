@@ -64,3 +64,24 @@ test('setup preview includes newly approved modules and filters paid or deferred
   assert.ok(!setupWorkspacePreview({ ...pro, my_role: 'gudang' }, items).quick.includes('Pesanan grosir'));
   assert.equal(setupWorkspacePreview({ ...draft, modules: null }, items), null);
 });
+
+test('properti: menu Operasional properti/Keuangan, modul inventaris, dan istilah mengikuti jenis properti', () => {
+  const kos = { business_type: 'properti', my_role: 'pemilik', modules: ['p_inventaris', 'p_perbaikan', 'p_meteran', 'p_booking', 'p_pengeluaran', 'u_crm', 'u_halaman', 'u_akuntansi', 'u_sdm', 'u_aset', 'u_karyawan'] };
+  const { sections } = workspacePreview(kos);
+  const titles = sections.map(([t]) => t);
+  assert.ok(titles.includes('Operasional properti') && titles.includes('Keuangan'), titles.join());
+  const ops = sections.find(([t]) => t === 'Operasional properti')[1];
+  assert.ok(ops.includes('Properti & Lokasi'), ops.join());
+  assert.ok(ops.includes('Kamar / Unit'), ops.join());
+  // modul inventaris dimatikan → menunya hilang (progressive disclosure), kelompok Kamar tetap
+  const off = groupsFor({ ...kos, modules: kos.modules.filter((m) => m !== 'p_inventaris') }).flatMap(([, , , items]) => items.map(([h]) => h));
+  assert.ok(!off.includes('/inventaris') && off.includes('/kamar'));
+  // ruko: Unit/Penyewa; penginapan: Tamu & Reservasi
+  const ruko = groupsFor({ ...kos, subcategory_code: 'properti_ruko' }).flatMap(([, , , items]) => items.map(([, l]) => l));
+  assert.ok(ruko.includes('Penyewa') && ruko.includes('Unit'), ruko.join());
+  const inap = quickFor({ ...kos, subcategory_code: 'hospitality_guesthouse' }).map((a) => a.label);
+  assert.ok(inap.includes('Tambah tamu') && inap.includes('Reservasi kamar'), inap.join());
+  // karyawan penjaga (area rent) tidak melihat Property Intelligence (finance/settings)
+  const penjaga = groupsFor({ ...kos, my_role: 'penjaga' }).flatMap(([, , , items]) => items.map(([h]) => h));
+  assert.ok(!penjaga.includes('/properti') && penjaga.includes('/inventaris'));
+});

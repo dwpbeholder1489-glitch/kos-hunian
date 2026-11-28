@@ -6,6 +6,7 @@ import { useKos } from '@/components/KosProvider';
 import { ROLE, can } from '@/lib/admin';
 import MfaGate from '@/components/MfaGate';
 import { supabase } from '@/lib/supabase';
+import { notifSignOut } from '@/lib/notif';
 
 const NAV = [
   ['/admin', 'Dashboard', 'dashboard.view'],
@@ -47,7 +48,7 @@ export default function AdminLayout({ children }) {
           <div className="brandrow">
             <div className="brand"><LogoMark size={30} /><div><h1>Management Center</h1><small>PRASARA · {ROLE[adminMe.role] || adminMe.role}</small></div></div>
             {list?.length > 0 ? <Link href="/beranda" className="small" style={{ color: 'var(--brand-fg)', opacity: 0.85 }}>← Aplikasi</Link>
-              : <button className="ghost sm" style={{ color: 'var(--brand-fg)' }} onClick={() => supabase.auth.signOut()}>Keluar</button>}
+              : <button className="ghost sm" style={{ color: 'var(--brand-fg)' }} onClick={async () => { await notifSignOut(); supabase.auth.signOut(); }}>Keluar</button>}
           </div>
           <nav className="tabs" aria-label="Menu admin">
             {nav.map(([href, label]) => <Link key={href} href={href} className={active(href) ? 'on' : ''} aria-current={active(href) ? 'page' : undefined}>{label}</Link>)}

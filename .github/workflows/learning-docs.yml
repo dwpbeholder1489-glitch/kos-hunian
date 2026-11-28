@@ -1,0 +1,27 @@
+name: Materi dan panduan PRASARA
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  learning-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Periksa pembaruan materi dan bantuan
+        env:
+          DOCS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          DOCS_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/check-learning-docs.mjs "$(git merge-base "$DOCS_BASE" "$DOCS_HEAD")" "$DOCS_HEAD"
+      - name: Uji aturan pembelajaran
+        run: node --test tests/learning-center.test.mjs

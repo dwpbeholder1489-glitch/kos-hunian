@@ -48,8 +48,24 @@
 .chart div:last-child i {background:#15803d}
 .home [data-widget=kpi] :global(.grid) {display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .home [data-widget=kpi] svg {color:#15803d}
-@media(min-width:1024px){.home [data-widget=operasional]{display:none}.home [data-widget=kamar]{grid-column:span 2}}
+@media(min-width:1024px){.home [data-widget=kamar]{grid-column:span 2}}
 @media(max-width:600px){.hero {padding:12px;background:linear-gradient(90deg,#e1f3e9 5%,#e1f3e9e6 40%,transparent 82%),url('/property/hero.webp') center/cover;color:#14251f}.hero img{width:50px;height:50px}.controls{margin:0;flex-basis:100%;width:100%;font-size:12px}.home [data-widget=kpi] :global(.grid){grid-template-columns:repeat(2,minmax(0,1fr))}.modules :is(a,button){padding:5px;min-height:64px}}
 @media(prefers-reduced-motion:no-preference){.hero img{animation:wave 1.8s ease-in-out 2;transform-origin:bottom center}.chart i{animation:grow .55s ease-out;transform-origin:bottom}}
 @keyframes wave{50%{transform:translateY(-4px) rotate(-5deg)}}
 @keyframes grow{from{transform:scaleY(.1)}}
+/* Widget acuan pemilik 28 Nov 2026 (tren hunian, komposisi biaya, status kamar) */
+.hero strong {display:block}
+.addr {display:block;font-size:13px;opacity:.9;margin-top:2px;max-width:46ch;overflow-wrap:anywhere}
+.donutRow {display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.legend {list-style:none;margin:0;padding:0;flex:1 1 150px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.legend li {display:flex;align-items:center;gap:8px;font-size:13px}
+.legend li span {flex:1;min-width:0;overflow-wrap:anywhere}
+.legend i {width:10px;height:10px;border-radius:50%;flex:none}
+.statusRow {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.statusRow a {display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 4px;border-radius:12px;text-decoration:none;color:var(--fg);background:var(--sunk)}
+.statusRow a b {font-size:22px}
+.statusRow a span {font-size:12px;color:var(--muted);text-align:center}
+.statusRow a[data-k="terisi"] {background:#DCFCE7} .statusRow a[data-k="terisi"] b {color:#15803D}
+.statusRow a[data-k="kosong"] {background:#DBEAFE} .statusRow a[data-k="kosong"] b {color:#1D4ED8}
+.statusRow a[data-k="booking"] {background:#FEF3C7} .statusRow a[data-k="booking"] b {color:#B45309}
+.statusRow a[data-k="rawat"] {background:#EDE9FE} .statusRow a[data-k="rawat"] b {color:#6D28D9}

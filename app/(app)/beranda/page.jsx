@@ -2,6 +2,7 @@
 import { invoiceTotals } from '@/lib/propertyTotals';
 import NavIcon from '@/components/NavIcon';
 import styles from './property.module.css';
+import BillingMenu from './BillingMenu';
 import Persiapan from '@/components/Persiapan';
 import { canArea } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
@@ -22,6 +23,11 @@ import { KPIS, periodRange, baselineRange, pulseLine } from '@/lib/dashboards';
 import { CompareBars } from '@/components/Charts';
 import { quickActions } from '@/lib/menu';
 import { addMonthsYm, BLN } from '@/lib/format';
+import { TrendChart, Donut, C } from '@/app/(app)/analisis/Charts';
+import { occFromLeases, roomStatus, noi, returns, pct, years } from '@/lib/propertyIntel';
+import { termsFor } from '@/lib/propertyTerms';
+
+const DONUT = [C.main, C.mid, C.amber, '#60A5FA', '#E879F9', C.grey];
 
 export default function Beranda() {
   const { kosId } = useKos();
@@ -33,6 +39,13 @@ function PropertyHome() {
   const { kos, kosId, ver } = useKos();
   const [tix, setTix] = useState(null); // keluhan belum selesai
   const [group, setGroup] = useState(null);
+  const [intel, setIntel] = useState(null); // ringkasan Property Intelligence (hanya peran keuangan)
+  const fin = canArea(kos, 'finance');
+  useEffect(() => {
+    if (!kosId || !fin) return;
+    const t0 = today(); const from = t0.slice(0, 8) + '01';
+    supabase.rpc('property_intel', { p_kos: kosId, p_from: from, p_to: t0, p_branch: null }).then(({ data }) => setIntel(data || null), () => setIntel(null));
+  }, [kosId, ver, fin]);
   const act = useActivity(kosId, ver);
   const prefs = useDashPrefs('kos', 'bulan');
   useEffect(() => {
@@ -113,9 +126,10 @@ function PropertyHome() {
     { id: 'tagihan', label: 'Tagihan bulan ini', value: rp(billedMonth), sub: `Sudah dibayar ${rp(paidAgainstMonth)}` },
     { id: 'terkumpul', label: `Pembayaran diterima ${per.label}`, value: rp(sumA(paidP)), sub: `${paidP.length} pembayaran terverifikasi` },
     { id: 'jatuh_tempo', label: 'Jatuh tempo 7 hari', value: rp(upcoming.reduce((s2, i) => s2 + i.outstanding, 0)), sub: `${upcoming.length} tagihan` },
-    { id: 'sewa', label: 'Pendapatan sewa bulan ini', value: rp(rentMonth), icon: <NavIcon name='/pembayaran' /> },
+    { id: 'sewa', label: 'Pendapatan sewa bulan ini', value: rp(rentMonth), icon: <NavIcon name='/pembayaran' />, sub: rentTrend.at(-2).value > 0 ? `${rentMonth >= rentTrend.at(-2).value ? '↑' : '↓'} ${Math.abs(Math.round(((rentMonth - rentTrend.at(-2).value) / rentTrend.at(-2).value) * 100))}% vs bulan lalu (penuh)` : undefined },
     { id: 'sisa', icon: <NavIcon name='/tagihan' />, label: 'Tagihan belum lunas', value: rp(outstanding), sub: `${live.filter(i => i.outstanding > 0).length} tagihan` },
     { id: 'tunggakan', label: 'Tunggakan', value: rp(arrears), tone: arrears > 0 ? 'bad' : '', sub: `${overdue.length} tagihan lewat jatuh tempo` },
+    tix !== null && { id: 'perawatan', icon: <NavIcon name='/perbaikan' />, label: 'Perawatan aktif', value: String(tix.length), sub: 'dalam penanganan', tone: highTix ? 'bad' : '' },
   ];
   const pulse = [
     pulseLine(`Pembayaran diterima ${per.label}`, sumA(paidP), sumA(paidB) / 30, per.days, rp),
@@ -189,28 +203,72 @@ function PropertyHome() {
     { id: 'aksi', title: 'Aksi cepat', size: 'normal', node: quickActions(kos).length > 0 && <Widget title="Aksi cepat"><QuickActions kos={kos} /></Widget> },
   ];
 
+  // Widget gaya acuan pemilik 28 Nov 2026: tren hunian, komposisi biaya, status kamar, analisis & investasi
+  const T = termsFor(kos);
+  const occ6 = occFromLeases(d.rooms, d.leases, 6, t);
+  const st = roomStatus(d.rooms.map((r) => ({ ...r, booked: d.bookByRoom.has(r.id), lease_rent: d.activeByRoom.get(r.id)?.rent })));
+  const catName = new Map((d.categories || []).map((c) => [c.id, c.name]));
+  const byCat = new Map();
+  for (const x of d.expenses.filter((e) => e.date.startsWith(ym))) { const k = catName.get(x.category_id) || 'Lainnya'; byCat.set(k, (byCat.get(k) || 0) + x.amount); }
+  const cats = [...byCat.entries()].sort((a, b) => b[1] - a[1]);
+  const parts = [...cats.slice(0, 5), ...(cats.length > 5 ? [['Lainnya', cats.slice(5).reduce((s2, x) => s2 + x[1], 0)]] : [])].map(([label, value], i) => ({ label, value, color: DONUT[i] }));
+  const ret = intel?.aktif ? returns(intel) : null;
+  const noiNow = intel?.aktif ? noi(intel.pnl) : null;
+  widgets.push(
+    { id: 'hunian_tren', title: 'Tren hunian 6 bulan', size: 'wide', node: d.rooms.length > 0 && (
+      <Widget title="Tren hunian 6 bulan" action={has('/properti') && <Link href="/properti">Property Intelligence</Link>}>
+        <TrendChart money={false} height={180} points={occ6.map((m) => ({ label: bulan(m.key), short: BLN[Number(m.key.slice(5, 7)) - 1], v: m.value == null ? 0 : Math.round(m.value * 100) }))}
+          series={[{ key: 'v', label: 'Hunian (%)', color: C.main, area: true, fmt: (v) => v + '%' }]} />
+        <span className="small muted">Hari {T.unit.toLowerCase()} terisi ÷ hari {T.unit.toLowerCase()} tersedia, dari data sewa.</span>
+      </Widget>) },
+    { id: 'biaya', title: 'Komposisi biaya operasional', size: 'normal', node: has('/pengeluaran') && (
+      <Widget title="Komposisi biaya bulan ini" action={<Link href="/pengeluaran">Pengeluaran</Link>}>
+        {!parts.length ? <p className="small muted" style={{ margin: 0 }}>Belum ada pengeluaran bulan ini.</p> : <div className={styles.donutRow}>
+          <Donut parts={parts} center={rp(cashOut).replace('Rp ', '')} sub="bulan ini" size={132} />
+          <ul className={styles.legend}>{parts.map((x) => <li key={x.label}><i style={{ background: x.color }} /><span>{x.label}</span><b>{Math.round((x.value / Math.max(1, cashOut)) * 100)}%</b></li>)}</ul>
+        </div>}
+      </Widget>) },
+    { id: 'status', title: 'Status kamar', size: 'normal', node: d.rooms.length > 0 && (
+      <Widget title={`Status ${T.unit.toLowerCase()}`} action={has('/kamar') && <Link href="/kamar">Lihat semua</Link>}>
+        <div className={styles.statusRow}>{[['Terisi', st.terisi, 'terisi'], ['Kosong', st.kosong, 'kosong'], [T.booking, st.booking, 'booking'], ['Perawatan', st.perawatan, 'rawat']].map(([l, v, k]) =>
+          <Link key={k} href="/kamar" data-k={k}><b>{v}</b><span>{l}</span></Link>)}</div>
+      </Widget>) },
+    { id: 'investasi', title: 'Analisis & investasi', size: 'normal', node: intel?.aktif && (
+      <Widget title="Analisis & investasi" action={<Link href="/properti">Rincian</Link>}>
+        <dl className={styles.finance}>
+          <div><dt>NOI bulan ini</dt><dd>{rp(noiNow.noi)}</dd></div>
+          {intel.lanjut ? <>
+            <div><dt>Rental yield</dt><dd>{ret.grossYield != null ? pct(ret.grossYield) + ' / thn' : '—'}</dd></div>
+            <div><dt>ROI (estimasi)</dt><dd>{ret.roi != null ? pct(ret.roi) + ' / thn' : '—'}</dd></div>
+            <div><dt>Estimasi balik modal</dt><dd>{years(ret.payback)}</dd></div>
+          </> : <div><dt>ROI, yield, balik modal</dt><dd><Link href="/properti">Paket Bisnis</Link></dd></div>}
+        </dl>
+        {intel.lanjut && ret.roi == null && <span className="small muted">{ret.reasons.roi || ret.reasons.all}</span>}
+      </Widget>) },
+  );
+
   const groups = [
     ['Kamar / Unit', ['/kamar']], ['Penghuni', ['/penghuni']], ['Booking & Pendaftaran', ['/booking']],
-    ['Tagihan & Pembayaran', ['/tagihan', '/pembayaran']], ['Keuangan', ['/pembukuan', '/pengeluaran']],
-    ['Pemeliharaan', ['/perbaikan']], ['Aset & Inventaris', ['/aset']], ['Laporan & Analisis', ['/laporan', '/analisis']],
+    ['Tagihan & Pembayaran', ['/tagihan', '/pembayaran', '/penghuni', '/rekap', '/laporan']], ['Keuangan', ['/pembukuan', '/pengeluaran']],
+    ['Pemeliharaan', ['/perbaikan']], ['Aset & Inventaris', ['/aset']], ['Laporan & Analisis', ['/laporan-analisis']],
   ];
   const shortcuts = groups.map(([label, paths]) => ({label, path: paths.find(has), paths: paths.filter(has)})).filter(x => x.path);
   widgets.push(
-    { id: 'operasional', title: 'Operasional', size: 'full', node: shortcuts.length > 0 && <nav className={styles.operations} aria-label="Operasional properti"><h3>Operasional</h3><div className={styles.modules}>{shortcuts.map(({label,path,paths}) => paths.length > 1 ? <button key={path} onClick={() => setGroup({label,paths})}><NavIcon name={path} /><span>{label}</span></button> : <Link key={path} href={path}><NavIcon name={path} /><span>{label}</span></Link>)}</div></nav> },
+    { id: 'operasional', title: 'Operasional', size: 'full', node: shortcuts.length > 0 && <nav className={styles.operations} aria-label="Operasional properti"><h3>Operasional</h3><div className={styles.modules}>{shortcuts.map(({label,path,paths}) => (label === 'Tagihan & Pembayaran' || paths.length > 1) ? <button key={label} aria-haspopup="dialog" onClick={() => setGroup({label,paths})}><NavIcon name={path} /><span>{label}</span></button> : <Link key={label} href={path}><NavIcon name={path} /><span>{label}</span></Link>)}</div></nav> },
     { id: 'sewa', title: 'Pendapatan sewa', size: 'wide', node: <Widget title="Pendapatan sewa" action={<span className="small muted">6 bulan terakhir</span>}><div className={styles.chart}>{rentTrend.map(m => <div key={m.key}><small>{rp(m.value)}</small><i style={{height: (m.value / Math.max(1, ...rentTrend.map(x => x.value)) * 90) + 'px'}} /><span>{m.short}</span></div>)}</div></Widget> },
     { id: 'keuangan', title: 'Ringkasan keuangan', size: 'normal', node: has('/laporan') && <Widget title="Ringkasan keuangan bulan ini"><dl className={styles.finance}>{[['Pendapatan sewa', rentMonth], ['Pendapatan lain & tambahan', operatingIncome - rentMonth], ['Pengeluaran', cashOut], ['Surplus operasional', operatingIncome - cashOut]].map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{rp(value)}</dd></div>)}</dl></Widget> }
   );
-  const priority = ['kpi', 'operasional', 'sewa', 'perhatian', 'kamar', 'keuangan'];
+  const priority = ['kpi', 'operasional', 'hunian_tren', 'biaya', 'status', 'jatuhtempo', 'investasi', 'sewa', 'perhatian', 'kamar', 'keuangan'];
   const rank = w => priority.includes(w.id) ? priority.indexOf(w.id) : priority.length;
   widgets.sort((a,b) => rank(a) - rank(b));
   const hour = Number(new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', hour:'2-digit', hourCycle:'h23'}).format(new Date()));
   const greeting = hour < 11 ? 'pagi' : hour < 15 ? 'siang' : hour < 18 ? 'sore' : 'malam';
   return <div className={styles.home}><Dashboard id="kos" kosId={kosId} widgets={widgets} prefs={prefs} kpis={KPIS.kos.map(([id,label]) => ({id,label}))} period header={(atur,periode) => <header className={styles.hero}>
-    <div><h1>Selamat {greeting}</h1><strong>{kos.name}</strong></div>
+    <div><h1>Selamat {greeting}</h1><strong>{kos.name}</strong>{kos.address && <span className={styles.addr}>{kos.address}</span>}</div>
     <img src="/retail/prasara-maskot.webp" alt="Maskot PRASARA" />
     <div className={styles.controls}>{periode}{atur}<PageHelp page="beranda" /></div>
   </header>} />
-    {group && <Sheet title={group.label} onClose={() => setGroup(null)}><div className="list">{group.paths.map(path => <Link className="li" href={path} key={path}><NavIcon name={path} />{tabsFor(kos).find(([href]) => href === path)?.[1]}</Link>)}</div></Sheet>}
+    {group?.label === 'Tagihan & Pembayaran' ? <BillingMenu has={has} onClose={() => setGroup(null)} /> : group && <Sheet title={group.label} onClose={() => setGroup(null)}><div className="list">{group.paths.map(path => <Link className="li" href={path} key={path}><NavIcon name={path} />{tabsFor(kos).find(([href]) => href === path)?.[1]}</Link>)}</div></Sheet>}
     {!d.rooms.length && has('/kamar') && <Empty title="Belum ada kamar" text="Tambahkan kamar pertama untuk mulai mengelola hunian."><Link href="/kamar">Ke halaman Kamar</Link></Empty>}
     <Checklist d={d} kosId={kosId} />{canArea(kos,'settings') && <Persiapan kos={kos} />}<CrmHint /><RecHint />
   </div>;

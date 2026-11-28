@@ -1,0 +1,155 @@
+/* Chat & Tracking pelanggan (portal toko /b, grosir /c, cek jasa). Tampilan terang mengikuti gambar acuan; mandiri dari tema aplikasi. */
+.wrap, .track {
+  --cx-forest: #064e3b; --cx-green: #15803d; --cx-accent: #22a06b; --cx-mint: #e1f3e9; --cx-bg: #f7faf8;
+  --cx-ink: #14251f; --cx-muted: #64746d; --cx-faint: #87948e; --cx-line: #dce7e0;
+  color-scheme: light;
+}
+.track *, .track *::before, .track *::after { box-sizing: border-box; }
+.track button { font: inherit; cursor: pointer; }
+.wrap { color: var(--cx-ink); font-size: 15px; line-height: 1.4; overflow-wrap: anywhere;
+  display: flex; flex-direction: column; min-width: 0; background: #fff; border: 1px solid var(--cx-line); border-radius: 16px; overflow: hidden;
+}
+.wrap *, .wrap *::before, .wrap *::after { box-sizing: border-box; }
+.wrap button { font: inherit; color: inherit; cursor: pointer; }
+.wrap button:disabled { opacity: .55; cursor: default; }
+.wrap button:focus-visible, .wrap a:focus-visible, .wrap textarea:focus-visible, .wrap input:focus-visible { outline: 2px solid var(--cx-green); outline-offset: 2px; }
+
+/* Layar chat penuh (ala WhatsApp). .overlay mengikuti Visual Viewport (top/height dari useChatViewport; cadangan 100dvh) →
+   kolom ketik selalu tepat di atas keyboard; hanya daftar pesan yang bergulir. */
+.overlay { position: fixed; left: 0; right: 0; top: 0; height: 100dvh; z-index: 1000; display: flex; background: #f7faf8; overscroll-behavior: contain; }
+.screen { flex: 1; min-height: 0; height: 100%; border: 0; border-radius: 0; background: #f7faf8; }
+.wa { flex: none; display: grid; place-items: center; min-width: 40px; height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--cx-line); color: var(--cx-forest); font-size: 12px; font-weight: 700; text-decoration: none; }
+.back { flex: none; width: 40px; height: 40px; margin-left: -6px; border: 0; background: none; color: var(--cx-green); display: grid; place-items: center; border-radius: 50%; }
+.listWrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.screen .list { flex: 1; min-height: 0; max-height: none; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+.newPill { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 99px; padding: 7px 14px; background: var(--cx-forest); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 4px 14px #0b2a1b33; }
+.hello { display: flex; gap: 8px; align-items: flex-end; }
+.hello p { margin: 0; max-width: min(82%, 34rem); padding: 10px 13px; border-radius: 14px; border-bottom-left-radius: 4px; background: #fff; border: 1px solid var(--cx-line); }
+.suggest { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: #eaf6ef; border: 1px solid #d3eadb; }
+.suggest b { color: var(--cx-forest); font-size: 15px; }
+.suggest > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.suggest button { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 12px; border: 1px solid var(--cx-line); border-radius: 12px; background: #fff; font-weight: 600; font-size: 14px; text-align: left; box-shadow: 0 1px 2px #0b2a1b0d; }
+.suggest button svg { flex: none; color: var(--cx-green); }
+.foot { flex: none; background: #fff; border-top: 1px solid var(--cx-line); padding-bottom: env(safe-area-inset-bottom); }
+.screen[data-typing] .foot { padding-bottom: 0; }
+.foot .compose { border-top: 0; }
+.idRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.noteInput { background: #fff8e6 !important; border-color: #f2dfae !important; }
+@media (min-width: 768px) {
+  .overlay { padding: 24px; background: rgba(20, 37, 31, .38); justify-content: center; align-items: center; }
+  .screen { flex: none; width: min(760px, 100%); height: min(900px, 100%); border-radius: 18px; overflow: hidden; box-shadow: 0 24px 60px #0b2a1b40; }
+}
+
+/* Kepala: identitas bisnis + status online nyata */
+.head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--cx-line); background: #fff; }
+.logo { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--cx-green); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 18px; overflow: hidden; }
+.logo img { width: 100%; height: 100%; object-fit: cover; }
+.headText { min-width: 0; flex: 1; }
+.headText b { display: block; font-size: 16px; letter-spacing: -.01em; }
+.presence { display: flex; flex-wrap: wrap; gap: 0 6px; font-size: 13px; color: var(--cx-muted); }
+.presence span + span::before { content: '•'; margin-right: 6px; color: var(--cx-faint); }
+.online { color: var(--cx-green); font-weight: 600; }
+
+/* Kartu transaksi di atas chat */
+.refCard { flex: none; display: flex; align-items: center; gap: 10px; margin: 8px 10px 0; padding: 8px 10px; border: 1px solid var(--cx-line); border-radius: 14px; background: #fff; box-shadow: 0 1px 3px #0b2a1b10; }
+.refIcon { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--cx-mint); color: var(--cx-forest); }
+.refCard div { min-width: 0; flex: 1; }
+.refCard b { display: block; font-size: 14px; }
+.refCard small { display: block; color: var(--cx-muted); font-size: 13px; }
+.pill { flex: none; border: 0; border-radius: 10px; padding: 7px 10px; background: var(--cx-mint); color: var(--cx-forest); font-weight: 600; font-size: 13px; white-space: nowrap; }
+
+/* Pesan */
+.list { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; overflow-y: auto; min-height: 220px; max-height: 62dvh; background: var(--cx-bg); }
+.empty { margin: auto; text-align: center; color: var(--cx-muted); font-size: 14px; max-width: 30ch; }
+.older { align-self: center; border: 1px solid var(--cx-line); background: #fff; border-radius: 99px; padding: 6px 14px; font-size: 13px; }
+.row { display: flex; gap: 8px; align-items: flex-end; max-width: 100%; }
+.row.mine { justify-content: flex-end; }
+.avatar { flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--cx-green); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.bubble { max-width: min(82%, 34rem); padding: 9px 12px 6px; border-radius: 14px; background: #fff; border: 1px solid var(--cx-line); box-shadow: 0 1px 2px #0b2a1b0d; min-width: 0; }
+.mine .bubble { background: #dcf3e4; border-color: #c6e9d2; border-bottom-right-radius: 4px; }
+.row:not(.mine) .bubble { border-bottom-left-radius: 4px; }
+.bubble p { margin: 0; white-space: pre-wrap; }
+.meta { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 3px; font-size: 11.5px; color: var(--cx-muted); }
+.read { color: #2563eb; }
+.note { background: #fff8e6 !important; border-color: #f2dfae !important; }
+.noteTag { display: block; font-size: 11.5px; font-weight: 700; color: #8a5a00; margin-bottom: 2px; }
+.by { display: block; font-size: 11.5px; color: var(--cx-muted); margin-bottom: 2px; }
+.photo { display: block; max-width: 240px; width: 100%; border-radius: 10px; margin-bottom: 4px; background: var(--cx-bg); min-height: 80px; }
+.doc { display: flex; align-items: center; gap: 8px; padding: 8px; margin-bottom: 4px; border-radius: 10px; background: var(--cx-bg); border: 1px solid var(--cx-line); text-align: left; width: 100%; }
+.doc b { font-size: 13px; display: block; }
+.doc small { font-size: 12px; color: var(--cx-muted); }
+.day { align-self: center; font-size: 12px; color: var(--cx-muted); background: #fff; border: 1px solid var(--cx-line); border-radius: 99px; padding: 2px 10px; }
+
+/* Kartu di dalam chat (produk / penawaran / cara bayar) */
+.card { display: grid; gap: 4px; padding: 10px; margin-bottom: 4px; border-radius: 12px; border: 1px solid #b7e0c6; background: #f2fbf5; min-width: 200px; }
+.cardHead { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--cx-forest); }
+.card small { font-size: 13px; color: var(--cx-muted); }
+.cardBtn { justify-self: start; margin-top: 4px; border: 0; border-radius: 9px; padding: 7px 12px; background: var(--cx-green); color: #fff; font-weight: 600; font-size: 13px; text-decoration: none; }
+.qris { max-width: 200px; border-radius: 8px; background: #fff; }
+
+/* Balasan cepat + penulis */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 12px 2px; background: #fff; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; border: 1px solid var(--cx-line); background: #fff; border-radius: 99px; padding: 6px 13px; font-size: 13.5px; white-space: nowrap; }
+.chips button svg { color: var(--cx-green); }
+.compose { display: flex; align-items: flex-end; gap: 8px; padding: 8px 10px 10px; background: #fff; border-top: 1px solid var(--cx-line); }
+.chips + .compose { border-top: 0; }
+.round { flex: none; width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--cx-line); background: #fff; display: grid; place-items: center; }
+.send { flex: none; width: 52px; height: 46px; border-radius: 14px; border: 0; background: var(--cx-green); color: #fff; display: grid; place-items: center; touch-action: manipulation; }
+.send:disabled { background: #9fcfb0; opacity: 1 !important; }
+.input { flex: 1; min-width: 0; min-height: 46px; height: 46px; border: 1.5px solid var(--cx-line); border-radius: 23px; padding: 11px 16px; font: inherit; font-size: 16px; line-height: 22px; resize: none; max-height: 132px; overflow-y: hidden; background: #fff; color: var(--cx-ink); -webkit-appearance: none; appearance: none; }
+.input:focus, .wrap .input:focus-visible { border-color: var(--cx-green); outline: none; }
+.hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.alert { margin: 8px 14px 0; padding: 8px 12px; border-radius: 10px; background: #fdecec; color: #9b1c1c; font-size: 13.5px; }
+.info { margin: 8px 14px 0; padding: 8px 12px; border-radius: 10px; background: var(--cx-mint); color: var(--cx-forest); font-size: 13.5px; }
+.identity { display: grid; gap: 8px; padding: 12px 14px; background: #fff; border-top: 1px solid var(--cx-line); }
+.identity label { display: grid; gap: 4px; font-size: 13px; color: var(--cx-muted); }
+.identity input { font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--cx-line); color: var(--cx-ink); background: #fff; }
+.powered { padding: 0 14px 8px; text-align: center; font-size: 11px; color: var(--cx-faint); background: #fff; }
+.powered b { color: var(--cx-forest); font-weight: 600; }
+
+/* Tracking */
+.track { display: grid; gap: 12px; min-width: 0; color: var(--cx-ink); }
+.hero { position: relative; display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 16px; background: linear-gradient(135deg, #e5f6ec, #d3efdf); border: 1px solid #c3e6d0; overflow: hidden; }
+.heroIcon { flex: none; width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; background: #fff; color: var(--cx-green); box-shadow: 0 2px 6px #0b2a1b14; position: relative; }
+.heroIcon i { position: absolute; right: -6px; bottom: -6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--cx-green); color: #fff; font-style: normal; border: 2px solid #fff; }
+.hero.bad { background: #fdf0f0; border-color: #f3caca; }
+.hero.bad .heroIcon, .hero.bad .heroIcon i { color: #b42318; }
+.hero.bad .heroIcon i { background: #b42318; color: #fff; }
+.hero h2 { margin: 0; font-size: 19px; letter-spacing: -.02em; color: var(--cx-forest); }
+.hero.bad h2 { color: #9b1c1c; }
+.hero p { margin: 3px 0 0; font-size: 14px; color: #24443a; }
+.steps { list-style: none; margin: 0; padding: 4px 4px 2px; display: flex; }
+.steps li { flex: 1; min-width: 0; display: grid; justify-items: center; text-align: center; gap: 4px; position: relative; font-size: 12.5px; color: var(--cx-muted); }
+.steps li::before { content: ''; position: absolute; top: 19px; right: 50%; width: 100%; height: 3px; background: var(--cx-line); z-index: 0; }
+.steps li:first-child::before { display: none; }
+.steps li.done::before, .steps li.current::before { background: var(--cx-green); }
+.dot { position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid var(--cx-line); color: var(--cx-faint); }
+.done .dot { background: var(--cx-green); border-color: var(--cx-green); color: #fff; }
+.current .dot { background: var(--cx-green); border-color: #bfe5cc; color: #fff; box-shadow: 0 0 0 4px #e1f3e9; }
+.off .dot { opacity: .5; }
+.steps b { color: var(--cx-ink); font-size: 13px; font-weight: 700; }
+.todo b, .off b { color: var(--cx-muted); font-weight: 600; }
+.box { border: 1px solid var(--cx-line); border-radius: 14px; background: #fff; padding: 4px 14px; }
+.box h3 { margin: 10px 0 2px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.box h3 button, .box h3 a { border: 0; background: none; color: var(--cx-green); font-weight: 600; font-size: 14px; text-decoration: none; padding: 0; }
+.line { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid #edf2ef; min-width: 0; }
+.box h3 + .line { border-top: 0; }
+.line > svg { flex: none; color: var(--cx-green); }
+.line div { min-width: 0; flex: 1; }
+.line small { display: block; font-size: 12.5px; color: var(--cx-muted); }
+.line b { font-weight: 600; }
+.copy { flex: none; border: 1px solid var(--cx-line); background: #fff; border-radius: 8px; width: 34px; height: 34px; display: grid; place-items: center; }
+.item { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #edf2ef; }
+.item div { flex: 1; min-width: 0; }
+.item small { display: block; color: var(--cx-muted); font-size: 13px; }
+.item strong { flex: none; font-size: 14px; }
+.thumb { flex: none; width: 52px; height: 52px; border-radius: 10px; background: var(--cx-bg); overflow: hidden; display: grid; place-items: center; color: var(--cx-faint); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.track .contact { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 13px; border-radius: 14px; border: 1.5px solid var(--cx-green); background: #fff; color: var(--cx-forest); font-weight: 700; font-size: 15px; text-decoration: none; }
+.badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: #dc2626; color: #fff; font-size: 12px; display: inline-grid; place-items: center; }
+
+@media (min-width: 768px) {
+  .hero { padding: 20px 22px; }
+  .hero h2 { font-size: 21px; }
+}

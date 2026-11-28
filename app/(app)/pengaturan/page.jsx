@@ -8,6 +8,7 @@ import { TPL, MAX_TPL, fill } from '@/lib/templates';
 import { compressImage } from '@/lib/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { notifSignOut } from '@/lib/notif';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Field, Loading, run, toast } from '@/components/ui';
@@ -66,7 +67,7 @@ export default function Pengaturan() {
     if (!confirm(`Hapus kategori "${c.name}"? Pengeluaran lama tetap ada, tapi tanpa kategori.`)) return;
     if (await run(() => supabase.from('expense_categories').delete().eq('id', c.id), 'Kategori dihapus', errMsg)) bump();
   }
-  async function logout() { await supabase.auth.signOut(); router.replace('/masuk'); }
+  async function logout() { await notifSignOut(); await supabase.auth.signOut(); router.replace('/masuk'); }
 
   return (
     <div className="stack">

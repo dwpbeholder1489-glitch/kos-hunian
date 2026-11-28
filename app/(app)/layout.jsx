@@ -15,8 +15,10 @@ import NavIcon from '@/components/NavIcon';
 import { useKos } from '@/components/KosProvider';
 import { tgl, today } from '@/lib/format';
 import { planOf, PLANS, BUSINESS, limitOf } from '@/lib/plan';
-import NotifBell from '@/components/NotifBell';
-import RetailBell from '@/components/RetailBell';
+import { KosBell } from '@/components/NotifBell';
+import { RetailNotifBell } from '@/components/RetailBell';
+import { NotifBellMenu, NotifLive, ActivationCard } from '@/components/NotifCenter';
+import ChatPresence from '@/components/chat/ChatPresence';
 import AnnounceBanner from '@/components/AnnounceBanner';
 import { OfflineSync } from '@/components/KasirOffline';
 
@@ -24,8 +26,9 @@ import { isKuliner, typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, RO
 import { sectionsFor, fourthTab, mainTabOf, groupIcon, pinsFor } from '@/lib/menu';
 import QuickPanel from '@/components/QuickPanel';
 import HomeTop from '@/components/HomeTop';
-import { createPortal } from 'react-dom';
+import SmartDetailSheet from '@/components/SmartDetailSheet';
 import { logoUrl } from '@/lib/logo';
+import { GuideBoundary, GuideFallback, OnboardingPrompt } from '@/components/InteractiveGuide';
 import { Sidebar, Topbar, Crumbs, toggleSide } from '@/components/AppShell';
 
 
@@ -48,11 +51,8 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
   const pins = pinsFor(kos);
   const [open, setOpen] = useState(() => groups.find(([, , , items]) => items.some(([h]) => on(h)))?.[0] || groups[0]?.[0]);
   const home = homeOf(kos);
-  const el = (
-    <div className="drawer-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <aside className="drawer" role="dialog" aria-modal="true" aria-label="Menu">
-        <div className="drawer-h"><span className="logo"><LogoMark size={34} /><span className="logo-t"><b>PRASARA</b><small>Adaptive Business System</small></span></span>
-          <button className="iconbtn" onClick={onClose} aria-label="Tutup menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></div>
+  return (
+    <SmartDetailSheet title="Menu PRASARA" subtitle={kos.name} icon="/operasional" side onClose={onClose}>
         <nav className="drawer-nav" aria-label="Semua menu">
           <Link href={home} className={'drawer-i' + (on(home) ? ' on' : '')} onClick={onClose}><NavIcon name="/beranda" />Beranda</Link>
           {pins.length > 0 && <><span className="drawer-sh">Pintasan</span>{pins.map(([h, l]) => <Link key={'pin' + h} href={h} className={'drawer-i' + (on(h) ? ' on' : '')} onClick={onClose}><NavIcon name={h} />{l}</Link>)}</>}
@@ -73,14 +73,12 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
           <hr />
           <Link href="/operasional" className={'drawer-i' + (on('/operasional') ? ' on' : '')} onClick={onClose}><NavIcon name="/layers" />Semua modul</Link>
           {admin && <Link href="/admin" className={'drawer-i' + (on('/admin') ? ' on' : '')} onClick={onClose}><NavIcon name="/admin" />Admin PRASARA</Link>}
-          <Link href="/bantuan" className={'drawer-i' + (on('/bantuan') ? ' on' : '')} onClick={onClose}><NavIcon name="/bantuan" />Bantuan</Link>
+          <Link href="/bantuan" className={'drawer-i' + (on('/bantuan') ? ' on' : '')} onClick={onClose}><NavIcon name="/bantuan" />Panduan &amp; Bantuan</Link>
           <Link href="/akun" className={'drawer-i' + (on('/akun') ? ' on' : '')} onClick={onClose}><NavIcon name="/karyawan" />Akun & tampilan</Link>
         </nav>
         <button className="drawer-biz" onClick={onBiz}><span className="ic" aria-hidden="true">{typeOf(kos).icon}</span><span className="t"><b>{kos.name}</b><small>{isDraft(kos) ? 'Draf · menunggu konfirmasi' : kos.closed_at ? 'Ditutup (arsip)' : 'Bisnis aktif'} · ganti bisnis</small></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>
-      </aside>
-    </div>
+    </SmartDetailSheet>
   );
-  return typeof document === 'undefined' ? el : createPortal(el, document.body);
 }
 
 // Tablet & desktop (≥768px) memakai sidebar + topbar; HP memakai header + menu bawah. Hanya satu yang dirender agar
@@ -121,13 +119,16 @@ export default function AppLayout({ children }) {
   const home = homeOf(kos);
   const fourth = fourthTab(kos);
   const main = mainTabOf(kos);
-  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !(fourth && on(fourth[0])) && !on('/akun') && !on('/bantuan'));
-  const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <NotifBell /> : null) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailBell /> : null);
+  const reportOn = fourth && (on(fourth[0]) || (fourth[0] === '/laporan-analisis' && (path.startsWith('/laporan') || ['/analisis', '/rekap', '/pembukuan'].includes(path))));
+  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !reportOn && !on('/akun') && !on('/bantuan') && !on('/learning-center'));
+  // Lonceng Pusat Notifikasi untuk semua peran; hitungan "perlu ditindaklanjuti" lama ikut bila peran & modulnya sesuai
+  const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <KosBell /> : <NotifBellMenu />) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailNotifBell /> : <NotifBellMenu />);
   // Tombol menu topbar: tablet (icon rail) → menu samping lengkap; desktop → lebarkan/ciutkan sidebar
   const onMenu = () => (window.innerWidth < 1024 ? setSheet('menu') : toggleSide());
   const go = (k) => { setSheet(null); if (k === '+') return router.push('/mulai'); pickKos(k.id); router.push(homeOf(k)); };
 
   return (
+    <GuideBoundary key={`${session.user.id}:${kosId}:${role}`} scope={`${session.user.id}:${kosId}:${role}`} path={path} kos={kos}>
     <div className="shell" data-accounting={path === '/pembukuan' || undefined} data-fnb={isKuliner(kos) || undefined}>
       {wide && <Sidebar kos={kos} path={path} on={on} admin={isAdmin} onBiz={() => setSheet('biz')} />}
       <div className="shell-main">
@@ -151,6 +152,8 @@ export default function AppLayout({ children }) {
       </header>
       )}
       <OfflineSync />
+      <NotifLive />
+      {!portfolio && (kos.business_type === 'retail' || kos.business_type === 'jasa') && (canArea(kos, 'sell') || canArea(kos, 'ops')) && <ChatPresence kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <TrialReminder kosId={kos.id} />}
@@ -158,12 +161,12 @@ export default function AppLayout({ children }) {
       {!portfolio && role === 'pemilik' && <GrowthAuto kosId={kos.id} event={path.startsWith('/laporan') ? 'LAPORAN.DIBUKA' : 'TRANSAKSI.PERTAMA'} skip={path.startsWith('/langganan') || /^\/(kasir|dapur|meja|penjualan|pembayaran|shift|pesanan)/.test(path)} />}
       <AnnounceBanner />
       {!portfolio && <ClosedBar />}
-      <main className="wrap" key={kosId}><Crumbs kos={kos} path={path} />{portfolio && !ownsBusiness ? <div className="empty"><h2>Ringkasan ini khusus pemilik bisnis</h2><Link href={home}>Buka bisnis aktif</Link></div> : !portfolio && kos.suspended_at ? (
+      <main className="wrap" key={kosId} data-guide-page><Crumbs kos={kos} path={path} />{portfolio && !ownsBusiness ? <div className="empty"><h2>Ringkasan ini khusus pemilik bisnis</h2><Link href={home}>Buka bisnis aktif</Link></div> : !portfolio && kos.suspended_at ? (
         <div className="empty"><h2>Bisnis ini sedang ditangguhkan</h2><p className="muted">Alasan: {kos.suspend_reason || '—'}. Data Anda tetap tersimpan dan tidak dihapus.</p>
           <p className="small muted">Hubungi tim PRASARA untuk mengaktifkannya kembali.</p>
           <a href={`https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, bisnis "${kos.name}" saya ditangguhkan. Mohon info.`)}`} target="_blank" rel="noreferrer"><button className="primary">Hubungi via WhatsApp</button></a>
           {list.length > 1 && <span className="small muted">Bisnis lain bisa dibuka dengan mengetuk nama bisnis di kiri atas.</span>}</div>
-      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && !isEvent(kos) && <HomeTop kos={kos} />}<Suspense fallback={<p className="muted">Memuat…</p>}>{children}</Suspense></> : isDraft(kos) ? (
+      ) : allowed ? <>{path === home && path !== '/toko' && path !== '/beranda' && !isKuliner(kos) && !isEvent(kos) && <HomeTop kos={kos} />}{path === home && !isDraft(kos) && <ActivationCard />}<Suspense fallback={<p className="muted">Memuat…</p>}><GuideFallback />{path === home && <OnboardingPrompt />}<div data-guide-content style={{ display: "contents" }}>{children}</div></Suspense></> : isDraft(kos) ? (
         <div className="empty"><h2>{kos.name} masih dalam setup</h2><p className="muted">Menu operasional terbuka setelah pemilik meninjau dan mengaktifkan bisnis di Pusat Konfirmasi.</p>{canArea(kos, 'settings') && <Link href="/konfirmasi"><button className="primary">Buka Pusat Konfirmasi</button></Link>}</div>
       ) : pathOfType(kos, path) && pathModuleOff(kos, path) ? (
         <div className="empty"><h2>Modul ini sedang nonaktif</h2><p className="muted">Data lamanya tetap tersimpan. Pemilik atau pengelola bisa mengaktifkannya lagi di Pusat konfigurasi.</p>{canArea(kos, 'settings') && <Link href="/konfigurasi"><button className="primary">Buka Pusat konfigurasi</button></Link>}</div>
@@ -179,7 +182,7 @@ export default function AppLayout({ children }) {
         <Link href={home} className={on(home) ? 'on' : ''} aria-current={on(home) ? 'page' : undefined}><NavIcon name="/beranda" />Beranda</Link>
         <Link href={main[0]} className={mainOn ? 'on' : ''} aria-current={on(main[0]) ? 'page' : undefined}><NavIcon name={main[2]} />{main[1]}</Link>
         <button className="fab" onClick={() => setSheet('quick')} aria-label="Aksi cepat" aria-haspopup="dialog"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
-        {fourth ? <Link href={fourth[0]} className={on(fourth[0]) || path === '/pembukuan' ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
+        {fourth ? <Link href={fourth[0]} className={reportOn || path === '/pembukuan' ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
           : <Link href="/operasional" className={on('/operasional') ? 'on' : ''}><NavIcon name="/layers" />Menu</Link>}
         <Link href="/akun" className={on('/akun') ? 'on' : ''} aria-current={on('/akun') ? 'page' : undefined}><NavIcon name="/akun" />Akun</Link>
       </nav>}
@@ -207,5 +210,6 @@ export default function AppLayout({ children }) {
         </Sheet>
       )}
     </div>
+    </GuideBoundary>
   );
 }

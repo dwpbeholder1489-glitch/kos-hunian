@@ -1,0 +1,46 @@
+.page { display:grid;gap:15px;min-width:0 }
+.hero { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,34%);align-items:center;gap:12px;padding:clamp(16px,4vw,34px);background:linear-gradient(125deg,#064431,#086739 70%,#0a8050);border-radius:20px;color:#fff }
+.hero h1 { margin:0;color:inherit;line-height:1.1;font-size:clamp(1.6rem,5vw,2.7rem);overflow-wrap:anywhere }
+.hero p { margin:8px 0 14px;line-height:1.4;color:#eef9f2 }
+.hero img { width:100%;max-width:245px;max-height:155px;object-fit:contain;justify-self:end }
+.hero button { background:#fff;color:#154633;border-color:#d5eadb }
+.kpis,.quick,.tabs,.grid,.form { display:grid;gap:8px;min-width:0 }
+.kpis { grid-template-columns:repeat(2,minmax(0,1fr)) }
+.kpis button { display:grid;justify-items:start;gap:4px;text-align:start;min-width:0;overflow-wrap:anywhere;background:#eaf8ef;color:#165236;border-radius:14px;padding:clamp(10px,2vw,17px) }
+.kpis b { font-size:clamp(1.05rem,3vw,1.38rem);line-height:1.2 }
+.kpis button[data-tone="menunggu"] { background:#edf6ff;color:#174968 }
+.kpis button[data-tone="dibatalkan"] { background:#fbeced;color:#9e252d }
+.kpis button[aria-pressed=true] { border-color:currentColor }
+.quick { grid-template-columns:repeat(auto-fit,minmax(min(100%,88px),1fr)) }
+.quick button,.quick a { display:grid;align-content:start;justify-items:center;gap:5px;min-width:0;padding:9px 6px;line-height:1.26;text-align:center;font-size:.8rem;overflow-wrap:anywhere }
+.quick .primary { background:#08733e;color:#fff;border-radius:11px;text-decoration:none;font-weight:700 }
+.period { display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:9px }
+.period select { min-width:0;max-width:100%;font-size:16px;text-align:center }
+.tabs { grid-template-columns:repeat(auto-fit,minmax(min(100%,100px),1fr));background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:4px }
+.tabs button { border:0;background:transparent;color:var(--fg);font-size:.82rem;line-height:1.25;min-width:0;padding:6px }
+.tabs button[aria-pressed=true] { background:#086a3d;color:#fff }
+.search,.actions { display:flex;gap:8px;align-items:stretch }
+.search label { display:flex;flex:1;min-width:0;align-items:center;gap:7px;padding-inline:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface) }
+.search input { font-size:16px;border:0;background:transparent;padding-inline:0;min-width:0 }
+.search button { display:flex;align-items:center;gap:4px;padding-inline:9px }
+.search svg,.card svg { flex:none }
+.form { grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr)) }
+.form select,.panel textarea { font-size:16px;min-width:0;max-width:100% }
+.summary { display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-radius:12px;background:#eaf7ee;color:#154b2f;padding:12px;overflow-wrap:anywhere }
+.summary span { flex:1;min-width:105px }
+.summary span b { display:block }
+.grid { grid-template-columns:minmax(0,1fr) }
+.card { display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,auto) auto;align-items:start;gap:8px;min-width:0;padding:clamp(9px,2vw,16px);overflow-wrap:anywhere;text-align:start;border-radius:15px }
+.avatar { display:grid;background:#e3f5e9;color:#12623a;padding:6px;border-radius:12px }
+.person,.amount { display:grid;gap:3px;min-width:0;line-height:1.35 }
+.person { justify-items:start }
+.person small { color:var(--muted) }
+.amount { text-align:right;justify-items:end }
+.card :global(.chip) { white-space:normal;line-height:1.25 }
+.panel { border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0;overflow-wrap:anywhere }
+.panel summary { cursor:pointer }
+.panel h3 { margin:0 }
+.actions { flex-wrap:wrap }
+@media(min-width:560px) { .kpis { grid-template-columns:repeat(4,minmax(0,1fr)) } }
+@media(min-width:1050px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)) } }
+@media(max-width:370px) { .card { grid-template-columns:auto minmax(0,1fr) auto }.amount { grid-column:2;grid-row:2;text-align:left;justify-items:start }.card > svg { grid-column:3;grid-row:1 } }

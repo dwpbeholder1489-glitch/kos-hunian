@@ -1,0 +1,8 @@
+.t { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.t th, .t td { padding: 7px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.t thead th { color: var(--muted); font-size: 12px; font-weight: 600; }
+.t tbody th { text-align: left; font-weight: 400; white-space: normal; min-width: 130px; }
+.t td:last-child { font-weight: 700; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar select { width: auto; min-width: 200px; max-width: 100%; }
+.bar input[type=date] { width: auto; flex: 0 1 170px; }

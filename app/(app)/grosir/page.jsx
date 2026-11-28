@@ -1,6 +1,9 @@
 'use client';
 // Grosir & B2B: penawaran → pesanan (cek batas kredit) → surat jalan bertahap → faktur (penjualan grosir) → piutang.
 // Server: so_save / so_confirm / so_deliver / so_delivery_status / so_cancel, price_list_*, customer_credit, receivable_open.
+import { useSearchParams } from 'next/navigation';
+import ChatButton from '@/components/chat/ChatButton';
+import TrackingControls from '@/components/chat/TrackingControls';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -32,6 +35,8 @@ export default function Grosir() {
 
 function GrosirWorkspace({ kosId, kos, ver }) {
   const { bump } = useKos();
+  const query = useSearchParams();
+  const requestedOrder = query.get('pesanan');
   const [tab, setTab] = useState('jalan');
   useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['harga', 'portal', 'penawaran'].includes(t)) setTab(t); } catch {} }, []);
   const [d, setD] = useState(null);
@@ -42,11 +47,11 @@ function GrosirWorkspace({ kosId, kos, ver }) {
   const [detailMode, setDetailMode] = useState(null);
   const [linkedOrder, setLinkedOrder] = useState(undefined);
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('pesanan');
+    const id = requestedOrder;
     const linked = id && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id) ? id : null;
     setLinkedOrder(linked);
     setOpen(linked);
-  }, []);
+  }, [requestedOrder]);
   useBaru(() => setForm({}));
   const load = async () => {
     const [o, l, dv, p, u, c, pl, ro, linked, linkedLines, linkedDeliveries] = await Promise.all([
@@ -402,6 +407,8 @@ function OrderDetail({ initialMode, kos, reloadKey, d, order: o, onClose, onEdit
       : '\n\nBalas pesan ini untuk konfirmasi. Terima kasih.');
   return (
     <Sheet title={`${o.number} · ${c?.name || ''}`} onClose={onClose}>
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}><ChatButton kosId={kos.id} type="so_order" id={o.id} /></div>
+      {o.status !== 'batal' && <TrackingControls track={{ type: 'so_order', id: o.id, status: o.status, prepared_at: o.prepared_at, deliveries: dvs }} onChanged={onChanged} />}
       <div className="row" style={{ gap: 6 }}><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.source === 'portal' && <span className="chip">{o.portal_guest_hash ? 'Dari portal bisnis publik' : 'Dari portal pelanggan'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span>}{o.customer_ref && <span className="chip">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</span>}</div>
       {o.portal_fulfillment && <div className="unitbox small">
         <b>{o.portal_fulfillment === 'antar' ? 'Kirim ke alamat' : 'Ambil di toko'}</b>

@@ -1,0 +1,320 @@
+{
+    "to": "2026-11-28",
+    "occ": [
+        {
+            "hari": 93,
+            "bulan": "2025-12",
+            "terisi": 0
+        },
+        {
+            "hari": 93,
+            "bulan": "2026-01",
+            "terisi": 0
+        },
+        {
+            "hari": 84,
+            "bulan": "2026-02",
+            "terisi": 0
+        },
+        {
+            "hari": 93,
+            "bulan": "2026-03",
+            "terisi": 0
+        },
+        {
+            "hari": 90,
+            "bulan": "2026-04",
+            "terisi": 0
+        },
+        {
+            "hari": 93,
+            "bulan": "2026-05",
+            "terisi": 0
+        },
+        {
+            "hari": 90,
+            "bulan": "2026-06",
+            "terisi": 0
+        },
+        {
+            "hari": 93,
+            "bulan": "2026-07",
+            "terisi": 0
+        },
+        {
+            "hari": 93,
+            "bulan": "2026-08",
+            "terisi": 0
+        },
+        {
+            "hari": 90,
+            "bulan": "2026-09",
+            "terisi": 24
+        },
+        {
+            "hari": 93,
+            "bulan": "2026-10",
+            "terisi": 62
+        },
+        {
+            "hari": 84,
+            "bulan": "2026-11",
+            "terisi": 56
+        }
+    ],
+    "pnl": {
+        "pendapatan_usaha": 1600000.00,
+        "beban_operasional": 250000.00
+    },
+    "t12": {
+        "pendapatan_usaha": 3200000.00
+    },
+    "from": "2026-10-30",
+    "main": "0c31700c-f510-475c-8b65-d75dac6b3333",
+    "prev": {
+        "pendapatan_usaha": 1600000.00
+    },
+    "aktif": true,
+    "dalam": true,
+    "due30": 0,
+    "maint": {
+        "cost": 0,
+        "open": 0
+    },
+    "props": [
+        {
+            "id": "0c31700c-f510-475c-8b65-d75dac6b3333",
+            "aset": 0,
+            "name": "Lokasi utama",
+            "note": "appraisal",
+            "kamar": 2,
+            "invest": 500000000.00,
+            "market": 600000000.00,
+            "terisi": 1,
+            "address": null,
+            "is_main": true,
+            "invest_date": "2025-10-24",
+            "market_date": "2026-11-28"
+        },
+        {
+            "id": "cf8e6159-a056-4bda-8a5c-b61e1dd2b7aa",
+            "aset": 0,
+            "name": "Gedung B",
+            "note": null,
+            "kamar": 1,
+            "invest": 200000000.00,
+            "market": null,
+            "terisi": 1,
+            "address": "Jl. Melati 2",
+            "is_main": false,
+            "invest_date": null,
+            "market_date": null
+        }
+    ],
+    "rooms": [
+        {
+            "id": "e7e7e7e7-0000-0000-0000-0000000000a1",
+            "code": "A1",
+            "name": null,
+            "rent": 1000000.00,
+            "booked": false,
+            "branch": "0c31700c-f510-475c-8b65-d75dac6b3333",
+            "status": "terisi",
+            "tickets": 0,
+            "lease_rent": 1000000.00
+        },
+        {
+            "id": "e7e7e7e7-0000-0000-0000-0000000000a2",
+            "code": "A2",
+            "name": null,
+            "rent": 800000.00,
+            "booked": false,
+            "branch": "0c31700c-f510-475c-8b65-d75dac6b3333",
+            "status": "tersedia",
+            "tickets": 0,
+            "lease_rent": null
+        },
+        {
+            "id": "e7e7e7e7-0000-0000-0000-0000000000a3",
+            "code": "B1",
+            "name": null,
+            "rent": 600000.00,
+            "booked": false,
+            "branch": "cf8e6159-a056-4bda-8a5c-b61e1dd2b7aa",
+            "status": "terisi",
+            "tickets": 0,
+            "lease_rent": 600000.00
+        }
+    ],
+    "today": "2026-11-28",
+    "units": [
+        {
+            "id": "e7e7e7e7-0000-0000-0000-0000000000a3",
+            "code": "B1",
+            "hari": 30,
+            "rent": 600000.00,
+            "masuk": 600000.00,
+            "rawat": 0,
+            "status": "terisi",
+            "hari_terisi": 30
+        },
+        {
+            "id": "e7e7e7e7-0000-0000-0000-0000000000a1",
+            "code": "A1",
+            "hari": 30,
+            "rent": 1000000.00,
+            "masuk": 1000000.00,
+            "rawat": 0,
+            "status": "terisi",
+            "hari_terisi": 30
+        },
+        {
+            "id": "e7e7e7e7-0000-0000-0000-0000000000a2",
+            "code": "A2",
+            "hari": 30,
+            "rent": 800000.00,
+            "masuk": 0,
+            "rawat": 0,
+            "status": "tersedia",
+            "hari_terisi": 0
+        }
+    ],
+    "billed": 1600000.00,
+    "branch": null,
+    "lanjut": true,
+    "locked": {
+        "units": false,
+        "invest": false,
+        "properti": false,
+        "proyeksi": false
+    },
+    "arrears": {
+        "b30": 0,
+        "b60": 0,
+        "b90": 0,
+        "b90p": 0,
+        "count": 0,
+        "total": 0,
+        "penghuni": 0
+    },
+    "forward": [
+        {
+            "bulan": "2026-12",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-01",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-02",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-03",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-04",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-05",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-06",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-07",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-08",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-09",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-10",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        },
+        {
+            "bulan": "2027-11",
+            "booking": 0,
+            "kontrak": 0,
+            "potensi": 800000.00,
+            "berjalan": 1600000.00
+        }
+    ],
+    "per_prop": [
+        {
+            "id": "0c31700c-f510-475c-8b65-d75dac6b3333",
+            "pnl": {
+                "pendapatan_usaha": 1000000.00,
+                "beban_operasional": 100000.00
+            },
+            "t12": {
+                "pendapatan_usaha": 2000000.00
+            }
+        },
+        {
+            "id": "cf8e6159-a056-4bda-8a5c-b61e1dd2b7aa",
+            "pnl": {
+                "pendapatan_usaha": 600000.00,
+                "beban_operasional": 150000.00
+            },
+            "t12": {
+                "pendapatan_usaha": 1200000.00
+            }
+        }
+    ],
+    "collected": 1600000.00,
+    "aset_total": 0,
+    "t12_period": {
+        "to": "2026-10-31",
+        "from": "2026-09-01",
+        "bulan": 2
+    },
+    "prev_period": {
+        "to": "2026-10-29",
+        "from": "2026-09-30"
+    },
+    "kamar_tanpa_lokasi": false
+}

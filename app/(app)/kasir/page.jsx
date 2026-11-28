@@ -9,6 +9,7 @@ import ProductPhotoButton from '@/components/ProductPhotoScan';
 import { moduleOn, canArea } from '@/lib/business';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
+import { PageTourPrompt } from '@/components/InteractiveGuide';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
@@ -50,7 +51,12 @@ export default function Kasir() {
   const uid = session?.user?.id;
   if (!uid || !kosId) return null;
   const accountKey = uid + ':' + kosId;
-  return <KasirWorkspace key={accountKey} accountKey={accountKey} uid={uid} />;
+  return <div className="stack">
+    <div className="row">
+      <Link className="nt-btn primary" href="/kasir/demo" data-guide-target="pos-demo">Coba Kasir DEMO</Link>
+    </div>
+    <KasirWorkspace key={accountKey} accountKey={accountKey} uid={uid} />
+  </div>;
 }
 
 function KasirWorkspace({ accountKey, uid: accountId }) {
@@ -221,7 +227,7 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
 
   const catalog = (
     <div className="stack pos-left" style={{ minWidth: 0 }}>
-      <PageHeader title="Kasir" help={<PageHelp page="kasir" />} desc={false} actions={<>
+      <PageHeader title="Kasir" help={<PageHelp page="kasir" />} desc={false} actions={<><PageTourPrompt />
         <span className={'chip ' + (online ? 'good' : 'bad')} title={online ? 'Tersambung ke internet' : 'Tidak ada internet — penjualan disimpan di HP dan dikirim otomatis'}>● {online && !d.offline ? 'Online' : 'Offline'}</span>
         {held.length > 0 && <button type="button" className="sm" onClick={() => setSheet('held')}>Ditahan ({held.length})</button>}
         <PrinterManager kosId={kosId} />
@@ -242,7 +248,7 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
         {[['', 'Semua'], ...d.cats.map((c) => [c.id, c.name]), ...(d.products.some((p) => !p.category_id) ? [['-', 'Lainnya']] : [])].map(([id, nm]) => (
           <button key={id || 'all'} role="tab" aria-selected={catF === id} className={catF === id ? 'on' : ''} onClick={() => setCatF(id)}>{nm}</button>
         ))}</div>}
-      <div className="pos-search">
+      <div className="pos-search" data-guide-target="pos-search">
         <label className="pos-q"><PosIcon n="search" /><input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); byCode(q); } }} placeholder="Cari produk (nama, kode, atau barcode)…" aria-label="Cari barang" /></label>
         <div className="pos-scan-actions">
           <ScanButton onCode={byCode} label={desk ? 'Scan Barcode' : 'Barcode'} className="pos-scan" />
@@ -290,7 +296,7 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
   const panelProps = { kos, kosId, d, tier, cart, setCart, lead, contact, setContact, discount, setDiscount, note, setNote, cmd, thumbs, onHold: hold, reloadContacts: load, offline: d.offline,
     onDone: (r) => { clearAll(); setDone(r); setSeq((x) => x + 1); if (!r.offline) { setLastSale(r.id); try { localStorage.setItem(lastKey(accountKey), r.id); } catch {} } load(); } };
   const emptyPanel = (
-    <aside className="pos-cart panel" aria-label="Keranjang">
+    <aside className="pos-cart panel" data-guide-target="pos-cart" aria-label="Keranjang">
       <div className="pos-ch"><h3><PosIcon n="cart" /> Keranjang (0)</h3></div>
       <p className="small muted" style={{ margin: 0 }}>Belum ada barang. Ketuk <b>+</b> pada barang, ketik nama, atau scan barcode.</p>
       {held.length > 0 && <button className="sm" onClick={() => setSheet('held')}>Lanjutkan transaksi ditahan ({held.length})</button>}
@@ -307,7 +313,7 @@ function KasirWorkspace({ accountKey, uid: accountId }) {
       {cart.length > 0 && !desk && (
         <div className="cartbar pos-bar">
           <button type="button" onClick={() => cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><span>Keranjang ({count})</span><b>{rp(total)}</b></button>
-          <button type="button" className="pos-bayar" onClick={() => setCmd({ k: 'pay', n: Date.now() })}>Bayar</button>
+          <button type="button" className="pos-bayar" data-guide-target="pos-pay" onClick={() => setCmd({ k: 'pay', n: Date.now() })}>Bayar</button>
         </div>
       )}
       {sheet === 'cust' && <Sheet title="Pelanggan" onClose={() => setSheet(null)}>
@@ -596,7 +602,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
   const tierLabel = tier === 'grosir' ? 'harga grosir' : 'harga eceran';
   // Panel keranjang (laptop: kanan, lengket · HP: di bawah katalog)
   const cartPanel = (
-    <aside className="pos-cart panel" aria-label="Keranjang">
+    <aside className="pos-cart panel" data-guide-target="pos-cart" aria-label="Keranjang">
       <div className="pos-ch">
         <h3><PosIcon n="cart" /> Keranjang ({cart.length})</h3>
         <button type="button" className="sm ghost pos-clear" onClick={() => { if (window.confirm('Kosongkan keranjang?')) setCart([]); }}><PosIcon n="trash" /> Kosongkan</button>
@@ -653,7 +659,7 @@ function Checkout({ kos, kosId, d, tier, cart, setCart, lead, contact, setContac
       <div className="pos-total"><span>Total Bayar</span><b>{rp(total)}</b></div>
       <div className="pos-btns">
         <button type="button" className="pos-sec" onClick={onHold}><PosIcon n="pause" /><span><b>Tahan</b><small>simpan dulu</small></span></button>
-        <button type="button" className="pos-pay" onClick={() => setPayOpen(true)} disabled={busy}><PosIcon n="card" /><span><b>Bayar</b><small>{tierLabel}</small></span></button>
+        <button type="button" className="pos-pay" data-guide-target="pos-pay" onClick={() => setPayOpen(true)} disabled={busy}><PosIcon n="card" /><span><b>Bayar</b><small>{tierLabel}</small></span></button>
       </div>
     </aside>
   );

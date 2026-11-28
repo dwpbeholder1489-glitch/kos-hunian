@@ -2,18 +2,22 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useKos } from '@/components/KosProvider';
-import { HELP_CATS, searchHelp } from '@/lib/help';
+import TourCatalog from '@/components/TourCatalog';
+import { knowledgeFor } from '@/lib/learning';
+import { HELP_CATS } from '@/lib/help';
 import { BUSINESS } from '@/lib/plan';
 import Tickets from '@/components/Tickets';
 import SupportAccess from '@/components/SupportAccess';
 import { supabase } from '@/lib/supabase';
+import { notifSignOut } from '@/lib/notif';
 
 export default function Bantuan() {
   const { kos } = useKos();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
-  const hasil = useMemo(() => searchHelp(q), [q]);
-  const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, saya pemilik ${kos?.name || 'kos'}. Saya butuh bantuan: `)}`;
+  const hasil = useMemo(() => knowledgeFor(kos, q), [kos, q]);
+  const categories = HELP_CATS.filter(([cat]) => hasil.some((h) => h.cat === cat));
+  const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Halo tim PRASARA, saya menggunakan PRASARA untuk ${kos?.name || 'kos'}. Saya butuh bantuan: `)}`;
 
   const Item = ({ h }) => (
     <div className="li" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
@@ -36,14 +40,16 @@ export default function Bantuan() {
 
   return (
     <div className="stack">
-      <h2>Pusat bantuan</h2>
+      <h2>Panduan &amp; Bantuan</h2>
+      <div id="tur"><TourCatalog kos={kos} /></div>
+      <section className="panel" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}><span><b>Learning Center</b><br /><span className="small muted">Materi bertahap, simulasi DEMO, evaluasi, dan progres belajar.</span></span><Link href="/learning-center"><button className="primary">Buka Learning Center</button></Link></section>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ketik pertanyaan, mis. penghuni lama, kwitansi, prive" aria-label="Cari bantuan" />
       {q.trim() ? (
         <section className="panel">
           <span className="label">{hasil.length ? `${hasil.length} jawaban` : 'Belum ada jawaban untuk kata itu'}</span>
           <div className="list">{hasil.map((h) => <Item key={h.id} h={h} />)}</div>
         </section>
-      ) : HELP_CATS.map(([cat, name]) => (
+      ) : categories.map(([cat, name]) => (
         <section className="panel" key={cat}>
           <h3>{name}</h3>
           <div className="list">{hasil.filter((h) => h.cat === cat).map((h) => <Item key={h.id} h={h} />)}</div>
@@ -57,7 +63,7 @@ export default function Bantuan() {
         <a href={wa} target="_blank" rel="noreferrer"><button className="primary">Tanya via WhatsApp</button></a>
         <Link href="/panduan" className="small">Baca panduan lengkap bergambar →</Link>
       </section>
-      <button className="ghost" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
+      <button className="ghost" onClick={async () => { await notifSignOut(); await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
     </div>
   );
 }

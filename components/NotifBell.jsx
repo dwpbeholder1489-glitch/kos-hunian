@@ -7,8 +7,10 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { today } from '@/lib/format';
 
-// Lonceng di kepala aplikasi: jumlah hal yang perlu ditindaklanjuti hari ini (hitungan ringan, tanpa memuat semua data)
-export default function NotifBell() {
+import { NotifBellMenu } from '@/components/NotifCenter';
+
+// Hitungan hal yang perlu ditindaklanjuti hari ini (kos): pembayaran menunggu, tagihan telat & jatuh tempo, tindak lanjut CRM
+export function useKosTodo() {
   const { kosId, ver } = useKos();
   const path = usePathname();
   const [n, setN] = useState(0);
@@ -23,7 +25,17 @@ export default function NotifBell() {
     ]).then((res) => { if (alive) setN(res.reduce((s, r) => s + (r.count || 0), 0)); }).catch(() => {});
     return () => { alive = false; };
   }, [kosId, ver, path]);
-  const count = n + useCrmDue();
+  return n + useCrmDue();
+}
+// Lonceng Pusat Notifikasi untuk kos (angka = belum dibaca + perlu ditindaklanjuti)
+export function KosBell() {
+  const count = useKosTodo();
+  return <NotifBellMenu todo={{ count, href: '/notifikasi', label: 'Perlu ditindaklanjuti hari ini' }} />;
+}
+
+// Lonceng lama (hanya hitungan tindak lanjut) — dipertahankan
+export default function NotifBell() {
+  const count = useKosTodo();
   return (
     <Link href="/notifikasi" className="helpbtn bell" aria-label={count ? `Notifikasi: ${count} perlu ditindaklanjuti` : 'Notifikasi'} title="Notifikasi">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>

@@ -1102,3 +1102,156 @@ export function ScrMedia() {
     </Phone>
   );
 }
+
+// Notifikasi: aktivasi (iPhone lewat Layar Utama), kotak masuk, pengaturan — DATA CONTOH
+export function ScrNotifAktif() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Aktifkan notifikasi</h3>
+      <div className="unitbox small" style={{ gap: 4 }}><b>iPhone · Safari</b><span className="muted">Perlu dipasang ke Layar Utama</span></div>
+      <div className="small">1. Ketuk <b>Bagikan</b> ⬆ di Safari</div>
+      <div className="small">2. Pilih <b>Tambahkan ke Layar Utama</b></div>
+      <div className="small">3. Buka PRASARA dari ikon <b>P</b></div>
+      <span className="mini-btn cta">Aktifkan Notifikasi</span>
+      <div className="unitbox small" style={{ gap: 4, borderColor: 'var(--good)' }}><b>Notifikasi aktif di perangkat ini</b><span className="muted">Pesan uji “perangkat baru” sudah masuk.</span></div>
+    </Phone>
+  );
+}
+export function ScrNotifCenter() {
+  const rows = [['Permintaan pesanan baru', 'PSN-0145 · Bu Rina · 3 kg', '2 mnt', 'Penting'], ['Stok menipis', 'Kopi Arabika 500g tersisa 8 pcs', '15 mnt', ''], ['3 penjualan baru', 'Penjualan TRX-018 · ' + rp(45000), '1 jam', ''], ['Menunggu persetujuan Anda', 'Minta batal penjualan TRX-011', '2 jam', 'Penting']];
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Notifikasi</h3>
+      <div className="row small" style={{ gap: 4, flexWrap: 'wrap' }}><span className="chip info">Semua 4</span><span className="chip">Penjualan</span><span className="chip">Inventaris</span><span className="chip">Keuangan</span></div>
+      {rows.map(([t, b, w, p]) => (
+        <div key={t} className="unitbox small" style={{ gap: 2 }}>
+          <div className="row between"><b>{t}</b><span className="muted">{w}</span></div>
+          <span className="muted">{b}</span>{p && <span className="chip warn" style={{ alignSelf: 'flex-start' }}>{p}</span>}
+        </div>
+      ))}
+    </Phone>
+  );
+}
+export function ScrNotifSet() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Pengaturan notifikasi</h3>
+      <div className="row between small"><b>Penjualan</b><span>Aplikasi ✓ · Push ✓</span></div>
+      <div className="row between small"><b>Inventaris</b><span>Aplikasi ✓ · Push ✓</span></div>
+      <div className="row between small"><b>Keuangan</b><span>Aplikasi ✓ · Push –</span></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Jam tenang 22.00–07.00 WIB</b><span className="muted">Sen–Min · kritis tetap dikirim</span></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Perangkat terhubung</b><span>iPhone 14 · Safari (ini) · Aktif</span><span>Laptop kantor · Chrome · Aktif</span></div>
+    </Phone>
+  );
+}
+
+// Chat & tracking pelanggan (Langkah 148–149)
+export function ScrChatPelanggan() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Chat dengan Toko</h3>
+      <div className="row between small"><b>Toko Contoh</b><span className="muted">Online · biasanya membalas &lt; 5 menit</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Pesanan #SO-CONTOH-001</b><span className="muted">Rp 96.600 · 3 produk</span></div>
+      <div className="unitbox small" style={{ gap: 2, alignSelf: 'flex-end', background: 'var(--gold-soft)' }}><span>Halo, stok mi goreng 5 dus ada?</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><span>Ada, kak. Siap kami kemas.</span></div>
+      <div className="row small" style={{ gap: 6, flexWrap: 'wrap' }}><span className="chip">Cek stok</span><span className="chip">Cara bayar</span><span className="chip">Estimasi kirim</span></div>
+    </Phone>
+  );
+}
+export function ScrTrackingPesanan() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Pesanan Sedang Dikirim</h3>
+      <span className="small muted">Estimasi tiba hari ini, 17.00 – 19.00 (diisi toko)</span>
+      <div className="row between small"><span>✓ Diproses</span><span>✓ Disiapkan</span><b>● Dikirim</b><span className="muted">○ Selesai</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Detail pengiriman</b><span>Kurir toko · resi CONTOH123</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Hubungi Toko</b><span className="muted">membuka chat pesanan ini</span></div>
+    </Phone>
+  );
+}
+
+export function ScrPropertiIntel() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Property Intelligence</h3>
+      <div className="row between small"><span>Tingkat hunian</span><b>90%</b></div>
+      <div className="row between small"><span>NOI bulan ini</span><b>Rp3.250.000</b></div>
+      <div className="row between small"><span>Rental yield <span className="chip">ESTIMASI</span></span><b>8,4% / thn</b></div>
+      <div className="row between small"><span>ROI</span><b>16,8% / thn</b></div>
+      <div className="row between small"><span>Estimasi balik modal</span><b>5,9 tahun</b></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Proyeksi sewa 12 bulan <span className="chip">PROYEKSI</span></b><span>Dasar Rp54.000.000 · Potensi penuh Rp60.000.000</span></div>
+    </Phone>
+  );
+}
+
+export function ScrInventarisKamar() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Periksa kamar A05 · Check-out</h3>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Kasur</b><span>Baik · Perlu perbaikan · <b>Rusak</b> · Hilang</span><span className="muted">sobek di sudut</span></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Lemari</b><span><b>Baik</b> · Perlu perbaikan · Rusak · Hilang</span></div>
+      <div className="row between small"><span>Nilai kerusakan</span><b>Rp250.000</b></div>
+      <span className="small muted">Simpan → potong deposit penghuni (dengan alasan)</span>
+    </Phone>
+  );
+}
+
+export function ScrTarifKalender() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Booking · Harian</h3>
+      <div className="row between small"><span>Check-in</span><b>Jum, 5 Mar</b></div>
+      <div className="row between small"><span>Check-out</span><b>Sen, 8 Mar</b></div>
+      <div className="unitbox small" style={{ gap: 2 }}>
+        <div className="row between"><span>1 malam (Jumat)</span><span>Rp300.000</span></div>
+        <div className="row between"><span>2 malam (akhir pekan +20%)</span><span>Rp720.000</span></div>
+        <div className="row between"><b>Total 3 malam</b><b>Rp1.020.000</b></div>
+      </div>
+      <span className="small muted">Harga dihitung otomatis dari tarif & aturan tarif</span>
+    </Phone>
+  );
+}
+
+export function ScrKontrakSewa() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Perjanjian sewa A05</h3>
+      <span className="small muted">KTR-2611-001 · Menunggu persetujuan</span>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Link pribadi penyewa</b><span>prasara.id/k/…</span><span className="row"><b>Salin</b> · <b>Kirim via WA</b></span></div>
+      <div className="row between small"><span>Penyewa</span><b>Belum menyetujui</b></div>
+      <div className="row between small"><span>Pengelola</span><b>Dewo · 28 Nov</b></div>
+      <span className="small muted">Jejak audit · Dokumen pendukung · Cetak / PDF</span>
+    </Phone>
+  );
+}
+
+// Tur "? Panduan": sorotan elemen nyata + kartu langkah (Langkah 148)
+export function ScrTurPanduan() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <div className="row between"><h3 style={{ margin: 0 }}>Kamar</h3><span className="chip info">? Panduan</span></div>
+      <div className="unitbox small" style={{ gap: 4, borderColor: 'var(--gold)', boxShadow: '0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent)' }}>
+        <span className="mini-btn cta" style={{ alignSelf: 'flex-start' }}>+ Kamar</span>
+      </div>
+      <div className="unitbox small" style={{ gap: 2, opacity: .45 }}><b>Kamar 101</b><span className="muted">Terisi · Bu Rina</span></div>
+      <div className="unitbox small" style={{ gap: 6 }}>
+        <span className="muted">Langkah 2 dari 6</span>
+        <b>Panduan · Kamar</b>
+        <span>Tambah kamar baru dengan tombol + Kamar.</span>
+        <div className="row between"><span className="muted">‹ Sebelumnya</span><span className="mini-btn cta">Lanjutkan ›</span></div>
+        <div className="row small" style={{ gap: 10 }}><span>Jeda</span><span>Lewati</span><span>Ulangi</span></div>
+        <span className="muted">Panduan hanya menunjukkan — tidak mengubah data bisnis.</span>
+      </div>
+    </Phone>
+  );
+}

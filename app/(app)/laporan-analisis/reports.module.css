@@ -1,0 +1,83 @@
+.page {
+  display: grid;
+  gap: clamp(16px, 2vw, 26px);
+  min-width: 0;
+  padding-block-end: 16px;
+}
+.page h1, .page h2, .page h3, .page p { margin: 0; }
+.page h2 { font-size: clamp(1.15rem, 2vw, 1.42rem); line-height: 1.25; }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 34%);
+  align-items: center;
+  gap: 12px;
+  border-radius: 20px;
+  padding: clamp(16px, 4vw, 36px);
+  background: linear-gradient(125deg, #073f32, #086238 65%, #098548);
+  color: #fff;
+}
+.hero h1 { font-size: clamp(1.65rem, 4.7vw, 2.8rem); line-height: 1.12; color: inherit; }
+.hero p { margin: 8px 0 16px; max-width: 42ch; color: #ecf8ef; line-height: 1.42; }
+.hero img { width: 100%; max-width: 240px; max-height: 160px; object-fit: contain; justify-self: end; }
+.hero button { color: #124932; background: #fff; border: 1px solid #d9e9de; padding: 8px 14px; }
+.navigation, .metrics, .categories { display: grid; gap: 10px; }
+.navigation { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.navigation a, .categories a, .metrics button {
+  min-width: 0;
+  border: 1px solid var(--line, #dce8df);
+  border-radius: 15px;
+  background: var(--surface, #fff);
+  color: var(--ink, #14251f);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.navigation a {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  align-content: start;
+  padding: clamp(10px, 2vw, 20px);
+  background: var(--surface, #fff);
+}
+.navigation strong { font-size: clamp(.88rem, 2vw, 1.06rem); line-height: 1.25; }
+.navigation small, .metrics small, .sources small { display: block; color: var(--muted, #4b6258); line-height: 1.36; }
+.navigation svg, .metrics svg, .categories svg { color: var(--green, #087849); flex: none; }
+.chevron { position: absolute; top: 12px; right: 10px; }
+.toolbar, .filters, .exports, .chartHead { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; min-width: 0; }
+.toolbar, .chartHead { justify-content: space-between; }
+.filters input, .filters select { width: auto; min-width: 0; max-width: 100%; min-height: 44px; font-size: 16px; }
+.segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 100%;
+  border: 1px solid var(--line, #dce8df);
+  border-radius: 12px;
+  padding: 3px;
+  background: var(--surface, #fff);
+}
+.segment button, .exports a { min-height: 38px; padding: 6px 10px; border-radius: 8px; font-weight: 650; }
+.segment button { border: 0; background: transparent; color: var(--ink, #14251f); }
+.segment button[aria-pressed="true"] { color: #fff; background: #09623e; }
+.exports a { display: inline-flex; align-items: center; gap: 6px; color: var(--green, #087849); border: 1px solid var(--line, #dce8df); text-decoration: none; background: var(--surface, #fff); }
+.page .period { margin: 5px 0 12px; color: var(--muted, #4b6258); font-size: .875rem; }
+.metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.metrics button { display: flex; align-items: flex-start; gap: 9px; padding: clamp(11px, 2vw, 17px); text-align: start; }
+.metrics span { display: grid; gap: 4px; min-width: 0; }
+.metrics strong { font-size: .9rem; line-height: 1.3; }
+.metrics b { font-size: clamp(1.05rem, 2.8vw, 1.45rem); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.metrics .warning b, .metrics .warning svg { color: var(--bad, #ae2222); }
+.chart { min-width: 0; border: 1px solid var(--line, #dce8df); border-radius: 18px; background: var(--surface, #fff); padding: clamp(12px, 2.5vw, 22px); }
+.categories { grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)); margin-top: 10px; }
+.categories a { display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: 8px; padding: 12px; font-weight: 650; }
+.navigation a:hover, .metrics button:hover, .categories a:hover, .exports a:hover { border-color: #218357; }
+.sources { display: grid; gap: 5px; min-width: 0; }
+.sources a { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line, #dce8df); color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+.sources a span { flex: 1 1 135px; min-width: 0; }
+.sources a b { color: var(--green, #087849); }
+@media (min-width: 1080px) { .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 380px) {
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 25%); }
+  .metrics button { flex-direction: column; }
+  .navigation small { font-size: .75rem; }
+}

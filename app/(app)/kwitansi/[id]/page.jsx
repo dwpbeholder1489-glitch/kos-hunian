@@ -1,21 +1,22 @@
 'use client';
 import { PrintReceiptButton } from '@/components/PrinterManager';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { LogoMark } from '@/components/Logo';
 import { useParams } from 'next/navigation';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
-import { Loading, Empty } from '@/components/ui';
+import { Loading, Empty, toast } from '@/components/ui';
 import Locked from '@/components/Locked';
 import { hasFeature } from '@/lib/plan';
-import { rp, tgl, invTitle, METHOD, waLink } from '@/lib/format';
+import { rp, tgl, invTitle, METHOD, waLink, errMsg } from '@/lib/format';
 
 import { kwitansiText, receiptNumber, terbilang } from '@/lib/kwitansi';
 
 export default function Kwitansi() {
   const { id } = useParams();
   const { kos } = useKos();
-  const d = useData();
+  const d = useData({ fullRoomHistory: true });
   if (!hasFeature(kos, 'kwitansi')) return <Locked need="dasar" title="Kwitansi PDF" text="Cetak dan kirim kwitansi resmi ke penghuni mulai Paket Dasar." />;
   if (!d.ready) return <Loading />;
   const p = d.payments.find((x) => x.id === id);
@@ -35,10 +36,11 @@ export default function Kwitansi() {
         <div className="row">
           {occ?.phone && <a href={waLink(occ.phone, msg)} target="_blank" rel="noreferrer"><button>Kirim via WhatsApp</button></a>}
           <PrintReceiptButton kosId={kos.id} renderText={() => kwitansiText(kos, p, inv, occ?.name || '—', d.roomCode(inv.room_id))}>Cetak via printer default</PrintReceiptButton>
-          <button onClick={() => window.print()}>Kwitansi lengkap / PDF</button>
+          <ReceiptFile key={p.id} kos={kos} p={p} inv={inv} occ={occ} room={d.roomCode(inv.room_id)} />
+          <button onClick={() => window.print()}>Cetak kuitansi</button>
         </div>
       </div>
-      <p className="small muted noprint" style={{ margin: 0 }}>Pilih "Simpan sebagai PDF" di jendela cetak untuk mendapat file PDF.</p>
+      <p className="small muted noprint" style={{ margin: 0 }}>Jika perangkat tidak mendukung berbagi file, unduh PDF lalu lampirkan ke pesan WhatsApp.</p>
 
       <section className="panel" style={{ gap: 16 }}>
         <div className="row between" style={{ alignItems: 'flex-start' }}>
@@ -72,4 +74,39 @@ export default function Kwitansi() {
       </section>
     </div>
   );
+}
+
+function ReceiptFile({ kos,p,inv,occ,room }) {
+  const [ready,setReady] = useState(null);
+  const [error,setError] = useState(null);
+  useEffect(() => {
+    let active = true;
+    import('@/lib/pdfExport').then(({ makePdf }) => makePdf({
+      title: 'Kuitansi Pembayaran', business: kos.name, type: 'properti', subtitle: receiptNumber(p),
+      exported_at: new Date().toLocaleString('id-ID',{ timeZone:'Asia/Jakarta' }),
+      note: 'Bukti penerimaan pembayaran yang terverifikasi di PRASARA.',
+      sheets: [{ name:'Rincian pembayaran', cols:['Keterangan','Isi'], types:['s','s'], rows:[
+        ['Penghuni',occ?.name || '—'],['Kamar',room],['Tagihan',invTitle(inv)],['Tanggal bayar',tgl(p.paid_at)],
+        ['Metode',METHOD[p.method]],['Referensi',p.ref],['Jumlah diterima',rp(p.amount)],['Sisa tagihan',rp(inv.outstanding)],
+      ] }],
+    })).then((blob) => {
+      if (active) setReady(new File([blob], `Kuitansi-${receiptNumber(p)}.pdf`, { type:'application/pdf' }));
+    }).catch((err) => { if (active) setError(errMsg(err)); });
+    return () => { active = false; };
+  }, [kos,p,inv,occ,room]);
+  const shareable = ready && typeof navigator !== 'undefined' && navigator.canShare?.({ files:[ready] });
+  function download() {
+    const href = URL.createObjectURL(ready);
+    const a = document.createElement('a');
+    a.href = href; a.download = ready.name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(href),30000);
+  }
+  return <>
+    <button disabled={!ready} onClick={download}>Unduh kuitansi PDF</button>
+    {shareable && <button onClick={() => navigator.share({ title:receiptNumber(p), files:[ready] }).catch((err) => {
+      if (err.name !== 'AbortError') toast(errMsg(err));
+    })}>Bagikan PDF</button>}
+    {error && <small role="alert">{error}</small>}
+  </>;
 }

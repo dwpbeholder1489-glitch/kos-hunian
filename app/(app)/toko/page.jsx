@@ -17,6 +17,7 @@ import Dashboard, { Widget, Alerts, QuickActions, ActivityList, useActivity, use
 import { KPIS, periodRange } from '@/lib/dashboards';
 import { mediaUrl } from '@/lib/media';
 import { Loading, Sheet } from '@/components/ui';
+import { SheetStats } from '@/components/SmartDetailSheet';
 import { rp, angka, today, tgl, tglShort, bulan, thisMonth } from '@/lib/format';
 import { isLow, payLabel, jam } from '@/lib/retail';
 import { canArea, tabsFor } from '@/lib/business';
@@ -64,7 +65,8 @@ const percent = new Intl.NumberFormat('id-ID', { style: 'percent', maximumFracti
 function growth(value, before, comparison) {
   if (value == null || before == null || before === 0) return null;
   const delta = (value - before) / Math.abs(before);
-  return { tone: delta > 0 ? 'good' : delta < 0 ? 'bad' : 'neutral', text: `${delta > 0 ? '↑ ' : delta < 0 ? '↓ ' : ''}${percent.format(delta)} · ${comparison}` };
+  const valueText = `${delta > 0 ? '↑ ' : delta < 0 ? '↓ ' : ''}${percent.format(delta)}`;
+  return { tone: delta > 0 ? 'good' : delta < 0 ? 'bad' : 'neutral', valueText, comparison, text: `${valueText} · ${comparison}` };
 }
 
 
@@ -329,8 +331,8 @@ export default function Toko() {
         <CrmHint />
         <RecHint />
       </>} />
-      {detail && <Sheet title={detail.label} onClose={() => setDetail(null)}>
-        <strong>{detail.value}</strong>{detail.sub && <p className="small muted">{detail.sub}</p>}
+      {detail && <Sheet title={detail.label} subtitle={detail.sub} icon="/analisis" onClose={() => setDetail(null)}>
+        <SheetStats items={[[detail.label, detail.value]]} />
         {detail.id === 'menipis' && <div className="list">{low.map((item) => <div className="li" key={item.id}>
           <span>{item.name}</span><b>{angka(item.stock)} / {angka(item.min_stock)} {item.base_unit}</b>
         </div>)}</div>}

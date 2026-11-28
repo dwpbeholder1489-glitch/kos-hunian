@@ -293,6 +293,7 @@ export default function Bisnis() {
                 <div className="row"><button className="sm" onClick={() => setPick(sel.map((business) => business.id))}>{sel.length ? 'Ubah pilihan' : 'Pilih bisnis yang digabung'}</button></div>
               </>
             )}
+            <span className="small muted">Gabungan di sini hanya menjumlahkan. Untuk menghapus transaksi antarbisnis sendiri dan memisahkan bagian pemilik lain, pakai <Link href="/konsolidasi">Konsolidasi</Link> (Paket Pro).</span>
           </section>
         </>
       )}

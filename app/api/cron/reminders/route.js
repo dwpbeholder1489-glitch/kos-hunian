@@ -6,6 +6,7 @@ import { runSummaries } from '@/lib/summaries';
 import { runRetailAlerts } from '@/lib/retailAlerts';
 import { runAutomations } from '@/lib/automation';
 import { adminDb } from '@/lib/reminders';
+import { dispatch } from '@/lib/notifServer';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -19,6 +20,10 @@ export async function GET(req) {
   // Pembukuan: posting jurnal dari transaksi kemarin (halaman Pembukuan juga memposting saat dibuka)
   let pembukuan = { ok: true, skipped: 'belum dikonfigurasi' };
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('acct_sync_all'); pembukuan = r.error ? { ok: false, error: r.error.message } : { ok: !(r.data?.gagal > 0), ...r.data }; } } catch (e) { pembukuan = { ok: false, error: e.message }; }
+  // Rekap Bisnis: arsip otomatis periode yang baru selesai (minggu/bulan/kuartal/tahun) + versi koreksi bila data periode lama berubah.
+  // Dijalankan SESUDAH posting jurnal agar arsip memakai jurnal terbaru.
+  let rekap = { ok: true, skipped: 'belum dikonfigurasi' };
+  try { const sb = adminDb(); if (sb) { const r = await sb.rpc('recap_auto_tick', { p_limit: 300 }); rekap = r.error ? { ok: false, error: r.error.message } : { ok: !(r.data?.gagal > 0), ...r.data }; } } catch (e) { rekap = { ok: false, error: e.message }; }
   // Portal bisnis (Pro): sembunyikan halaman bisnis yang tidak berhak lagi (turun paket); isi halaman tidak dihapus
   let portal = { ok: true, skipped: 'belum dikonfigurasi' };
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('portal_unpublish_lapsed'); portal = r.error ? { ok: false, error: r.error.message } : { ok: true, disembunyikan: r.data }; } } catch (e) { portal = { ok: false, error: e.message }; }
@@ -30,6 +35,17 @@ export async function GET(req) {
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('integ_logs_purge'); integrasi = r.error ? { ok: false, error: r.error.message } : { ok: true, dihapus: r.data }; } } catch (e) { integrasi = { ok: false, error: e.message }; }
   let pemakaian = { ok: true, skipped: 'belum dikonfigurasi' };
   try { const sb = adminDb(); if (sb) { const r = await sb.rpc('exp_usage_purge'); pemakaian = r.error ? { ok: false, error: r.error.message } : { ok: true, dihapus: r.data }; } } catch (e) { pemakaian = { ok: false, error: e.message }; }
+  // Notifikasi: pengingat harian (tagihan jatuh tempo, pesanan terlambat), retensi, lalu kirim antrean push yang tertunda
+  // (cadangan bila pg_net/pg_cron tidak tersedia; sekaligus mendaftarkan alamat aplikasi untuk pg_net)
+  let notifikasi = { ok: true, skipped: 'belum dikonfigurasi' };
+  try {
+    const sb = adminDb();
+    if (sb) {
+      const t = await sb.rpc('notif_daily_tick'); const p = await sb.rpc('notif_purge');
+      const d = await dispatch({ origin, reason: 'cron', budgetMs: 20000 });
+      notifikasi = { ok: !t.error && !p.error && d.ok !== false, harian: t.error ? t.error.message : t.data, retensi: p.error ? p.error.message : p.data, kirim: d };
+    }
+  } catch (e) { notifikasi = { ok: false, error: e.message }; }
   // Lampiran: hapus file yang sudah dihapus pengguna / unggahan yang tidak selesai dari penyimpanan
   let lampiran = { ok: true, skipped: 'belum dikonfigurasi' };
   try {
@@ -54,6 +70,18 @@ export async function GET(req) {
       lampiranPenawaran = { ok: true, dibersihkan: paths?.length || 0 };
     }
   } catch (e) { lampiranPenawaran = { ok: false, error: e.message }; }
+  // Lampiran chat pelanggan yang tersimpan tapi pesannya gagal dikirim (> 1 hari)
+  let lampiranChat = { ok: true, skipped: 'belum dikonfigurasi' };
+  try {
+    const sb = adminDb();
+    if (sb) {
+      const { data: paths, error } = await sb.rpc('cx_orphan_paths');
+      if (error) throw error;
+      const list = (paths || []).map((x) => (typeof x === 'string' ? x : x?.cx_orphan_paths)).filter(Boolean);
+      if (list.length) { const { error: removal } = await sb.storage.from('customer-chat').remove(list); if (removal) throw removal; }
+      lampiranChat = { ok: true, dibersihkan: list.length };
+    }
+  } catch (e) { lampiranChat = { ok: false, error: e.message }; }
   // Media (foto publik): file lama setelah diganti/dihapus + unggahan yang tidak selesai
   let media = { ok: true, skipped: 'belum dikonfigurasi' };
   try {
@@ -66,7 +94,7 @@ export async function GET(req) {
       media = { ok: true, dibersihkan: paths.length };
     }
   } catch (e) { media = { ok: false, error: e.message }; }
-  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && portal.ok && pengalaman.ok && integrasi.ok && pemakaian.ok && lampiran.ok && lampiranPenawaran.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, portal, pengalaman, integrasi, pemakaian, lampiran, lampiranPenawaran, media };
+  const res = { ok: reminders.ok && onboarding.ok && summaries.ok && toko.ok && otomatisasi.ok && pembukuan.ok && rekap.ok && portal.ok && pengalaman.ok && integrasi.ok && pemakaian.ok && notifikasi.ok && lampiran.ok && lampiranPenawaran.ok && lampiranChat.ok && media.ok, reminders, onboarding, summaries, toko, otomatisasi, pembukuan, rekap, portal, pengalaman, integrasi, pemakaian, notifikasi, lampiran, lampiranPenawaran, lampiranChat, media };
   console.log('[cron daily]', JSON.stringify(res));
   try { await adminDb()?.from('cron_runs').insert({ ok: res.ok, result: res }); } catch {} // untuk halaman Status sistem
   return Response.json(res, { status: res.ok ? 200 : 500 });

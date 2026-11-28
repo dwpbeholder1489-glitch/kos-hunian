@@ -7,17 +7,17 @@ import { errMsg } from '@/lib/format';
 import { multiLoc } from '@/lib/business';
 
 // Lokasi kerja (cabang/gudang): penjualan, belanja, dan penyesuaian stok tercatat di lokasi ini. Muncul hanya bila ada >1 lokasi.
-export default function LokasiBar({ note }) {
+export default function LokasiBar({ note, onBusyChange }) {
   const { kos, kosId, loadKos, bump } = useKos();
   const [busy, setBusy] = useState(false);
   if (!multiLoc(kos)) return null;
   const { list, current, locked } = kos.locs;
   const cur = list.find((b) => b.id === current);
   const change = async (id) => {
-    setBusy(true);
+    setBusy(true); onBusyChange?.(true);
     const { error } = await supabase.rpc('my_location_set', { p_kos: kosId, p_branch: id });
-    if (error) { setBusy(false); return toast(errMsg(error)); }
-    await loadKos(); bump(); setBusy(false);
+    if (error) { setBusy(false); onBusyChange?.(false); return toast(errMsg(error)); }
+    await loadKos(); bump(); setBusy(false); onBusyChange?.(false);
     toast('Lokasi kerja: ' + (list.find((b) => b.id === id)?.name || ''));
   };
   return (

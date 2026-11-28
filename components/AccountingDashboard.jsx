@@ -122,7 +122,7 @@ export default function AccountingDashboard({ report, kosId, entity, from, to, y
     <AccountingMenu active="overview" menus={menus} onOpen={onOpen} canConfigure={canConfigure} />
     <section className={styles.planning}>
       <Link href="/anggaran"><strong>Selisih Anggaran Bulan Ini</strong><small>Lihat realisasi dan transaksi biaya ›</small></Link>
-      <button type="button" onClick={() => onOpen('investment')}><strong>Simulasi Kelayakan Investasi</strong><small>Bandingkan ROI, NPV, dan balik modal ›</small></button>
+      {!entity && <button type="button" onClick={() => onOpen('investment')}><strong>Smart Investment Planner</strong><small>Bandingkan ROI, NPV, dan balik modal ›</small></button>}
       {canValue && <button type="button" onClick={() => onOpen('valuation')}><strong>Valuasi Bisnis (DCF)</strong><small>Estimasi nilai dan sensitivitas ›</small></button>}
       {canForecast && <button type="button" onClick={() => onOpen('forecast')}><strong>Proyeksi Kas 30 Hari</strong><small>Lihat jadwal dan simulasi ›</small></button>}
     </section>

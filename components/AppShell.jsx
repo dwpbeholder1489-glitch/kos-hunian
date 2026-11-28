@@ -11,6 +11,7 @@ import NavIcon from '@/components/NavIcon';
 import { LogoMark } from '@/components/Logo';
 import { useKos } from '@/components/KosProvider';
 import { supabase } from '@/lib/supabase';
+import { notifSignOut } from '@/lib/notif';
 import { logoUrl } from '@/lib/logo';
 import { SIDE_KEY } from '@/lib/theme';
 import { isKuliner, typeOf, roleOf, ROLES, isDraft, homeOf } from '@/lib/business';
@@ -154,7 +155,7 @@ export function Sidebar({ kos, path, on, admin, onBiz }) {
       <div className="side-foot">
         {isKuliner(kos) && <img className="fnb-side-mascot" alt="Maskot PRASARA" src="/retail/prasara-maskot.webp" />}
         {admin && <Link href="/admin" className={'side-i' + (on('/admin') ? ' on' : '')} data-tip="Admin PRASARA"><NavIcon name="/admin" size={20} /><span className="side-t">Admin PRASARA</span></Link>}
-        <Link href="/bantuan" className={'side-i' + (on('/bantuan') ? ' on' : '')} data-tip="Bantuan"><NavIcon name="/bantuan" size={20} /><span className="side-t">Bantuan</span></Link>
+        <Link href="/bantuan" className={'side-i' + ((on('/bantuan') || on('/learning-center')) ? ' on' : '')} data-tip="Panduan & Bantuan"><NavIcon name="/bantuan" size={20} /><span className="side-t">Panduan &amp; Bantuan</span></Link>
       </div>
       {tip && !fly && <div className="side-tip" style={{ top: tip.top }} role="tooltip">{tip.text}</div>}
       {flyGroup && (
@@ -185,7 +186,7 @@ function MenuSearch({ kos }) {
     return () => window.removeEventListener('keydown', k);
   }, []);
   const term = q.trim().toLowerCase();
-  const pool = [['Beranda', homeOf(kos), 'Beranda'], ...groupsFor(kos, { all: true }).flatMap(([, g, , items]) => items.map(([h, l]) => [l, h, g])), ['Akun & tampilan', '/akun', 'Akun'], ['Bantuan', '/bantuan', 'Bantuan'], ['Notifikasi', '/notifikasi', 'Akun']];
+  const pool = [['Beranda', homeOf(kos), 'Beranda'], ...groupsFor(kos, { all: true }).flatMap(([, g, , items]) => items.map(([h, l]) => [l, h, g])), ['Akun & tampilan', '/akun', 'Akun'], ['Panduan & Bantuan', '/bantuan', 'Bantuan'], ['Learning Center', '/learning-center', 'Bantuan'], ['Notifikasi', '/notifikasi', 'Akun']];
   const hits = term ? pool.filter(([l, h, g]) => `${l} ${subOf(h)} ${g}`.toLowerCase().includes(term)).slice(0, 8) : [];
   const go = (h) => { setQ(''); setOpen(false); router.push(h); };
   return (
@@ -239,7 +240,7 @@ export function Topbar({ kos, path, bell, share, admin, onMenu, onBiz }) {
           <Link href="/panduan" role="menuitem"><NavIcon name="/catatan" size={18} />Panduan lengkap</Link>
           {admin && <Link href="/admin" role="menuitem"><NavIcon name="/admin" size={18} />Admin PRASARA</Link>}
           <hr />
-          <button type="button" role="menuitem" data-close className="danger" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/masuk'; }}><NavIcon name="logout" size={18} />Keluar</button>
+          <button type="button" role="menuitem" data-close className="danger" onClick={async () => { await notifSignOut(); await supabase.auth.signOut(); window.location.href = '/masuk'; }}><NavIcon name="logout" size={18} />Keluar</button>
         </Dropdown>
       </div>
     </header>

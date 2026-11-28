@@ -324,3 +324,7 @@
 .scGroup > :global(.sm) { justify-self: start; }
 .scList { margin: 0; padding: 0; list-style: none; }
 .scList li + li { border-top: 1px solid var(--line); }
+.vlTriple { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@container card (max-width: 360px) { .vlTriple { grid-template-columns: 1fr; } }
+.vlCheck { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 13px; }
+.vlCheck input { width: 18px; height: 18px; min-height: 0; margin: 0; padding: 0; accent-color: var(--gold); }

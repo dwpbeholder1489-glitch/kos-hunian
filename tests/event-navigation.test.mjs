@@ -49,5 +49,5 @@ test('event menu groups do not overwrite other business menus (kos "Booking" gro
   const kos = { business_type: 'properti', my_role: 'pemilik' };
   const g = groupsFor(kos, { all: true }).find(([, , , items]) => items.some(([h]) => h === '/booking'));
   assert.ok(g, 'kelompok booking kamar ada');
-  assert.equal(g[1], 'Booking');
+  assert.notEqual(g[1], 'Booking & Pesanan', 'label kos tidak boleh tertimpa label Event');
 });

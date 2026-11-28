@@ -190,7 +190,7 @@ function ServiceDashboard() {
     { id: 'bahan', title: 'Bahan menipis', size: 'normal', node: bahan && bahan.length > 0 && (
       <Widget title={T.kul ? 'Bahan baku menipis' : 'Bahan menipis'} action={<Link href="/barang">Stok</Link>}>
         <ul className="alerts">{bahan.slice(0, 6).map((p) => <li key={p.id}><div><span className="alerts-t small">{p.name}</span><span className="small" style={{ whiteSpace: 'nowrap', color: 'var(--bad)' }}>{angka(p.stock)} / min {angka(p.min_stock)} {p.base_unit}</span></div></li>)}</ul>
-        {has('/belanja') && <Link href="/belanja?baru=1" className="small">Belanja bahan →</Link>}
+        {has('/belanja') && <Link href="/belanja/baru" className="small">Belanja bahan →</Link>}
       </Widget>
     ) },
     { id: 'terlambat', title: 'Terlambat', size: 'normal', node: lateL.length > 0 && <List title="Terlambat" rows={lateL} tone="bad" /> },

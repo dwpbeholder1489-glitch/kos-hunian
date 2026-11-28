@@ -15,13 +15,11 @@ update public.plan_versions v
 set features = (select array_agg(distinct f order by f) from unnest(v.features || '{proyek_lanjut}'::text[]) f)
 where v.plan_key in ('bisnis', 'pro') and v.id = (public.plan_current(v.plan_key)).id;
 
-create or replace function public.plan_feature_codes()
-returns text[] language sql immutable as $$
-  select array['laporan_lengkap', 'ekspor', 'kwitansi', 'pengingat_email', 'portal_penghuni', 'email_toko',
-               'portal_bisnis', 'jurnal_manual', 'anggaran', 'rekonsiliasi', 'laporan_lanjutan', 'persetujuan', 'otomatisasi',
-               'akses_modul', 'akses_granular', 'persetujuan_bertingkat', 'otomatisasi_lanjutan', 'analisis_lanjutan', 'analisis_mendalam',
-               'integrasi', 'gabungan_bisnis', 'proyek', 'proyek_lanjut'];
-$$;
+-- Tambahkan kode fitur tanpa menimpa kode lain yang ditambahkan migrasi sesudah 21 Nov (mis. laporan_investor)
+do $$ begin
+  execute format('create or replace function public.plan_feature_codes() returns text[] language sql immutable as $f$ select %L::text[] $f$',
+    (select array_agg(distinct x) from unnest(public.plan_feature_codes() || '{proyek_lanjut}'::text[]) x));
+end $$;
 
 create or replace function public._prasara_patch(p_sig text, p_old text, p_new text)
 returns void language plpgsql as $$
@@ -63,17 +61,21 @@ update public.growth_rules set active = false, updated_by = 'sistem' where id = 
 update public.growth_rules set to_plan = 'dasar', title = 'Kelola setiap acara sebagai event.',
   message = 'Paket Dasar memberi tiap event satu tempat: klien, jadwal, tugas tim, tagihan DP & pelunasan, dan kalender acara.',
   cta = 'Upgrade ke Paket Dasar', updated_by = 'sistem' where id = 'UPGRADE.PROJECT.GRATIS';
-alter table public.growth_rules drop constraint if exists growth_rules_trigger_event_check;
-alter table public.growth_rules add constraint growth_rules_trigger_event_check
-  check (trigger_event is null or trigger_event in ('LAPORAN.DIBUKA', 'TRANSAKSI.PERTAMA', 'REPORT.ADVANCED_REQUESTED', 'PORTAL.PUBLIC_PAGE.REQUESTED',
-    'PORTAL.CATALOG.REQUESTED', 'PORTAL.REGISTRATION.REQUESTED', 'PORTAL.BOOKING.REQUESTED', 'PORTAL.SYNC.REQUESTED',
-    'FINANCE.MANUAL_JOURNAL_REQUESTED', 'FINANCE.RECONCILIATION_REQUESTED', 'BUDGET.CREATE_REQUESTED', 'TRANSACTION.APPROVAL_REQUESTED', 'WORKFLOW.REQUESTED',
-    'ACCESS.MODULE.REQUESTED', 'ACCESS.GRANULAR.REQUESTED', 'APPROVAL.MULTILEVEL.REQUESTED', 'WORKFLOW.ADVANCED.REQUESTED',
-    'ANALYTICS.ADVANCED.REQUESTED', 'ANALYTICS.MULTI_BRANCH.REQUESTED', 'INTEGRATION.REQUESTED', 'PORTFOLIO.CONSOLIDATION.REQUESTED',
-    'PROJECT.REQUESTED', 'PROJECT.ADVANCED.REQUESTED'));
-select public._prasara_patch('public.growth_event_feature(text)',
-  'when ''PROJECT.REQUESTED'' then ''proyek'' end;',
-  'when ''PROJECT.REQUESTED'' then ''proyek'' when ''PROJECT.ADVANCED.REQUESTED'' then ''proyek_lanjut'' end;');
+-- Jenis penawaran baru: ditambahkan ke daftar yang ada (tidak menimpa tambahan migrasi lain)
+do $$ declare d text; begin
+  select pg_get_constraintdef(oid) into d from pg_constraint where conname = 'growth_rules_trigger_event_check';
+  if position('PROJECT.ADVANCED.REQUESTED' in d) = 0 then
+    alter table public.growth_rules drop constraint growth_rules_trigger_event_check;
+    execute 'alter table public.growth_rules add constraint growth_rules_trigger_event_check ' || replace(d, ']))))', ', ''PROJECT.ADVANCED.REQUESTED''::text]))))');
+  end if;
+end $$;
+do $$ declare d text; begin
+  d := pg_get_functiondef('public.growth_event_feature(text)'::regprocedure);
+  if position('PROJECT.ADVANCED.REQUESTED' in d) = 0 then
+    if position(' end;' in d) = 0 then raise exception 'growth_event_feature: pola tidak ditemukan'; end if;
+    execute regexp_replace(d, ' end;(\s*\$function\$)', ' when ''PROJECT.ADVANCED.REQUESTED'' then ''proyek_lanjut'' end;\1');
+  end if;
+end $$;
 insert into public.growth_rules(id, name, context, kind, from_plan, to_plan, to_months, trigger_event, title, message, cta, cta_secondary, priority, frequency_days, general, updated_by)
 select 'UPGRADE.PROJECT.ADVANCED.' || upper(p.k), 'Penawaran, anggaran & laba event (' || p.n || ')', 'fitur', 'upgrade', p.k, 'bisnis', 1, 'PROJECT.ADVANCED.REQUESTED',
   'Ketahui untung-rugi setiap event.',

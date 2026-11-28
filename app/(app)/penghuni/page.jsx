@@ -1,116 +1,225 @@
 'use client';
+import { rentText } from '@/components/SewaFleksibel';
 import PortalBox from '@/components/PortalBox';
 import { useBaru } from '@/lib/useBaru';
 import DepositBox from '@/components/DepositBox';
 import IsianTambahan from '@/components/IsianTambahan';
 import Lampiran from '@/components/Lampiran';
-import { moduleOn } from '@/lib/business';
+import { pathAllowed } from '@/lib/business';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
-import { useState } from 'react';
+import NavIcon from '@/components/NavIcon';
+import { SheetSegments, SheetStats } from '@/components/SmartDetailSheet';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import { Sheet, Field, Loading, Empty, InvChip, run } from '@/components/ui';
 import { StartLeaseSheet, EndLeaseSheet, MoveRoomSheet } from '@/components/LeaseForms';
 import PaySheet from '@/components/PaySheet';
-import { rp, tgl, invTitle, errMsg, waLink, today } from '@/lib/format';
-import { message, caraBayar } from '@/lib/templates';
+import { rp, tgl, invTitle, errMsg, waLink, today, thisMonth, METHOD, PAY_ST } from '@/lib/format';
+import InvoiceReminder, { hasReminderPhone as hasPhone } from '@/components/InvoiceReminder';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import css from './penghuni.module.css';
 
-export default function Penghuni() {
-  const d = useData();
-  const [f, setF] = useState('aktif');
-  const [q, setQ] = useState('');
-  const [sheet, setSheet] = useState(null);
-  useBaru(() => setSheet({ t: 'edit', occ: null }));
-  if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
-
-  const list = d.occupants
-    .filter((o) => (f === 'aktif' ? d.activeByOcc.has(o.id) : f === 'keluar' ? !d.activeByOcc.has(o.id) : true))
-    .filter((o) => !q || (o.name + ' ' + (o.phone || '')).toLowerCase().includes(q.toLowerCase()));
-  const close = () => setSheet(null);
-
-  return (
-    <div className="stack">
-      <PageHeader title="Penghuni" help={<PageHelp page="penghuni" />} actions={<><button className="primary" onClick={() => setSheet({ t: 'edit', occ: null })}>+ Penghuni</button></>} />
-      <div className="seg">
-        {[['aktif', 'Aktif'], ['keluar', 'Tidak aktif'], ['semua', 'Semua']].map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}
-      </div>
-      <FilterToolbar q={q} onQ={setQ} placeholder="Cari nama / nomor" />
-      {list.length === 0 ? <Empty title={q ? 'Tidak ada yang cocok' : 'Belum ada penghuni'} text={q ? 'Ubah kata pencarian.' : 'Tambahkan penghuni, atau isi kamar dari halaman Kamar.'} /> : (
-        <DataTable rows={list} caption="Daftar penghuni" onRow={(o) => setSheet({ t: 'detail', id: o.id })} rowLabel={(o) => o.name}
-          columns={[
-            { key: 'name', label: 'Nama', sort: (o) => o.name.toLowerCase(), render: (o) => <b>{o.name}</b> },
-            { key: 'phone', label: 'No. HP', hide: 'tablet', render: (o) => o.phone || <span className="muted">—</span> },
-            { key: 'room', label: 'Kamar', sort: (o) => { const l = d.activeByOcc.get(o.id); return l ? d.roomCode(l.room_id) : null; }, render: (o) => { const l = d.activeByOcc.get(o.id); return l ? d.roomCode(l.room_id) : <span className="muted">Tidak menyewa</span>; } },
-            { key: 'since', label: 'Sejak', sort: (o) => d.activeByOcc.get(o.id)?.start_date || null, render: (o) => { const l = d.activeByOcc.get(o.id); return l ? tgl(l.start_date) : '—'; } },
-            { key: 'debt', label: 'Tunggakan', align: 'right', sort: (o) => d.outByOcc.get(o.id) || 0, render: (o) => { const debt = d.outByOcc.get(o.id) || 0; return debt > 0 ? <span className="num" style={{ color: 'var(--bad)' }}>{rp(debt)}</span> : <span className="chip good">Lunas</span>; } },
-          ]}
-          card={(o) => { const l = d.activeByOcc.get(o.id); const debt = d.outByOcc.get(o.id) || 0; return <>
-            <div className="dt-row"><b>{o.name}</b>{debt > 0 ? <span className="num" style={{ color: 'var(--bad)' }}>{rp(debt)}</span> : <span className="chip good">Lunas</span>}</div>
-            <span className="small muted">{l ? `Kamar ${d.roomCode(l.room_id)} · sejak ${tgl(l.start_date)}` : 'Tidak menyewa'}</span>
-          </>; }} />
-      )}
-      {sheet?.t === 'detail' && <OccDetail d={d} occ={d.occById.get(sheet.id)} go={setSheet} onClose={close} />}
-      {sheet?.t === 'edit' && <OccEdit d={d} occ={sheet.occ} onClose={close} />}
-      {sheet?.t === 'start' && <StartLeaseSheet d={d} occupantId={sheet.id} onClose={close} />}
-      {sheet?.t === 'end' && <EndLeaseSheet d={d} lease={sheet.lease} onClose={close} />}
-      {sheet?.t === 'move' && <MoveRoomSheet d={d} lease={sheet.lease} onClose={close} />}
-      {sheet?.t === 'pay' && <PaySheet d={d} inv={d.invById.get(sheet.id)} onClose={close} />}
-    </div>
-  );
+const tabs = [['aktif', 'Aktif'], ['keluar', 'Tidak Aktif'], ['semua', 'Semua']];
+const states = [['tunggak', 'Tunggakan'], ['belum', 'Belum lunas'], ['pending', 'Menunggu verifikasi'], ['lunas', 'Lunas'], ['none', 'Belum ada tagihan']];
+const dates = [['late', 'Lewat jatuh tempo'], ['today', 'Jatuh tempo hari ini'], ['soon', 'Dalam 7 hari ke depan'], ['later', 'Lebih dari 7 hari']];
+const digit = (value) => String(value || '').replace(/\D/g, '').replace(/^0/, '62');
+const total = (rows) => rows.reduce((sum, row) => sum + row.outstanding, 0);
+function groupBy(rows, key) {
+  const grouped = new Map();
+  for (const row of rows) {
+    if (!grouped.has(row[key])) grouped.set(row[key], []);
+    grouped.get(row[key]).push(row);
+  }
+  return grouped;
+}
+function badge(state) {
+  return states.find(([key]) => key === state)?.[1];
 }
 
-function OccDetail({ d, occ, go, onClose }) {
+export default function Penghuni() {
+  const d = useData({ fullRoomHistory: true });
   const { kos, user } = useKos();
-  if (!occ) return null;
-  const l = d.activeByOcc.get(occ.id);
-  // sewa untuk deposit: yang aktif, atau sewa terakhir bila masih ada catatan deposit
-  const depLease = l || d.leases.find((x) => x.occupant_id === occ.id && (d.deposits || []).some((y) => y.lease_id === x.id));
-  const invs = d.invoices.filter((i) => i.occupant_id === occ.id && i.status !== 'batal').slice(0, 12);
-  const debt = d.outByOcc.get(occ.id) || 0;
-  const unpaid = invs.filter((i) => i.outstanding > 0);
-  const reminder = message('reminder', kos.wa_reminder_tpl, {
-    nama: occ.name, kos: kos.name, kamar: l ? d.roomCode(l.room_id) : '',
-    rincian: unpaid.map((i) => `• ${invTitle(i)}: ${rp(i.outstanding)}`).join('\n'),
-    total: rp(debt), cara_bayar: caraBayar(kos.payment_info),
+  const [f, setF] = useState('aktif');
+  const [q, setQ] = useState('');
+  const [state, setState] = useState('');
+  const [due, setDue] = useState('');
+  const [sheet, setSheet] = useState(null);
+  const add = () => setSheet({ t: 'edit', occ: null });
+  useBaru(add);
+  const overdueView = useSearchParams().get('tunggakan') === '1';
+  useEffect(() => {
+    if (overdueView) {
+      setF('semua');
+      setState('tunggak');
+    }
+  }, [overdueView]);
+  if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
+
+  const owner = Boolean(user?.id && kos?.owner_id === user.id);
+  const now = today();
+  const week = new Date(new Date(now + 'T00:00:00Z').getTime() + 7 * 86400000).toISOString().slice(0, 10);
+  const month = thisMonth();
+  const leases = groupBy(d.leases, 'occupant_id');
+  const invoices = groupBy(d.invoices, 'occupant_id');
+  const records = d.occupants.map((occ) => {
+    const lease = d.activeByOcc.get(occ.id);
+    const history = leases.get(occ.id) || [];
+    const bills = invoices.get(occ.id) || [];
+    const open = bills.filter((i) => i.status !== 'batal' && i.outstanding > 0).sort((a, b) => a.due_date.localeCompare(b.due_date));
+    const overdue = open.filter((i) => i.overdue);
+    const status = overdue.length ? 'tunggak' : open.some((i) => i.pending > 0) ? 'pending' : open.length ? 'belum'
+      : bills.some((i) => i.status !== 'batal' && i.due_date.startsWith(month)) ? 'lunas' : 'none';
+    return { occ, lease, history, bills, open, overdue, status };
   });
-  return (
-    <Sheet title={occ.name} onClose={onClose}>
-      <dl className="kv">
-        <dt>Kamar</dt><dd>{l ? d.roomCode(l.room_id) : '—'}</dd>
-        {l && <><dt>Sewa</dt><dd>{rp(l.rent)}/bulan sejak {tgl(l.start_date)}</dd></>}
-        {l && <><dt>Rencana selesai</dt><dd><EndDate lease={l} /></dd></>}
-        {l && (() => { const fi = d.invoices.find((i) => i.lease_id === l.id && i.kind === 'sewa' && i.period_start === l.billing_start && i.status !== 'batal'); return fi && fi.outstanding > 0 ? <><dt>Batas bayar bulan pertama</dt><dd><FirstDueEdit lease={l} inv={fi} /></dd></> : null; })()}
-        <dt>WhatsApp</dt><dd>{occ.phone || '—'}</dd>
-        {occ.address && <><dt>Alamat asal</dt><dd style={{ overflowWrap: 'anywhere' }}>{occ.address}</dd></>}
-        {occ.emergency && <><dt>Kontak darurat</dt><dd>{occ.emergency}</dd></>}
-        <dt>Belum dibayar</dt><dd style={{ color: debt ? 'var(--bad)' : undefined }}>{rp(debt)}</dd>
+  const search = q.trim().toLocaleLowerCase('id');
+  const phone = /^[+\d\s().-]+$/.test(search) ? digit(search) : '';
+  const matchesDue = (i) => !due || (due === 'late' ? i.overdue : due === 'today' ? i.due_date === now
+    : due === 'soon' ? i.due_date > now && i.due_date <= week : i.due_date > week);
+  const shown = records.filter(({ occ, lease, history, open, status }) => {
+    if ((f === 'aktif' && !lease) || (f === 'keluar' && lease) || (state && state !== status)) return false;
+    if (due && !open.some(matchesDue)) return false;
+    const room = lease || history[0];
+    return !search || [occ.name, occ.phone, room && d.roomCode(room.room_id)].some((value) => value?.toLocaleLowerCase('id').includes(search))
+      || (phone && digit(occ.phone).includes(phone));
+  });
+  const active = records.filter((record) => record.lease).length;
+  const overdue = records.filter((record) => record.overdue.length);
+  const eligible = shown.map((record) => ({ ...record, open: record.open.filter((i) => matchesDue(i) && (state !== 'tunggak' || i.overdue)) }))
+    .filter(({ occ, open }) => hasPhone(occ) && open.length);
+  const detail = records.find(({ occ }) => occ.id === sheet?.id);
+  const close = () => setSheet(null);
+  const back = () => sheet.occupantId ? setSheet({ t: 'detail', id: sheet.occupantId }) : close();
+  const leaseById = new Map(d.leases.map((lease) => [lease.id, lease]));
+  const movedFrom = new Set(d.leases.filter((lease) => lease.prev_lease_id).map((lease) => lease.prev_lease_id));
+  const mutations = d.leases.flatMap((lease) => [
+    { ...lease, id: lease.id + ':start', kind: lease.prev_lease_id ? 'move' : 'start', date: lease.start_date },
+    ...(lease.status === 'selesai' && !movedFrom.has(lease.id) ? [{ ...lease, id: lease.id + ':end', kind: 'end', date: lease.end_date }] : []),
+  ]).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  return <div className={css.page}>
+    <header className={css.heading}><div><div><h1>Penghuni</h1><PageHelp page="penghuni" /></div><p>Kelola data penghuni, sewa, dan masa tinggal</p></div>
+      <button className="primary" onClick={add}>+ Penghuni</button>
+    </header>
+    <section className={css.metrics} aria-label="Ringkasan penghuni">
+      <button onClick={() => { setF('aktif'); setQ(''); setState(''); setDue(''); }}><NavIcon name="/penghuni" size={26} /><span><b>Penghuni Aktif</b><strong>{active} Orang</strong><small>dari {d.rooms.length} kamar</small></span></button>
+      <button onClick={() => { setF('semua'); setQ(''); setState('tunggak'); setDue(''); }}><NavIcon name="/tagihan" size={24} /><span><b>Total Tunggakan</b><strong>{rp(overdue.reduce((sum, record) => sum + total(record.overdue), 0))}</strong><small>{overdue.length} penghuni tertunggak</small></span><NavIcon name="next" size={16} /></button>
+    </section>
+    <nav className={css.quick} aria-label="Aksi cepat penghuni">
+      <button onClick={add}><NavIcon name="/penghuni" />Tambah Penghuni</button>
+      <Link href="/tagihan"><NavIcon name="calendar" />Tagihan Sewa</Link>
+      <Link href="/pembayaran"><NavIcon name="/pembayaran" />Pembayaran</Link>
+      <button onClick={() => setSheet({ t: 'mutations' })}><NavIcon name="swap" />Mutasi Penghuni</button>
+      {pathAllowed(kos, '/laporan') && <Link href="/laporan"><NavIcon name="/laporan" />Laporan</Link>}
+    </nav>
+    <SheetSegments label="Status penghuni" options={tabs.map(([key, label]) => [key, `${label} (${key === 'aktif' ? active : key === 'keluar' ? records.length - active : records.length})`])} value={f} onChange={setF} />
+    <div className={css.tools}><label><NavIcon name="search" size={17} /><input type="search" aria-label="Cari penghuni" value={q} onChange={(event) => setQ(event.target.value)} placeholder="Cari nama, kamar, atau nomor" /></label>
+      <button onClick={() => setSheet({ t: 'filter' })}><NavIcon name="filter" size={17} />Filter{(state || due) && ' · Aktif'}</button></div>
+    <div className={css.actions}>
+      {state && <button onClick={() => setState('')}>{badge(state)} ×</button>}
+      {due && <button onClick={() => setDue('')}>{dates.find(([key]) => key === due)?.[1]} ×</button>}
+      {owner && eligible.length > 0 && <button onClick={() => setSheet({ t: 'reminder' })}><NavIcon name="message" size={16} />Pengingat massal ({eligible.length})</button>}
+    </div>
+    {shown.length ? <section className={css.list} aria-label="Daftar penghuni">{shown.map(({ occ, lease, history, open, overdue: late, status }) =>
+      <button className={css.resident} data-state={status} key={occ.id} aria-label={`Detail ${occ.name}`} onClick={() => setSheet({ t: 'detail', id: occ.id })}>
+        <span className={css.avatar}><NavIcon name="/akun" /></span>
+        <span className={css.identity}><b>{occ.name}</b>
+          <small><NavIcon name="/kamar" size={15} />{lease ? `Kamar ${d.roomCode(lease.room_id)}` : history[0] ? `Terakhir di ${d.roomCode(history[0].room_id)}` : 'Belum menyewa'}</small>
+          {(lease || history[0]) && <small><NavIcon name="calendar" size={15} />Sejak {tgl((lease || history[0]).start_date)}</small>}
+        </span>
+        <span className={css.status}><span><NavIcon name={status === 'lunas' ? 'done' : status === 'none' ? '/tagihan' : 'clock'} size={15} />{badge(status)}</span>
+          {open.length > 0 && <strong>{rp(total(late.length ? late : open))}</strong>}</span>
+        <NavIcon name="next" size={17} />
+      </button>)}</section> : <Empty title="Tidak ada penghuni yang cocok" text="Ubah kata pencarian atau filter, atau tambahkan penghuni baru." />}
+
+    {sheet?.t === 'filter' && <Sheet title="Filter penghuni" icon="filter" onClose={close}>
+      <Field label="Status pembayaran"><select value={state} onChange={(event) => setState(event.target.value)}><option value="">Semua status</option>{states.map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></Field>
+      <Field label="Jatuh tempo"><select value={due} onChange={(event) => setDue(event.target.value)}><option value="">Semua tanggal</option>{dates.map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></Field>
+      <div className="row"><button onClick={() => { setState(''); setDue(''); }}>Reset</button><button className="primary" onClick={close}>Lihat {shown.length} penghuni</button></div>
+    </Sheet>}
+    {sheet?.t === 'mutations' && <Sheet title="Mutasi Penghuni" icon="swap" onClose={close}>
+      <Entries rows={mutations} empty="Belum ada riwayat masuk, pindah, atau keluar." render={(lease) => <div className={css.entry}>
+        <b>{d.occName(lease.occupant_id)}</b><span>{lease.kind === 'move' ? `Pindah ke kamar ${d.roomCode(lease.room_id)}` : lease.kind === 'start' ? `Masuk kamar ${d.roomCode(lease.room_id)}` : `Keluar dari kamar ${d.roomCode(lease.room_id)}`}</span>
+        <small>{[lease.kind === 'move' && leaseById.has(lease.prev_lease_id) ? `Dari ${d.roomCode(leaseById.get(lease.prev_lease_id).room_id)}` : lease.kind === 'end' ? lease.end_reason : null, lease.date && tgl(lease.date)].filter(Boolean).join(' · ')}</small>
+        <button className="sm" onClick={() => setSheet({ t: 'detail', id: lease.occupant_id })}>Buka profil</button>
+      </div>} />
+    </Sheet>}
+    {sheet?.t === 'reminder' && owner && <InvoiceReminder key={sheet.id || 'bulk'} kos={kos} d={d}
+      records={sheet.id ? records.filter(({ occ, open }) => occ.id === sheet.id && hasPhone(occ) && open.length) : eligible}
+      onClose={sheet.id ? () => setSheet({ t: 'detail', id: sheet.id }) : close} />}
+    {sheet?.t === 'detail' && detail && <OccDetail key={detail.occ.id} d={d} record={detail} owner={owner} go={setSheet} onClose={close} />}
+    {sheet?.t === 'edit' && <OccEdit d={d} occ={sheet.occ} onClose={back} />}
+    {sheet?.t === 'start' && <StartLeaseSheet d={d} occupantId={sheet.id} onClose={back} />}
+    {sheet?.t === 'end' && <EndLeaseSheet d={d} lease={sheet.lease} onClose={back} />}
+    {sheet?.t === 'move' && <MoveRoomSheet d={d} lease={sheet.lease} onClose={back} />}
+    {sheet?.t === 'pay' && <PaySheet d={d} inv={d.invById.get(sheet.id)} onClose={back} />}
+  </div>;
+}
+
+function Entries({ rows, empty, render }) {
+  const [limit, setLimit] = useState(12);
+  if (!rows.length) return <p className="muted">{empty}</p>;
+  return <><ul className={css.entries}>{rows.slice(0, limit).map((row) => <li key={row.id}>{render(row)}</li>)}</ul>
+    {rows.length > limit && <button onClick={() => setLimit(limit + 12)}>Tampilkan lebih banyak</button>}</>;
+}
+
+function OccDetail({ d, record, owner, go, onClose }) {
+  const { kos } = useKos();
+  const [tab, setTab] = useState('profile');
+  const { occ, lease: l, history, bills, open, overdue } = record;
+  const depLease = l || history.find((x) => d.deposits.some((y) => y.lease_id === x.id));
+  const first = l && bills.find((i) => i.lease_id === l.id && i.kind === 'sewa' && i.period_start === l.billing_start && i.status !== 'batal');
+  const ids = new Set(bills.map((i) => i.id));
+  const act = (t, props) => go({ t, occupantId: occ.id, ...props });
+  return <Sheet title={occ.name} subtitle={l ? `Kamar ${d.roomCode(l.room_id)}` : 'Tidak aktif'} icon="/penghuni" wide onClose={onClose}>
+    <SheetStats items={[[ 'Belum dibayar', rp(total(open)) ], ['Tunggakan', rp(total(overdue))]]} />
+    <SheetSegments label="Detail penghuni" value={tab} onChange={setTab} options={[
+      ['profile', 'Profil', '/akun'], ['lease', 'Kontrak', '/kamar'], ['bills', 'Tagihan', '/tagihan'], ['payments', 'Pembayaran', 'wallet'],
+      ['deposit', 'Deposit', 'coins'], ['docs', 'Dokumen', '/catatan'],
+    ]} />
+    {tab === 'profile' && <>
+      <dl className="kv"><dt>WhatsApp</dt><dd>{hasPhone(occ) ? <a href={waLink(occ.phone, '')} target="_blank" rel="noreferrer">{occ.phone}</a> : occ.phone || '—'}</dd>
+        {occ.email && <><dt>Email</dt><dd>{occ.email}</dd></>}{occ.address && <><dt>Alamat asal</dt><dd>{occ.address}</dd></>}
+        {occ.emergency && <><dt>Kontak darurat</dt><dd>{occ.emergency}</dd></>}{occ.notes && <><dt>Catatan</dt><dd>{occ.notes}</dd></>}
       </dl>
-      {l && l.end_date && l.end_date < today() && <div className="notice">Rencana selesai ({tgl(l.end_date)}) sudah lewat dan sewa masih tercatat aktif. Penghuni sudah keluar? Ketuk <b>Akhiri sewa</b> dan isi tanggal keluarnya. Masih tinggal? Ubah <b>Rencana selesai</b> agar tagihan berikutnya terbit lagi.</div>}
-      {debt > 0 && unpaid.length > 0 && <button className="cta" onClick={() => go({ t: 'pay', id: [...unpaid].sort((a, b) => a.due_date.localeCompare(b.due_date))[0].id })}>Catat pembayaran / tandai lunas</button>}
-      {occ.phone && debt > 0 && <a href={waLink(occ.phone, reminder)} target="_blank" rel="noreferrer"><button className="primary" style={{ width: '100%' }}>Kirim pengingat via WhatsApp</button></a>}
       <IsianTambahan entity="occupant" id={occ.id} extra={occ.extra} area="rent" />
-      <Lampiran entity="occupant" id={occ.id} title="Dokumen penghuni" hint="Mis. foto KTP, surat perjanjian sewa (PDF). Hanya pemilik & karyawan bagian sewa yang bisa melihat." />
-      {depLease && <DepositBox d={d} lease={depLease} />}
-      {<PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />}
-      {kos.owner_id === user?.id && <Link href="/pengaturan#pesan" className="small" style={{ textAlign: 'center' }}>Ubah teks pesan WhatsApp</Link>}
-      <section className="panel"><span className="label">Tagihan terakhir</span>
-        {invs.length === 0 ? <p className="small muted" style={{ margin: 0 }}>Belum ada tagihan.</p> : (
-          <div className="list">{invs.map((i) => (
-            <div className="li" key={i.id}><div className="main"><b>{invTitle(i)}</b><span className="small muted">Jatuh tempo {tgl(i.due_date)}</span></div>
-              <div style={{ textAlign: 'right' }}><div className="num">{rp(i.amount)}</div><InvChip inv={i} />{i.outstanding > 0 && <div><button className="sm primary" style={{ marginTop: 4 }} onClick={() => go({ t: 'pay', id: i.id })}>Bayar {rp(i.outstanding)}</button></div>}</div></div>
-          ))}</div>
-        )}
-      </section>
-      <div className="row">
-        {l && <button onClick={() => go({ t: 'move', lease: l })}>Pindah kamar</button>}
-        {l ? <button className="danger" onClick={() => go({ t: 'end', lease: l })}>Akhiri sewa</button> : <button className="primary" onClick={() => go({ t: 'start', id: occ.id })}>Mulai sewa</button>}
-        <button onClick={() => go({ t: 'edit', occ })}>Ubah data</button>
-      </div>
-    </Sheet>
-  );
+      <PortalBox occ={occ} room={l ? d.roomCode(l.room_id) : ''} />
+      {owner && <Link href="/pengaturan#pesan">Ubah teks pesan WhatsApp</Link>}
+      <div className="row"><button onClick={() => act('edit', { occ })}>Ubah data</button>
+        {owner && hasPhone(occ) && open.length > 0 && <button className="primary" onClick={() => go({ t: 'reminder', id: occ.id })}>Kirim pengingat</button>}</div>
+    </>}
+    {tab === 'lease' && <>
+      {l && <dl className="kv"><dt>Rencana selesai</dt><dd><EndDate lease={l} /></dd>
+        {first?.outstanding > 0 && <><dt>Batas bayar bulan pertama</dt><dd><FirstDueEdit lease={l} inv={first} /></dd></>}</dl>}
+      {l?.end_date && l.end_date < today() && <div className="notice">Rencana selesai sudah lewat. Akhiri sewa bila penghuni sudah keluar, atau perbarui rencana selesai jika masih tinggal.</div>}
+      <Entries rows={history} empty="Belum ada kontrak sewa." render={(lease) => <div className={css.entry}>
+        <b>Kamar {d.roomCode(lease.room_id)} · {rentText(lease)}</b><small>{tgl(lease.start_date)}{lease.end_date && ` – ${tgl(lease.end_date)}`} · {lease.status === 'aktif' ? 'Aktif' : 'Selesai'}</small>
+        {lease.end_reason && <span>{lease.end_reason}</span>}<Link href="/kamar">Buka modul Kamar</Link>
+      </div>} />
+      <div className="row">{l ? <><button onClick={() => act('move', { lease: l })}>Pindah kamar</button><button className="danger" onClick={() => act('end', { lease: l })}>Akhiri sewa</button></>
+        : <button className="primary" onClick={() => act('start', { id: occ.id })}>Mulai sewa</button>}</div>
+    </>}
+    {tab === 'bills' && <>
+      <div className="row">{open.length > 0 && <button className="primary" onClick={() => act('pay', { id: open[0].id })}>Catat pembayaran</button>}
+        {owner && hasPhone(occ) && open.length > 0 && <button onClick={() => go({ t: 'reminder', id: occ.id })}>Kirim pengingat</button>}</div>
+      <Entries rows={bills} empty="Belum ada tagihan." render={(i) => <div className={css.entry}>
+        <Link href={`/tagihan?invoice=${i.id}`}>{invTitle(i)}</Link><small>Kamar {d.roomCode(i.room_id)} · Jatuh tempo {tgl(i.due_date)}</small>
+        <div className="row"><b>{rp(i.amount)}</b><InvChip inv={i} />{i.outstanding > 0 && i.status !== 'batal' && <button className="sm" onClick={() => act('pay', { id: i.id })}>Bayar {rp(i.outstanding)}</button>}</div>
+      </div>} />
+    </>}
+    {tab === 'payments' && <>
+      <Entries rows={d.payments.filter((p) => ids.has(p.invoice_id))} empty="Belum ada riwayat pembayaran." render={(p) => <div className={css.entry}>
+        <b>{rp(p.amount)} · {METHOD[p.method] || 'Pembayaran'}</b><small>{tgl(p.paid_at)} · {PAY_ST[p.status]?.[0]} · {invTitle(d.invById.get(p.invoice_id))}</small>
+        {p.status === 'terverifikasi' && <Link href={`/kwitansi/${p.id}`}>Buka kwitansi</Link>}
+      </div>} />
+      <Link href="/pembayaran">Buka modul Pembayaran</Link>
+      {pathAllowed(kos, '/pembukuan') && <Link href="/pembukuan?tab=jurnal">Buka jurnal di Pembukuan</Link>}
+    </>}
+    {tab === 'deposit' && (depLease ? <DepositBox d={d} lease={depLease} /> : <p className="muted">Belum ada sewa dengan catatan deposit.</p>)}
+    {tab === 'docs' && <Lampiran entity="occupant" id={occ.id} title="Dokumen penghuni" hint="Mis. foto KTP, surat perjanjian sewa (PDF). Hanya pemilik & karyawan bagian sewa yang bisa melihat." />}
+  </Sheet>;
 }
 
 function OccEdit({ d, occ, onClose }) {

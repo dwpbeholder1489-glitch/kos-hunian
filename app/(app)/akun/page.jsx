@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { notifSignOut } from '@/lib/notif';
 import { useKos } from '@/components/KosProvider';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import NavIcon from '@/components/NavIcon';
@@ -51,7 +52,7 @@ export default function Akun() {
         <Link href="/panduan" className="modrow"><span className="modic"><NavIcon name="/catatan" /></span><span className="t"><b>Panduan bergambar</b><small>Langkah demi langkah semua menu</small></span></Link>
       </div>
       <HapusAkun />
-      <button className="ghost danger" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
+      <button className="ghost danger" onClick={async () => { await notifSignOut(); await supabase.auth.signOut(); window.location.href = '/masuk'; }}>Keluar dari akun</button>
     </div>
   );
 }

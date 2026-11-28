@@ -80,7 +80,7 @@ export function ActivityList({ rows }) {
 export function useDashPrefs(id, fallbackPeriod = 'hari') {
   const { kos, kosId, loadKos } = useKos();
   const k = KEY(kosId, id);
-  const owner = canArea(kos, 'settings');
+  const owner = canArea(kos, 'team');
   const server = kos?.exp?.dash?.[id] || null;
   const [pref, setPref] = useState(() => server || { hidden: [], order: [] });
   const [period, setPeriod] = useState(null);

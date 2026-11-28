@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import CrmDue, { useCrmDue } from '@/components/CrmDue';
+import RekapNotice from '@/components/RekapNotice';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader } from '@/components/Page';
 import { supabase } from '@/lib/supabase';
@@ -94,6 +95,8 @@ export default function Notifikasi() {
           ))}</div>
         )}
       </section>
+
+      <RekapNotice kos={kos} />
 
       {isOwner && (
         <section className="panel">

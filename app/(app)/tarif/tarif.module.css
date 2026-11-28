@@ -1,0 +1,25 @@
+.page{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:999px;min-height:38px;padding:6px 14px;white-space:nowrap;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--gold-soft);border-color:var(--gold);color:var(--fg);font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar input{max-width:170px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend span::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;background:var(--sunk);border:1px solid var(--line)}
+.legend span[data-k="sewa"]::before{background:#15803D;border-color:#15803D}
+.legend span[data-k="booking"]::before{background:#F59E0B;border-color:#F59E0B}
+.legend span[data-k="rawat"]::before{background:#8B5CF6;border-color:#8B5CF6}
+.gridWrap{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.grid{border-collapse:separate;border-spacing:0;min-width:100%}
+.grid th,.grid td{padding:0;border-bottom:1px solid var(--line);text-align:center}
+.grid thead th{font-weight:500;font-size:11px;color:var(--muted);padding:6px 2px;min-width:34px}
+.grid thead th span,.grid thead th b{display:block}
+.grid thead th b{font-size:13px;color:var(--fg)}
+.grid thead th[data-today="true"]{background:var(--gold-soft)}
+.grid tbody th{position:sticky;left:0;z-index:1;background:var(--surface);padding:6px 10px;font-size:13px;text-align:left;white-space:nowrap;border-right:1px solid var(--line)}
+.grid td button{display:block;width:100%;min-width:34px;height:34px;min-height:34px;border:0;border-radius:0;padding:0;background:transparent;font-size:11px;color:#fff;font-weight:700}
+.grid td[data-k="sewa"] button{background:#15803D}
+.grid td[data-k="booking"] button{background:#F59E0B}
+.grid td[data-k="rawat"] button{background:#8B5CF6}
+.grid td[data-k="tidak"] button{background:repeating-linear-gradient(45deg,var(--sunk) 0 4px,transparent 4px 8px)}
+.grid td+td{border-left:1px solid var(--line)}

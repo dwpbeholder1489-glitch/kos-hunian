@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
+import { portalExchange } from '@/lib/customerExperience';
 import { createClient } from '@supabase/supabase-js';
 import { userDb } from '@/lib/serverAuth';
 import { NextResponse } from 'next/server';
@@ -39,6 +40,7 @@ async function quoteAttachment(req, order) {
 }
 
 async function readBody(req, multipart) {
+  // multipart lampiran: field "attachment" (penawaran) atau "file" (chat)
   const reader = req.body?.getReader();
   if (!reader) return null;
   const chunks = [];
@@ -51,7 +53,7 @@ async function readBody(req, multipart) {
       const form = await new Response(content, { headers: { 'Content-Type': req.headers.get('content-type') } }).formData();
       const request = form.get('request');
       if (typeof request !== 'string' || request.length > maxBody) return {};
-      return { body: JSON.parse(request), file: form.get('attachment') };
+      return { body: JSON.parse(request), file: form.get('attachment') || form.get('file') };
     }
     size += value.byteLength;
     if (size > (multipart ? maxFile + maxBody : maxBody)) {
@@ -91,7 +93,8 @@ export async function GET(req) {
     console.error('[portal-shop] riwayat', failure.code);
     return json({ error: 'Gagal memuat pesanan.' }, 500);
   }
-  const response = json({ orders: data || [] });
+  const { data: unread } = token ? await sb.rpc('cx_guest_unread', { p_slug: slug, p_guest: hash(token) }) : {};
+  const response = json({ orders: (data || []).map((order) => ({ ...order, unread: unread?.[order.id] || 0 })), unread_general: unread?.umum || 0 });
   if (!token) response.cookies.set(cookie, randomBytes(32).toString('hex'), {
     httpOnly: true, secure: req.nextUrl.protocol === 'https:', sameSite: 'strict',
     path: '/api/portal-shop', maxAge: 60 * 60 * 24 * 180,
@@ -112,6 +115,10 @@ export async function POST(req) {
   let body, file;
   try { ({ body, file } = await readBody(req, multipart) || {}); }
   catch { return json({ error: 'Permintaan tidak valid.' }, 400); }
+  if (body?.action === 'conversation') {
+    if (multipart && (!file || typeof file.arrayBuffer !== 'function')) return json({ error: 'Lampiran tidak valid.' }, 400);
+    return json(...await portalExchange(sb, body, { access: 'guest', slug, credential: hash(token) }, multipart ? file : null));
+  }
   if (multipart && (!file || body?.kind !== 'penawaran' || typeof file.arrayBuffer !== 'function' || !file.size || file.size > maxFile)) {
     return json({ error: 'Lampiran penawaran harus berukuran maksimal 3 MB.' }, 400);
   }

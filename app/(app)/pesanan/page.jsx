@@ -6,10 +6,12 @@ import IsianTambahan from '@/components/IsianTambahan';
 import { useBaru } from '@/lib/useBaru';
 import Lampiran from '@/components/Lampiran';
 import { useEffect, useMemo, useState } from 'react';
+import ChatButton from '@/components/chat/ChatButton';
 import Link from 'next/link';
 import ListThumb, { useThumbs } from '@/components/media/ListThumb';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
+import { PageTourPrompt } from '@/components/InteractiveGuide';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable, FilterToolbar, useMedia } from '@/components/Page';
 import { Sheet, Field, Loading, Empty, toast } from '@/components/ui';
@@ -36,7 +38,7 @@ export default function Pesanan() {
   const desk = useMedia('(min-width: 1180px)');   // laptop: pesanan baru tampil penuh seperti Kasir
   const load = () => supabase.rpc('svc_board', { p_kos: kosId }).then(({ data, error }) => (error ? setErr(errMsg(error)) : setD(data)));
   useEffect(() => { load(); }, [kosId, ver]);
-  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('baru')) setNeu(true); } catch {} }, []);
+  useEffect(() => { try { const q = new URLSearchParams(window.location.search); if (q.get('baru')) setNeu(true); if (q.get('pesanan')) setOpen(q.get('pesanan')); } catch {} }, []);
   if (neu && d?.money && (desk || terms(kos).kul)) return <NewOrder inline kosId={kosId} onClose={() => setNeu(false)} onSaved={(id) => { setNeu(false); load().then(() => setOpen(id)); }} />;
   if (err) return <div className="notice bad">{/svc_board/.test(err) ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
@@ -67,7 +69,7 @@ export default function Pesanan() {
 
   return (
     <div className="stack">
-      <PageHeader title="Pesanan" help={<PageHelp page="pesanan" />} actions={<>{money && <button className="primary" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</>} />
+      <div data-guide-target="order-header"><PageHeader title="Pesanan" help={<PageHelp page="pesanan" />} actions={<><PageTourPrompt />{money && <button className="primary" data-guide-target="order-new" onClick={() => setNeu(true)}>+ Pesanan baru</button>}</>} /></div>
       {req.length > 0 && money && f !== 'permintaan' && <div className="notice"><b>{req.length} pesanan dari halaman bisnis</b> menunggu konfirmasi. <button className="sm" onClick={() => setF('permintaan')}>Lihat</button></div>}
       <div className="seg" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>{chips.map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)} style={{ whiteSpace: 'nowrap' }}>{l}</button>)}</div>
       {T.kul && <div className="seg" aria-label="Tampilan pesanan">{[[false,'Daftar'],[true,'Papan dapur']].map(([board,label]) => <button key={label} aria-pressed={boardView === board} className={boardView === board ? 'on' : ''} onClick={() => setBoardView(board)}>{label}</button>)}</div>}
@@ -390,7 +392,7 @@ function Detail({ o, d, kos, onClose, onChanged }) {
   const paid = Number(o.paid || 0);
   return (
     <Sheet title={`${o.number} · ${o.customer_name}`} onClose={onClose}>
-      <div className="row"><span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>{late(o) && <span className="chip bad">Terlambat</span>}{o.rework_of && <span className="chip gold">{T.rework} {o.rework_of}</span>}{dineText(o) && <span className="chip">{dineText(o)}</span>}</div>
+      <div className="row"><span className={'chip ' + (waitPickup(o) || onTheWay(o) ? 'gold' : STATUS[o.status]?.[1] || '')}>{stageLabel(o)}</span>{late(o) && <span className="chip bad">Terlambat</span>}{o.rework_of && <span className="chip gold">{T.rework} {o.rework_of}</span>}{dineText(o) && <span className="chip">{dineText(o)}</span>}<ChatButton kosId={kos.id} type="svc_order" id={o.id} /></div>
       <span className="small muted">Diterima {waktu(o.received_at)} · janji {waktu(o.due_at)}</span>
       {(o.pickup || o.deliver) && <div className="unitbox" style={{ gap: 4 }}>
         <span className="small" style={{ overflowWrap: 'anywhere' }}>📍 {o.zone_name ? `${o.zone_name} · ` : ''}{o.address || 'Alamat belum diisi'}{o.address && <> · <a href={mapsLink(o.address)} target="_blank" rel="noreferrer">Peta</a></>}{!money && o.logi_phone ? <> · <a href={waLink(o.logi_phone, `Halo ${o.customer_name}, dari ${kos.name}.`)} target="_blank" rel="noreferrer">WA</a></> : ''}</span>

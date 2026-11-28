@@ -7,7 +7,9 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
+import styles from './experience.module.css';
 import { Sheet, Loading, toast, run } from '@/components/ui';
 import NavIcon from '@/components/NavIcon';
 import DnaForm from '@/components/DnaForm';
@@ -20,7 +22,11 @@ import { quickCatalog, quickFor } from '@/lib/quick';
 import { DASHBOARDS, dashOf, KPIS, defaultKpis, PERIODS } from '@/lib/dashboards';
 import { tabsFor, homeOf, canArea } from '@/lib/business';
 
-const TABS = [['profil', 'Profil bisnis'], ['fitur', 'Fitur saya'], ['rekomendasi', 'Rekomendasi'], ['navigasi', 'Navigasi'], ['aksi', 'Aksi cepat'], ['dashboard', 'Dashboard'], ['evolusi', 'Perkembangan'], ['kinerja', 'Kinerja']];
+const TABS = [
+  ['profil', 'Profil Bisnis', '/pengalaman'], ['fitur', 'Fitur Saya', '/layers'], ['rekomendasi', 'Rekomendasi', '/langganan'],
+  ['navigasi', 'Navigasi', '/operasional'], ['alur', 'Alur Kerja', '/alur'], ['dashboard', 'Personalisasi Dashboard', '/laporan'],
+];
+const MORE = [['aksi', 'Aksi cepat'], ['evolusi', 'Perkembangan'], ['kinerja', 'Kinerja']];
 const SIG = [['employees', 'Karyawan'], ['outlets', 'Outlet/cabang'], ['products', 'Barang aktif'], ['tx30', 'Transaksi 30 hari'], ['customers', 'Pelanggan'], ['suppliers', 'Supplier'], ['age_days', 'Umur (hari)']];
 // tanggal + jam dari timestamp (tgl() khusus tanggal YYYY-MM-DD)
 const tglw = (ts) => (ts ? new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' }) : '—');
@@ -31,64 +37,119 @@ const move = (arr, i, dir) => { const a = [...arr]; const j = i + dir; if (j < 0
 
 export default function Pengalaman() {
   const { kos, kosId, loadKos } = useKos();
-  const [tab, setTab] = useState('profil');
+  const requested = useSearchParams().get('tab');
+  const [tab, setTab] = useState(() => [...TABS, ...MORE].some(([key]) => key === requested) ? requested : 'profil');
+  const [editing, setEditing] = useState(requested === 'profil');
+  const [processes, setProcesses] = useState(null);
   const [ov, setOv] = useState(null);
   const [hist, setHist] = useState(null);
   const [vocab, setVocab] = useState(null);
   const [err, setErr] = useState(null);
-  const owner = canArea(kos, 'team');
-
-  useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (TABS.some(([k]) => k === t)) setTab(t); } catch {} }, []);
+  const owner = canArea(kos, 'team') && !kos.closed_at;
   const load = async () => {
     setErr(null);
-    const [o, h] = await Promise.all([supabase.rpc('experience_overview', { p_kos: kosId }), supabase.rpc('experience_history', { p_kos: kosId, p_limit: 80 })]);
+    const [o, h, p] = await Promise.all([
+      supabase.rpc('experience_overview', { p_kos: kosId }),
+      supabase.rpc('experience_history', { p_kos: kosId, p_limit: 80 }),
+      supabase.rpc('process_map', { p_kos: kosId }),
+    ]);
     if (o.error) return setErr(errMsg(o.error));
-    setOv(o.data); setHist(h.data || []);
+    setOv(o.data);
+    setHist(h.data || []);
+    setProcesses(p.error ? { error: errMsg(p.error), rows: [] } : { rows: p.data || [] });
   };
   useEffect(() => { load(); loadVocab().then(setVocab, (e) => setErr(errMsg(e))); }, [kosId]); // eslint-disable-line react-hooks/exhaustive-deps
   const refresh = async () => { await Promise.all([load(), loadKos()]); };
 
-  if (err) return <div className="stack"><PageHeader title="Pusat Pengalaman" help={<PageHelp page="pengalaman" />} /><div className="notice bad">{err}</div></div>;
+  if (err) return <div className="stack"><h1>Pusat Pengalaman</h1><div className="notice bad">{err}</div></div>;
   if (!ov || !vocab) return <Loading />;
   const open = (ov.recommendations || []).filter((r) => ['recommended', 'deferred', 'accepted'].includes(r.status));
   const active = (ov.modules || []).filter((m) => m.active).length;
   const cat = vocab.categories.find((c) => c.code === ov.category);
 
+  const stored = ov.profile?.stored === true;
+  const openProfile = () => { setTab('profil'); setEditing(true); };
+  const summary = [
+    ['/alur', 'Tahap bisnis', STAGES[ov.stage]?.[0] || ov.stage || '—', () => setTab('evolusi')],
+    ['/layers', 'Fitur aktif', active, () => setTab('fitur')],
+    ['/langganan', 'Rekomendasi', open.length, () => setTab('rekomendasi')],
+    ['/pengalaman', 'Profil', stored ? 'Tersimpan' : 'Bawaan', openProfile],
+  ];
   return (
-    <div className="stack">
-      <PageHeader title="Pusat Pengalaman" help={<PageHelp page="pengalaman" />}
-        desc={<>PRASARA menyesuaikan menu, dashboard, dan aksi cepat dengan karakter bisnis Anda. <b>Sistem memberi saran, Anda yang memutuskan.</b></>} />
-      <section className="panel bec-sum">
-        <div className="bec-sum-h"><span className="modic"><NavIcon name="/pengalaman" /></span>
-          <span className="t"><b>{kos.name}</b><small>{cat ? cat.name : ov.category}{ov.profile?.dna?.identity?.custom_label ? ` · ${ov.profile.dna.identity.custom_label}` : ''}</small></span></div>
-        <div className="bec-kpi">
-          <div><span className="label">Tahap bisnis</span><b>{STAGES[ov.stage]?.[0] || ov.stage}</b></div>
-          <div><span className="label">Fitur aktif</span><b>{active}</b></div>
-          <div><span className="label">Rekomendasi</span><b>{open.length}</b></div>
-          <div><span className="label">Profil</span><b>{ov.profile.stored ? `v${ov.profile.version}` : 'Bawaan'}</b></div>
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div className={styles.heroCopy}>
+          <h1>Pusat Pengalaman</h1>
+          <p>Sesuaikan menu, dashboard, dan aksi cepat dengan karakter bisnis Anda. <b>Sistem memberi saran, Anda yang memutuskan.</b></p>
+          <PageHelp page="pengalaman" label={<><NavIcon name="/buku-besar" size={16} /><span>Panduan Pusat Pengalaman</span><NavIcon name="next" size={13} /></>} />
         </div>
-        {!ov.profile.stored && <div className="notice">Profil bisnis masih <b>bawaan dari kategori</b>. Tinjau di tab Profil bisnis agar menu & saran makin tepat.</div>}
+        <span className={styles.heroArt}><Image src="/pengalaman-ringkasan.webp" alt="" fill unoptimized priority /></span>
+      </header>
+      <section className={styles.panel} aria-label="Ringkasan bisnis">
+        <div className={styles.profile}>
+          <span className={styles.profileIcon}><NavIcon name="/pengalaman" /></span>
+          <span className={styles.identity}><b>{kos.name}</b><small>{cat?.name || ov.category}{ov.profile?.dna?.identity?.custom_label ? ` · ${ov.profile.dna.identity.custom_label}` : ''}</small></span>
+          <button onClick={openProfile}>{owner ? 'Kelola Profil' : 'Lihat Profil'}</button>
+        </div>
+        <div className={styles.metrics}>{summary.map(([icon, label, value, onClick]) => <button className={styles.metric} key={label} onClick={onClick}>
+          <span><NavIcon name={icon} size={17} />{label}</span><strong>{value}</strong>
+        </button>)}</div>
+        {!stored && <div className={styles.warning}><NavIcon name="info" /><p>Profil bisnis masih memakai bawaan kategori. Pemilik dapat meninjau profil agar menu dan saran lebih sesuai.</p></div>}
       </section>
-      <div className="seg bec-tabs" role="tablist" aria-label="Bagian Pusat Pengalaman">
-        {TABS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}{k === 'rekomendasi' && open.length > 0 ? ` (${open.length})` : ''}</button>)}
+      <nav className={styles.nav} aria-label="Bagian Pusat Pengalaman">
+        {TABS.map(([key, label, icon]) => <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}><NavIcon name={icon} /><span>{label}{key === 'rekomendasi' && open.length > 0 ? ` (${open.length})` : ''}</span></button>)}
+      </nav>
+      <div className={styles.secondary} role="group" aria-label="Pengaturan tambahan">
+        {MORE.map(([key, title]) => <button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}>{title}</button>)}
       </div>
-      {tab === 'profil' && <Profil kosId={kosId} ov={ov} vocab={vocab} onSaved={refresh} />}
+      {!owner && <p className="small muted">Pengaturan profil, navigasi, dan dashboard bisnis dikelola oleh pemilik. Permintaan perubahan fitur mengikuti alur persetujuan.</p>}
+      {tab === 'profil' && <>
+        <section className={styles.panel}>
+          <div className={styles.heading}><h2>Alur bisnis yang dikenali</h2><button className="sm ghost" onClick={() => setTab('alur')}>Lihat Alur Kerja <NavIcon name="next" size={15} /></button></div>
+          {processes?.error ? <p className="notice bad">{processes.error}</p> : !processes?.rows.length ? <p className="small muted">Belum ada alur yang dikenali untuk jenis bisnis ini.</p> :
+            processes.rows.map((item) => <button key={item.code} className={styles.process} onClick={() => setTab('alur')}>
+              <NavIcon name={kos.business_type === 'retail' ? 'cart' : '/alur'} /><span>
+                <span className={styles.processTitle}><b>{item.name}</b><small>{item.done} dari {item.total} langkah berjalan</small></span>
+                <progress max={Math.max(1, item.total)} value={item.done} aria-label={`Progres ${item.name}`} />
+              </span><NavIcon name={item.total > 0 && item.done === item.total ? 'done' : 'next'} size={19} />
+            </button>)}
+        </section>
+        <section className={styles.panel}>
+          <h2>Aksi cepat untuk Anda</h2>
+          <div className={styles.shortcuts}>
+            <button onClick={openProfile}><NavIcon name="/pengaturan" /><span>{owner ? 'Atur Profil Bisnis' : 'Lihat Profil Bisnis'}</span></button>
+            <button onClick={() => setTab('fitur')}><NavIcon name="/operasional" /><span>Pilih Fitur Tambahan</span></button>
+            <button onClick={() => setTab('rekomendasi')}><NavIcon name="/langganan" /><span>Lihat Rekomendasi</span></button>
+            <Link href="/panduan#bagian-AD"><NavIcon name="/buku-besar" /><span>Panduan Penggunaan</span></Link>
+          </div>
+          <div className={styles.steps}>
+            <button onClick={openProfile}><NavIcon name="/pengalaman" /><span><b>{stored ? 'Tinjau profil bisnis' : 'Lengkapi profil bisnis'}</b><small>{stored ? `Versi ${ov.profile.version} tersimpan` : 'Profil masih memakai bawaan kategori.'}</small></span><NavIcon name="next" size={18} /></button>
+            <button onClick={() => setTab('fitur')}><NavIcon name="/layers" /><span><b>Atur preferensi fitur</b><small>Pilih fitur yang sesuai kebutuhan usaha.</small></span><NavIcon name="next" size={18} /></button>
+            <button onClick={() => setTab('rekomendasi')}><NavIcon name="/langganan" /><span><b>Tinjau rekomendasi</b><small>Lihat saran dari profil dan aktivitas usaha.</small></span><NavIcon name="next" size={18} /></button>
+          </div>
+        </section>
+        {editing && <Sheet title={owner ? 'Kelola Profil Bisnis' : 'Profil Bisnis'} onClose={() => setEditing(false)}>
+          <Profil kosId={kosId} ov={ov} vocab={vocab} owner={owner} onSaved={refresh} />
+        </Sheet>}
+      </>}
       {tab === 'fitur' && <Fitur kosId={kosId} ov={ov} owner={owner} onSaved={refresh} />}
-      {tab === 'rekomendasi' && <Rekomendasi kosId={kosId} ov={ov} onSaved={refresh} />}
-      {tab === 'navigasi' && <Navigasi kos={kos} kosId={kosId} onSaved={refresh} />}
-      {tab === 'aksi' && <Aksi kos={kos} kosId={kosId} onSaved={refresh} />}
-      {tab === 'dashboard' && <Dash kos={kos} kosId={kosId} onSaved={refresh} />}
-      {tab === 'evolusi' && <Evolusi kosId={kosId} ov={ov} hist={hist} onSaved={refresh} />}
+      {tab === 'rekomendasi' && <Rekomendasi kosId={kosId} ov={ov} owner={owner} onSaved={refresh} />}
+      {tab === 'navigasi' && <fieldset className={styles.fieldset} disabled={!owner} aria-label="Pengaturan navigasi"><Navigasi kos={kos} kosId={kosId} onSaved={refresh} /></fieldset>}
+      {tab === 'alur' && <section className={styles.panel}>
+        <div className={styles.heading}><h2>Alur Kerja</h2><Link href="/alur">Buka Alur Kerja</Link></div>
+        {processes?.error ? <p className="notice bad">{processes.error}</p> : <ProcessMap data={processes?.rows} />}
+      </section>}
+      {tab === 'aksi' && <fieldset className={styles.fieldset} disabled={!owner} aria-label="Pengaturan aksi cepat"><Aksi kos={kos} kosId={kosId} onSaved={refresh} /></fieldset>}
+      {tab === 'dashboard' && <fieldset className={styles.fieldset} disabled={!owner} aria-label="Personalisasi dashboard"><Dash kos={kos} kosId={kosId} onSaved={refresh} /></fieldset>}
+      {tab === 'evolusi' && <Evolusi kosId={kosId} ov={ov} hist={hist} owner={owner} onSaved={refresh} />}
       {tab === 'kinerja' && <KinerjaPengalaman kos={kos} kosId={kosId} onTab={setTab} />}
     </div>
   );
 }
 
 // ---------- A. Profil bisnis (Business DNA) ----------
-function Profil({ kosId, ov, vocab, onSaved }) {
+function Profil({ kosId, ov, vocab, owner, onSaved }) {
   const [d, setD] = useState(ov.profile.dna);
-  const [pm, setPm] = useState(null);
-  useEffect(() => { supabase.rpc('process_map', { p_kos: kosId }).then((r) => setPm(r.data || [])); }, [kosId]);
   const [why, setWhy] = useState('');
   const [busy, setBusy] = useState(false);
   const changed = JSON.stringify(d) !== JSON.stringify(ov.profile.dna);
@@ -101,12 +162,7 @@ function Profil({ kosId, ov, vocab, onSaved }) {
     setWhy(''); onSaved();
   };
   return (
-    <div className="stack">
-      <section className="panel stack">
-        <div className="row between"><h3>Alur bisnis yang dikenali</h3><Link className="small" href="/alur">Buka Alur kerja ›</Link></div>
-        {pm ? <ProcessMap data={pm} compact /> : <Loading rows={1} />}
-        <span className="small muted">Hijau = sudah berjalan, garis putus = belum diatur/fitur nonaktif (data 90 hari terakhir). Tahap, status, aturan untuk karyawan, dan saran alur diatur di menu Alur kerja.</span>
-      </section>
+    <fieldset className={styles.fieldset} disabled={!owner} aria-label="Profil bisnis">
       <section className="panel">
         <div className="row between"><h3>Business DNA</h3><span className="small muted">{ov.profile.stored ? `Versi ${ov.profile.version} · ${tglw(ov.profile.updated_at)}` : 'Belum disimpan — bawaan kategori'}</span></div>
         <DnaForm value={d} onChange={setD} vocab={vocab} primary={ov.category} />
@@ -118,7 +174,7 @@ function Profil({ kosId, ov, vocab, onSaved }) {
         </div>
         <span className="small muted">Menyimpan profil TIDAK langsung mengaktifkan atau mematikan fitur. PRASARA hanya menyusun ulang rekomendasi; Anda yang memutuskan.</span>
       </section>
-    </div>
+    </fieldset>
   );
 }
 
@@ -160,11 +216,11 @@ function Fitur({ kosId, ov, owner, onSaved }) {
           </section>
         );
       })}
-      {off && <Deactivate kosId={kosId} m={off} onClose={() => setOff(null)} onSaved={() => { setOff(null); onSaved(); }} />}
+      {off && <Deactivate kosId={kosId} m={off} owner={owner} onClose={() => setOff(null)} onSaved={() => { setOff(null); onSaved(); }} />}
     </div>
   );
 }
-function Deactivate({ kosId, m, onClose, onSaved }) {
+function Deactivate({ kosId, m, owner, onClose, onSaved }) {
   const [imp, setImp] = useState(null);
   const [why, setWhy] = useState('');
   useEffect(() => { supabase.rpc('module_impact', { p_kos: kosId, p_code: m.code }).then(({ data }) => setImp(data || {})); }, [kosId, m.code]);
@@ -174,21 +230,21 @@ function Deactivate({ kosId, m, onClose, onSaved }) {
     toast(data === 'menunggu' ? 'Permintaan dikirim ke pemilik' : `${m.name} dinonaktifkan`); onSaved();
   };
   return (
-    <Sheet title={`Nonaktifkan ${m.name}?`} onClose={onClose}>
+    <Sheet title={`${owner ? 'Nonaktifkan' : 'Minta nonaktifkan'} ${m.name}?`} onClose={onClose}>
       {!imp ? <Loading rows={2} /> : <>
         <div className="notice">Data <b>tidak dihapus</b>: {imp.data_kept || 'data modul'} tetap tersimpan dan muncul lagi bila modul diaktifkan kembali. Riwayat keuangan tidak berubah.</div>
         {imp.menus_hidden?.length > 0 && <span className="small">Menu yang hilang: {imp.menus_hidden.join(', ')}</span>}
         {imp.dependents_active?.length > 0 && <div className="notice bad">Nonaktifkan dulu modul yang bergantung padanya: {imp.dependents_active.join(', ')}</div>}
         {imp.open_items && <div className="notice bad">Masih ada pekerjaan terbuka: {imp.open_items}</div>}
         <label className="f">Alasan<input value={why} maxLength={200} onChange={(e) => setWhy(e.target.value)} placeholder="mis. belum dipakai" /></label>
-        <button className="primary" disabled={why.trim().length < 3 || imp.can_disable === false} onClick={save}>Nonaktifkan</button>
+        <button className="primary" disabled={why.trim().length < 3 || imp.can_disable === false} onClick={save}>{owner ? 'Nonaktifkan' : 'Kirim permintaan'}</button>
       </>}
     </Sheet>
   );
 }
 
 // ---------- F. Rekomendasi ----------
-function Rekomendasi({ kosId, ov, onSaved }) {
+function Rekomendasi({ kosId, ov, owner, onSaved }) {
   const recs = ov.recommendations || [];
   const open = recs.filter((r) => ['recommended', 'deferred', 'accepted'].includes(r.status));
   const done = recs.filter((r) => !open.includes(r));
@@ -210,11 +266,11 @@ function Rekomendasi({ kosId, ov, onSaved }) {
           {!r.plan_ok && <div className="notice">Butuh paket yang lebih tinggi. Menerima rekomendasi TIDAK mengaktifkan fitur berbayar — <Link href="/langganan">lihat paket</Link>.</div>}
           {r.depends?.length > 0 && <span className="small">Perlu modul: {r.depends.join(', ')}</span>}
           {r.status === 'accepted' && r.note && <span className="small muted">Catatan: {r.note}</span>}
-          <div className="row bec-actions" style={{ gap: 6 }}>
+          {owner && <div className="row bec-actions" style={{ gap: 6 }}>
             <button className="sm primary" onClick={() => act(r, 'terima')}>{r.status === 'accepted' ? 'Coba aktifkan lagi' : 'Terima & aktifkan'}</button>
             <button className="sm" onClick={() => act(r, 'tunda')}>Tunda 7 hari</button>
             <button className="sm ghost" onClick={() => act(r, 'tolak')}>Tolak</button>
-          </div>
+          </div>}
         </section>
       ))}
       {done.length > 0 && <section className="panel"><h3>Riwayat rekomendasi (90 hari)</h3>
@@ -313,7 +369,7 @@ function Dash({ kos, kosId, onSaved }) {
   const [order, setOrder] = useState(() => [...ids].sort((a, b) => { const i = cfg.order.indexOf(a), j = cfg.order.indexOf(b); return (i < 0 ? 1000 + ids.indexOf(a) : i) - (j < 0 ? 1000 + ids.indexOf(b) : j); }));
   const [hidden, setHidden] = useState(cfg.hidden || []);
   const cat = KPIS[id] || [];
-  const [kpis, setKpis] = useState(cfg.kpis?.length ? cfg.kpis : defaultKpis(kos, id));
+  const [kpis, setKpis] = useState((id === 'toko' ? Array.isArray(cfg.kpis) : cfg.kpis?.length) ? cfg.kpis : defaultKpis(kos, id));
   const [period, setPeriod] = useState(cfg.period || '');
   const kList = [...kpis.map((x) => cat.find(([c]) => c === x)).filter(Boolean), ...cat.filter(([c]) => !kpis.includes(c))];
   const save = async () => {
@@ -348,7 +404,7 @@ function Dash({ kos, kosId, onSaved }) {
 }
 
 // ---------- G. Perkembangan bisnis (lifecycle, sinyal, riwayat & pemulihan) ----------
-function Evolusi({ kosId, ov, hist, onSaved }) {
+function Evolusi({ kosId, ov, hist, owner, onSaved }) {
   const [busy, setBusy] = useState(null);
   const restore = async (h) => {
     if (!confirm('Pulihkan ke keadaan SEBELUM perubahan ini? Perubahan dicatat sebagai versi baru.')) return;
@@ -372,7 +428,7 @@ function Evolusi({ kosId, ov, hist, onSaved }) {
         <ul className="bec-list">{(hist || []).map((h) => (
           <li key={h.id}>
             <div className="bec-li-h"><span><b>{HISTORY_ACTION[h.action] || h.action}</b>{['ubah_tampilan', 'reset_tampilan', 'pulihkan_tampilan'].includes(h.action) && PART_NAME[h.target] ? ` · ${PART_NAME[h.target]}` : h.action === 'tahap_bisnis' ? ` · ${STAGES[h.target]?.[0] || h.target}` : h.target && !['ubah_dna'].includes(h.action) ? ` · ${h.target}` : ''}</span>
-              {h.restorable && <button className="sm ghost" disabled={busy === h.id} onClick={() => restore(h)}>Pulihkan</button>}</div>
+              {owner && h.restorable && <button className="sm ghost" disabled={busy === h.id} onClick={() => restore(h)}>Pulihkan</button>}</div>
             <span className="small muted">{new Date(h.at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' })}{h.actor ? ` · ${h.actor}` : ' · sistem'}{h.reason ? ` · ${h.reason}` : ''}</span>
           </li>
         ))}</ul>

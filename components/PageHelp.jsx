@@ -2,12 +2,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Sheet } from '@/components/ui';
+import { GuideButton, useInteractiveGuide } from '@/components/InteractiveGuide';
 import { PAGE_HELP } from '@/lib/guide';
 
 // Tombol kecil "? Panduan" di samping judul menu
 export default function PageHelp({ page, label = '? Panduan' }) {
   const [open, setOpen] = useState(false);
   const h = PAGE_HELP[page];
+  const guide = useInteractiveGuide();
+  if (guide) return <GuideButton help={h} label={label} />;
   if (!h) return null;
   return (
     <>
