@@ -119,7 +119,8 @@ export default function AppLayout({ children }) {
   const home = homeOf(kos);
   const fourth = fourthTab(kos);
   const main = mainTabOf(kos);
-  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !(fourth && on(fourth[0])) && !on('/akun') && !on('/bantuan') && !on('/learning-center'));
+  const reportOn = fourth && (on(fourth[0]) || (fourth[0] === '/laporan-analisis' && (path.startsWith('/laporan') || ['/analisis', '/rekap', '/pembukuan'].includes(path))));
+  const mainOn = on(main[0]) || (main[0] === '/operasional' && !on(home) && !reportOn && !on('/akun') && !on('/bantuan') && !on('/learning-center'));
   // Lonceng Pusat Notifikasi untuk semua peran; hitungan "perlu ditindaklanjuti" lama ikut bila peran & modulnya sesuai
   const bell = isDraft(kos) ? null : kos.business_type !== 'retail' ? (canArea(kos, 'rent') && moduleOn(kos, 'p_pengingat') ? <KosBell /> : <NotifBellMenu />) : (canArea(kos, 'stock,finance') && moduleOn(kos, 'r_pengingat') ? <RetailNotifBell /> : <NotifBellMenu />);
   // Tombol menu topbar: tablet (icon rail) → menu samping lengkap; desktop → lebarkan/ciutkan sidebar
@@ -181,7 +182,7 @@ export default function AppLayout({ children }) {
         <Link href={home} className={on(home) ? 'on' : ''} aria-current={on(home) ? 'page' : undefined}><NavIcon name="/beranda" />Beranda</Link>
         <Link href={main[0]} className={mainOn ? 'on' : ''} aria-current={on(main[0]) ? 'page' : undefined}><NavIcon name={main[2]} />{main[1]}</Link>
         <button className="fab" onClick={() => setSheet('quick')} aria-label="Aksi cepat" aria-haspopup="dialog"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
-        {fourth ? <Link href={fourth[0]} className={on(fourth[0]) || path === '/pembukuan' ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
+        {fourth ? <Link href={fourth[0]} className={reportOn || path === '/pembukuan' ? 'on' : ''} aria-current={on(fourth[0]) ? 'page' : undefined}><NavIcon name={fourth[2]} />{fourth[1]}</Link>
           : <Link href="/operasional" className={on('/operasional') ? 'on' : ''}><NavIcon name="/layers" />Menu</Link>}
         <Link href="/akun" className={on('/akun') ? 'on' : ''} aria-current={on('/akun') ? 'page' : undefined}><NavIcon name="/akun" />Akun</Link>
       </nav>}

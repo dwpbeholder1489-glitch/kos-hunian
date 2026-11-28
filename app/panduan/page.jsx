@@ -163,7 +163,11 @@ const PARTS = [
       <>Grafik <b>Tagihan vs terkumpul</b> 6 bulan, <b>Perlu perhatian</b>, <b>Jatuh tempo 7 hari</b>, <b>Status kamar</b>, <b>Aktivitas terbaru</b>, dan <b>Aksi cepat</b>. Di laptop bagian-bagian ini tersusun dalam beberapa kolom; di HP satu kolom.</>,
       <>Tekan <b>Atur dashboard</b> untuk menyembunyikan bagian yang tidak dipakai atau mengubah urutannya (centang / ↑ ↓). Pilihan disimpan di perangkat itu saja; <b>Kembalikan bawaan</b> mengembalikan susunan awal. Dashboard Toko, Jasa/Kuliner, dan bisnis kustom memakai cara yang sama.</>,
     ], 'Kas bersih bukan laba. Untuk laba yang benar, lihat Laporan.', null, <ScrDashboard />],
-    ['Laporan bulanan', 'Laporan', [
+    ['Laporan bulanan', 'Beranda › Laporan & Analisis › Laporan', [
+      <>Buka <Link href="/laporan-analisis">Laporan &amp; Analisis</Link> dari Beranda atau tab <b>Laporan</b> di navigasi bawah.</>,
+      <>Pilih periode harian, bulanan, atau tahunan. Ketuk kartu ringkasan atau titik grafik untuk memeriksa sumber angkanya.</>,
+      <>Pilih <b>Laporan</b>, <b>Analisis Bisnis</b>, atau <b>Rekap Bisnis</b>. Tombol PDF dan Excel membuka menu ekspor Rekap Bisnis untuk periode yang dipilih.</>,
+      <>Grafik hunian memakai rata-rata hari unit terisi per bulan. Kartu tingkat hunian dan tunggakan menunjukkan posisi saat ini.</>,
       <>Pilih bulan dengan tombol <b>‹ ›</b>.</>,
       <><b>Laba operasional</b> = pendapatan − biaya operasional.</>,
       <><b>Arus kas bersih</b> = laba − belanja modal − pengeluaran non-operasional.</>,

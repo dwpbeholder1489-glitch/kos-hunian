@@ -65,7 +65,7 @@ export default function Kamar() {
   const [query, setQuery] = useState('');
   const sp = useSearchParams();
   const [prop, setProp] = useState(sp.get('properti') || '');
-  const [sheet, setSheet] = useState(null);
+  const [sheet, setSheet] = useState(() => sp.get('unit') ? { t: 'detail', id: sp.get('unit') } : null);
   const listRef = useRef(null);
   useBaru(() => setSheet({ t: 'edit', room: null }));
   const { kos, kosId, ver } = useKos();

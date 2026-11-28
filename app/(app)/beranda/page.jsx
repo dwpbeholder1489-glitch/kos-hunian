@@ -250,7 +250,7 @@ function PropertyHome() {
   const groups = [
     ['Kamar / Unit', ['/kamar']], ['Penghuni', ['/penghuni']], ['Booking & Pendaftaran', ['/booking']],
     ['Tagihan & Pembayaran', ['/tagihan', '/pembayaran', '/penghuni', '/rekap', '/laporan']], ['Keuangan', ['/pembukuan', '/pengeluaran']],
-    ['Pemeliharaan', ['/perbaikan']], ['Aset & Inventaris', ['/aset']], ['Laporan & Analisis', ['/laporan', '/analisis']],
+    ['Pemeliharaan', ['/perbaikan']], ['Aset & Inventaris', ['/aset']], ['Laporan & Analisis', ['/laporan-analisis']],
   ];
   const shortcuts = groups.map(([label, paths]) => ({label, path: paths.find(has), paths: paths.filter(has)})).filter(x => x.path);
   widgets.push(

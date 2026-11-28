@@ -59,6 +59,7 @@ const P = {
   '/tagihan': <><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z" /><path d="M9 7h6M9 11h6M9 15h4" /></>,
   '/pembayaran': <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>,
   '/pengeluaran': <><path d="M12 3v14M6 11l6 6 6-6" /><path d="M4 21h16" /></>,
+  '/laporan-analisis': <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   '/laporan': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   '/laporan-toko': <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   '/kasir': <><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M7 20h10M12 16v4M7 8h4" /></>,
