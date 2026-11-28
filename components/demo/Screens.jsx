@@ -1169,3 +1169,25 @@ export function ScrInventarisKamar() {
     </Phone>
   );
 }
+
+// Tur "? Panduan": sorotan elemen nyata + kartu langkah (Langkah 148)
+export function ScrTurPanduan() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <div className="row between"><h3 style={{ margin: 0 }}>Kamar</h3><span className="chip info">? Panduan</span></div>
+      <div className="unitbox small" style={{ gap: 4, borderColor: 'var(--gold)', boxShadow: '0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent)' }}>
+        <span className="mini-btn cta" style={{ alignSelf: 'flex-start' }}>+ Kamar</span>
+      </div>
+      <div className="unitbox small" style={{ gap: 2, opacity: .45 }}><b>Kamar 101</b><span className="muted">Terisi · Bu Rina</span></div>
+      <div className="unitbox small" style={{ gap: 6 }}>
+        <span className="muted">Langkah 2 dari 6</span>
+        <b>Panduan · Kamar</b>
+        <span>Tambah kamar baru dengan tombol + Kamar.</span>
+        <div className="row between"><span className="muted">‹ Sebelumnya</span><span className="mini-btn cta">Lanjutkan ›</span></div>
+        <div className="row small" style={{ gap: 10 }}><span>Jeda</span><span>Lewati</span><span>Ulangi</span></div>
+        <span className="muted">Panduan hanya menunjukkan — tidak mengubah data bisnis.</span>
+      </div>
+    </Phone>
+  );
+}

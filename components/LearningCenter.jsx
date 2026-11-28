@@ -7,6 +7,7 @@ import { useState } from 'react';
 import NavIcon from '@/components/NavIcon';
 import PageHelp from '@/components/PageHelp';
 import LearningPractice from '@/components/LearningPractice';
+import TourCatalog from '@/components/TourCatalog';
 import { curriculum, GLOSSARY, PRACTICE_TASKS, readiness, recoveryCases, TRANSACTION_STAGES as STAGES } from '@/lib/learningCurriculum';
 import { isDraft, ROLES, typeOf } from '@/lib/business';
 import { knowledgeFor, learningTrack, quizFor } from '@/lib/learning';
@@ -206,6 +207,7 @@ function LearningContent({ kos, scope, track }) {
         <ul>{startItems.map((item) => <li key={item.href}><button className="ghost" onClick={() => { setLesson(item); setView('module'); }}>{passed[item.href] ? 'Selesai · ' : ''}{item.title}</button></li>)}</ul>
         <button className="primary" onClick={() => go(destination)}>Buka panduan transaksi</button>
       </section>}
+      {view === 'start' && <TourCatalog kos={kos} compact />}
       {view === 'catalog' && <section className={styles.card}>
         <h2>Katalog materi</h2><label className="f">Kategori<select value={category} onChange={(e) => setCategory(e.target.value)}><option value="">Semua kategori</option>{[...new Set(modules.map((item) => item.category))].map((name) => <option key={name}>{name}</option>)}</select></label>
         {category && <p>{modules.filter((item) => item.category === category && passed[item.href]).length} dari {modules.filter((item) => item.category === category).length} materi selesai.</p>}
