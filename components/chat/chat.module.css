@@ -22,6 +22,8 @@
 .thread > section { border: 0 !important; border-radius: 0 !important; }
 .thread button { font: inherit; cursor: pointer; }
 .thread * { box-sizing: border-box; }
+.threadFs { flex: 1; width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; }
+.threadFs div[aria-label="Riwayat pesan"] { flex: 1; min-height: 0; max-height: none; overscroll-behavior: contain; }
 .modeRow { display: flex; gap: 6px; padding: 8px 12px 0; background: #fff; }
 .modeRow button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #dce7e0; background: #fff; color: #14251f; border-radius: 99px; padding: 5px 11px; font-size: 13px; min-height: 32px; }
 .modeRow button[aria-pressed=true] { background: #064e3b; border-color: #064e3b; color: #fff; }
@@ -33,13 +35,16 @@
 .pick { display: flex; justify-content: space-between; gap: 8px; border: 1px solid #dce7e0; background: #fff; border-radius: 10px; padding: 8px 10px; font: inherit; color: inherit; text-align: left; }
 .pick small { color: #64746d; white-space: nowrap; }
 .context { display: none; }
-.contextOpen { display: grid; gap: 14px; align-content: start; position: fixed; inset: 0; z-index: 60; overflow-y: auto; padding: 16px; background: var(--bg); }
+.contextOpen { display: grid; gap: 14px; align-content: start; position: fixed; inset: 0; z-index: 1100; overflow-y: auto; padding: 16px; background: var(--bg); }
 .ctxHead { display: flex; justify-content: space-between; align-items: center; }
 .ctxBtn { white-space: nowrap; }
 .backBtn { min-width: 36px; }
 .settings { display: grid; gap: 8px; }
 .settings textarea { min-height: 120px; }
 
+@media (min-width: 768px) {
+  .threadFs { max-width: 760px; margin: 0 auto; }
+}
 @media (min-width: 1024px) {
   .layout { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); align-items: start; }
   .layout.single { grid-template-columns: minmax(0, 1fr); }
@@ -55,3 +60,4 @@
   .contextOpen { position: static; inset: auto; z-index: auto; background: var(--card); }
   .ctxHead button, .ctxBtn { display: none; }
 }
+.thread textarea:focus-visible { outline: none; }

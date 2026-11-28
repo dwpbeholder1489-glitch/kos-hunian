@@ -61,10 +61,8 @@ function Found({ slug, o, cred, track, setTrack, chat, setChat }) {
   const t = track || { ...o, type: 'svc_order' };
   return <>
     {o.status === 'batal' && <div className="notice bad">Pesanan dibatalkan{o.void_reason ? `: ${o.void_reason}` : ''}.</div>}
-    {chat ? <>
-      <button type="button" className="sm" style={{ justifySelf: 'start' }} onClick={() => setChat(false)}>← Status pesanan</button>
-      <CustomerChat endpoint="/api/publik/chat" auth={auth} refId="nomor" onOpenReference={() => setChat(false)} />
-    </> : <TrackingView track={t} onContact={() => setChat(true)} contactLabel="Chat dengan Bisnis" />}
+    {chat ? <CustomerChat endpoint="/api/publik/chat" auth={auth} refId="nomor" back={() => setChat(false)} onOpenReference={() => setChat(false)} />
+      : <TrackingView track={t} onContact={() => setChat(true)} contactLabel="Chat dengan Bisnis" />}
     {!chat && o.status !== 'batal' && o.status !== 'permintaan' && !o.lunas && <PublicPay slug={slug} note="Setelah membayar, kirim bukti transfer lewat chat agar pembayaran dicatat." />}
     {!chat && o.status === 'permintaan' && <span className="small muted">Total masih perkiraan; dikonfirmasi saat barang diterima.</span>}
   </>;

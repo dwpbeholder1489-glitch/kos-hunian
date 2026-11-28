@@ -148,7 +148,8 @@ export function GuideBoundary({ scope, path, kos, customer, customerHelp, childr
     setField(null);
     setFieldOpen(false);
     const focus = (e) => {
-      if (e.target.matches?.(controls) && !e.target.closest('dialog')) setField(describeField(e.target));
+      // [data-no-field-help] = layar yang sedang dipakai mengetik cepat (mis. chat) — bantuan kolom tidak ditampilkan
+      if (e.target.matches?.(controls) && !e.target.closest('dialog') && !e.target.closest('[data-no-field-help]')) setField(describeField(e.target));
       else if (!e.target.closest?.('[data-guide-field]')) { setField(null); setFieldOpen(false); }
     };
     const keyboard = (e) => {

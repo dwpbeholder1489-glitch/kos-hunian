@@ -538,8 +538,8 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   else if (view === 'pesanan') content = <Orders orders={orders} photos={photos} error={networkError} refresh={refresh} go={go} />;
   else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} respond={respond} repeat={(previous) => { setRepeatQuote(previous); go('penawaran'); }} endpoint={endpoint} photos={photos} />;
   else if (view === 'chat') content = <>
-    <Bar title={id ? 'Chat Pesanan' : 'Chat dengan Toko'} subtitle={order ? `#${order.number}` : undefined} back={() => (id ? go('lacak', id) : go('info'))} />
-    <CustomerChat key={id || 'umum'} endpoint={endpoint} refId={id || 'umum'} title={page.name}
+    <CustomerChat key={id || 'umum'} endpoint={endpoint} refId={id || 'umum'} title={page.name} back={() => (id ? go('lacak', id) : go('info'))}
+      whatsapp={page.wa_phone ? waLink(page.wa_phone, `Halo ${page.name}${order ? `, saya ingin menanyakan pesanan ${order.number}` : ''}.`) : null}
       onOpenReference={(ref) => go('lacak', ref.id)} onPay={shop.pay ? () => go('bayar') : undefined}
       onCard={(kind, p) => { if (kind === 'produk' && products.get(p.product_id)) go('produk', p.product_id); else if (kind === 'penawaran') go('lacak', p.order_id); }} />
   </>;

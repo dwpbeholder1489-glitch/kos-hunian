@@ -1,26 +1,38 @@
 'use client';
-// Chat pelanggan ↔ bisnis (gambar acuan "Chat dengan Toko"). Dipakai portal toko (/b, cookie tamu), portal grosir (/c, token pribadi)
-// dan cek pesanan jasa (/b/[slug]/cek, nomor + No. HP). Semua lewat endpoint server yang memeriksa kredensial di database.
+// Chat pelanggan ↔ bisnis, tampilan layar penuh ala WhatsApp. Dipakai portal toko (/b, cookie tamu), portal grosir (/c, token
+// pribadi) dan cek pesanan jasa (/b/[slug]/cek, nomor + No. HP). Semua lewat endpoint server yang memeriksa kredensial di database.
 // refId: id transaksi | 'umum' (chat tanpa transaksi) | 'nomor' (jasa). Pesan diperbarui tiap 5 detik saat layar terlihat.
+// Tata letak: lapisan tetap (portal ke <body>) yang mengikuti Visual Viewport (lib/useChatViewport) → kepala di atas, daftar pesan
+// bergulir sendiri, kolom ketik selalu tepat di atas keyboard (iOS Safari, Android Chrome, PWA). Saat mengetik di layar sentuh:
+// branding & bantuan kolom disembunyikan (data-no-field-help dibaca InteractiveGuide).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BusinessHead, Composer, MessageList, Powered, RefCard, usePendingId } from './ChatParts';
+import { createPortal } from 'react-dom';
+import { BusinessHead, Composer, Ico, MessageList, Powered, RefCard, Suggestions, usePendingId } from './ChatParts';
 import { logoUrl } from '@/lib/logo';
+import { isTouch, useChatViewport } from '@/lib/useChatViewport';
 import styles from './customer-chat.module.css';
 
-export default function CustomerChat({ endpoint, auth = {}, refId, full = false, onOpenReference, onCard, onPay, title, back }) {
+export default function CustomerChat({ endpoint, auth = {}, refId, onOpenReference, onCard, onPay, title, back, whatsapp }) {
   const [data, setData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [older, setOlder] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [who, setWho] = useState({ name: '', phone: '' });
+  const [focused, setFocused] = useState(false);
+  const [unseen, setUnseen] = useState(0);
+  const [prefill, setPrefill] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const listRef = useRef(null);
   const stick = useRef(true);
   const readRef = useRef(null);
   const exhausted = useRef(false);
+  const lastOther = useRef(null);
   const files = useRef(new Map());
   const pending = usePendingId();
   const authKey = JSON.stringify(auth);
+  const box = useChatViewport(true);
+  useEffect(() => setMounted(true), []);
 
   const call = useCallback(async (operation, extra = {}, file = null) => {
     const payload = { action: 'conversation', ...JSON.parse(authKey), ref: refId, operation, ...extra };
@@ -51,22 +63,37 @@ export default function CustomerChat({ endpoint, auth = {}, refId, full = false,
     const tick = () => { if (!document.hidden) load().catch((e) => alive && setError(e.message)); };
     tick();
     const timer = setInterval(tick, 5000);
-    return () => { alive = false; clearInterval(timer); };
+    document.addEventListener('visibilitychange', tick);
+    return () => { alive = false; clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
   }, [load]);
 
-  // gulir ke bawah saat pesan baru masuk (kecuali pengguna sedang membaca pesan lama)
-  useEffect(() => {
+  const toBottom = useCallback((smooth) => {
     const el = listRef.current;
-    if (el && stick.current) el.scrollTop = el.scrollHeight;
-  }, [messages.length]);
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    stick.current = true; setUnseen(0);
+  }, []);
+  // pesan baru: ikut turun bila sedang di bawah; bila sedang membaca pesan lama → tampilkan "↓ n pesan baru"
+  useEffect(() => {
+    const other = [...messages].reverse().find((m) => m.sender === 'business');
+    const isNew = other && lastOther.current && other.id !== lastOther.current;
+    if (other) lastOther.current = other.id; else if (!lastOther.current && messages.length) lastOther.current = '-';
+    if (stick.current) requestAnimationFrame(() => toBottom(false));
+    else if (isNew) setUnseen((u) => u + 1);
+  }, [messages, toBottom]);
+  // keyboard muncul/hilang → area pesan mengecil; tetap di pesan terbaru bila memang di bawah
+  useEffect(() => { if (stick.current) requestAnimationFrame(() => toBottom(false)); }, [box?.height, toBottom]);
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    const onScroll = () => { stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; };
-    el.addEventListener('scroll', onScroll);
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [data !== null]);
-  // tandai balasan bisnis sudah dibaca
+    const onScroll = () => { stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; if (stick.current) setUnseen(0); };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    // area pesan mengecil (keyboard, kolom ketik tumbuh, chip) → tetap menempel di pesan terbaru bila memang di bawah
+    const ro = window.ResizeObserver ? new ResizeObserver(() => { if (stick.current) el.scrollTop = el.scrollHeight; }) : null;
+    ro?.observe(el);
+    return () => { el.removeEventListener('scroll', onScroll); ro?.disconnect(); };
+  }, [data !== null, mounted]);
+  // tandai balasan bisnis sudah dibaca (hanya saat layar terlihat)
   useEffect(() => {
     if (document.hidden) return;
     const latest = [...messages].reverse().find((m) => m.sender === 'business' && !m.read_at && !m.pending);
@@ -108,31 +135,60 @@ export default function CustomerChat({ endpoint, auth = {}, refId, full = false,
   const ref = data?.reference;
   const so = ref?.type === 'so_order';
   const names = (ref?.lines || []).slice(0, 2).map((l) => l.name).join(', ');
+  const ask = (text) => () => text;
   const chips = [
-    ...(so && ref.status === 'penawaran' && onOpenReference ? [[ref.quote_ready ? 'Lihat penawaran' : 'Lihat permintaan', () => onOpenReference(ref)]] : []),
-    ...(refId === 'umum' || so ? [['Cek stok', () => (names ? `Halo, apakah stok ${names} masih tersedia?` : 'Halo, apakah barang ini masih tersedia?')]] : []),
-    ['Cara bayar', () => (onPay ? onPay() : 'Bagaimana cara pembayarannya?')],
-    ...(so && ref.fulfillment !== 'ambil' ? [['Estimasi kirim', () => 'Kira-kira pesanan saya tiba kapan?']] : []),
-    ...(ref?.type === 'svc_order' ? [['Kapan selesai?', () => 'Kira-kira pesanan saya selesai kapan?']] : []),
+    ...(so && ref.status === 'penawaran' && onOpenReference ? [[ref.quote_ready ? 'Lihat penawaran' : 'Lihat permintaan', () => onOpenReference(ref), 'tag']] : []),
+    ...(refId === 'umum' || so ? [['Cek stok', ask(names ? `Halo, apakah stok ${names} masih tersedia?` : 'Halo, apakah barang ini masih tersedia?'), 'box']] : []),
+    ['Cara bayar', () => (onPay ? onPay() : 'Bagaimana cara pembayarannya?'), 'card'],
+    ...(so && ref.fulfillment !== 'ambil' ? [['Estimasi kirim', ask('Kira-kira pesanan saya tiba kapan?'), 'truck']] : []),
+    ...(ref?.type === 'svc_order' ? [['Kapan selesai?', ask('Kira-kira pesanan saya selesai kapan?'), 'clock']] : []),
+    ...(ref && onOpenReference && !(so && ref.status === 'penawaran') ? [['Lihat pesanan', () => onOpenReference(ref), 'box']] : []),
   ];
+  // kartu "Coba tanyakan" di percakapan kosong: mengisi kolom ketik (bisa diubah sebelum dikirim)
+  const suggestions = chips.map(([label, act, icon]) => [label, () => { const r = act(); if (typeof r === 'string') setPrefill({ text: r, at: Date.now() }); }, icon]);
   const off = data && data.enabled === false;
+  const typing = focused && (box?.keyboard || isTouch());
+  const short = (box?.height || 800) < 560;
+  const empty = data && messages.length === 0;
 
-  return <section className={`${styles.wrap} ${full ? styles.full : ''}`} aria-label="Chat dengan bisnis">
-    <BusinessHead business={data?.business} logo={data?.business?.logo ? logoUrl(data.business.logo) : null} title={title}
-      extra={back && <button type="button" className={styles.round} aria-label="Tutup chat" onClick={back}>✕</button>} />
-    {ref && <RefCard reference={ref} onOpen={onOpenReference ? () => onOpenReference(ref) : null} />}
-    {error && <p role="alert" className={styles.alert}>{error}</p>}
-    {off && <p className={styles.info}>Chat sedang dimatikan oleh bisnis. Gunakan kontak lain di halaman bisnis.</p>}
-    {!data && !error ? <div className={styles.list}><p className={styles.empty}>Memuat percakapan…</p></div>
-      : <MessageList listRef={listRef} messages={messages} side="customer" business={data?.business?.name} older={older}
-        loadOlder={() => messages[0] && load(messages.find((m) => !m.pending)?.id)} openFile={openFile} onCard={onCard}
-        emptyText={refId === 'umum' ? 'Tanyakan stok, harga, atau apa saja kepada bisnis.' : 'Belum ada pesan. Tanyakan apa pun tentang pesanan ini.'} />}
-    {data?.need_identity && <div className={styles.identity}>
-      <span style={{ fontSize: 13.5 }}>Isi data agar bisnis bisa membalas & mengenali Anda.</span>
-      <label>Nama<input value={who.name} maxLength={80} autoComplete="name" onChange={(e) => setWho({ ...who, name: e.target.value })} /></label>
-      <label>No. WhatsApp<input value={who.phone} maxLength={20} inputMode="tel" autoComplete="tel" onChange={(e) => setWho({ ...who, phone: e.target.value })} /></label>
-    </div>}
-    <Composer onSend={send} onFile={sendFile} chips={off ? [] : chips} busy={busy} disabled={!data || off} />
-    <Powered />
-  </section>;
+  // laptop: Esc atau klik di luar panel = kembali (seperti menutup jendela chat)
+  useEffect(() => {
+    if (!back) return;
+    const k = (e) => { if (e.key === 'Escape') back(); };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, [back]);
+  const screen = <div className={styles.overlay} style={box ? { top: box.top, height: box.height } : undefined}
+    onClick={(e) => { if (back && e.target === e.currentTarget) back(); }}>
+    <section className={`${styles.wrap} ${styles.screen}`} aria-label="Chat dengan bisnis" data-no-field-help data-typing={typing || undefined}>
+      <BusinessHead business={data?.business} logo={data?.business?.logo ? logoUrl(data.business.logo) : null} title={title} back={back}
+        extra={whatsapp && <a className={styles.wa} href={whatsapp} target="_blank" rel="noreferrer" aria-label="Hubungi lewat WhatsApp">WA</a>} />
+      {ref && !(typing && short) && <RefCard reference={ref} onOpen={onOpenReference ? () => onOpenReference(ref) : null} />}
+      {error && <p role="alert" className={styles.alert}>{error}</p>}
+      {off && <p className={styles.info}>Chat sedang dimatikan oleh bisnis. Gunakan kontak lain di halaman bisnis.</p>}
+      <div className={styles.listWrap}>
+        {!data && !error ? <div className={styles.list}><p className={styles.empty}>Memuat percakapan…</p></div>
+          : <MessageList listRef={listRef} messages={messages} side="customer" business={data?.business?.name} older={older}
+            loadOlder={() => { stick.current = false; load(messages.find((m) => !m.pending)?.id); }} openFile={openFile} onCard={onCard}
+            empty={!off && <>
+              <div className={styles.hello}><span className={styles.avatar}><Ico name="store" size={15} /></span>
+                <p>{refId === 'umum' ? 'Halo! Ada yang bisa kami bantu? Tanyakan stok, harga, atau apa saja.' : 'Ada pertanyaan tentang pesanan ini? Tulis di sini, toko akan membalas.'}</p></div>
+              <Suggestions items={suggestions} />
+            </>} />}
+        {unseen > 0 && <button type="button" className={styles.newPill} onClick={() => toBottom(true)}><Ico name="down" size={16} />{unseen} pesan baru</button>}
+      </div>
+      {data?.need_identity && <div className={styles.identity}>
+        <span style={{ fontSize: 13.5 }}>Isi data agar bisnis bisa membalas & mengenali Anda.</span>
+        <div className={styles.idRow}>
+          <label>Nama<input value={who.name} maxLength={80} autoComplete="name" onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onChange={(e) => setWho({ ...who, name: e.target.value })} /></label>
+          <label>No. WhatsApp<input value={who.phone} maxLength={20} inputMode="tel" autoComplete="tel" onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onChange={(e) => setWho({ ...who, phone: e.target.value })} /></label>
+        </div>
+      </div>}
+      <div className={styles.foot}>
+        <Composer onSend={send} onFile={sendFile} chips={off || empty ? [] : chips} busy={busy} disabled={!data || off} onTyping={setFocused} prefill={prefill} />
+        {!typing && <Powered />}
+      </div>
+    </section>
+  </div>;
+  return mounted ? createPortal(screen, document.body) : null;
 }

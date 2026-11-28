@@ -10,13 +10,20 @@ import { errMsg, rp, waLink } from '@/lib/format';
 import { CONV_STATUS } from '@/lib/tracking';
 import { BusinessHead, Composer, Ico, MessageList, RefCard, TrackingView, usePendingId } from '@/components/commerce/ChatParts';
 import TrackingControls from './TrackingControls';
+import { createPortal } from 'react-dom';
+import { useChatViewport } from '@/lib/useChatViewport';
+import cs from '@/components/commerce/customer-chat.module.css';
 import styles from './chat.module.css';
 
 const token = async () => (await supabase.auth.getSession()).data.session?.access_token;
 const CHANNEL = { toko: 'Portal toko', grosir: 'Portal grosir', jasa: 'Cek pesanan' };
 const refLink = (c) => (c.ref_type === 'so_order' ? `/grosir?pesanan=${c.ref_id}` : c.ref_type === 'svc_order' ? `/pesanan?id=${c.ref_id}` : null);
 
-export default function StaffChat({ convId, kosId, onBack, onChanged }) {
+export default function StaffChat({ convId, kosId, onBack, onChanged, fullscreen = false }) {
+  const box = useChatViewport(fullscreen);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const stick = useRef(true);
   const [d, setD] = useState(null);
   const [messages, setMessages] = useState([]);
   const [err, setErr] = useState('');
@@ -49,7 +56,17 @@ export default function StaffChat({ convId, kosId, onBack, onChanged }) {
     const t = setInterval(tick, 5000);
     return () => { alive = false; clearInterval(t); };
   }, [load]);
-  useEffect(() => { const el = listRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages.length]);
+  // ikut ke pesan terbaru hanya bila sedang di bawah (membaca pesan lama tidak terganggu); keyboard naik → tetap di bawah
+  useEffect(() => { const el = listRef.current; if (el && stick.current) el.scrollTop = el.scrollHeight; }, [messages.length, box?.height]);
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const on = () => { stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; };
+    el.addEventListener('scroll', on, { passive: true });
+    const ro = window.ResizeObserver ? new ResizeObserver(() => { if (stick.current) el.scrollTop = el.scrollHeight; }) : null;
+    ro?.observe(el);
+    return () => { el.removeEventListener('scroll', on); ro?.disconnect(); };
+  }, [d !== null, mounted]);
   useEffect(() => {
     if (document.hidden) return;
     const latest = [...messages].reverse().find((m) => m.sender === 'customer' && !m.read_at);
@@ -141,12 +158,11 @@ export default function StaffChat({ convId, kosId, onBack, onChanged }) {
     </section>}
   </aside>;
 
-  return <div className={styles.threadWrap}>
-    <div className={styles.thread}>
-      <BusinessHead business={null} title={c.customer} avatar={(c.customer || '?').trim()[0]?.toUpperCase()}
+  const thread = <div className={`${styles.thread} ${fullscreen ? styles.threadFs : ''}`} data-no-field-help>
+      <BusinessHead business={null} title={c.customer} avatar={(c.customer || '?').trim()[0]?.toUpperCase()} back={fullscreen ? onBack : null}
         sub={[CONV_STATUS[c.status][0], CHANNEL[c.channel]]} extra={<div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
         <button type="button" className={`sm ${styles.ctxBtn}`} onClick={() => setSide(true)}>Detail</button>
-        {onBack && <button type="button" className={`sm ghost ${styles.backBtn}`} onClick={onBack} aria-label="Kembali ke daftar">✕</button>}
+        {onBack && !fullscreen && <button type="button" className={`sm ghost ${styles.backBtn}`} onClick={onBack} aria-label="Kembali ke daftar">✕</button>}
       </div>} />
       {ref && <RefCard reference={ref} onOpen={() => setSide(true)} label="Lacak" />}
       {!d.enabled && <div className="notice warn" style={{ margin: '8px 12px 0' }}>Chat pelanggan dimatikan di Setelan chat — pelanggan tidak bisa mengirim, Anda hanya bisa menulis catatan internal.</div>}
@@ -174,7 +190,8 @@ export default function StaffChat({ convId, kosId, onBack, onChanged }) {
         disabled={mode === 'teks' && !d.enabled} mode={mode === 'catatan' ? 'note' : undefined}
         placeholder={mode === 'catatan' ? 'Catatan untuk tim (tidak dikirim ke pelanggan)…' : 'Ketik balasan…'}
         extraMenu={() => setMenu((x) => !x)} />
-    </div>
-    {context}
-  </div>;
+    </div>;
+  // HP & tablet: layar penuh mengikuti Visual Viewport (kolom ketik tepat di atas keyboard); laptop: di dalam halaman
+  if (fullscreen) return mounted ? createPortal(<div className={cs.overlay} style={box ? { top: box.top, height: box.height } : undefined}>{thread}{context}</div>, document.body) : null;
+  return <div className={styles.threadWrap}>{thread}{context}</div>;
 }
