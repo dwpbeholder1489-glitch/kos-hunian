@@ -1209,7 +1209,7 @@ const PARTS = [
     ], <>Booking tidak punya tabel terpisah — booking adalah event yang belum dikonfirmasi, jadi tidak ada data ganda. Formulir booking dari halaman publik menyusul (Tahap D).</>, null, null, 'dasar'],
     ['Jadwal & Tim, pelanggan, vendor', 'Jadwal & Tim · Pelanggan (Client) · Vendor', [
       <><b>Jadwal &amp; Tim</b>: kalender event bulanan (ketuk tanggal untuk event hari itu), <b>Beban kerja tim</b> (tugas terbuka &amp; terlambat per orang — ketuk untuk menyaring), dan semua <b>tugas persiapan</b> dengan saringan Terlambat / 7 hari ke depan / per orang.</>,
-      <><b>Pelanggan (Client)</b> hanya menampilkan pelanggan; <b>Vendor</b> menampilkan supplier/vendor. Keduanya memakai daftar kontak yang sama dengan Belanja &amp; Pembukuan — tidak ada data ganda.</>,
+      <><b>Pelanggan (Client)</b> hanya menampilkan pelanggan; <b>Vendor</b> menampilkan supplier/vendor. Keduanya memakai daftar kontak yang sama dengan Belanja &amp; Pembukuan — tidak ada data ganda. Modul Kontak ini menyala otomatis untuk bisnis berkategori Event; bisnis kustom lain bisa menyalakannya sendiri di <b>Konfigurasi › Modul</b>.</>,
       <><b>Inventaris &amp; Properti</b> memakai menu Aset tetap (peralatan, sound system, tenda, dekorasi) beserta penyusutannya.</>,
     ], <>Kategori &amp; evaluasi vendor serta jadwal peralatan per event menyusul di tahap berikutnya (Tahap C) — belum tersedia sekarang. Rundown ada di Langkah 164–165.</>, null, null, 'dasar'],
     ['Menyusun rundown & menyimpan versi', 'Event / Kegiatan › buka event › tab Rundown', [
