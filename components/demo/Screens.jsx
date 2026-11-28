@@ -1170,6 +1170,37 @@ export function ScrInventarisKamar() {
   );
 }
 
+export function ScrTarifKalender() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Booking · Harian</h3>
+      <div className="row between small"><span>Check-in</span><b>Jum, 5 Mar</b></div>
+      <div className="row between small"><span>Check-out</span><b>Sen, 8 Mar</b></div>
+      <div className="unitbox small" style={{ gap: 2 }}>
+        <div className="row between"><span>1 malam (Jumat)</span><span>Rp300.000</span></div>
+        <div className="row between"><span>2 malam (akhir pekan +20%)</span><span>Rp720.000</span></div>
+        <div className="row between"><b>Total 3 malam</b><b>Rp1.020.000</b></div>
+      </div>
+      <span className="small muted">Harga dihitung otomatis dari tarif & aturan tarif</span>
+    </Phone>
+  );
+}
+
+export function ScrKontrakSewa() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Perjanjian sewa A05</h3>
+      <span className="small muted">KTR-2611-001 · Menunggu persetujuan</span>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Link pribadi penyewa</b><span>prasara.id/k/…</span><span className="row"><b>Salin</b> · <b>Kirim via WA</b></span></div>
+      <div className="row between small"><span>Penyewa</span><b>Belum menyetujui</b></div>
+      <div className="row between small"><span>Pengelola</span><b>Dewo · 28 Nov</b></div>
+      <span className="small muted">Jejak audit · Dokumen pendukung · Cetak / PDF</span>
+    </Phone>
+  );
+}
+
 // Tur "? Panduan": sorotan elemen nyata + kartu langkah (Langkah 148)
 export function ScrTurPanduan() {
   return (

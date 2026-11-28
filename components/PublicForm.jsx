@@ -15,13 +15,13 @@ function goDone(slug, q) {
 
 // Formulir permintaan di halaman bisnis publik. Kiriman = permintaan/prospek, bukan pesanan final;
 // harga & ketersediaan dikonfirmasi pemilik. Anti-spam: kolom jebakan, waktu isi minimal, batas per perangkat (di server).
-export default function PublicForm({ page, initialReservation = false }) {
+export default function PublicForm({ page, initialReservation = false, refCode = '' }) {
   const started = useRef(Date.now());
   const retail = page.type === 'retail';
   const jasa = page.type === 'jasa';
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [msg, setMsg] = useState('');
+  const [msg, setMsg] = useState(refCode ? `Kode referral: ${refCode}` : ''); // ?ref=KODE dari link referral penghuni
   const [date, setDate] = useState(''); // kos: rencana masuk; jasa: tanggal jemput/antar
   const [pick, setPick] = useState({}); // id → { unit, qty }
   const [consent, setConsent] = useState(false);

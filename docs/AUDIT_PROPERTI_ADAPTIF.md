@@ -65,3 +65,17 @@ Uji: `supabase/tests/properti_adaptif.sql` (semua kolom t), `node supabase/tests
 
 Batasan yang diketahui: penyusutan & biaya tanpa lokasi dihitung di lokasi utama; profit per unit = kontribusi langsung (biaya bersama tidak dibagi);
 laporan kos tetap basis kas (keputusan pemilik 27 Nov 2026).
+
+## 4. Tahap 2 (28 Nov 2026) — Terverifikasi
+
+| Kebutuhan | Dibangun | Mesin yang dipakai ulang |
+|---|---|---|
+| Universal Rental Engine (jam/harian/mingguan/bulanan/tahunan/khusus) | `leases.cycle`, booking bersatuan tanpa tumpang tindih, `rental_quote` tarif dinamis, kalender `/tarif`, sewa langsung & perpanjang | leases, bookings, invoices, payments, deposits, jurnal |
+| Pembelian & supplier hybrid | `/pembelian`: persediaan (Belanja), biaya langsung, aset tetap; rekap per supplier | purchases/products, expenses, fixed_assets, contacts |
+| Referral | `/referral`: kode per penghuni, syarat otomatis, imbalan diskon atau komisi | invoice_discount_apply, expenses |
+| Kampanye | `/kampanye`: promo/voucher/pengumuman, potongan N bulan otomatis, halaman bisnis, notifikasi tim, WhatsApp manual | invoice_discount_apply, Notification Engine, public_pages |
+| Kontrak digital | `/kontrak`: template, isi dibekukan + hash, link persetujuan penyewa, tanda tangan pengelola, jejak audit, lampiran, PDF | attachments, notifikasi |
+
+Uji: `rental_engine.sql`, `properti_tahap2.sql`, regresi kos lama (e2e_kos, pindah_kamar, tagihan_pertama, fleksibel_cara_bayar), `harness/run_bi.sh` (termasuk isolasi), `next build`, render HP.
+
+Belum / dalam rencana: notifikasi push ke penghuni (penghuni belum punya akun/perangkat terdaftar), tanda tangan elektronik tersertifikasi (butuh PSrE), WhatsApp otomatis (butuh API berbayar), pindah kamar untuk sewa non-bulanan, tagihan per malam yang dipecah per periode untuk sewa harian panjang.

@@ -20,6 +20,7 @@ import { invoiceTotals } from '@/lib/propertyTotals';
 import styles from './kamar.module.css';
 import { useSearchParams } from 'next/navigation';
 import { termsFor } from '@/lib/propertyTerms';
+import { rentText, cycleLabel, ExtendSheet, RentalStartSheet } from '@/components/SewaFleksibel';
 
 const propsOf = (kos) => (kos?.locs?.list || []).filter((b) => b.kind === 'cabang');
 
@@ -161,11 +162,12 @@ export default function Kamar() {
               <span className={styles.roomName}><b>{room.code}</b><span>{name}</span></span>
               <span className={styles.badge} data-status={room.status}>{ROOM_ST[room.status]}</span>
             </span>
-            <span className={styles.rate}><NavIcon name="wallet" size={15} />{(lease?.rent ?? room.rent) ? `${rp(lease?.rent ?? room.rent)}/bln` : 'Tarif belum diisi'}</span>
+            <span className={styles.rate}><NavIcon name="wallet" size={15} />{lease ? rentText(lease) : room.rent ? `${rp(room.rent)}/bln` : 'Tarif belum diisi'}</span>
             <span className={styles.roomFoot}><PaymentStatus billing={billing} />
               {booking && <span className={styles.booked}>Dibooking · {tgl(booking.check_in)}</span>}<NavIcon name="next" size={15} /></span>
           </button>
           {!lease && room.status === 'tersedia' && !booking && <button className={styles.rent} onClick={() => setSheet({ t: 'start', id: room.id })}>+ Sewa / Isi Penghuni</button>}
+          {!lease && room.status === 'tersedia' && moduleOn(kos, 'p_tarif') && <button className={styles.rent} onClick={() => setSheet({ t: 'rental', id: room.id })}>+ Sewa harian / per jam</button>}
         </article>)}</div> : <Empty title="Tidak ada kamar" text="Belum ada kamar yang cocok dengan pencarian dan filter." />}
     </section>
 
@@ -190,6 +192,8 @@ export default function Kamar() {
     {sheet?.t === 'edit' && <RoomEdit d={d} room={sheet.room} onClose={close} />}
     {sheet?.t === 'start' && <StartLeaseSheet d={d} roomId={sheet.id} onClose={close} />}
     {sheet?.t === 'end' && <EndLeaseSheet d={d} lease={sheet.lease} onClose={close} />}
+    {sheet?.t === 'rental' && <RentalStartSheet d={d} roomId={sheet.id} onClose={close} />}
+    {sheet?.t === 'extend' && <ExtendSheet lease={sheet.lease} onClose={close} />}
     {sheet?.t === 'move' && <MoveRoomSheet d={d} lease={sheet.lease} onClose={close} />}
     {sheet?.t === 'pay' && <PaySheet d={d} inv={d.invById.get(sheet.id)} onClose={() => sheet.roomId ? setSheet({ t: 'detail', id: sheet.roomId }) : close()} />}
   </div>;
@@ -238,7 +242,7 @@ function RoomDetail({ d, card, go, onClose }) {
   const pay = (id) => go({ t: 'pay', id, roomId: room.id });
   const start = () => go({ t: 'start', id: room.id });
   return <Sheet title={`Kamar ${room.code}`} subtitle={card.name} icon="bed" wide onClose={onClose}>
-    <SheetStats items={[[ 'Status hunian', ROOM_ST[room.status] ], ['Tarif sewa', (lease?.rent ?? room.rent) ? `${rp(lease?.rent ?? room.rent)}/bln` : '—'],
+    <SheetStats items={[[ 'Status hunian', ROOM_ST[room.status] ], ['Tarif sewa', lease ? rentText(lease) : room.rent ? `${rp(room.rent)}/bln` : '—'],
       ...(billing ? [['Tagihan belum dibayar', rp(billing.amount)]] : [])]} />
     <SheetSegments label="Bagian detail kamar" options={tabs} value={tab} onChange={setTab} />
     {tab === 'detail' && <>
@@ -259,11 +263,14 @@ function RoomDetail({ d, card, go, onClose }) {
         <dl className="kv">
           {occ.phone && <><dt>WhatsApp</dt><dd><a href={`https://wa.me/${occ.phone.replace(/\D/g, '').replace(/^0/, '62')}`}>{occ.phone}</a></dd></>}
           <dt>Masuk</dt><dd>{tgl(lease.start_date)}</dd>
+          {lease.cycle && lease.cycle !== 'bulan' && <><dt>Jenis sewa</dt><dd>{cycleLabel(lease.cycle)}{lease.end_date ? ` · sampai ${lease.end_at ? new Date(lease.end_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : tgl(lease.end_date)}` : ''}</dd></>}
           {(d.depByLease.get(lease.id) || 0) > 0 && <><dt>Deposit dipegang</dt><dd>{rp(d.depByLease.get(lease.id))}</dd></>}
         </dl>
         {otherInvoices.length > 0 && <details><summary>Tagihan penghuni dari sewa lain · {rp(sum(otherInvoices, 'outstanding'))}</summary>
           <InvoiceList d={d} rows={otherInvoices} pay={pay} /></details>}
-        <div className="row"><button onClick={() => go({ t: 'move', lease })}>Pindah kamar</button><button className="danger" onClick={() => go({ t: 'end', lease })}>Akhiri sewa</button></div>
+        <div className="row">{(!lease.cycle || lease.cycle === 'bulan') && <button onClick={() => go({ t: 'move', lease })}>Pindah kamar</button>}
+          {['jam', 'hari', 'khusus'].includes(lease.cycle) && <button onClick={() => go({ t: 'extend', lease })}>Perpanjang</button>}
+          <button className="danger" onClick={() => go({ t: 'end', lease })}>{['jam', 'hari', 'khusus'].includes(lease.cycle) ? 'Check-out' : 'Akhiri sewa'}</button></div>
       </section>}
       {billing?.next && <button className="primary" onClick={() => pay(billing.next.id)}>Catat pembayaran / tandai lunas</button>}
       {!lease && room.status === 'tersedia' && !booking && <button className="cta" onClick={start}>+ Sewa / Isi Penghuni</button>}
@@ -275,7 +282,7 @@ function RoomDetail({ d, card, go, onClose }) {
     </>}
     {tab === 'occupancy' && <History rows={d.leases.filter((item) => item.room_id === room.id)} empty="Belum ada riwayat penghuni." render={(item) => <>
       <div className={styles.historyHead}><b>{d.occName(item.occupant_id)}</b><span>{item.status === 'aktif' ? 'Aktif' : 'Selesai'}</span></div>
-      <small>{tgl(item.start_date)} – {item.end_date ? tgl(item.end_date) : 'Sekarang'} · {rp(item.rent)}/bln</small>
+      <small>{tgl(item.start_date)} – {item.end_date ? tgl(item.end_date) : 'Sekarang'} · {rentText(item)}</small>
     </>} />}
     {tab === 'bills' && <InvoiceList d={d} rows={roomInvoices} pay={pay} />}
     {tab === 'payments' && <History rows={d.payments.filter((item) => ids.has(item.invoice_id))} empty="Belum ada pembayaran untuk kamar ini." render={(item) => <>
