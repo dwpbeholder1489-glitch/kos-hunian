@@ -1,0 +1,57 @@
+/* Halaman Chat pelanggan (/chat): HP = daftar → percakapan; ≥1024 = daftar | percakapan | detail. */
+.layout { display: grid; gap: 12px; min-width: 0; }
+.inbox { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.filters button { flex: none; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 99px; padding: 6px 12px; font-size: 13px; min-height: 34px; }
+.filters button[aria-pressed=true] { background: var(--gold); border-color: var(--gold); color: #fff; }
+.filters b { margin-left: 4px; }
+.rows { display: grid; border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
+.conv { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 11px 12px; border: 0; border-radius: 0; box-shadow: none; border-top: 1px solid var(--line); background: none; color: inherit; text-align: left; font: inherit; width: 100%; min-height: 64px; }
+.conv:first-child { border-top: 0; }
+.conv[aria-current=true] { background: var(--gold-soft); }
+.conv .av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--gold-soft); color: var(--brand); font-weight: 700; }
+.conv .main { min-width: 0; display: grid; gap: 2px; }
+.conv .main b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; }
+.conv .main span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--muted); }
+.conv .side { display: grid; justify-items: end; gap: 4px; font-size: 12px; color: var(--muted); }
+.count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--gold); color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; }
+.high { color: var(--bad); font-weight: 700; }
+.threadWrap { display: grid; gap: 12px; min-width: 0; }
+.thread { --cx-forest: #064e3b; --cx-green: #15803d; --cx-mint: #e1f3e9; --cx-bg: #f7faf8; --cx-ink: #14251f; --cx-muted: #64746d; --cx-faint: #87948e; --cx-line: #dce7e0;
+  color: #14251f; color-scheme: light; display: flex; flex-direction: column; min-width: 0; border: 1px solid #dce7e0; border-radius: 16px; background: #fff; overflow: hidden; position: relative; }
+.thread > section { border: 0 !important; border-radius: 0 !important; }
+.thread button { font: inherit; cursor: pointer; }
+.thread * { box-sizing: border-box; }
+.modeRow { display: flex; gap: 6px; padding: 8px 12px 0; background: #fff; }
+.modeRow button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #dce7e0; background: #fff; color: #14251f; border-radius: 99px; padding: 5px 11px; font-size: 13px; min-height: 32px; }
+.modeRow button[aria-pressed=true] { background: #064e3b; border-color: #064e3b; color: #fff; }
+.menu { position: absolute; left: 12px; bottom: 132px; z-index: 5; display: grid; min-width: 220px; padding: 6px; border-radius: 12px; border: 1px solid #dce7e0; background: #fff; box-shadow: 0 8px 24px #0b2a1b26; color: #14251f; }
+.menu button { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 9px 10px; border-radius: 8px; font: inherit; font-size: 14px; color: inherit; text-align: left; }
+.menu button:hover { background: #f2f7f4; }
+.picker { display: grid; gap: 6px; max-height: 260px; overflow-y: auto; padding: 10px 12px; border-top: 1px solid #dce7e0; background: #fbfdfc; color: #14251f; }
+.picker input { min-width: 0; flex: 1; }
+.pick { display: flex; justify-content: space-between; gap: 8px; border: 1px solid #dce7e0; background: #fff; border-radius: 10px; padding: 8px 10px; font: inherit; color: inherit; text-align: left; }
+.pick small { color: #64746d; white-space: nowrap; }
+.context { display: none; }
+.contextOpen { display: grid; gap: 14px; align-content: start; position: fixed; inset: 0; z-index: 60; overflow-y: auto; padding: 16px; background: var(--bg); }
+.ctxHead { display: flex; justify-content: space-between; align-items: center; }
+.ctxBtn { white-space: nowrap; }
+.backBtn { min-width: 36px; }
+.settings { display: grid; gap: 8px; }
+.settings textarea { min-height: 120px; }
+
+@media (min-width: 1024px) {
+  .layout { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); align-items: start; }
+  .layout.single { grid-template-columns: minmax(0, 1fr); }
+  .rows { max-height: calc(100dvh - 260px); overflow-y: auto; }
+  .threadWrap { grid-template-columns: minmax(0, 1fr); }
+  .thread { height: calc(100dvh - 200px); min-height: 520px; }
+  .thread > section > div[aria-label="Riwayat pesan"], .thread div[aria-label="Riwayat pesan"] { max-height: none; flex: 1; }
+  .backBtn { display: none; }
+}
+@media (min-width: 1440px) {
+  .threadWrap { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+  .context { display: grid; gap: 14px; align-content: start; position: static; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); max-height: calc(100dvh - 200px); overflow-y: auto; }
+  .contextOpen { position: static; inset: auto; z-index: auto; background: var(--card); }
+  .ctxHead button, .ctxBtn { display: none; }
+}

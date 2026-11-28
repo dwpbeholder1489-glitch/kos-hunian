@@ -86,6 +86,7 @@ const P = {
   '/media': <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="m21 16-5-5-9 9" /></>,
   '/halaman': <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18" /></>,
   '/crm': <><path d="M4 5h16v11H8l-4 4z" /><path d="M8 10h8" /></>,
+  '/chat': <><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /><path d="M8.5 12h.01M12 12h.01M15.5 12h.01" /></>,
   '/mutasi': <><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></>,
   '/buku-besar': <><path d="M12 6a8 8 0 0 0-9-2v15a8 8 0 0 1 9 2 8 8 0 0 1 9-2V4a8 8 0 0 0-9 2z" /><path d="M12 6v15" /></>,
   '/neraca-saldo': <><path d="M12 3v18M7 21h10M4 7h16M5 7l-3 7h6zm14 0-3 7h6z" /></>,

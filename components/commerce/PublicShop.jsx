@@ -1,6 +1,7 @@
 'use client';
 
-import TransactionChat from './TransactionChat';
+import CustomerChat from './CustomerChat';
+import { TrackingView } from './ChatParts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LogoMark } from '@/components/Logo';
 import NavIcon from '@/components/NavIcon';
@@ -313,10 +314,23 @@ function Rating({ item, orderId, rate }) {
   </form>;
 }
 
-function Tracking({ order, orders, page, pay, contact, go, error, rate, respond, repeat }) {
+function Tracking({ order, orders, page, pay, contact, go, error, rate, respond, repeat, endpoint, photos }) {
   const [approvalError, setApprovalError] = useState('');
   const [responding, setResponding] = useState(false);
   const [negotiating, setNegotiating] = useState(false);
+  const [track, setTrack] = useState(null);
+  const orderId = order?.id;
+  // tahap, kurir, resi & estimasi dari data penjual (cx_customer track); diperbarui bersama daftar pesanan
+  useEffect(() => {
+    if (!orderId) return;
+    let alive = true;
+    const load = () => fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'conversation', ref: orderId, operation: 'track' }) })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d && !d.error) setTrack(d); }).catch(() => {});
+    load();
+    const timer = setInterval(() => { if (!document.hidden) load(); }, 15000);
+    return () => { alive = false; clearInterval(timer); };
+  }, [orderId, endpoint, order?.status, order?.deliveries?.length]);
   async function reply(message) {
     setApprovalError('');
     setResponding(true);
@@ -327,30 +341,21 @@ function Tracking({ order, orders, page, pay, contact, go, error, rate, respond,
   if (!order) return <><Bar title="Detail Pesanan" back={() => go('pesanan')} /><p className={styles.empty}>{error || (orders ? 'Pesanan tidak ditemukan di browser ini.' : 'Memuat pesanan…')}</p></>;
   const pendingQuote = order.kind === 'penawaran' && order.status === 'penawaran';
   const status = orderStatus(order);
-  const delivery = order.deliveries.find((entry) => entry.status !== 'gagal');
-  const received = [...order.deliveries].reverse().find((entry) => entry.received_at)?.received_at;
   const ratingItems = [...new Map(order.lines.filter((line) => line.rateable).map((line) => [line.product_id, line])).values()];
-  const steps = [
-    [order.kind === 'penawaran' ? 'Permintaan penawaran dibuat' : 'Pesanan dibuat', order.created_at, ''],
-    ['Diproses', order.confirmed_at, order.confirmed_at ? 'Pesanan sedang disiapkan' : 'Menunggu konfirmasi toko'],
-    [order.fulfillment === 'ambil' ? 'Diserahkan' : 'Dikirim', delivery?.created_at, order.fulfillment === 'ambil' ? 'Menunggu pengambilan' : 'Menunggu pengiriman'],
-    ['Selesai', status === 'Selesai' ? received || order.closed_at || delivery?.created_at : null, status === 'Selesai' ? '' : 'Belum selesai'],
-  ];
+  const photoOf = (id) => { const ph = photos[id]?.[0]; return ph ? mediaUrl(ph.thumb || ph.path) : null; };
   return <>
     <Bar title={pendingQuote ? 'Detail Penawaran' : 'Detail Pesanan'} subtitle={`#${order.number}`} back={() => go(order.kind === 'penawaran' ? 'riwayat-penawaran' : 'pesanan')} />
     {pendingQuote && <section className={styles.info}>
       <h2>{order.quote_revision ? 'Penawaran siap ditinjau' : 'Permintaan diterima'}</h2>
       {order.quote_counter && !order.quote_revision && <p>Usulan Anda sudah diterima. Tunggu tanggapan bisnis.</p>}
     </section>}
-    <ol className={styles.timeline}>{steps.map(([label, date, hint]) => <li key={label} data-done={Boolean(date)}>
-      <span className={styles.dot}>{date && <Icon name="check" size={14} />}</span><div><b>{label}</b>{date && <small>{stamp(date)}</small>}{hint && (!date || label === 'Diproses') && <small>{hint}</small>}</div>
-    </li>)}</ol>
-    <TransactionChat key={order.id} order={order.id} endpoint={`/api/portal-shop?slug=${encodeURIComponent(page.slug)}`} />
-    {status === 'Batal' && <p className={styles.error}>Pesanan dibatalkan.</p>}
-    {contact && <a className={styles.contactOrder} href={waLink(page.wa_phone, `Halo ${page.name}, saya ingin menanyakan ${pendingQuote ? 'permintaan penawaran' : 'pesanan'} ${order.number}.`)} target="_blank" rel="noreferrer"><Icon name="/crm" />{pendingQuote ? 'Lanjutkan di WhatsApp' : 'Hubungi Toko'}</a>}
-    <section className={styles.orderContents}><h2>{pendingQuote ? 'Ringkasan Penawaran' : 'Ringkasan Pesanan'}</h2>
-      {order.lines.map((line, index) => <div key={index}><span>{line.name}<small>{line.qty} {line.unit}</small></span>{line.total != null && <b>{rp(line.total)}</b>}</div>)}
-      {order.total != null && <div><strong>{pendingQuote && !order.quote_revision ? 'Perkiraan' : 'Total Barang'}</strong><strong>{rp(order.total)}</strong></div>}
+    {track ? <TrackingView track={track} photoOf={photoOf} showLines={!pendingQuote} unread={order.unread || 0} onContact={() => go('chat', order.id)}
+      contactLabel={pendingQuote ? 'Chat dengan Toko' : 'Hubungi Toko'} />
+      : <p className={styles.empty}>{status === 'Batal' ? 'Pesanan dibatalkan.' : 'Memuat status pesanan…'}</p>}
+    {contact && <a className={styles.waLink} href={waLink(page.wa_phone, `Halo ${page.name}, saya ingin menanyakan ${pendingQuote ? 'permintaan penawaran' : 'pesanan'} ${order.number}.`)} target="_blank" rel="noreferrer">atau hubungi lewat WhatsApp</a>}
+    <section className={styles.orderContents}><h2>{pendingQuote ? 'Ringkasan Penawaran' : 'Pembayaran & Lainnya'}</h2>
+      {pendingQuote && order.lines.map((line, index) => <div key={index}><span>{line.name}<small>{line.qty} {line.unit}</small></span>{line.total != null && <b>{rp(line.total)}</b>}</div>)}
+      {pendingQuote && order.total != null && <div><strong>{pendingQuote && !order.quote_revision ? 'Perkiraan' : 'Total Barang'}</strong><strong>{rp(order.total)}</strong></div>}
       {order.quote_manual && <p style={{ whiteSpace: 'pre-wrap' }}>{order.quote_manual}</p>}
       {order.quote_filename && <p>Lampiran: {order.quote_filename}</p>}
       {order.quote_message && <p style={{ whiteSpace: 'pre-wrap' }}>{order.quote_message}</p>}
@@ -391,6 +396,7 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   const [quick, setQuick] = useState(null);
   const [excluded, setExcluded] = useState([]);
   const [orders, setOrders] = useState(null);
+  const [unreadGeneral, setUnreadGeneral] = useState(0);
   const [networkError, setNetworkError] = useState('');
   const [notice, setNotice] = useState('');
   const pendingLoad = useRef(null);
@@ -446,14 +452,15 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setOrders(data.orders);
+      setUnreadGeneral(data.unread_general || 0);
       setNetworkError('');
     }).catch((error) => setNetworkError(error.message || 'Gagal memuat pesanan.')).finally(() => { pendingLoad.current = null; });
     return pendingLoad.current;
   }
   useEffect(() => {
-    if (!['checkout', 'penawaran', 'permintaan', 'pesanan', 'riwayat-penawaran', 'lacak'].includes(view)) return;
+    if (!['checkout', 'penawaran', 'permintaan', 'pesanan', 'riwayat-penawaran', 'lacak', 'chat', 'info'].includes(view)) return;
     refresh();
-    if (view !== 'lacak' && view !== 'pesanan' && view !== 'riwayat-penawaran') return;
+    if (view !== 'lacak' && view !== 'pesanan' && view !== 'riwayat-penawaran' && view !== 'info') return;
     const timer = setInterval(() => { if (!document.hidden) refresh(); }, 15000);
     return () => clearInterval(timer);
   }, [view, endpoint]); // refresh memakai endpoint yang sama selama tampilan aktif
@@ -529,12 +536,19 @@ export default function PublicShop({ page, shop, quoteCatalog, initialScreen, qu
   </>;
   else if (view === 'riwayat-penawaran') content = <Orders quotes orders={orders?.filter((row) => row.kind === 'penawaran')} photos={photos} error={networkError} refresh={refresh} go={go} />;
   else if (view === 'pesanan') content = <Orders orders={orders} photos={photos} error={networkError} refresh={refresh} go={go} />;
-  else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} respond={respond} repeat={(previous) => { setRepeatQuote(previous); go('penawaran'); }} />;
+  else if (view === 'lacak') content = <Tracking order={order} orders={orders} page={page} pay={shop.pay} contact={contact} error={networkError} go={go} rate={rate} respond={respond} repeat={(previous) => { setRepeatQuote(previous); go('penawaran'); }} endpoint={endpoint} photos={photos} />;
+  else if (view === 'chat') content = <>
+    <Bar title={id ? 'Chat Pesanan' : 'Chat dengan Toko'} subtitle={order ? `#${order.number}` : undefined} back={() => (id ? go('lacak', id) : go('info'))} />
+    <CustomerChat key={id || 'umum'} endpoint={endpoint} refId={id || 'umum'} title={page.name}
+      onOpenReference={(ref) => go('lacak', ref.id)} onPay={shop.pay ? () => go('bayar') : undefined}
+      onCard={(kind, p) => { if (kind === 'produk' && products.get(p.product_id)) go('produk', p.product_id); else if (kind === 'penawaran') go('lacak', p.order_id); }} />
+  </>;
   else if (view === 'info') content = <>
     <Bar title="Info Toko" back={() => go('beranda')} />
     <section className={styles.info}><h2>{page.name}</h2>
       {[page.address, page.hours, page.about, page.policy].filter(Boolean).map((text, i) => <p key={i}><Linkify text={text} /></p>)}
-      {contact && <a className={styles.contactOrder} href={contact} target="_blank" rel="noreferrer"><Icon name="/crm" />Hubungi Toko</a>}
+      <button type="button" className={styles.contactOrder} onClick={() => go('chat')}><Icon name="/crm" />Chat dengan Toko{unreadGeneral > 0 && <span className={styles.unreadBadge}>{unreadGeneral}</span>}</button>
+      {contact && <a className={styles.waLink} href={contact} target="_blank" rel="noreferrer">atau hubungi lewat WhatsApp</a>}
       {page.links?.filter((link) => /^https?:\/\//i.test(link.url)).map((link) => <p key={link.url}><a href={link.url} target="_blank" rel="noreferrer">{link.label}</a></p>)}
       <button type="button" onClick={() => go('favorit')}><Icon name="heart" />Produk Favorit</button>
       <button type="button" onClick={() => go('penawaran')}><Icon name="/tagihan" />Minta Penawaran</button>

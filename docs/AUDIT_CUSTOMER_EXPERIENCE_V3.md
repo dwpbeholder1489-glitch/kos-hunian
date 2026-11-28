@@ -58,3 +58,28 @@ Tahap berikutnya yang disarankan adalah memvalidasi adaptor pesanan jasa dan pen
 | Tracking dan regresi pesanan | Uji SQL membaca event konfirmasi dan penerimaan dari transaksi nyata serta menjalankan checkout, penawaran grosir, stok, dan penilaian produk. |
 | Portal browser | Chromium menjalankan checkout, mengirim pesan, memuat ulang riwayat, membaca event transaksi, menguji sesi kedua, dan memeriksa overflow pada 390 px dan 1280 px dengan basis data lokal. |
 | Regresi JavaScript | 32 pengujian Node lulus. |
+
+## Tahap 2 — Chat & Tracking terintegrasi (28 Nov 2026, gambar acuan pemilik)
+
+Migrasi `20261128140000_chat_tracking.sql`. Fungsi tahap 1 (`cx_exchange`, `cx_owner_exchange`, `cx_owner_inbox`, `cx_order`) diganti; riwayat pesan tahap 1 dipindahkan otomatis ke percakapan transaksi (diuji dengan data tahap 1 sebelum migrasi).
+
+| Fitur | Status | Bukti / catatan |
+| --- | --- | --- |
+| Chat terkait transaksi — toko publik (/b), grosir (/c), jasa/laundry/kuliner (/b/[slug]/cek) | Diimplementasikan & diuji | `cx_customer` (service_role) memeriksa ulang cookie tamu / token pribadi / nomor + No. HP setiap permintaan |
+| Chat umum tanpa transaksi | Diimplementasikan & diuji (toko & grosir) | Tamu baru wajib isi nama + WhatsApp; jasa belum punya chat umum (tidak ada identitas pelanggan tanpa pesanan) |
+| Foto (JPG/PNG/WebP) & PDF ≤ 3 MB | Diimplementasikan; logika akses diuji SQL | Tipe dicek dari isi file; bucket privat `customer-chat`; URL 10 menit; lampiran yatim dibersihkan cron harian. Unggah ke Supabase Storage asli belum diuji di lingkungan ini |
+| Kartu produk, penawaran, cara bayar | Diimplementasikan & diuji | Isi kartu dibangun server (harga = salinan saat dikirim); pelanggan tidak bisa mengirim kartu |
+| Balasan cepat | Diimplementasikan & diuji | Pelanggan: Cek stok / Cara bayar / Estimasi kirim / Kapan selesai (mengisi teks, bisa diubah). Staf: maks. 10 dari Setelan chat |
+| Catatan internal | Diimplementasikan & diuji | Tidak muncul di daftar, lencana, maupun unduhan pelanggan |
+| Status, prioritas, penugasan percakapan | Diimplementasikan & diuji | Penugasan hanya ke anggota berakses chat; yang ditugaskan mendapat notifikasi |
+| Notifikasi pesan baru ke pemilik/staf | Diimplementasikan & diuji | Lewat Notification Engine (`CustomerChatMessage`/`CustomerChatAssigned`), tanpa isi pesan, digabung 10 menit |
+| Notifikasi ke pelanggan | Sebagian | Hanya lencana "belum dibaca" di portal. Push/WhatsApp ke pelanggan belum ada |
+| Status online & waktu respons | Diimplementasikan & diuji | Dari `cx_presence` (aplikasi tim terbuka ≤ 3 menit) & median balasan 30 hari (≥ 3 contoh); tanpa data = tidak ditampilkan |
+| Tracking toko/grosir (Diproses → Disiapkan → Dikirim/Diserahkan → Selesai) | Diimplementasikan & diuji | Tanggal dari konfirmasi, `prepared_at`, surat jalan, penerimaan. Kurir/resi/estimasi diisi penjual (`so_track_set`); kosong = "belum ditentukan" |
+| Tracking jasa/laundry/kuliner | Diimplementasikan & diuji | Tahap menyesuaikan jemput, proses/masak, antar, makan di tempat (`svcTracking`) |
+| Halaman pemilik `/chat` + tombol Chat pelanggan di Pesanan grosir & Pesanan jasa | Diimplementasikan; render HP 390px & laptop 1280/1500px diperiksa | Harness Chromium dengan data dari database uji, tanpa geser horizontal |
+| Kategori properti, pendidikan, otomotif, konstruksi, dll. | Belum | Butuh adaptor transaksi masing-masing (lihat tabel 15 kategori di atas) |
+| WhatsApp otomatis, GPS kurir | Belum (Dalam rencana) | Butuh kredensial resmi & keputusan biaya |
+| Kuota penyimpanan lampiran chat | Belum dihitung ke `lampiran_mb` | Dibatasi 20 lampiran/hari/percakapan; perlu keputusan pemilik apakah dihitung kuota paket |
+
+Uji: `supabase/tests/chat_tracking.sql` (akses, isolasi tamu/token/bisnis, idempotensi, catatan internal, notifikasi, penugasan, waktu respons, chat umum, setelan, tracking toko & jasa), `node supabase/tests/chat_tracking_js.mjs` (22 aturan tahap), `supabase/tests/portal_shop.sql` (diperbarui), `isolasi.sql` (270 uji lulus), seluruh uji SQL lain dibandingkan sebelum/sesudah migrasi (tidak ada perubahan hasil).
