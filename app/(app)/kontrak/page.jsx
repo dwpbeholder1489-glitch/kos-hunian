@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/Page';
 import { Loading, Sheet, Field, run, toast } from '@/components/ui';
 import PageHelp from '@/components/PageHelp';
 import Lampiran from '@/components/Lampiran';
-import { tgl, errMsg, waLink } from '@/lib/format';
+import { tglTs as tgl, errMsg, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { termsFor } from '@/lib/propertyTerms';
 

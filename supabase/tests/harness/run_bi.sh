@@ -18,7 +18,7 @@ echo "== $(ls "$ROOT"/supabase/migrations/*.sql | wc -l) migrasi terpasang"
 fail=0
 # Uji SQL BI (urutan bebas; tiap uji memakai id sendiri). rekap_bisnis.sql milik sesi lain: 7 ERROR penolakan memang diharapkan.
 for t in analisis_intel laporan_keuangan_rasio pinjaman_bunga pph_final_umkm anggaran_target_persetujuan skenario_stress_test perubahan_ekuitas \
-         daftar_risiko kpi_industri valuasi_multiple_aset laporan_investor konsolidasi properti_adaptif; do
+         daftar_risiko kpi_industri valuasi_multiple_aset laporan_investor konsolidasi properti_adaptif rental_engine properti_tahap2; do
   out=$($PSQL -X -A -d "$DB" -f "$ROOT/supabase/tests/$t.sql" 2>&1); rc=$?
   bad=$(echo "$out" | grep -E "GAGAL|ERROR:|\|f\||\|f$|^f\||^f$" | grep -v "^NOTICE:  OK" )
   [ $rc -ne 0 ] && bad="psql keluar dengan status $rc

@@ -3,7 +3,7 @@ import LandingNav from '@/components/LandingNav';
 import { BUSINESS, SITE_HOST } from '@/lib/plan';
 import {
   ScrSignup, ScrHelp, ScrRoomEdit, ScrStartLease, ScrRooms, ScrInvoices, ScrPay, ScrVerify, ScrReminder,
-  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrChatPelanggan, ScrTrackingPesanan, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrPropertiIntel, ScrInventarisKamar } from '@/components/demo/Screens';
+  ScrExtra, ScrExpense, ScrOwner, ScrEndLease, ScrDashboard, ScrReport, ScrExport, ScrReceipt, ScrPlan, ScrPenawaran, ScrUpgradeSukses, ScrAlasanBerhenti, ScrAnggaran, ScrRekonBank, ScrAksesKaryawan, ScrPersetujuanTingkat, ScrAnalisis, ScrGrosir, ScrSDM, ScrSatuan, ScrAset, ScrResep, ScrPromo, ScrFaktur, ScrKonsinyasi, ScrVarian, ScrKomisi, ScrBeliBanyak, ScrKesehatanStok, ScrHargaPelanggan, ScrUmurPiutang, ScrPaketSeri, ScrKasirOffline, ScrNotifAktif, ScrNotifCenter, ScrNotifSet, ScrChatPelanggan, ScrTrackingPesanan, ScrProyek, ScrPenawaranProyek, ScrBiayaProyek, ScrTagihanProyek, ScrPortalPelanggan, ScrPortal, ScrPesanan, ScrNota, ScrDeposit, ScrPerbaikan, ScrMeteran, ScrBooking, ScrBuilder, ScrCatatan, ScrLampiran, ScrKonfirmasi, ScrAntar, ScrDapur, ScrMeja, ScrMedia, ScrPropertiIntel, ScrInventarisKamar, ScrTarifKalender, ScrKontrakSewa } from '@/components/demo/Screens';
 
 import HitungKunjungan from '@/components/HitungKunjungan';
 export const metadata = {
@@ -47,6 +47,10 @@ const MENUS = [
   ['Properti & Lokasi', 'Beberapa gedung/lokasi, nilai investasi, okupansi, NOI, ROI, rental yield & proyeksi sewa'],
   ['Kamar', 'Peta kamar, harga sewa, fasilitas, properti/lantai/luas, dan memasukkan penghuni'],
   ['Inventaris kamar', 'Perlengkapan tiap kamar dan pemeriksaan check-in/check-out/rutin'],
+  ['Tarif & kalender', 'Sewa per jam/harian/mingguan/bulanan/tahunan, aturan tarif, kalender ketersediaan'],
+  ['Kontrak sewa', 'Kontrak dari template, persetujuan penyewa lewat link, jejak audit, PDF'],
+  ['Pembelian & supplier', 'Persediaan, biaya langsung, aset tetap, rekap per supplier'],
+  ['Referral & Kampanye', 'Imbalan penghuni yang mengajak, promo/voucher, WhatsApp manual'],
   ['Penghuni', 'Data penghuni, tunggakan, deposit/uang jaminan, pengingat WhatsApp, dan akhiri sewa'],
   ['Tagihan', 'Tagihan sewa otomatis, tagihan tambahan, dan mencatat pembayaran'],
   ['Pembayaran', 'Memverifikasi pembayaran dan riwayat uang masuk per bulan'],
@@ -1135,6 +1139,38 @@ const PARTS = [
       <>Paket Pro: pilih properti tertentu atau lihat <b>Perbandingan properti</b> (hunian, pendapatan, NOI, ROI per gedung).</>,
     ], <>Tanda AKTUAL = tercatat; ESTIMASI = disetahunkan dari kurang dari 12 bulan data; PROYEKSI = asumsi tertulis di layar. Paket Dasar: hunian, pendapatan, NOI, tunggakan. Paket Bisnis: per kamar, ROI, yield, balik modal, proyeksi. Paket Pro: per properti.</>, null, <ScrPropertiIntel />, 'bisnis'],
   ]],
+  ['AS', 'Properti: sewa fleksibel, kontrak digital, pembelian, referral & kampanye', [
+    ['Sewa per jam, harian, mingguan, bulanan, tahunan & tarif dinamis', 'Tarif & kalender · Booking kamar · Kamar', [
+      <>Buka <b>Tarif & kalender</b> → <b>Tarif</b> → <b>+ Tarif</b>: pilih satuan (per jam, harian, mingguan, bulanan, tahunan), kamar (atau semua), harga, dan minimal sewa. Tanpa tarif bulanan, harga sewa kamar dipakai seperti biasa.</>,
+      <><b>Aturan tarif</b>: musim/periode, hari tertentu (mis. Sabtu–Minggu +20%), tanggal khusus (libur, event), dan diskon sewa lama (mis. ≥ 7 malam −10%). Persen minus = diskon.</>,
+      <><b>Booking kamar</b> → pilih <b>Jenis sewa</b> → isi tanggal/jam → rincian & total muncul dari server. Beberapa booking harian di kamar yang sama boleh selama tidak bertumpuk; jadwal bentrok langsung ditolak.</>,
+      <>Tamu datang langsung: <b>Kamar</b> → kamar kosong → <b>+ Sewa harian / per jam</b>. Saat check-in, satu tagihan untuk seluruh masa sewa terbit; DP booking jadi deposit seperti biasa. Tambah waktu: <b>Perpanjang</b>; tamu pulang: <b>Check-out</b>.</>,
+      <><b>Kalender</b> menampilkan kamar terisi, booking, dan perbaikan per tanggal (geser ke samping, ketuk kotak untuk rincian).</>,
+    ], <>Per jam/harian/periode khusus ditagih sekali; mingguan & tahunan ditagih tiap periode; bulanan tidak berubah. Pindah kamar otomatis hanya untuk sewa bulanan.</>, 'info', <ScrTarifKalender />],
+    ['Kontrak sewa digital', 'Kontrak sewa', [
+      <><b>+ Kontrak</b> → pilih sewa & template → draf terisi otomatis dari data sewa (nama, kamar, harga, tanggal, deposit, peraturan, cara bayar). Ubah isinya bila perlu, lalu <b>Kirim ke penyewa</b>.</>,
+      <>Setelah dikirim, isi <b>dibekukan</b> (diberi kode isi SHA-256) dan link pribadi dibuat. Kirim via WhatsApp; penyewa membaca, mengetik nama lengkap, lalu <b>Setuju</b> atau <b>Tolak</b> dengan alasan.</>,
+      <>Pemilik/pengelola menandatangani dengan mengetik nama. Kontrak <b>aktif</b> setelah kedua pihak setuju dan otomatis <b>berakhir</b> saat sewa selesai. Semua langkah tercatat di <b>Jejak audit</b>.</>,
+      <>Lampirkan scan KTP atau kontrak bertanda tangan basah di <b>Dokumen pendukung</b>; <b>Cetak / PDF</b> untuk arsip. Tab <b>Template</b> untuk membuat template sendiri dengan isian otomatis.</>,
+    ], <>Perlu perubahan setelah dikirim? Pakai <b>Revisi</b> (nomor baru; yang lama dibatalkan). Persetujuan ini bukti internal, bukan tanda tangan elektronik tersertifikasi; template bawaan adalah contoh umum.</>, 'warn', <ScrKontrakSewa />],
+    ['Pembelian & supplier (persediaan, biaya langsung, aset tetap)', 'Pembelian & supplier', [
+      <><b>Persediaan</b> (barang habis pakai yang disimpan): <b>Belanja persediaan</b> → stok & nilai tercatat; saat dipakai catat di <b>Persediaan</b> (jadi biaya).</>,
+      <><b>Biaya langsung</b> (servis, perbaikan kecil): <b>Catat biaya langsung</b> → pengeluaran dengan nama supplier & kategori.</>,
+      <><b>Aset tetap</b> (AC, kasur, water heater, renovasi besar): <b>Catat aset tetap</b> → isi umur manfaat; disusutkan otomatis tiap bulan.</>,
+      <>Tabel <b>Belanja per supplier</b> menjumlah ketiganya untuk 30 hari, 3 bulan, atau 12 bulan.</>,
+    ], null, null, null],
+    ['Referral penghuni', 'Referral', [
+      <><b>Atur</b> program: imbalan <b>potongan tagihan</b> atau <b>komisi tunai</b>, nilainya, dan syaratnya (penghuni baru masuk / membayar sewa pertama).</>,
+      <>Bagikan kode ke penghuni aktif lewat <b>Kirim via WA</b>; link halaman bisnis ikut membawa kode sehingga formulir pendaftaran terisi otomatis.</>,
+      <><b>+ Catat referral</b> saat calon masuk/booking. Status otomatis berubah menjadi <b>Siap diberi imbalan</b> setelah syarat terpenuhi → <b>Berikan imbalan</b>.</>,
+    ], <>Potongan tagihan menurunkan tagihan sewa pemberi yang belum dibayar; komisi tunai dicatat sebagai pengeluaran "Komisi referral".</>, null, null],
+    ['Kampanye, voucher & WhatsApp manual', 'Kampanye & voucher', [
+      <><b>+ Kampanye</b>: promo, voucher (dengan kode), atau pengumuman; atur masa berlaku, potongan (persen/rupiah, maks.), berlaku berapa bulan pertama, dan kuota.</>,
+      <><b>Aktifkan</b> → tim mendapat notifikasi di aplikasi. Centang <b>Tampilkan di halaman bisnis</b> agar promo terlihat di halaman publik.</>,
+      <><b>Pakai untuk sewa</b>: tagihan sewa yang belum dibayar langsung dipotong; bulan berikutnya dipotong otomatis saat tagihannya terbit.</>,
+      <><b>Kirim WhatsApp</b>: pilih penghuni aktif, mantan penghuni, atau calon (CRM); pesan template otomatis berisi nama, promo, kode, dan link → tekan Kirim satu per satu.</>,
+    ], <>Tanpa biaya API: WhatsApp dikirim dari HP Anda sendiri. Notifikasi push ke penghuni belum tersedia (Dalam rencana).</>, 'info', null],
+  ]],
 ];
 
 const RULES = [
@@ -1208,6 +1244,7 @@ export default function Panduan() {
           <div><b>Notifikasi</b><span><a href="#bagian-AN">Langkah 141–143</a><br />Aktifkan di HP/komputer (iPhone lewat Layar Utama), Pusat Notifikasi, kategori, jam tenang, perangkat</span></div>
           <div><b>Learning Center</b><span><a href="#langkah-147">Langkah 147</a><br />Belajar, simulasi, evaluasi, dan ulangi panduan</span></div>
           <div><b>Properti lanjutan</b><span><a href="#bagian-AR">Langkah 152–154</a><br />Multi-properti, inventaris & pemeriksaan kamar, Property Intelligence (NOI, ROI, yield, proyeksi)</span></div>
+          <div><b>Sewa fleksibel & pemasaran</b><span><a href="#bagian-AS">Langkah 155–159</a><br />Sewa per jam/harian/mingguan/tahunan, tarif dinamis, kalender, kontrak digital, pembelian & supplier, referral, kampanye & voucher</span></div>
           <div><b>Chat & tracking pelanggan</b><span><a href="#bagian-AP">Langkah 148–149</a><br />Chat dari portal toko, grosir & cek pesanan jasa; foto/PDF, kartu produk/penawaran/cara bayar, catatan internal, penugasan; kurir, resi & estimasi tiba</span></div>
           <div><b>Kuliner & usaha lain</b><span><a href="#bagian-M">Langkah 67–69</a><br />Menu, meja/bungkus/antar, layar dapur, QR per meja, tagihan per meja & split bill, reservasi; template kursus, rental, klinik, dll.</span></div>
         </div>

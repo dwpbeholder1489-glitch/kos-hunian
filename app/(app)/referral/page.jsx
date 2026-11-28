@@ -8,7 +8,7 @@ import { useData } from '@/lib/useData';
 import { PageHeader } from '@/components/Page';
 import { Loading, Sheet, Field, run, toast } from '@/components/ui';
 import PageHelp from '@/components/PageHelp';
-import { rp, tgl, errMsg, parseRp, angka, waLink } from '@/lib/format';
+import { rp, tglTs as tgl, errMsg, parseRp, angka, waLink } from '@/lib/format';
 import { canArea } from '@/lib/business';
 import { termsFor } from '@/lib/propertyTerms';
 
@@ -20,7 +20,9 @@ export default function Referral() {
   const t = termsFor(kos);
   const [rows, setRows] = useState(null);
   const [sheet, setSheet] = useState(null);
+  const [slug, setSlug] = useState('');
   const s = kos?.profile?.referral;
+  useEffect(() => { supabase.from('public_pages').select('slug,enabled').eq('kos_id', kosId).maybeSingle().then(({ data }) => setSlug(data?.enabled ? data.slug : '')); }, [kosId]);
   const load = async () => {
     await supabase.rpc('referral_refresh', { p_kos: kosId }).then(() => {}, () => {});
     const { data } = await supabase.from('referrals').select('*').eq('kos_id', kosId).order('created_at', { ascending: false });
@@ -32,7 +34,7 @@ export default function Referral() {
   const share = async (occ) => {
     const r = await supabase.rpc('referral_code', { p_occupant: occ.id });
     if (r.error) return toast(errMsg(r.error));
-    const text = `Halo ${occ.name}! Ajak teman tinggal di ${kos.name}. Sebutkan kode referral ${r.data} saat mendaftar.${s?.aktif ? ` Kamu dapat ${s.reward === 'diskon' ? 'potongan tagihan' : 'komisi'} ${rp(s.amount)} setelah ${s.syarat === 'masuk' ? 'temanmu masuk' : 'temanmu membayar sewa pertama'}.` : ''}`;
+    const text = `Halo ${occ.name}! Ajak teman tinggal di ${kos.name}. Sebutkan kode referral ${r.data} saat mendaftar${slug ? `, atau daftar lewat ${location.origin}/b/${slug}?ref=${r.data}` : ''}.${s?.aktif ? ` Kamu dapat ${s.reward === 'diskon' ? 'potongan tagihan' : 'komisi'} ${rp(s.amount)} setelah ${s.syarat === 'masuk' ? 'temanmu masuk' : 'temanmu membayar sewa pertama'}.` : ''}`;
     window.open(waLink(occ.phone, text), '_blank');
   };
   return <div className="stack">
