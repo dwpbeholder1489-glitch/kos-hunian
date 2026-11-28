@@ -24,3 +24,6 @@
   .choices button,.methods button { flex-direction:column;align-items:flex-start }
   .methods button { align-items:center;text-align:center }
 }
+.pick { display:flex;gap:8px;align-items:center;text-align:start;padding:12px }
+.pick svg { flex:none;color:var(--form-green) }
+.pick svg:last-child { margin-inline-start:auto }

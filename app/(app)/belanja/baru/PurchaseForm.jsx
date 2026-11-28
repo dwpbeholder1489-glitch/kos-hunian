@@ -1,6 +1,5 @@
 'use client';
 import { useRef, useState } from 'react';
-import Link from 'next/link';
 import NavIcon from '@/components/NavIcon';
 import PageHelp from '@/components/PageHelp';
 import LokasiBar from '@/components/LokasiBar';
@@ -9,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 import { toBase } from '@/lib/units';
+import ProductPicker from './ProductPicker';
 import { BUY } from '../purchase-data';
 import formStyles from '../../barang/product-form.module.css';
 import styles from './purchase-form.module.css';
@@ -22,23 +22,26 @@ const MODES = [
 const netPrice = (l) => parseRp(l.price) - parseRp(l.discount);
 const subtotal = (l) => Math.round((qtyNum(l.qty) || 0) * Math.max(0, netPrice(l)) * 100) / 100;
 
-export default function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
-  const [stage, setStage] = useState(0);
+export default function PurchaseForm({ kosId, kos, version, d, init, initialSearch, onClose, onSaved, onNewProduct }) {
+  const draft = init?.resume;
+  const [stage, setStage] = useState(draft ? 1 : 0);
+  const [picker, setPicker] = useState(Boolean(draft));
   const heading = useRef(null);
   const saving = useRef(false);
-  const newSupplierId = useRef(null);
-  const [date, setDate] = useState(today());
-  const [supplier, setSupplier] = useState(init?.supplier || '');
-  const [newSup, setNewSup] = useState('');
-  const [q, setQ] = useState('');
-  const [lines, setLines] = useState(() => (init?.lines || []).map((l) => ({ key: uid(), expiry: '', lot: '', discount: '', ...l, price: String(l.price ?? '') })));
-  const [method, setMethod] = useState('tunai');
-  const [due, setDue] = useState('');
-  const [note, setNote] = useState('');
-  const [mode, setMode] = useState(init ? 'pesan' : 'terima');
-  const [expected, setExpected] = useState('');
+  const newSupplierId = useRef(draft?.newSupplierId || null);
+  const [date, setDate] = useState(draft?.date || today());
+  const [supplier, setSupplier] = useState(draft?.supplier ?? init?.supplier ?? '');
+  const [newSup, setNewSup] = useState(draft?.newSup || '');
+  const [lines, setLines] = useState(() => (draft?.lines || init?.lines || []).map((l) => ({ expiry:'', lot:'', discount:'', ...l, key:l.key || uid(), price:String(l.price ?? '') })));
+  const [method, setMethod] = useState(draft?.method || 'tunai');
+  const [due, setDue] = useState(draft?.due || '');
+  const [note, setNote] = useState(draft?.note || '');
+  const [mode, setMode] = useState(draft?.mode || (init ? 'pesan' : 'terima'));
+  const [expected, setExpected] = useState(draft?.expected || '');
   const [busy, setBusy] = useState(false);
-  const [txId] = useState(uid);
+  const [txId] = useState(() => draft?.txId || uid());
+  const [pickerInitial,setPickerInitial] = useState(draft?.selection || {});
+  const [pickerSearch,setPickerSearch] = useState(initialSearch || '');
 
   const prodById = new Map(d.products.map((p) => [p.id, p]));
   // Harga beli terakhir untuk barang + satuan (dari belanja yang tidak batal)
@@ -58,19 +61,24 @@ export default function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
     if (sid) setLines(lines.map((l) => { const p = prodById.get(l.product_id); const a = agreed(sid, l.product_id, l.unit); return a?.price != null && p ? { ...l, price: angka(a.price) } : l; }));
   };
 
-  const w = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const found = w.length ? d.products.filter((p) => {
-    const code = [p.name, p.sku, p.barcode, ...unitsOf(p, d.units).map((u) => u.barcode)].filter(Boolean).join(' ').toLowerCase();
-    return w.every((part) => code.includes(part));
-  }).slice(0, 8) : [];
-  const addProduct = (p) => {
-    const us = unitsOf(p, d.units);
-    if (!us.length) return toast('Tambahkan satuan untuk barang ini di Barang & Stok.');
-    const pref = supplier ? (d.supItems || []).find((x) => x.contact_id === supplier && x.product_id === p.id) : null;
-    const u = (pref && us.find((x) => x.name === pref.unit)) || [...us].sort((a, b) => b.qty - a.qty)[0];
-    const price = suggest(p, u);
-    setLines([...lines, { key: uid(), product_id: p.id, unit: u.name, qty: '1', price: price > 0 ? angka(price) : '' }]);
-    setQ('');
+  const priceFor = (p, unit) => {
+    const u = unitsOf(p,d.units).find((x) => x.name === unit);
+    const price = u ? suggest(p,u) : null;
+    return price != null && Number.isFinite(price) ? angka(price) : '';
+  };
+  const defaults = (p, unit, qty = '1', quoted) => {
+    const us = unitsOf(p,d.units);
+    const pref = supplier && d.supItems.find((x) => x.contact_id === supplier && x.product_id === p.id);
+    const u = us.find((x) => x.name === unit) || us.find((x) => x.name === pref?.unit) || [...us].sort((a,b) => b.qty - a.qty)[0];
+    if (!u) return null;
+    const useQuote = quoted != null && u.name === unit;
+    return { product_id:p.id, unit:u.name, qty, price:useQuote ? angka(quoted) : priceFor(p,u.name) };
+  };
+  const closePicker = () => { setPicker(false); setPickerInitial({}); setPickerSearch(''); };
+  const applyPicker = (picked) => {
+    if (lines.length + picked.length > 100) return toast('Maksimal 100 baris per pembelian.');
+    setLines((previous) => [...previous, ...picked.map((l) => ({ key:uid(), expiry:'', lot:'', discount:'', ...l }))]);
+    closePicker();
   };
   const set = (key, patch) => setLines(lines.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const total = lines.reduce((sum, l) => sum + subtotal(l), 0);
@@ -134,6 +142,12 @@ export default function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
     finally { saving.current = false; setBusy(false); }
   };
 
+  if (picker) return <ProductPicker kosId={kosId} retail={kos.business_type === 'retail'} version={version} supplier={supplier} d={d}
+    initial={pickerInitial} initialSearch={pickerSearch} defaults={defaults} priceFor={priceFor} onBack={closePicker} onApply={applyPicker}
+    onNew={onNewProduct && ((selection) => onNewProduct({ request:init?.request, requestNo:init?.requestNo, resume:{
+      date,supplier,newSup,lines,method,due,note,mode,expected,selection,txId,newSupplierId:newSupplierId.current,
+    } }))} />;
+
   return <section className={`${formStyles.productForm} ${styles.purchase}`} data-no-field-help>
     <header className={formStyles.heading}>
       <button type="button" aria-label="Kembali ke Belanja" onClick={onClose} disabled={busy}><NavIcon name="prev" /></button>
@@ -169,13 +183,7 @@ export default function PurchaseForm({ kosId, d, init, onClose, onSaved }) {
         </section>
       </>}
       {stage === 1 && <>
-        <section className={formStyles.card}>
-          <Field label="Cari barang"><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, SKU, atau barcode" /></Field>
-          {found.length > 0 && <div className={styles.results}>{found.map((p) => <button key={p.id} onClick={() => addProduct(p)}>
-            <span>{p.name}</span><NavIcon name="plus" size={18} />
-          </button>)}</div>}
-          {w.length > 0 && !found.length && <p>Tidak ditemukan. Tambahkan barang baru di <Link href="/barang">Barang &amp; Stok</Link>.</p>}
-        </section>
+        <button type="button" className={styles.pick} onClick={() => setPicker(true)}><NavIcon name="/barang" /> Pilih Barang <NavIcon name="next" size={17} /></button>
       {lines.map((l) => {
         const p = prodById.get(l.product_id);
         if (!p) return <div className={formStyles.card} key={l.key}><p>Barang dari draf ini sudah tidak tersedia.</p><button onClick={() => setLines(lines.filter((x) => x.key !== l.key))}>Hapus barang</button></div>;

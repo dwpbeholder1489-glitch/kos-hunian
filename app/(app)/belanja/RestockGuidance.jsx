@@ -100,6 +100,7 @@ function GuidanceItem({ row, selection, onChange, onReview }) {
   const message = {
     check_eta: 'Pastikan perkiraan kedatangan pesanan yang terlambat atau belum punya tanggal.',
     expedite: 'Stok diperkirakan kurang sebelum jadwal kedatangan. Cek apakah pesanan yang ada bisa dipercepat.',
+    check_moq: 'Minimal pesanan supplier menambah stok lebih dari perkiraan kebutuhan 30 hari. Pertimbangkan kemasan atau supplier lain.',
     check_limit: 'Periksa minimal pesan atau ukuran kemasan karena saran melebihi batas stok maksimum.',
   }[row.action];
   return <div className="unitbox" style={{ gap: 6 }}>

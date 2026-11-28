@@ -4,19 +4,21 @@ import { uid } from '@/lib/retail';
 
 export const BUY = { tunai: 'Tunai', transfer: 'Transfer', utang: 'Utang ke supplier' };
 
-export async function loadPurchaseCatalog(kosId) {
+export async function loadPurchaseCatalog(kosId, { picker = false } = {}) {
   const query = (table, cols = '*') => supabase.from(table).select(cols).eq('kos_id', kosId);
-  const [b, p, u, c, pl, si] = await Promise.all([
+  const [b, p, u, c, pl, si, cats, barcodes] = await Promise.all([
     query('purchases').order('purchase_date', { ascending: false }).order('created_at', { ascending: false }).limit(60),
     allRows(() => query('products').eq('active', true).order('name')),
     allRows(() => query('product_units')),
     allRows(() => query('contacts').eq('kind', 'supplier').order('name')),
     query('purchase_lines', 'product_id,unit,price,purchase_id').limit(2000),
     allRows(() => query('supplier_items', 'contact_id,product_id,unit,price,moq,preferred,lead_days')),
+    picker ? allRows(() => query('product_categories', 'id,name').order('name')) : {},
+    picker ? allRows(() => query('product_barcodes', 'product_id,unit,code')) : {},
   ]);
   const error = b.error || p.error || u.error || c.error || pl.error;
   if (error) throw error;
-  return { purchases: b.data, products: p.data.filter((x) => !x.is_kit), units: u.data, suppliers: c.data, lines: pl.data, supItems: si.data || [] };
+  return { purchases: b.data, products: p.data.filter((x) => !x.is_kit), units: u.data, suppliers: c.data, lines: pl.data, supItems: si.data || [], categories: cats.data || [], barcodes: barcodes.data || [] };
 }
 
 export function purchasePath({ month, draft } = {}) {

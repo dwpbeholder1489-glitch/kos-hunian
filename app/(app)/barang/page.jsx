@@ -3,6 +3,8 @@ import IsianTambahan from '@/components/IsianTambahan';
 import { useBaru } from '@/lib/useBaru';
 import { withApproval } from '@/lib/approval';
 import Link from 'next/link';
+import { useRouter,useSearchParams } from 'next/navigation';
+import { purchasePath,readPurchasePrefill } from '../belanja/purchase-data';
 import Image from 'next/image';
 import NavIcon from '@/components/NavIcon';
 import styles from './barang.module.css';
@@ -74,6 +76,13 @@ export default function Barang() {
 }
 
 function InventoryWorkspace({ kosId, ver, kos }) {
+  const router = useRouter();
+  const params = useSearchParams();
+  const purchaseDraft = params.get('belanja');
+  const returnToPurchase = editId => {
+    const destination = purchasePath({ draft:purchaseDraft, month:params.get('bulan') });
+    router.replace(destination + (editId ? '&barang=' + encodeURIComponent(editId) : ''));
+  };
   const multi = multiLoc(kos);
   const { d, err, reload } = useProducts(kosId, ver, multi);
   const [stockVersion, setStockVersion] = useState(0);
@@ -105,6 +114,7 @@ function InventoryWorkspace({ kosId, ver, kos }) {
   if (err) return <div className="notice bad">{err.includes('products') ? 'Database sedang diperbarui. Coba lagi beberapa menit lagi.' : err}</div>;
   if (!d) return <Loading />;
 
+  const purchaseEntry = edit === 'new' && purchaseDraft && readPurchasePrefill(kosId,purchaseDraft)?.resume;
   const bahan = kos?.business_type === 'jasa'; // bisnis jasa: menu ini untuk bahan operasional (tanpa harga jual)
   const locs = multi ? kos.locs.list : [];
   const locName = (id) => locs.find((b) => b.id === id)?.name || 'lokasi lain';
@@ -312,7 +322,7 @@ function InventoryWorkspace({ kosId, ver, kos }) {
       {priceProduct && <PriceBreakSheet p={priceProduct} units={unitsOf(priceProduct, d.units)} breaks={d.breaks} onClose={closePrices} onSaved={() => { closePrices(); reload(); }} />}
       {edit && <ProductForm retail={retail} multi={multi} taxEnabled={Boolean(kos?.profile?.tax?.aktif)}
         canPromo={moduleOn(kos, 'r_promo')} onCategoryAdded={reload} onCreateVariant={!bahan ? () => setVariant('new') : null} canCreateBreaks={!bahan && canArea(kos, 'finance')} brands={d.brands} onBarcodes={!bahan ? (x) => { setEdit(null); setBcs(x); } : null} onSupplier={moduleOn(kos, 'r_belanja') ? (x) => { setEdit(null); setSup(x); } : null}
-        onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => setEdit(null)} onSaved={(id, next) => { setEdit(null); if (next === 'prices') setBreakAfterCreate(id); reload(); }} />}
+        onSerial={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setSer(x); } : null} onKit={!bahan && kos?.business_type === 'retail' ? (x) => { setEdit(null); setKit(x); } : null} onBreaks={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setBrk(x); } : null} onOutlet={!bahan && multi && canArea(kos, 'finance') ? (x) => { setEdit(null); setOpr(x); } : null} onHistory={!bahan && canArea(kos, 'finance') ? (x) => { setEdit(null); setHist(x); } : null} cats={d.cats} group={edit !== 'new' && edit.variant_group_id ? groupOf(edit, d.products, d.units, d.groups) : null} onAddVariant={(g) => { setEdit(null); setVariant(g); }} bahan={bahan} batch={moduleOn(kos, 'r_batch')} catalogOnly={Boolean(purchaseEntry)} kosId={kosId} p={edit === 'new' ? null : edit} units={edit === 'new' ? [] : unitsOf(edit, d.units)} onClose={() => purchaseEntry ? returnToPurchase() : setEdit(null)} onSaved={(id, next) => { if (purchaseEntry) return returnToPurchase(id); setEdit(null); if (next === 'prices') setBreakAfterCreate(id); reload(); }} />}
       {adj && <StockSheet canCorrect={canArea(kos, 'team')} bahan={bahan} p={adj} units={unitsOf(adj, d.units)} loc={multi ? { here: here(adj), name: locName(kos.locs.current), rows: perLoc(adj).map((l) => [locName(l.branch_id), l.qty]), names: locName } : null} onClose={() => setAdj(null)} onSaved={() => { setAdj(null); setStockVersion((value) => value + 1); reload(); }} />}
     </div>
   );
@@ -331,7 +341,7 @@ const blankUnit = () => ({ name: '', content_qty: '', content_unit: '', price_re
 const money = (v) => (Number(v) > 0 ? angka(v) : '');
 const kgText = (v) => (Number(v) > 0 ? String(Number(v)).replace('.', ',') : '');
 
-function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled, canPromo, onCategoryAdded, onCreateVariant, canCreateBreaks, cats = [], brands = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onBarcodes, onSupplier, onSerial, onKit, onClose, onSaved }) {
+function ProductForm({ kosId, p, units, catalogOnly, bahan, retail, batch, multi, taxEnabled, canPromo, onCategoryAdded, onCreateVariant, canCreateBreaks, cats = [], brands = [], group, onAddVariant, onBreaks, onOutlet, onHistory, onBarcodes, onSupplier, onSerial, onKit, onClose, onSaved }) {
   const [stage, setStage] = useState(0);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [customUnit, setCustomUnit] = useState(false);
@@ -463,7 +473,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
     saveLock.current = true;
     setBusy(true);
     let pid = p?.id || null;
-    const args = { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p ? 0 : st, p_sku: sku.trim() || null, p_density: densN };
+    const args = { p_kos: kosId, p_id: p?.id || null, p_name: name, p_base: b, p_cost: costN, p_min: min.trim() ? qtyNum(min) || 0 : 0, p_units: us, p_initial_stock: p || catalogOnly ? 0 : st, p_sku: sku.trim() || null, p_density: densN };
     const hasPackaging = retail && (aliases.length > 0 || p?.packaging_aliases?.length > 0);
     const hasPortalDetails = retail && (description.trim() || composition.trim() || p?.portal_description || p?.portal_composition);
     const ok = await run(async () => {
@@ -645,7 +655,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
         <div className={formStyles.fields}>
           <Field label="Harga Beli"><input inputMode="numeric" value={cost} onChange={(event) => setCost(event.target.value)} placeholder="Rp 0" /></Field>
           {!bahan && <Field label="Harga Jual"><input inputMode="numeric" value={rows[0].price_retail} onChange={(event) => set(0, { price_retail: event.target.value })} placeholder="Rp 0" /></Field>}
-          <Field label="Stok Awal"><input inputMode="decimal" value={stock} onChange={(event) => setStock(event.target.value)} placeholder="0" /></Field>
+          {!catalogOnly && <Field label="Stok Awal"><input inputMode="decimal" value={stock} onChange={(event) => setStock(event.target.value)} placeholder="0" /></Field>}
           <Field label="Stok Minimum"><input inputMode="decimal" value={min} onChange={(event) => setMin(event.target.value)} placeholder="0" /></Field>
         </div>
         {b && <small>Harga dan stok dicatat per {b}.</small>}
@@ -667,7 +677,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
             </select></Field>}
             {taxEnabled && !bahan && <label className={formStyles.check}><input type="checkbox" checked={taxExempt} onChange={(event) => setTaxExempt(event.target.checked)} />Bebas PPN</label>}
           </div>
-          {multi && <LokasiBar note="Stok awal dicatat di lokasi kerja aktif." onBusyChange={setLocationBusy} />}
+          {multi && !catalogOnly && <LokasiBar note="Stok awal dicatat di lokasi kerja aktif." onBusyChange={setLocationBusy} />}
           {batch && expiryFields}
           {retail && <details className={formStyles.subDetails}><summary>Informasi katalog</summary><div>
             <Field label="Nama lain di kemasan" hint="Satu nama per baris."><textarea rows={2} maxLength={1010} value={packaging} onChange={(event) => setPackaging(event.target.value)} /></Field>
