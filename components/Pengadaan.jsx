@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, parseRp, tgl, today, errMsg } from '@/lib/format';
+import { readPrice } from '@/lib/stockSuggestion.mjs';
 import { qtyNum, unitsOf, uid } from '@/lib/retail';
 
 // Pengadaan: permintaan pembelian, faktur supplier (pencocokan pesanan–terima–faktur), kinerja supplier.
@@ -12,6 +13,10 @@ const INV_ST = { draf: ['Draf', 'gold'], diposting: ['Diposting', 'good'], batal
 const MATCH = { cocok: ['Cocok', 'good'], selisih: ['Ada selisih', 'warn'], menunggu_barang: ['Menunggu barang', 'gold'] };
 const liBtn = { background: 'none', border: 0, borderTop: '1px solid var(--line)', borderRadius: 0, textAlign: 'left', width: '100%', font: 'inherit', color: 'inherit' };
 const num = (v) => String(v).replace('.', ',');
+const invoicePrice = (value) => {
+  const text = value.trim();
+  return readPrice(/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(text) ? text.replaceAll('.', '') : text);
+};
 
 // ---------- Permintaan pembelian ----------
 export function Permintaan({ kosId, d, onOrder }) {
@@ -172,7 +177,7 @@ function MatchTable({ m }) {
   );
 }
 
-export function FakturSheet({ purchaseId, onClose }) {
+export function FakturSheet({ purchaseId, invoiceId, onClose }) {
   const [c, setC] = useState(null);
   const [f, setF] = useState(null);       // formulir: {id, supplier_no, date, due, ppn, tax, tax_no, note, lines: {line_id: {qty, price}}}
   const [post, setPost] = useState(null); // {id, reason, pay}
@@ -187,20 +192,36 @@ export function FakturSheet({ purchaseId, onClose }) {
   useEffect(() => { load(); }, [purchaseId]);
   if (!c) return <Sheet title="Faktur supplier" onClose={onClose}><Loading /></Sheet>;
   const p = c.purchase, taxOn = !!c.tax?.aktif, rate = Number(c.tax?.rate) || 0;
-  const active = c.invoices.filter((i) => i.status !== 'batal');
+  const active = c.invoices.filter((i) => invoiceId ? i.id === invoiceId : i.status !== 'batal');
   const rest = (l) => Math.max(0, Number(l.recv_qty) - Number(l.billed));
   const start = (inv) => setF({
     id: inv?.id || uid(), supplier_no: inv?.supplier_no || '', date: inv?.invoice_date || today(), due: inv?.due_date || p.due_date || '', ppn: Number(inv?.tax_amount) > 0,
     tax: inv && Number(inv.tax_amount) > 0 ? angka(inv.tax_amount) : '', taxEdited: !!inv, tax_no: inv?.tax_no || '', note: inv?.note || '',
-    lines: Object.fromEntries(c.lines.map((l) => { const il = inv?.match?.lines?.find((x) => x.line_id === l.line_id); return [l.line_id, { qty: il ? num(il.qty) : rest(l) > 0 ? num(rest(l)) : '', price: angka(il ? il.price : l.recv_price) }]; })),
+    lines: Object.fromEntries(c.lines.map((l) => {
+      const il = inv?.match?.lines?.find((x) => x.line_id === l.line_id);
+      const discount = Number(inv?.discounts?.[l.line_id] || 0);
+      return [l.line_id, { qty: il ? num(il.qty) : rest(l) > 0 ? num(rest(l)) : '',
+        price: String(il ? Math.round((Number(il.price) + discount) * 100) / 100 : l.recv_price),
+        discount: discount ? String(discount) : '' }];
+    })),
   });
-  const sub = f ? c.lines.reduce((a, l) => a + (qtyNum(f.lines[l.line_id].qty) || 0) * parseRp(f.lines[l.line_id].price), 0) : 0;
+  const sub = f ? c.lines.reduce((total, line) => {
+    const values = f.lines[line.line_id];
+    return total + Math.round((qtyNum(values.qty) || 0) * Math.max(0,(invoicePrice(values.price) || 0) - (invoicePrice(values.discount) || 0)) * 100) / 100;
+  },0) : 0;
   const autoTax = Math.round((sub * rate) / 100);
   const taxVal = f && f.ppn ? (f.taxEdited ? parseRp(f.tax) : autoTax) : 0;
   const save = async () => {
     if (!f.supplier_no.trim()) return toast('Isi nomor faktur dari supplier.');
-    const lines = c.lines.map((l) => ({ line_id: l.line_id, qty: qtyNum(f.lines[l.line_id].qty) || 0, price: parseRp(f.lines[l.line_id].price) })).filter((x) => x.qty > 0);
+    const lines = c.lines.map((l) => {
+      const values = f.lines[l.line_id];
+      return { line_id: l.line_id, qty: qtyNum(values.qty) || 0, price: invoicePrice(values.price),
+        discount: values.discount.trim() ? invoicePrice(values.discount) : 0 };
+    }).filter((x) => x.qty !== 0);
     if (!lines.length) return toast('Isi jumlah barang yang ditagih.');
+    if (lines.some((x) => x.qty < 0 || x.price == null || x.discount == null || x.discount > x.price)) {
+      return toast('Periksa jumlah, harga, dan diskon per satuan.');
+    }
     setBusy(true);
     const { error } = await supabase.rpc('sinv_save', { p_id: f.id, p_purchase: p.id, p: { supplier_no: f.supplier_no, invoice_date: f.date, due_date: f.due || null, tax_no: f.tax_no, tax_amount: taxVal, note: f.note, lines } });
     setBusy(false);
@@ -236,6 +257,10 @@ export function FakturSheet({ purchaseId, onClose }) {
             <div className="row between" style={{ flexWrap: 'nowrap' }}><b style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{i.supplier_no}</b><span style={{ flex: 'none' }}><span className={'chip ' + INV_ST[i.status][1]}>{INV_ST[i.status][0]}</span>{m && <span className={'chip ' + MATCH[m.status][1]} style={{ marginLeft: 6 }}>{MATCH[m.status][0]}</span>}</span></div>
             <span className="small muted">{i.number} · {tgl(i.invoice_date)}{i.due_date ? ` · jatuh tempo ${tgl(i.due_date)}` : ''}{i.tax_no ? ` · faktur pajak ${i.tax_no}` : ''}</span>
             {m && <MatchTable m={m} />}
+            {Object.entries(i.discounts || {}).map(([id, discount]) => {
+              const line = c.lines.find((value) => value.line_id === id);
+              return line && <span className="small muted" key={id}>{line.name} · diskon {rp(discount)} per {line.unit}</span>;
+            })}
             <dl className="kv">
               <dt>Nilai barang di faktur</dt><dd>{rp(i.subtotal)}</dd>
               {Number(i.tax_amount) > 0 && <><dt>PPN masukan</dt><dd>{rp(i.tax_amount)}</dd></>}
@@ -245,8 +270,8 @@ export function FakturSheet({ purchaseId, onClose }) {
             {i.override_reason && <span className="small muted">Selisih disetujui: {i.override_reason}</span>}
             {i.status === 'diposting' && <span className="small muted">{extra === 0 ? 'Tidak mengubah utang: nilai barang sudah tercatat saat diterima.' : i.paid ? `Tambahan ${rp(extra)} (PPN/selisih) sudah dibayar.` : `${extra > 0 ? 'Menambah' : 'Mengurangi'} utang ke supplier ${rp(Math.abs(extra))} (PPN/selisih).`}</span>}
 
-            {i.status === 'draf' && c.can_post && m.status === 'menunggu_barang' && <div className="notice">Belum bisa diposting: ada barang yang ditagih tetapi belum diterima. Terima dulu barangnya di tab Belanja, atau ubah jumlah di faktur. Draf ini tetap tersimpan.</div>}
-            {i.status === 'draf' && c.can_post && m.status !== 'menunggu_barang' && (!ps ? <button className="cta" onClick={() => setPost({ id: i.id, reason: '', pay: '' })}>{m.status === 'cocok' ? 'Posting faktur' : 'Tinjau selisih & posting'}</button> : <>
+            {!invoiceId && i.status === 'draf' && c.can_post && m.status === 'menunggu_barang' && <div className="notice">Belum bisa diposting: ada barang yang ditagih tetapi belum diterima. Terima dulu barangnya di tab Belanja, atau ubah jumlah di faktur. Draf ini tetap tersimpan.</div>}
+            {!invoiceId && i.status === 'draf' && c.can_post && m.status !== 'menunggu_barang' && (!ps ? <button className="cta" onClick={() => setPost({ id: i.id, reason: '', pay: '' })}>{m.status === 'cocok' ? 'Posting faktur' : 'Tinjau selisih & posting'}</button> : <>
               {m.status === 'selisih' && (c.can_override
                 ? <Field label="Alasan menerima selisih" hint="Tersimpan di riwayat. Selisih harga dicatat di akun Selisih harga pembelian."><input value={ps.reason} onChange={(e) => setPost({ ...ps, reason: e.target.value })} placeholder="mis. harga naik, sudah dikonfirmasi supplier" /></Field>
                 : <div className="notice">Faktur ini berbeda dari pesanan/barang diterima. Hanya pemilik atau pengelola yang bisa menyetujuinya.</div>)}
@@ -257,7 +282,7 @@ export function FakturSheet({ purchaseId, onClose }) {
               <button className="ghost" onClick={() => setPost(null)}>Nanti dulu</button>
             </>)}
             {i.status === 'draf' && !ps && c.can_post && <div className="row"><button className="sm" onClick={() => start(i)}>Ubah</button><button className="sm ghost" disabled={busy} onClick={() => doVoid(i)}>Hapus draf</button></div>}
-            {i.status === 'diposting' && c.can_post && (voiding?.id !== i.id ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding({ id: i.id, reason: '' })}>Batalkan faktur</button> : <>
+            {!invoiceId && i.status === 'diposting' && c.can_post && (voiding?.id !== i.id ? <button className="ghost" style={{ color: 'var(--bad)' }} onClick={() => setVoiding({ id: i.id, reason: '' })}>Batalkan faktur</button> : <>
               <Field label="Alasan pembatalan" hint={i.paid ? 'Pembayaran tambahan faktur ini ikut dibatalkan.' : extra !== 0 ? 'Utang ke supplier dikembalikan seperti sebelum faktur.' : null}><input value={voiding.reason} onChange={(e) => setVoiding({ ...voiding, reason: e.target.value })} /></Field>
               <button className="danger" disabled={busy || !voiding.reason.trim()} onClick={() => doVoid(i)}>Ya, batalkan faktur</button>
             </>)}
@@ -265,8 +290,9 @@ export function FakturSheet({ purchaseId, onClose }) {
         );
       })}
 
-      {!f && p.contact_id && c.can_post && p.status !== 'batal' && <button className={active.length ? '' : 'cta'} onClick={() => start(null)}>+ Catat faktur{active.length ? ' lain' : ''}</button>}
-      {!f && !c.can_post && <div className="notice">Faktur dicatat dan diposting oleh pemilik atau bagian keuangan.</div>}
+      {invoiceId && !active.length && <Empty title="Faktur tidak ditemukan" />}
+      {!invoiceId && !f && p.contact_id && c.can_post && p.status !== 'batal' && <button className={active.length ? '' : 'cta'} onClick={() => start(null)}>+ Catat faktur{active.length ? ' lain' : ''}</button>}
+      {!invoiceId && !f && !c.can_post && <div className="notice">Faktur dicatat dan diposting oleh pemilik atau bagian keuangan.</div>}
 
       {f && <>
         <div className="row">
@@ -281,7 +307,8 @@ export function FakturSheet({ purchaseId, onClose }) {
             <span className="small muted">dipesan {angka(l.order_qty)} × {rp(l.order_price)} · diterima {angka(l.recv_qty)} × {rp(l.recv_price)}{Number(l.billed) > 0 ? ` · sudah ditagih ${angka(l.billed)}` : ''}</span>
             <div className="row">
               <Field label={`Ditagih (${l.unit})`}><input inputMode="decimal" value={f.lines[l.line_id].qty} placeholder="0" onChange={(e) => setF({ ...f, lines: { ...f.lines, [l.line_id]: { ...f.lines[l.line_id], qty: e.target.value } } })} /></Field>
-              <Field label={`Harga faktur per ${l.unit}`}><input inputMode="numeric" value={f.lines[l.line_id].price} onChange={(e) => setF({ ...f, lines: { ...f.lines, [l.line_id]: { ...f.lines[l.line_id], price: e.target.value } } })} /></Field>
+              <Field label={`Harga sebelum diskon per ${l.unit}`}><input inputMode="decimal" value={f.lines[l.line_id].price} onChange={(e) => setF({ ...f, lines: { ...f.lines, [l.line_id]: { ...f.lines[l.line_id], price: e.target.value } } })} /></Field>
+              <Field label={`Potongan per ${l.unit} (Rp)`}><input inputMode="decimal" value={f.lines[l.line_id].discount} placeholder="0" onChange={(e) => setF({ ...f, lines: { ...f.lines, [l.line_id]: { ...f.lines[l.line_id], discount: e.target.value } } })} /></Field>
             </div>
           </div>
         ))}

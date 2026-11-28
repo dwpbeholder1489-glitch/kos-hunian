@@ -17,11 +17,12 @@ import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg, bulan, monthEnd } from '@/lib/format';
 import { qtyNum, uid } from '@/lib/retail';
 import { Permintaan, Faktur, FakturSheet, KinerjaSupplier } from '@/components/Pengadaan';
+import PurchasePriceHistory from './PurchasePriceHistory';
 import { ReceiptHistory, ReceiptMatching } from './ReceiptMatching';
 
 import { BUY, loadPurchaseCatalog, purchasePath, storePurchasePrefill } from './purchase-data';
 const REFUND = { potong_utang: 'Potong utang ke supplier', tunai: 'Uang kembali tunai', transfer: 'Uang kembali transfer' };
-const TABS = [['belanja', 'Belanja'], ['permintaan', 'Permintaan'], ['faktur', 'Faktur supplier'], ['supplier', 'Kinerja supplier']];
+const TABS = [['belanja', 'Belanja'], ['permintaan', 'Permintaan'], ['faktur', 'Faktur supplier'], ['supplier', 'Kinerja supplier'], ['harga', 'Riwayat Harga']];
 const ST = { dipesan: ['Dipesan', 'gold'], sebagian: ['Diterima sebagian', 'info'], batal: ['Batal', 'void'] };
 
 async function readAll(makeQuery, signal) {
@@ -69,7 +70,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
     const id = params.get('pesanan');
     const linked = id && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id) ? id : null;
     setLinkedPurchase(linked);
-    if (!linked && TABS.some(([k]) => k === t)) setTab(t);
+    if (!linked && (t !== 'harga' || canArea(kos, 'finance')) && TABS.some(([k]) => k === t)) setTab(t);
   }, []);
   useEffect(() => {
     if (!linkedPurchase) return;
@@ -162,11 +163,12 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
         <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
       </div>
       {linkError && <div className="notice bad">Pesanan supplier rujukan tidak bisa dibuka di bisnis aktif.</div>}
-      <div className={styles.tabs} aria-label="Menu pembelian">{TABS.map(([key, label]) => (
+      <div className={styles.tabs} aria-label="Menu pembelian">{TABS.filter(([key]) => key !== 'harga' || canArea(kos, 'finance')).map(([key, label]) => (
         <button key={key} onClick={() => setTab(key)} aria-pressed={tab === key}>{label}</button>
       ))}</div>
       {tab === 'permintaan' && <Permintaan kosId={kosId} d={d} onOrder={fromSuggestion} />}
       {tab === 'faktur' && <Faktur kosId={kosId} />}
+      {tab === 'harga' && canArea(kos, 'finance') && <PurchasePriceHistory kosId={kosId} version={`${ver}:${revision}`} />}
       {tab === 'supplier' && <KinerjaSupplier kosId={kosId} />}
       {tab === 'belanja' && <>
         <LokasiBar note="Belanja baru dicatat untuk lokasi ini; barang masuk ke stok lokasi tempat belanja dicatat." />
