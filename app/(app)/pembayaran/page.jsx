@@ -1,6 +1,7 @@
 'use client';
 import { printVerifiedPayment } from '@/lib/print-payment';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import PageHelp from '@/components/PageHelp';
 import { PageHeader, DataTable } from '@/components/Page';
 import { useState } from 'react';
@@ -13,9 +14,10 @@ import { rp, tgl, thisMonth, bulan, addMonthsYm, invTitle, METHOD, errMsg } from
 export default function Pembayaran() {
   const d = useData();
   const { kos, bump } = useKos();
-  // ?bulan=YYYY-MM dari tautan halaman lain (mis. drill-down Rekap Bisnis)
-  const [ym, setYm] = useState(() => { try { const b = new URLSearchParams(window.location.search).get('bulan'); return /^\d{4}-\d{2}$/.test(b || '') && b <= thisMonth() ? b : thisMonth(); } catch { return thisMonth(); } });
-  const [view, setView] = useState(() => typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('tampilan'));
+  const params = useSearchParams();
+  const monthParam = params.get('bulan');
+  const [ym, setYm] = useState(() => /^\d{4}-\d{2}$/.test(monthParam || '') && monthParam <= thisMonth() ? monthParam : thisMonth());
+  const view = params.get('tampilan');
   const receipts = view === 'kwitansi';
   const verification = view === 'verifikasi';
   const [proof, setProof] = useState(null);
@@ -73,7 +75,6 @@ export default function Pembayaran() {
         const url = new URL(window.location.href);
         url.searchParams.delete('tampilan');
         window.history.replaceState(window.history.state, '', url);
-        setView('');
       }}>← Semua pembayaran</button>}
       {!receipts && (pending.length > 0 || verification) && (
         <section className="panel"><h3>Menunggu verifikasi</h3>

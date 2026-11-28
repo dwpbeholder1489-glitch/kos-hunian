@@ -18,6 +18,7 @@ import PaySheet from '@/components/PaySheet';
 import { rp, tgl, invTitle, errMsg, waLink, today, thisMonth, METHOD, PAY_ST } from '@/lib/format';
 import { message, caraBayar } from '@/lib/templates';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import css from './penghuni.module.css';
 
 const tabs = [['aktif', 'Aktif'], ['keluar', 'Tidak Aktif'], ['semua', 'Semua']];
@@ -48,12 +49,13 @@ export default function Penghuni() {
   const [sheet, setSheet] = useState(null);
   const add = () => setSheet({ t: 'edit', occ: null });
   useBaru(add);
+  const overdueView = useSearchParams().get('tunggakan') === '1';
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('tunggakan') === '1') {
+    if (overdueView) {
       setF('semua');
       setState('tunggak');
     }
-  }, []);
+  }, [overdueView]);
   if (!d.ready) return d.err ? <div className="notice bad">{d.err}</div> : <Loading />;
 
   const owner = Boolean(user?.id && kos?.owner_id === user.id);
