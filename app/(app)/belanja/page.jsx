@@ -13,10 +13,11 @@ import { DataTable } from '@/components/Page';
 import LokasiBar from '@/components/LokasiBar';
 import { canArea, multiLoc, pathAllowed } from '@/lib/business';
 import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
-import { rp, angka, parseRp, tgl, today, errMsg, bulan, monthEnd } from '@/lib/format';
+import { rp, angka, tgl, today, errMsg, bulan, monthEnd } from '@/lib/format';
 import { qtyNum, uid } from '@/lib/retail';
 import { Permintaan, Faktur, FakturSheet, KinerjaSupplier } from '@/components/Pengadaan';
 import RestockGuidance from './RestockGuidance';
+import { ReceiptHistory, ReceiptMatching } from './ReceiptMatching';
 
 import { BUY, loadPurchaseCatalog, purchasePath, storePurchasePrefill } from './purchase-data';
 const REFUND = { potong_utang: 'Potong utang ke supplier', tunai: 'Uang kembali tunai', transfer: 'Uang kembali transfer' };
@@ -57,6 +58,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
   const legacyNew = useSearchParams().has('baru');
   useEffect(() => { if (legacyNew) router.replace(purchasePath({ month })); }, [legacyNew, router, month]);
   const [open, setOpen] = useState(null);
+  const [matchOnOpen, setMatchOnOpen] = useState(null);
   const [linkedPurchase, setLinkedPurchase] = useState(null);
   const [linkError, setLinkError] = useState(false);
   const [tab, setTab] = useState('belanja');
@@ -249,7 +251,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
       </Sheet>}
       {menu === 'receive' && <Sheet title="Penerimaan Barang" onClose={() => setMenu(null)}>
         {!ready ? <p>Daftar pesanan belum tersedia.</p> : waiting.length ? waiting.map((item) => (
-          <button key={item.id} onClick={() => { setMenu(null); setOpen(item); }}>{item.number} · {sup.get(item.contact_id) || 'Tanpa supplier'}{item.expected_date ? ` · ${tgl(item.expected_date)}` : ''}</button>
+          <button key={item.id} onClick={() => { setMenu(null); setMatchOnOpen(item.id); setOpen(item); }}>{item.number} · {sup.get(item.contact_id) || 'Tanpa supplier'}{item.expected_date ? ` · ${tgl(item.expected_date)}` : ''}</button>
         )) : <p>Tidak ada pesanan yang menunggu penerimaan.</p>}
       </Sheet>}
       {menu === 'scan' && <SupplierReceiptScan onClose={() => setMenu(null)} onInvoices={() => { setMenu(null); setTab('faktur'); }} />}
@@ -260,8 +262,8 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
         ? <RestockGuidance kosId={kosId} version={ver} onClose={() => setSaran(false)} onPick={fromSuggestion} onReview={reviewPurchase} />
         : <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={fromSuggestion} />)}
 
-      {open && <Detail key={open.id} tracked={new Set(d.products.filter((p) => p.track_expiry).map((p) => p.id))} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
-        canOpenOrder={canArea(kos, 'sell') || canArea(kos, 'finance')} onClose={() => setOpen(null)} onChanged={() => { setOpen(null); setRevision((value) => value + 1); }} onFaktur={() => { setFk(open.id); setOpen(null); }} />}
+      {open && <Detail key={open.id} units={d.units} canReceive={canArea(kos, 'stock')} matchOnOpen={matchOnOpen === open.id} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
+        canOpenOrder={canArea(kos, 'sell') || canArea(kos, 'finance')} onClose={() => { setMatchOnOpen(null); setOpen(null); }} onChanged={() => { setMatchOnOpen(null); setOpen(null); setRevision((value) => value + 1); }} onFaktur={() => { setFk(open.id); setMatchOnOpen(null); setOpen(null); }} />}
       {fk && <FakturSheet purchaseId={fk} onClose={() => { setFk(null); setRevision((value) => value + 1); }} />}
     </div>
   );
@@ -308,7 +310,7 @@ function SupplierReceiptScan({ onClose, onInvoices }) {
   </Sheet>;
 }
 
-function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, onFaktur }) {
+function Detail({ b, supplier, loc, units, canReceive, matchOnOpen, canOpenOrder, onClose, onChanged, onFaktur }) {
   const [editingExpected, setEditingExpected] = useState(false);
   const [expected, setExpected] = useState(b.expected_date || '');
   const [lines, setLines] = useState(null);
@@ -316,12 +318,25 @@ function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, o
   const [ret, setRet] = useState(null);   // form retur: {qty: {line_id: '...'}, refund, reason}
   const [voiding, setVoiding] = useState(false);
   const [reason, setReason] = useState('');
-  const [recv, setRecv] = useState(null);   // {line_id: {qty, price}}
+  const [recv, setRecv] = useState(canReceive && matchOnOpen);
+  const [receipts, setReceipts] = useState([]);
+  const [detailError, setDetailError] = useState(null);
+  const [receiptError, setReceiptError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [by, setBy] = useState(null);
   useEffect(() => {
-    supabase.from('purchase_lines').select('*').eq('purchase_id', b.id).then(({ data }) => setLines(data || []));
+    const controller = new AbortController();
+    supabase.from('purchase_lines').select('*, products(base_unit, track_expiry)').eq('purchase_id', b.id).order('id')
+      .abortSignal(controller.signal).then(({ data, error }) => {
+        if (controller.signal.aborted) return;
+        if (error) setDetailError(errMsg(error));
+        else setLines(data);
+      });
+    readAll(() => supabase.from('purchase_receipts').select('id, created_at, lines').eq('purchase_id', b.id)
+      .order('created_at', { ascending: false }).order('id'), controller.signal)
+      .then(setReceipts).catch((error) => { if (!controller.signal.aborted) setReceiptError(errMsg(error)); });
     supabase.from('purchase_returns').select('*, purchase_return_lines(*)').eq('purchase_id', b.id).order('created_at').then(({ data }) => setRets(data || []));
+    return () => controller.abort();
   }, [b.id]);
   const returned = (l) => rets.reduce((a, r) => a + (r.purchase_return_lines || []).filter((x) => x.purchase_line_id === l.id).reduce((s, x) => s + Number(x.qty), 0), 0);
   const canRet = (l) => Math.max(0, Number(l.qty_received) - returned(l));
@@ -347,21 +362,19 @@ function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, o
     if (ok) onChanged();
   };
   const left = (l) => Math.max(0, Number(l.qty) - Number(l.qty_received));
-  const startRecv = () => setRecv(Object.fromEntries(lines.map((l) => [l.id, { qty: String(left(l)).replace('.', ','), price: angka(l.price), expiry: l.expiry || '', lot: l.lot || '' }])));
   const doVoid = async () => {
     if (await withApproval(() => supabase.rpc('purchase_void', { p_purchase: b.id, p_reason: reason }), Number(b.total) > 0 ? 'Belanja dibatalkan, stok dikurangi lagi' : 'Pesanan dibatalkan',
       { kos: b.kos_id, action: 'batal_belanja', payload: { purchase_id: b.id }, reason })) onChanged();
   };
-  const receive = async (close) => {
-    const items = recv ? lines.map((l) => ({ line_id: l.id, qty: qtyNum(recv[l.id].qty) || 0, price: parseRp(recv[l.id].price), expiry: recv[l.id].expiry || null, lot: recv[l.id].lot || null })).filter((x) => x.qty > 0) : [];
-    if (!close && !items.length) return toast('Isi jumlah barang yang diterima.');
+  const closeOrder = async () => {
+    if (!window.confirm('Tutup pesanan? Sisa barang tidak akan ditunggu.')) return;
     setBusy(true);
-    const ok = await run(() => supabase.rpc('purchase_receive', { p_purchase: b.id, p_lines: items, p_date: null, p_close: close }), close && !items.length ? 'Pesanan ditutup' : 'Barang diterima, stok bertambah', errMsg);
+    const ok = await run(() => supabase.rpc('purchase_receive', { p_purchase: b.id, p_lines: [], p_date: null, p_close: true }), 'Pesanan ditutup', errMsg);
     setBusy(false);
     if (ok) onChanged();
   };
   return (
-    <Sheet title={b.number} onClose={onClose}>
+    <Sheet title={b.number} onClose={() => { if (!busy) onClose(); }}>
       <span className="small muted">{tgl(b.purchase_date)} · {supplier || 'Tanpa supplier'} · {BUY[b.pay_method]}{b.due_date ? ` · jatuh tempo ${tgl(b.due_date)}` : ''}{b.expected_date && open ? ` · perkiraan datang ${tgl(b.expected_date)}` : ''}</span>
       {ST[b.status] && <span className={'chip ' + ST[b.status][1]} style={{ alignSelf: 'flex-start' }}>{ST[b.status][0]}</span>}
       {b.note && <span className="small">Catatan: {b.note}</span>}
@@ -378,32 +391,24 @@ function Detail({ b, supplier, loc, tracked, canOpenOrder, onClose, onChanged, o
       {b.so_order_id && canOpenOrder && <Link href={`/grosir?pesanan=${b.so_order_id}`} className="small">Buka pesanan pelanggan</Link>}
       {by && <span className="small muted">Dicatat oleh {by}{loc ? ` · ${loc}` : ''}</span>}
       {b.status === 'batal' && <div className="notice bad">Dibatalkan: {b.void_reason}</div>}
-      {!lines ? <Loading /> : <div className="list">{lines.map((l) => (
+      {detailError ? <p role="alert">{detailError}</p> : !lines ? <Loading /> : <div className="list">{lines.map((l) => (
         <div className="li" key={l.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
           <div className="row between" style={{ flexWrap: 'nowrap' }}><b className="small">{l.name}</b><b className="small">{rp(Number(l.line_total) || Number(l.qty) * Number(l.price))}</b></div>
-          <span className="small muted">dipesan {angka(l.qty)} {l.unit} × {rp(l.price)}{Number(l.qty_received) !== Number(l.qty) || open ? ` · diterima ${angka(l.qty_received)}` : ''}{open && left(l) > 0 ? ` · kurang ${angka(left(l))}` : ''}{returned(l) > 0 ? ` · diretur ${angka(returned(l))}` : ''}</span>
+          <span className="small muted">dipesan {angka(l.qty)} {l.unit} × {rp(l.order_price ?? l.price)}{Number(l.qty_received) !== Number(l.qty) || open ? ` · diterima ${angka(l.qty_received)}` : ''}{open && left(l) > 0 ? ` · Belum Diterima ${angka(left(l))} ${l.unit}` : ''}{returned(l) > 0 ? ` · diretur ${angka(returned(l))}` : ''}</span>
           {ret && canRet(l) > 0 && <Field label={`Dikembalikan (${l.unit}, maks ${angka(canRet(l))})`}><input inputMode="decimal" value={ret.qty[l.id] || ''} onChange={(e) => setRet({ ...ret, qty: { ...ret.qty, [l.id]: e.target.value } })} placeholder="0" /></Field>}
-          {recv && <div className="row">
-            <Field label={`Diterima sekarang (${l.unit})`}><input inputMode="decimal" value={recv[l.id].qty} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], qty: e.target.value } })} /></Field>
-            <Field label={`Harga per ${l.unit}`}><input inputMode="numeric" value={recv[l.id].price} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], price: e.target.value } })} /></Field>
-          </div>}
-          {recv && tracked?.has(l.product_id) && <div className="row">
-            <Field label="Tanggal kedaluwarsa"><input type="date" value={recv[l.id].expiry} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], expiry: e.target.value } })} /></Field>
-            <Field label="No. batch (opsional)"><input value={recv[l.id].lot} maxLength={40} onChange={(e) => setRecv({ ...recv, [l.id]: { ...recv[l.id], lot: e.target.value } })} /></Field>
-          </div>}
           {!recv && (l.expiry || l.lot) && <span className="small muted">{l.expiry ? `Exp ${tgl(l.expiry)}` : ''}{l.lot ? ` · batch ${l.lot}` : ''}</span>}
         </div>
       ))}</div>}
       <div className="row between"><b>{open ? 'Sudah diterima' : 'Total'}</b><b>{rp(b.total)}</b></div>
       {open && <div className="row between small muted"><span>Nilai pesanan</span><span>{rp(b.order_total)}</span></div>}
-      {open && lines && (!recv ? <>
-        <button className="cta" onClick={startRecv}>Terima barang</button>
-        <button className="ghost" onClick={() => receive(true)} disabled={busy}>{Number(b.total) > 0 ? 'Tutup pesanan (sisa tidak dikirim)' : 'Batalkan pesanan (tidak jadi)'}</button>
-      </> : <>
-        <p className="small muted" style={{ margin: 0 }}>Isi jumlah yang benar-benar datang. Kosongkan atau isi 0 untuk barang yang belum datang.</p>
-        <button className="cta" onClick={() => receive(false)} disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan penerimaan'}</button>
-        <button className="ghost" onClick={() => receive(true)} disabled={busy}>Simpan & tutup pesanan</button>
+      {open && canReceive && lines?.length > 0 && (recv ? <ReceiptMatching
+        purchase={b} lines={lines} units={units} onBusy={setBusy} onCancel={() => setRecv(false)} onSaved={onChanged}
+      /> : <>
+        <button className="cta" onClick={() => { setRet(null); setRecv(true); }} disabled={busy}>Cocokkan Pesanan dengan Barang Datang</button>
+        <button className="ghost" onClick={closeOrder} disabled={busy}>{lines.some((line) => Number(line.qty_received) > 0) ? 'Tutup pesanan (sisa tidak dikirim)' : 'Batalkan pesanan (tidak jadi)'}</button>
       </>)}
+      {receiptError && <p className="small muted" role="status">Riwayat penerimaan belum dapat dimuat. {receiptError}</p>}
+      <ReceiptHistory receipts={receipts} />
       {b.contact_id && b.status !== 'batal' && !recv && !ret && <button onClick={onFaktur}>Faktur supplier</button>}
       {rets.length > 0 && <>
         <span className="label">Retur ke supplier</span>
