@@ -13,7 +13,32 @@
 .wrap button { font: inherit; color: inherit; cursor: pointer; }
 .wrap button:disabled { opacity: .55; cursor: default; }
 .wrap button:focus-visible, .wrap a:focus-visible, .wrap textarea:focus-visible, .wrap input:focus-visible { outline: 2px solid var(--cx-green); outline-offset: 2px; }
-.full { border: 0; border-radius: 0; min-height: calc(100dvh - 120px); }
+
+/* Layar chat penuh (ala WhatsApp). .overlay mengikuti Visual Viewport (top/height dari useChatViewport; cadangan 100dvh) →
+   kolom ketik selalu tepat di atas keyboard; hanya daftar pesan yang bergulir. */
+.overlay { position: fixed; left: 0; right: 0; top: 0; height: 100dvh; z-index: 1000; display: flex; background: #f7faf8; overscroll-behavior: contain; }
+.screen { flex: 1; min-height: 0; height: 100%; border: 0; border-radius: 0; background: #f7faf8; }
+.wa { flex: none; display: grid; place-items: center; min-width: 40px; height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--cx-line); color: var(--cx-forest); font-size: 12px; font-weight: 700; text-decoration: none; }
+.back { flex: none; width: 40px; height: 40px; margin-left: -6px; border: 0; background: none; color: var(--cx-green); display: grid; place-items: center; border-radius: 50%; }
+.listWrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.screen .list { flex: 1; min-height: 0; max-height: none; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+.newPill { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 99px; padding: 7px 14px; background: var(--cx-forest); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 4px 14px #0b2a1b33; }
+.hello { display: flex; gap: 8px; align-items: flex-end; }
+.hello p { margin: 0; max-width: min(82%, 34rem); padding: 10px 13px; border-radius: 14px; border-bottom-left-radius: 4px; background: #fff; border: 1px solid var(--cx-line); }
+.suggest { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: #eaf6ef; border: 1px solid #d3eadb; }
+.suggest b { color: var(--cx-forest); font-size: 15px; }
+.suggest > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.suggest button { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 12px; border: 1px solid var(--cx-line); border-radius: 12px; background: #fff; font-weight: 600; font-size: 14px; text-align: left; box-shadow: 0 1px 2px #0b2a1b0d; }
+.suggest button svg { flex: none; color: var(--cx-green); }
+.foot { flex: none; background: #fff; border-top: 1px solid var(--cx-line); padding-bottom: env(safe-area-inset-bottom); }
+.screen[data-typing] .foot { padding-bottom: 0; }
+.foot .compose { border-top: 0; }
+.idRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.noteInput { background: #fff8e6 !important; border-color: #f2dfae !important; }
+@media (min-width: 768px) {
+  .overlay { padding: 24px; background: rgba(20, 37, 31, .38); justify-content: center; align-items: center; }
+  .screen { flex: none; width: min(760px, 100%); height: min(900px, 100%); border-radius: 18px; overflow: hidden; box-shadow: 0 24px 60px #0b2a1b40; }
+}
 
 /* Kepala: identitas bisnis + status online nyata */
 .head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--cx-line); background: #fff; }
@@ -26,16 +51,15 @@
 .online { color: var(--cx-green); font-weight: 600; }
 
 /* Kartu transaksi di atas chat */
-.refCard { display: flex; align-items: center; gap: 12px; margin: 12px 14px 0; padding: 12px; border: 1px solid var(--cx-line); border-radius: 14px; background: #fff; box-shadow: 0 1px 3px #0b2a1b10; }
-.refIcon { flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--cx-mint); color: var(--cx-forest); }
+.refCard { flex: none; display: flex; align-items: center; gap: 10px; margin: 8px 10px 0; padding: 8px 10px; border: 1px solid var(--cx-line); border-radius: 14px; background: #fff; box-shadow: 0 1px 3px #0b2a1b10; }
+.refIcon { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--cx-mint); color: var(--cx-forest); }
 .refCard div { min-width: 0; flex: 1; }
 .refCard b { display: block; font-size: 14px; }
 .refCard small { display: block; color: var(--cx-muted); font-size: 13px; }
-.pill { flex: none; border: 0; border-radius: 10px; padding: 8px 12px; background: var(--cx-mint); color: var(--cx-forest); font-weight: 600; font-size: 13px; white-space: nowrap; }
+.pill { flex: none; border: 0; border-radius: 10px; padding: 7px 10px; background: var(--cx-mint); color: var(--cx-forest); font-weight: 600; font-size: 13px; white-space: nowrap; }
 
 /* Pesan */
 .list { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; overflow-y: auto; min-height: 220px; max-height: 62dvh; background: var(--cx-bg); }
-.full .list { max-height: none; }
 .empty { margin: auto; text-align: center; color: var(--cx-muted); font-size: 14px; max-width: 30ch; }
 .older { align-self: center; border: 1px solid var(--cx-line); background: #fff; border-radius: 99px; padding: 6px 14px; font-size: 13px; }
 .row { display: flex; gap: 8px; align-items: flex-end; max-width: 100%; }
@@ -64,20 +88,24 @@
 .qris { max-width: 200px; border-radius: 8px; background: #fff; }
 
 /* Balasan cepat + penulis */
-.chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 14px 2px; background: #fff; scrollbar-width: none; }
-.chips button { flex: none; border: 1px solid var(--cx-line); background: #fff; border-radius: 99px; padding: 7px 13px; font-size: 13.5px; }
-.compose { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px 12px; background: #fff; border-top: 1px solid var(--cx-line); }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 12px 2px; background: #fff; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; border: 1px solid var(--cx-line); background: #fff; border-radius: 99px; padding: 6px 13px; font-size: 13.5px; white-space: nowrap; }
+.chips button svg { color: var(--cx-green); }
+.compose { display: flex; align-items: flex-end; gap: 8px; padding: 8px 10px 10px; background: #fff; border-top: 1px solid var(--cx-line); }
 .chips + .compose { border-top: 0; }
-.round { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--cx-line); background: #fff; display: grid; place-items: center; }
-.send { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--cx-green); color: #fff; display: grid; place-items: center; }
-.input { flex: 1; min-width: 0; min-height: 46px; height: 46px; border: 1px solid var(--cx-line); border-radius: 23px; padding: 11px 16px; font: inherit; font-size: 16px; line-height: 22px; resize: none; max-height: 120px; background: #fff; color: var(--cx-ink); }
+.round { flex: none; width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--cx-line); background: #fff; display: grid; place-items: center; }
+.send { flex: none; width: 52px; height: 46px; border-radius: 14px; border: 0; background: var(--cx-green); color: #fff; display: grid; place-items: center; touch-action: manipulation; }
+.send:disabled { background: #9fcfb0; opacity: 1 !important; }
+.input { flex: 1; min-width: 0; min-height: 46px; height: 46px; border: 1.5px solid var(--cx-line); border-radius: 23px; padding: 11px 16px; font: inherit; font-size: 16px; line-height: 22px; resize: none; max-height: 132px; overflow-y: hidden; background: #fff; color: var(--cx-ink); -webkit-appearance: none; appearance: none; }
+.input:focus, .wrap .input:focus-visible { border-color: var(--cx-green); outline: none; }
 .hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .alert { margin: 8px 14px 0; padding: 8px 12px; border-radius: 10px; background: #fdecec; color: #9b1c1c; font-size: 13.5px; }
 .info { margin: 8px 14px 0; padding: 8px 12px; border-radius: 10px; background: var(--cx-mint); color: var(--cx-forest); font-size: 13.5px; }
 .identity { display: grid; gap: 8px; padding: 12px 14px; background: #fff; border-top: 1px solid var(--cx-line); }
 .identity label { display: grid; gap: 4px; font-size: 13px; color: var(--cx-muted); }
 .identity input { font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--cx-line); color: var(--cx-ink); background: #fff; }
-.powered { padding: 6px 14px 10px; text-align: center; font-size: 11.5px; color: var(--cx-faint); background: #fff; }
+.powered { padding: 0 14px 8px; text-align: center; font-size: 11px; color: var(--cx-faint); background: #fff; }
 .powered b { color: var(--cx-forest); font-weight: 600; }
 
 /* Tracking */

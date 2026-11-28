@@ -22,6 +22,9 @@ const P = {
   card: 'M3 6h18v12H3zM3 10h18M7 15h4',
   doc: 'M14 3H6v18h12V7l-4-4Zm0 0v4h4M9 13h6M9 17h6',
   next: 'm9 6 6 6-6 6',
+  left: 'm15 6-6 6 6 6',
+  down: 'M12 5v14m-6-6 6 6 6-6',
+  cart: 'M3 4h2l2.4 11h11L21 8H6.2M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z',
   x: 'm6 6 12 12M18 6 6 18',
   store: 'M4 10v10h16V10M3 10l2-6h14l2 6M3 10h18M9 20v-5h6v5',
   note: 'M4 4h16v12l-4 4H4zM16 20v-4h4',
@@ -38,9 +41,10 @@ const dayLabel = (iso) => {
   return d === today ? 'Hari ini' : fmtDay(iso);
 };
 
-export function BusinessHead({ business, logo, title, extra, avatar, sub }) {
+export function BusinessHead({ business, logo, title, extra, avatar, sub, back }) {
   const presence = sub || presenceText(business);
   return <header className={styles.head}>
+    {back && <button type="button" className={styles.back} aria-label="Kembali" onClick={back}><Ico name="left" size={24} /></button>}
     <span className={styles.logo}>{logo ? <img src={logo} alt="" /> : avatar ? avatar : <Ico name="store" size={22} />}</span>
     <div className={styles.headText}>
       <b>{title || business?.name}</b>
@@ -50,7 +54,7 @@ export function BusinessHead({ business, logo, title, extra, avatar, sub }) {
   </header>;
 }
 
-export function RefCard({ reference, onOpen, label = 'Lihat Pesanan' }) {
+export function RefCard({ reference, onOpen, label = 'Lihat' }) {
   if (!reference) return null;
   const items = reference.lines?.length || 0;
   return <div className={styles.refCard}>
@@ -103,11 +107,11 @@ function Card({ m, onAction }) {
 }
 
 // Daftar pesan; side = 'customer' | 'business' (sisi yang melihat)
-export function MessageList({ messages, side, business, older, loadOlder, openFile, onCard, emptyText, listRef }) {
+export function MessageList({ messages, side, business, older, loadOlder, openFile, onCard, emptyText, listRef, empty }) {
   let lastDay = null;
   return <div className={styles.list} ref={listRef} aria-live="polite" aria-label="Riwayat pesan">
     {older && <button type="button" className={styles.older} onClick={loadOlder}>Muat pesan sebelumnya</button>}
-    {messages.length === 0 && <p className={styles.empty}>{emptyText}</p>}
+    {messages.length === 0 && (empty || <p className={styles.empty}>{emptyText}</p>)}
     {messages.map((m) => {
       const mine = m.sender === side;
       const day = dayLabel(m.created_at);
@@ -132,30 +136,44 @@ export function MessageList({ messages, side, business, older, loadOlder, openFi
 }
 
 // Penulis pesan: teks + lampiran (+) + chip balasan cepat
-export function Composer({ onSend, onFile, chips, busy, disabled, placeholder = 'Ketik pesan…', extraMenu, mode }) {
+// Penulis pesan ala WhatsApp: kolom ketik tumbuh mengikuti isi (maks ±5 baris lalu bergulir di dalam), tombol kirim
+// tidak menutup keyboard (fokus tetap di kolom), Enter = kirim di laptop / baris baru di HP, chip balasan cepat geser.
+// onTyping(true|false) = kolom sedang difokuskan (dipakai layar chat untuk menyembunyikan branding & bantuan kolom).
+export function Composer({ onSend, onFile, chips, busy, disabled, placeholder = 'Ketik pesan…', extraMenu, mode, onTyping, prefill }) {
   const [draft, setDraft] = useState('');
   const file = useRef(null);
   const area = useRef(null);
+  const fit = () => {
+    const el = area.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight + 2, 132) + 'px';
+    el.style.overflowY = el.scrollHeight > 130 ? 'auto' : 'hidden';
+  };
+  useEffect(fit, [draft]);
+  useEffect(() => { if (prefill?.text) { setDraft(prefill.text); requestAnimationFrame(() => { area.current?.focus(); const n = prefill.text.length; area.current?.setSelectionRange(n, n); }); } }, [prefill]);
   const submit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const text = draft.trim();
     if (!text || busy) return;
     if (await onSend(text)) setDraft('');
   };
   return <>
-    {chips?.length > 0 && <div className={styles.chips}>{chips.map(([label, act]) => <button key={label} type="button" disabled={disabled}
-      onClick={() => { const r = act(); if (typeof r === 'string') { setDraft(r); area.current?.focus(); } }}>{label}</button>)}</div>}
+    {chips?.length > 0 && <div className={styles.chips} role="toolbar" aria-label="Balasan cepat">{chips.map(([label, act, icon]) => <button key={label} type="button" disabled={disabled}
+      onPointerDown={(e) => { if (document.activeElement === area.current) e.preventDefault(); }}
+      onClick={() => { const r = act(); if (typeof r === 'string') { setDraft(r); requestAnimationFrame(() => { area.current?.focus(); area.current?.setSelectionRange(r.length, r.length); }); } }}>{icon && <Ico name={icon} size={16} />}{label}</button>)}</div>}
     <form className={styles.compose} onSubmit={submit}>
       {onFile && <>
         <button type="button" className={styles.round} aria-label="Kirim foto atau dokumen" disabled={disabled || busy} onClick={() => (extraMenu ? extraMenu() : file.current?.click())}><Ico name="plus" /></button>
         <input ref={file} className={styles.hidden} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" tabIndex={-1}
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onFile(f); }} />
       </>}
-      <textarea ref={area} className={styles.input} rows={1} maxLength={2000} placeholder={placeholder} aria-label="Pesan" value={draft} disabled={disabled}
-        style={mode === 'note' ? { background: '#fff8e6', borderColor: '#f2dfae' } : undefined}
+      <textarea ref={area} className={`${styles.input} ${mode === 'note' ? styles.noteInput : ''}`} rows={1} maxLength={2000} placeholder={placeholder} aria-label="Pesan" value={draft} disabled={disabled}
+        autoComplete="off" onFocus={() => onTyping?.(true)} onBlur={() => onTyping?.(false)}
         onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(min-width: 768px)').matches) submit(e); }} />
-      <button type="submit" className={styles.send} aria-label="Kirim" disabled={busy || disabled || !draft.trim()}><Ico name="send" /></button>
+        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia('(pointer: fine)').matches) submit(e); }} />
+      {/* pointerdown dicegah agar fokus (dan keyboard) tidak hilang saat menekan Kirim */}
+      <button type="submit" className={styles.send} aria-label="Kirim" disabled={busy || disabled || !draft.trim()} onPointerDown={(e) => e.preventDefault()}><Ico name="send" /></button>
     </form>
     {onFile && <PickerBridge file={file} />}
   </>;
@@ -168,6 +186,15 @@ function PickerBridge({ file }) {
 
 export function Powered() {
   return <div className={styles.powered}>Powered by <b>PRASARA</b></div>;
+}
+
+// Saran pertanyaan saat percakapan masih kosong (kartu "Coba tanyakan")
+export function Suggestions({ items }) {
+  if (!items?.length) return null;
+  return <div className={styles.suggest}>
+    <b>Coba tanyakan:</b>
+    <div>{items.map(([label, act, icon]) => <button key={label} type="button" onClick={act}><Ico name={icon || 'chat'} size={18} />{label}</button>)}</div>
+  </div>;
 }
 
 // Layar tracking (gambar acuan): status utama, 4 tahap, detail pengiriman, detail pesanan, tombol hubungi

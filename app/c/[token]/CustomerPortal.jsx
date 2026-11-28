@@ -155,10 +155,9 @@ export default function CustomerPortal({ initialTab }) {
         {!sent && tab === 'pesanan' && <Orders p={p} token={token} reorder={reorder} onChanged={load} waOwner={waOwner} unread={unread} go={navigate} />}
         {!sent && tab === 'lacak' && focus && <OrderTrack token={token} order={p.orders.find((o) => o.id === focus)} unread={unread[focus] || 0} go={navigate} />}
         {!sent && tab === 'chat' && focus && <>
-          <button type="button" className="sm" style={{ justifySelf: 'start' }} onClick={() => navigate(focus === 'umum' ? 'pesan' : 'lacak', focus === 'umum' ? null : focus)}>← Kembali</button>
           <CustomerChat key={focus} endpoint="/api/portal-b2b" auth={{ token }} refId={focus} title={b.name}
+            back={() => navigate(focus === 'umum' ? 'pesan' : 'lacak', focus === 'umum' ? null : focus)} whatsapp={waOwner(`Halo ${b.name}, saya ${c.name}.`)}
             onOpenReference={(ref) => navigate('lacak', ref.id)} onCard={(kind, x) => { if (kind === 'penawaran') navigate('lacak', x.order_id); else if (kind === 'produk') { setQ(x.name); navigate('pesan'); } }} />
-          {b.phone && <a className="small muted" style={{ textAlign: 'center' }} href={waOwner(`Halo ${b.name}, saya ${c.name}.`)} target="_blank" rel="noreferrer">atau hubungi lewat WhatsApp</a>}
         </>}
         {!sent && tab === 'tagihan' && <Bills p={p} openInv={openInv} waOwner={waOwner} />}
         {!sent && tab === 'profil' && (

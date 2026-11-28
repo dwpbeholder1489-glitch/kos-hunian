@@ -77,7 +77,7 @@ export default function ChatPage() {
     {setup && settings && <ChatSettings kosId={kosId} kos={kos} enabled={d.enabled} onSaved={() => { setSetup(false); load(); }} />}
     <div className={`${styles.layout} ${!wide && sel ? styles.single : ''}`}>
       {showList && list}
-      {sel ? <StaffChat key={sel} convId={sel} kosId={kosId} onBack={wide ? null : () => pick(null)} onChanged={load} />
+      {sel ? <StaffChat key={sel} convId={sel} kosId={kosId} fullscreen={!wide} onBack={wide ? null : () => pick(null)} onChanged={load} />
         : wide && <div className="panel muted" style={{ alignSelf: 'start' }}>Pilih percakapan di kiri untuk membalas.</div>}
     </div>
   </>;
