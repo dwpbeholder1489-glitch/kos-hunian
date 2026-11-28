@@ -1114,3 +1114,30 @@ export function ScrNotifSet() {
     </Phone>
   );
 }
+
+// Chat & tracking pelanggan (Langkah 148–149)
+export function ScrChatPelanggan() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Chat dengan Toko</h3>
+      <div className="row between small"><b>Toko Contoh</b><span className="muted">Online · biasanya membalas &lt; 5 menit</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Pesanan #SO-CONTOH-001</b><span className="muted">Rp 96.600 · 3 produk</span></div>
+      <div className="unitbox small" style={{ gap: 2, alignSelf: 'flex-end', background: 'var(--gold-soft)' }}><span>Halo, stok mi goreng 5 dus ada?</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><span>Ada, kak. Siap kami kemas.</span></div>
+      <div className="row small" style={{ gap: 6, flexWrap: 'wrap' }}><span className="chip">Cek stok</span><span className="chip">Cara bayar</span><span className="chip">Estimasi kirim</span></div>
+    </Phone>
+  );
+}
+export function ScrTrackingPesanan() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Pesanan Sedang Dikirim</h3>
+      <span className="small muted">Estimasi tiba hari ini, 17.00 – 19.00 (diisi toko)</span>
+      <div className="row between small"><span>✓ Diproses</span><span>✓ Disiapkan</span><b>● Dikirim</b><span className="muted">○ Selesai</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Detail pengiriman</b><span>Kurir toko · resi CONTOH123</span></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Hubungi Toko</b><span className="muted">membuka chat pesanan ini</span></div>
+    </Phone>
+  );
+}

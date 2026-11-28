@@ -18,6 +18,7 @@ import { planOf, PLANS, BUSINESS, limitOf } from '@/lib/plan';
 import { KosBell } from '@/components/NotifBell';
 import { RetailNotifBell } from '@/components/RetailBell';
 import { NotifBellMenu, NotifLive, ActivationCard } from '@/components/NotifCenter';
+import ChatPresence from '@/components/chat/ChatPresence';
 import AnnounceBanner from '@/components/AnnounceBanner';
 import { OfflineSync } from '@/components/KasirOffline';
 
@@ -156,6 +157,7 @@ export default function AppLayout({ children }) {
       )}
       <OfflineSync />
       <NotifLive />
+      {!portfolio && (kos.business_type === 'retail' || kos.business_type === 'jasa') && (canArea(kos, 'sell') || canArea(kos, 'ops')) && <ChatPresence kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <PlanBar kos={kos} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <KuotaBar kosId={kos.id} />}
       {!path.startsWith('/langganan') && !portfolio && role === 'pemilik' && <TrialReminder kosId={kos.id} />}

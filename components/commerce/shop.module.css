@@ -188,13 +188,8 @@
 .status { display: inline-block; border-radius: 30px; background: var(--mint); color: var(--dark); padding: 3px 8px; font-size: 11px; font-weight: 750; }
 .status[data-status=Menunggu], .status[data-status=Diproses] { background: #fff0b4; color: #5a4105; }
 .status[data-status=Batal] { background: #f6ece7; color: #7d3926; }
-.timeline { list-style: none; margin: 0 0 12px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
-.timeline li { display: flex; gap: 15px; position: relative; align-items: flex-start; min-height: 51px; line-height: 1.2; }
-.timeline li:not(:last-child)::before { content: ''; position: absolute; top: 14px; bottom: -12px; left: 10px; width: 1px; background: #a9b2aa; }
-.timeline li[data-done=true]:not(:last-child)::before { background: #229347; }
-.timeline li:last-child { min-height: 35px; }
-.dot { z-index: 1; display: grid; place-items: center; flex: none; height: 21px; width: 21px; border: 1px solid #adb6ad; background: #fff; border-radius: 50%; }
-.timeline [data-done=true] .dot { background: #098627; color: #fff; border-color: #098627; }
+.waLink { display: block; text-align: center; margin: 8px 0 12px; font-size: 13px; color: var(--muted); }
+.unreadBadge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: #dc2626; color: #fff; font-size: 12px; display: inline-grid; place-items: center; }
 .contactOrder { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; border: 1px solid #aab6ab; border-radius: 9px; text-decoration: none; font-weight: 750; background: #fff; }
 .orderContents, .info { display: grid; gap: 8px; padding: 13px; margin-top: 10px; background: #fff; border: 1px solid var(--line); border-radius: 11px; }
 .orderContents > div:not(:global(.unitbox)) { display: flex; justify-content: space-between; gap: 8px; }
@@ -223,7 +218,7 @@
   .productLink b { font-size: 15px; }
   .detail { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
   .bar { min-height: 66px; }
-  .cart, .checkout, .orderList, .timeline, .orderContents, .info, .contactOrder { width: min(100%, 650px); margin-inline: auto; }
+  .cart, .checkout, .orderList, .orderContents, .info, .contactOrder { width: min(100%, 650px); margin-inline: auto; }
   .dock:not(.nav) { width: min(100%, 650px); border-radius: 13px 13px 0 0; }
   .sheet { bottom: 20px; border-radius: 20px; }
   .nav button { font-size: 12px; }

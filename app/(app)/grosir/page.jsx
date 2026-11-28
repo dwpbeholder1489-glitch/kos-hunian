@@ -2,8 +2,8 @@
 // Grosir & B2B: penawaran → pesanan (cek batas kredit) → surat jalan bertahap → faktur (penjualan grosir) → piutang.
 // Server: so_save / so_confirm / so_deliver / so_delivery_status / so_cancel, price_list_*, customer_credit, receivable_open.
 import { useSearchParams } from 'next/navigation';
-import TransactionChat from '@/components/commerce/TransactionChat';
-import CustomerChatInbox from '@/components/commerce/CustomerChatInbox';
+import ChatButton from '@/components/chat/ChatButton';
+import TrackingControls from '@/components/chat/TrackingControls';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -34,27 +34,24 @@ export default function Grosir() {
 }
 
 function GrosirWorkspace({ kosId, kos, ver }) {
-  const { bump, user } = useKos();
+  const { bump } = useKos();
   const query = useSearchParams();
   const requestedOrder = query.get('pesanan');
-  const requestedChat = query.get('chat') === '1';
   const [tab, setTab] = useState('jalan');
   useEffect(() => { try { const t = new URLSearchParams(window.location.search).get('tab'); if (['harga', 'portal', 'penawaran'].includes(t)) setTab(t); } catch {} }, []);
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const [form, setForm] = useState(null); // {order?} untuk baru/ubah
   const [open, setOpen] = useState(null);
-  const [chatOpen, setChatOpen] = useState(false);
   const [shortcut, setShortcut] = useState(null);
   const [detailMode, setDetailMode] = useState(null);
   const [linkedOrder, setLinkedOrder] = useState(undefined);
   useEffect(() => {
     const id = requestedOrder;
     const linked = id && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id) ? id : null;
-    setChatOpen(requestedChat);
     setLinkedOrder(linked);
     setOpen(linked);
-  }, [requestedOrder, requestedChat]);
+  }, [requestedOrder]);
   useBaru(() => setForm({}));
   const load = async () => {
     const [o, l, dv, p, u, c, pl, ro, linked, linkedLines, linkedDeliveries] = await Promise.all([
@@ -103,7 +100,6 @@ function GrosirWorkspace({ kosId, kos, ver }) {
     setShortcut(null);
     setDetailMode(mode);
     setOpen(id);
-    setChatOpen(false);
   };
 
   return (
@@ -116,7 +112,6 @@ function GrosirWorkspace({ kosId, kos, ver }) {
         </div>
         <span className={styles.heroArt}><Image src="/grosir-pesanan.webp" alt="" fill priority sizes="(max-width: 600px) 35vw, 280px" /></span>
       </section>
-      {kos.owner_id === user?.id && <CustomerChatInbox key={kosId} kosId={kosId} />}
 
       <div className={styles.actions}>
         <button className={styles.primary} onClick={() => setForm({})} disabled={!d.products.length}><span aria-hidden="true">+</span> Penawaran</button>
@@ -203,7 +198,7 @@ function GrosirWorkspace({ kosId, kos, ver }) {
         </Link>) : <p>Faktur terbit setelah surat jalan dibuat.</p>}
       </Sheet>}
       {form && <OrderForm kosId={kosId} kos={kos} d={d} order={form.order} onClose={() => setForm(null)} onSaved={(id) => { setForm(null); load(); selectOrder(id); }} />}
-      {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} chatOpen={chatOpen} ownerChat={kos.owner_id === user?.id} initialMode={detailMode} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={bump} />}
+      {open && d.orders.find((o) => o.id === open) && <OrderDetail key={open} initialMode={detailMode} reloadKey={ver} kos={kos} d={d} order={d.orders.find((o) => o.id === open)} onClose={() => setOpen(null)} onEdit={(o) => { setOpen(null); setForm({ order: o }); }} onChanged={bump} />}
     </div>
   );
 }
@@ -356,7 +351,7 @@ function OrderForm({ kosId, kos, d, order, onClose, onSaved }) {
 }
 const plusD = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
 
-function OrderDetail({ chatOpen, ownerChat, initialMode, kos, reloadKey, d, order: o, onClose, onEdit, onChanged }) {
+function OrderDetail({ initialMode, kos, reloadKey, d, order: o, onClose, onEdit, onChanged }) {
   const c = d.customers.find((x) => x.id === o.contact_id);
   const lines = d.lines.filter((l) => l.order_id === o.id);
   const dvs = d.deliveries.filter((x) => x.order_id === o.id);
@@ -412,7 +407,8 @@ function OrderDetail({ chatOpen, ownerChat, initialMode, kos, reloadKey, d, orde
       : '\n\nBalas pesan ini untuk konfirmasi. Terima kasih.');
   return (
     <Sheet title={`${o.number} · ${c?.name || ''}`} onClose={onClose}>
-      {ownerChat && <TransactionChat order={o.id} owner initialOpen={chatOpen} />}
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}><ChatButton kosId={kos.id} type="so_order" id={o.id} /></div>
+      {o.status !== 'batal' && <TrackingControls track={{ type: 'so_order', id: o.id, status: o.status, prepared_at: o.prepared_at, deliveries: dvs }} onChanged={onChanged} />}
       <div className="row" style={{ gap: 6 }}><span className={'chip ' + SO_ST[o.status][1]}>{SO_ST[o.status][0]}</span>{o.source === 'portal' && <span className="chip">{o.portal_guest_hash ? 'Dari portal bisnis publik' : 'Dari portal pelanggan'}{o.portal_kind === 'penawaran' ? ' · minta penawaran' : ''}</span>}{o.customer_ref && <span className="chip">{/^po/i.test(o.customer_ref) ? '' : 'PO '}{o.customer_ref}</span>}</div>
       {o.portal_fulfillment && <div className="unitbox small">
         <b>{o.portal_fulfillment === 'antar' ? 'Kirim ke alamat' : 'Ambil di toko'}</b>

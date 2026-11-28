@@ -84,33 +84,14 @@ begin
   assert result->>'ok' = 'true' and (result->>'total')::numeric = 15000, 'Link grosir lama tetap bisa pesan';
   assert jsonb_array_length(portal_shop_orders(slug, guest)) = 1, 'Riwayat tamu tidak memuat pesanan privat';
 
-  assert not has_function_privilege('anon','cx_exchange(uuid,text,text,text,text,uuid,text,uuid)','execute');
+  -- Chat pelanggan: uji lengkap di chat_tracking.sql; di sini cukup memastikan pesanan portal bisa dibuka & diisolasi
+  assert not has_function_privilege('anon','cx_customer(jsonb)','execute');
   assert not has_table_privilege('authenticated','customer_messages','select');
-  declare message uuid := gen_random_uuid(); reply uuid := gen_random_uuid();
-  begin
-    assert cx_exchange(guest_id, slug, repeat('c',64),'guest','list') is null;
-    assert cx_exchange(guest_id,'portal-shop-uji-b',guest,'guest','list') is null;
-    assert cx_exchange(guest_id,slug,guest,'guest','send',message,'Pesan uji')->>'ok' = 'true';
-    assert cx_exchange(guest_id,slug,guest,'guest','send',message,'Pesan uji')->>'ok' = 'true';
-    assert jsonb_array_length(cx_exchange(guest_id,slug,guest,'guest','list')->'messages') = 1;
-    assert cx_exchange(private_id,null,private_token,'private','list') is not null;
-    assert cx_exchange(guest_id,null,private_token,'private','list') is null;
-    perform set_config('request.jwt.claim.sub', owner_b, true);
-    assert cx_owner_exchange(guest_id,'list') is null;
-    assert cx_owner_inbox(a) = '[]'::jsonb;
-    perform set_config('request.jwt.claim.sub', owner_a, true);
-    assert cx_owner_inbox(a) #>> '{0,unread}' = '1';
-    assert cx_owner_exchange(guest_id,'read',message)->>'ok' = 'true';
-    assert cx_owner_inbox(a) #>> '{0,unread}' = '0';
-    assert cx_owner_exchange(guest_id,'send',reply,'Balasan uji')->>'ok' = 'true';
-    assert cx_guest_unread(slug,guest)->>guest_id::text = '1';
-    assert cx_guest_unread(slug,repeat('c',64)) = '{}'::jsonb;
-    assert cx_exchange(guest_id,slug,guest,'guest','read',reply)->>'ok' = 'true';
-    assert cx_guest_unread(slug,guest) = '{}'::jsonb;
-    assert (select count(*) from domain_events where kos_id=a and event_type='CustomerMessageReceived' and aggregate_id=guest_id) = 1;
-    assert (select count(*) from notif_items where kos_id=a and user_id=owner_a::uuid
-      and event_type='CustomerMessageReceived' and source_id=guest_id and body not like '%Pesan uji%') = 1;
-  end;
+  assert cx_customer(jsonb_build_object('access','guest','slug',slug,'credential',repeat('c',64),'ref',guest_id,'op','list')) is null;
+  assert cx_customer(jsonb_build_object('access','guest','slug',slug,'credential',guest,'ref',guest_id,'op','send','id',gen_random_uuid(),'body','Pesan uji'))->>'ok' = 'true';
+  assert cx_customer(jsonb_build_object('access','private','credential',private_token,'ref',guest_id,'op','list')) is null;
+  assert (select count(*) from notif_items where kos_id=a and user_id=owner_a::uuid
+    and event_type='CustomerChatMessage' and body not like '%Pesan uji%') = 1;
   perform set_config('request.jwt.claim.sub', owner_a, true);
   assert jsonb_array_length(retail_portal_inbox(a)) = 2, 'Pesanan dan penawaran menunggu tampil';
   assert retail_portal_inbox(b) = '[]'::jsonb, 'Pemberitahuan dibatasi akses bisnis';
@@ -131,8 +112,7 @@ begin
   assert not portal_shop_rate(slug, guest, guest_id, pr, 5), 'Produk belum diterima tidak dapat dinilai';
   perform so_delivery_status(delivery, 'diterima', 'Pembeli uji');
   assert portal_shop_orders(slug, guest) #>> '{0,deliveries,0,status}' = 'diterima', 'Pelacakan menerima status penjual';
-  assert cx_exchange(guest_id,slug,guest,'guest','list')->'events' @>
-    '[{"event_type":"SalesOrderDikonfirmasi"},{"event_type":"DeliveryDiterima"}]'::jsonb, 'Tracking memakai event aktual';
+  assert cx_customer(jsonb_build_object('access','guest','slug',slug,'credential',guest,'ref',guest_id,'op','track')) #>> '{deliveries,0,status}' = 'diterima', 'Tracking memakai data aktual';
   perform set_config('request.jwt.claim.sub', '', true);
   assert not portal_shop_rate(slug, repeat('c',64), guest_id, pr, 5), 'Tamu lain tidak dapat menilai';
   assert not portal_shop_rate(slug, guest, guest_id, pr_hidden, 5), 'Produk yang tidak dibeli tidak dapat dinilai';
