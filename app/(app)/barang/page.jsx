@@ -445,9 +445,10 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
     const bad = calc.find((c, i) => i > 0 && c.error);
     if (bad) {
       if (!p) {
-        openStage(2);
-        const conversion = sections.current[2]?.querySelector('[data-conversion]');
-        if (conversion) conversion.open = true;
+        setStage(0);
+        const conversion = sections.current[0]?.querySelector('[data-conversion]');
+        conversion?.focus({ preventScroll: true });
+        conversion?.scrollIntoView({ block: 'start' });
       }
       return toast(bad.error);
     }
@@ -505,11 +506,13 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
   const archive = async () => {
     if (await run(() => supabase.rpc('product_set_active', { p_product: p.id, p_active: !p.active }), p.active ? 'Barang diarsipkan' : 'Barang aktif lagi', errMsg)) onSaved();
   };
-  const presets = presetsFor(b).filter(([nm]) => !rows.some((r, i) => i > 0 && String(r.name).trim().toLowerCase() === nm.toLowerCase()));
+  const unitPresets = presetsFor(b);
+  if (!p && b.toLowerCase() === 'kg') unitPresets.unshift(['200 gram', 200, 'gram']);
+  const presets = unitPresets.filter(([nm]) => !rows.some((r, i) => i > 0 && String(r.name).trim().toLowerCase() === nm.toLowerCase()));
 
   const conversionFields = <>
-      <span className="label">{bahan ? 'Satuan beli / pakai lain' : 'Satuan jual lain'}</span>
-      <p className="small muted" style={{ margin: 0 }}>Tulis nama dan isinya saja — sistem menghitung sendiri ke {b || 'satuan utama'}. Contoh: Kemasan 250 gram, Dus isi 24 botol, Karton isi 2 Dus.</p>
+      {p && <><span className="label">{bahan ? 'Satuan beli / pakai lain' : 'Satuan jual lain'}</span>
+        <p className="small muted" style={{ margin: 0 }}>Tulis nama dan isinya saja — sistem menghitung sendiri ke {b || 'satuan utama'}. Contoh: Kemasan 250 gram, Dus isi 24 botol, Karton isi 2 Dus.</p></>}
       {rows.map((r, i) => {
         if (i === 0) return null;
         const c = calc[i];
@@ -518,7 +521,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
         const modal = costN * qn;
         const nm = String(r.name).trim() || 'satuan ini';
         return (
-          <div className="unitbox" key={i}>
+          <div className={p ? "unitbox" : `unitbox ${formStyles.extraUnit}`} key={i}>
             <Field label="Nama satuan / kemasan"><input value={r.name} maxLength={20} onChange={(e) => setUnitName(i, e.target.value)} placeholder="mis. Dus, Kemasan 250 gram" /></Field>
             <div className="row" style={{ flexWrap: 'nowrap' }}>
               <Field label={`Isi 1 ${nm}`}><input inputMode="decimal" value={r.content_qty} onChange={(e) => set(i, { content_qty: e.target.value, auto: false })} placeholder="mis. 24" /></Field>
@@ -545,7 +548,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
         <Field label="Berat 1 liter barang ini (kg)" hint="hanya untuk mengubah liter ↔ kg; mis. minyak goreng ± 0,9"><input inputMode="decimal" value={density} onChange={(e) => setDensity(e.target.value)} placeholder="kosong = tidak dikonversi" /></Field>
         <span className="small muted">Berat dan volume tidak pernah dikonversi otomatis. Isi angka ini hanya bila Anda tahu berat 1 liternya (timbang sendiri).</span>
       </div>}
-      {rows.length < 8 && b && <div className="stack" style={{ gap: 6 }}>
+      {p && rows.length < 8 && b && <div className="stack" style={{ gap: 6 }}>
         <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
           {presets.slice(0, 8).map(([nm, q, u]) => <button key={nm} className="sm" onClick={() => addPreset(nm, q, u)}>+ {nm}</button>)}
           <button className="sm primary" onClick={() => setRows([...rows, blankUnit()])}>+ Satuan lain</button>
@@ -597,17 +600,17 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
             </div>}
             {!bahan && <div className={formStyles.inlineField}>
               <Field label="Kategori"><select aria-label="Kategori" value={catId} onChange={(event) => setCatId(event.target.value)}>
-                <option value="">Tanpa kategori</option>{categories.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
+                <option value="">Pilih</option>{categories.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
               </select></Field>
               <button type="button" className={formStyles.inlineAction} aria-label="Tambah kategori" aria-expanded={newCategory !== null}
                 onClick={() => setNewCategory(newCategory === null ? '' : null)}>+</button>
             </div>}
             <div className={formStyles.inlineField}>
-              {customUnit ? <Field label="Satuan *"><input required maxLength={20} value={base} onChange={(event) => setBase(event.target.value)} placeholder="Nama satuan" autoFocus /></Field>
-                : <Field label="Satuan *"><select aria-label="Satuan" required value={b} onChange={(event) => setBase(event.target.value)}>
+              {customUnit ? <Field label="Satuan Utama *"><input required maxLength={20} value={base} onChange={(event) => setBase(event.target.value)} placeholder="Nama satuan" autoFocus /></Field>
+                : <Field label="Satuan Utama *"><select aria-label="Satuan Utama" required value={b} onChange={(event) => setBase(event.target.value)}>
                   <option value="">Pilih satuan</option>{unitOptions.map((unit) => <option key={unit}>{unit}</option>)}
                 </select></Field>}
-              <button type="button" className={formStyles.inlineAction} aria-label={customUnit ? 'Pilih dari satuan umum' : 'Tambah satuan utama'}
+              <button type="button" className={formStyles.inlineAction} aria-label={customUnit ? 'Pilih dari satuan umum' : 'Ketik satuan utama sendiri'}
                 aria-pressed={customUnit} onClick={() => setCustomUnit(!customUnit)}>{customUnit ? '−' : '+'}</button>
             </div>
             {unitWord && <p className={formStyles.full}>Kode barang berisi “{sku.trim()}”. Gunakan kolom Satuan bila itu satuan stok.</p>}
@@ -616,6 +619,25 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
               <button className={formStyles.inlineAction} disabled={categoryBusy}>{categoryBusy ? 'Menyimpan…' : 'Tambahkan'}</button>
             </form>}
           </div>
+          <section className={formStyles.extraUnits} data-conversion tabIndex={-1} aria-label="Satuan Tambahan">
+            <div className={formStyles.unitHeading}>
+              <h2>Satuan Tambahan</h2>
+              <button type="button" disabled={!b || rows.length >= 8 || busy} onClick={() => setRows((current) => [...current, blankUnit()])}>
+                + Tambah Satuan
+              </button>
+            </div>
+            <small>{!b ? 'Pilih satuan utama dulu.' : b.toLowerCase() === 'kg'
+              ? 'Contoh: 200 gram (⅕ kg). Stok tetap dihitung dalam kg.'
+              : 'Contoh: 1 dus isi 12 pcs. Isi dus mengikuti kemasan barang Anda.'}</small>
+            {rows.length < 8 && presets.length > 0 && <details className={formStyles.unitPresets}>
+              <summary>Pilihan satuan umum</summary>
+              <div>{presets.slice(0, 8).map(([nm, q, u]) =>
+                <button type="button" key={nm} className="sm" disabled={busy} onClick={() => addPreset(nm, q, u)}>+ {nm}</button>
+              )}</div>
+            </details>}
+            {conversionFields}
+            {rows.length >= 8 && <small>Batas 7 satuan tambahan sudah tercapai.</small>}
+          </section>
         </div>
       </div>
 
@@ -635,7 +657,7 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
 
       <details className={`${formStyles.section} ${formStyles.card} ${formStyles.advanced}`} open={advancedOpen}
         onToggle={(event) => setAdvancedOpen(event.currentTarget.open)} tabIndex={-1} ref={(node) => { sections.current[2] = node; }}>
-        <summary><NavIcon name="/pengaturan" size={24} /><span><b>Pengaturan Lanjutan</b><small>Satuan lain, grosir, pajak, lokasi stok, dan pengaturan lainnya.</small></span><NavIcon name="down" size={19} /></summary>
+        <summary><NavIcon name="/pengaturan" size={24} /><span><b>Pengaturan Lanjutan</b><small>Grosir, pajak, lokasi stok, dan pengaturan lainnya.</small></span><NavIcon name="down" size={19} /></summary>
         <div className={formStyles.advancedBody}>
           <div className={formStyles.fields}>
             {!bahan && <Field label="Harga Grosir"><input inputMode="numeric" value={rows[0].price_wholesale} onChange={(event) => set(0, { price_wholesale: event.target.value })} placeholder="Opsional" /></Field>}
@@ -646,7 +668,6 @@ function ProductForm({ kosId, p, units, bahan, retail, batch, multi, taxEnabled,
             {taxEnabled && !bahan && <label className={formStyles.check}><input type="checkbox" checked={taxExempt} onChange={(event) => setTaxExempt(event.target.checked)} />Bebas PPN</label>}
           </div>
           {multi && <LokasiBar note="Stok awal dicatat di lokasi kerja aktif." onBusyChange={setLocationBusy} />}
-          <details className={formStyles.subDetails} data-conversion><summary>Konversi satuan</summary><div>{conversionFields}</div></details>
           {batch && expiryFields}
           {retail && <details className={formStyles.subDetails}><summary>Informasi katalog</summary><div>
             <Field label="Nama lain di kemasan" hint="Satu nama per baris."><textarea rows={2} maxLength={1010} value={packaging} onChange={(event) => setPackaging(event.target.value)} /></Field>

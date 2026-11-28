@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Empty, Loading, Sheet } from '@/components/ui';
+import { SheetDisclosure, SheetPeriod, SheetSegments, SheetStats } from '@/components/SmartDetailSheet';
+import NavIcon from '@/components/NavIcon';
+import { SRC, srcHref } from '@/lib/journalSource';
 import { angka, errMsg, rp, tgl } from '@/lib/format';
 import { N, round, shiftDay, STOCK_KINDS, labelRange } from './report';
 import styles from './laporan.module.css';
@@ -30,6 +33,10 @@ const TYPES = {
   other: 'Pemasukan lain', journal: 'Baris jurnal', catalog: 'Data barang', product: 'Nota produk',
   purchase: 'Nota pembelian', purchaseReturn: 'Retur pembelian', invoices: 'Faktur supplier', stockJournal: 'Jurnal persediaan',
 };
+
+const SOURCE_ICONS = { sales: '/tagihan', returns: 'return', journal: '/catatan', stockJournal: '/catatan',
+  product: '/tagihan', stock: '/barang', expenses: '/pengeluaran', purchase: '/belanja', purchaseReturn: 'return',
+  invoices: '/tagihan', other: 'wallet', catalog: '/barang' };
 
 function filterProduct(query, id) {
   return id == null ? query.is('product_id', null) : query.eq('product_id', id);
@@ -81,7 +88,8 @@ async function loadRows(kosId, range, kind, source, owner) {
       const query = q(returns ? 'purchase_returns' : 'purchases', `id,number,${date},total`, date);
       return returns ? query : query.in('status', ['selesai', 'sebagian']);
     });
-    return data.map((row) => ({ id: row.id, date: row[date], title: row.number, amount: N(row.total) * (returns ? -1 : 1) }));
+    return data.map((row) => ({ id: row.id, date: row[date], title: row.number, amount: N(row.total) * (returns ? -1 : 1),
+      href: returns ? null : `/belanja?pesanan=${row.id}`, linkLabel: 'Buka nota pembelian' }));
   }
   if (kind === 'invoices') {
     const data = await reportRows(() => q('supplier_invoices', 'id,number,invoice_date,tax_amount,subtotal,tax_no', 'invoice_date')
@@ -119,9 +127,9 @@ async function loadRows(kosId, range, kind, source, owner) {
         .eq('ret.kos_id', kosId).gte('ret.return_date', range.from).lte('ret.return_date', range.to).order('id'), source.productId)),
     ]);
     return [
-      ...sales.map((row) => ({ id: row.id, date: row.sale.sale_date, title: row.sale.number, href: `/struk/${row.sale.id}`, amount: round(N(row.line_total) * (N(row.sale.subtotal) > 0 ? N(row.sale.total) / N(row.sale.subtotal) : 1) - N(row.tax_amount) - (source.measure === 'laba' ? N(row.cost) * N(row.qty) * N(row.unit_qty) : 0)),
+      ...sales.map((row) => ({ id: row.id, date: row.sale.sale_date, title: row.sale.number, href: `/struk/${row.sale.id}`, origin: { type: 'sale', id: row.sale.id }, amount: round(N(row.line_total) * (N(row.sale.subtotal) > 0 ? N(row.sale.total) / N(row.sale.subtotal) : 1) - N(row.tax_amount) - (source.measure === 'laba' ? N(row.cost) * N(row.qty) * N(row.unit_qty) : 0)),
         note: `${angka(row.qty)} ${row.unit} · HPP ${money(N(row.cost) * N(row.qty) * N(row.unit_qty))}` })),
-      ...returns.map((row) => ({ id: row.id, date: row.ret.return_date, title: row.ret.number, href: row.ret.sale_id ? `/struk/${row.ret.sale_id}` : null, amount: round(-N(row.amount) + (source.measure === 'laba' ? N(row.cost) * N(row.qty) * N(row.unit_qty) : 0)), note: `Retur · ${angka(row.qty)} ${row.unit}` })),
+      ...returns.map((row) => ({ id: row.id, date: row.ret.return_date, title: row.ret.number, origin: { type: 'return', id: row.ret.id }, href: row.ret.sale_id ? `/struk/${row.ret.sale_id}` : null, amount: round(-N(row.amount) + (source.measure === 'laba' ? N(row.cost) * N(row.qty) * N(row.unit_qty) : 0)), note: `Retur · ${angka(row.qty)} ${row.unit}` })),
     ].sort((a, b) => b.date.localeCompare(a.date));
   }
   const { error } = await supabase.rpc('acct_sync', { p_kos: kosId });
@@ -138,7 +146,9 @@ async function loadRows(kosId, range, kind, source, owner) {
     source.measure === 'expense' ? row.account.type === 'beban' && row.account.sys_key !== 'hpp' : true)
     .map((row) => ({ id: row.id, title: `${row.entry.number} · ${row.account.name}`, date: row.entry.entry_date,
       note: `${row.entry.description} · Debit ${money(row.debit)} · Kredit ${money(row.credit)}`,
-      amount: N(row.credit) - N(row.debit), href: row.source_type === 'sale' && row.source_id ? `/struk/${row.source_id}` : null }));
+      amount: N(row.credit) - N(row.debit),
+      href: row.source_id && (row.source_type === 'purchase' ? `/belanja?pesanan=${row.source_id}` : srcHref(row.source_type, row.source_id, true)),
+      linkLabel: row.source_type === 'sale' ? 'Buka nota penjualan' : `Buka sumber · ${SRC[row.source_type] || 'Transaksi'}` }));
 }
 
 export function ReportSource({ kosId, range, source, owner, onChange, onClose }) {
@@ -152,31 +162,52 @@ export function ReportSource({ kosId, range, source, owner, onChange, onClose })
     return () => { active = false; };
   }, [kosId, range.from, range.to, kind, source, owner]);
   const journalNet = round((result?.data || []).reduce((sum, row) => sum + row.amount, 0));
-  return <Sheet title={source.title} onClose={onClose}>
-    <p className={styles.muted}>{labelRange(range)}</p>
-    {source.amount != null && <strong className={styles.sourceValue}>{rp(source.amount)}</strong>}
-    {source.back && <button onClick={() => onChange(source.back)}>Kembali ke sumber laporan</button>}
-    {source.compare && <button onClick={() => onChange(source.compare)}>Telusuri periode pembanding</button>}
-    {source.explanation && <p>{source.explanation}</p>}
-    {source.bridge && <div className={styles.sourceList}>{source.bridge.map(([label, amount, key]) => <button key={key} onClick={() => { setLimit(20); setKind(key); }}><span>{label}</span><b>{rp(amount)}</b></button>)}</div>}
-    <div className={styles.controls} role="group" aria-label="Sumber laporan">{source.kinds.map((key) => <button key={key} aria-pressed={key === kind} onClick={() => { setLimit(20); setKind(key); }}>{TYPES[key]}</button>)}</div>
+  function pick(key) {
+    if (key === kind) return;
+    setResult(null);
+    setLimit(20);
+    setKind(key);
+  }
+  const stats = source.amount == null ? [] : [[source.measure === 'gross' ? 'Laba kotor' : 'Nilai', rp(source.amount)]];
+  if (source.margin != null) stats.push(['Margin kotor', source.margin]);
+
+  return <Sheet title={source.title} subtitle={source.measure === 'gross' ? 'Analisis laba dari penjualan bersih' : undefined}
+    icon="/laporan" wide onClose={onClose}>
+    <SheetPeriod>{labelRange(range)}</SheetPeriod>
+    {stats.length > 0 && <SheetStats items={stats} />}
+    {source.back && <button className={styles.sheetAction} onClick={() => onChange(source.back)}>← Kembali ke sumber laporan</button>}
+    {source.compare && <button className={styles.sheetAction} onClick={() => onChange({ ...source.compare, back: source })}>
+      <NavIcon name="/analisis" size={18} /> Telusuri periode pembanding <NavIcon name="next" size={16} />
+    </button>}
+    {source.explanation && <SheetDisclosure title="Cara perhitungan">{source.explanation}</SheetDisclosure>}
+    {source.bridge && <div className={styles.sourceList}>{source.bridge.map(([label, amount, key]) =>
+      <button key={key} onClick={() => pick(key)}><span>{label}</span><b>{rp(amount)}</b></button>)}</div>}
+    <SheetSegments label="Sumber laporan" options={source.kinds.map((key) => [key, TYPES[key], SOURCE_ICONS[key]])} value={kind} onChange={pick} />
     {kind === 'stock' && !owner && <p className="small muted">Daftar memuat mutasi fisik. Buka jurnal persediaan untuk melihat nilai yang masuk laba rugi.</p>}
     {kind === 'product' && <p className="small muted">Rincian mengikuti alokasi diskon dan PPN pada laporan produk. Pembulatan per baris dapat menimbulkan selisih kecil.</p>}
     {!result ? <Loading /> : result.error ? <p role="alert" className="notice bad">{errMsg(result.error)}</p> :
       result.data.length === 0 ? <Empty title="Belum ada catatan untuk periode ini" /> :
-        <div className={styles.sourceList}>{result.data.slice(0, limit).map((row) => <article key={row.id}>
-          <div><b>{row.title}</b><strong>{rp(row.amount)}</strong></div>
-          <small>{row.date ? tgl(row.date) + ' · ' : ''}{row.note || ''}</small>
-          {row.excluded && <small>Koreksi saldo awal, dikecualikan dari laba rugi · {row.excluded}</small>}
-          <div className={styles.sourceActions}>
-            {row.href && <Link href={row.href}>Buka nota penjualan</Link>}
-            {JOURNAL_SOURCE[kind] && <button onClick={() => onChange({ title: `Jurnal · ${row.title}`, kinds: ['journal'], range,
-              origin: { type: JOURNAL_SOURCE[kind], id: row.id }, back: source,
-              explanation: 'Termasuk posting dan koreksi untuk catatan ini, sesuai tanggal jurnal masing-masing.' })}>Lihat jurnal terkait</button>}
-          </div>
-        </article>)}</div>}
+        <div className={styles.sourceList}>{result.data.slice(0, limit).map((row) => {
+          const origin = row.origin || (JOURNAL_SOURCE[kind] && { type: JOURNAL_SOURCE[kind], id: row.id });
+          return <article className={styles.sourceEntry} key={row.id}>
+            <span className={styles.sourceIcon}><NavIcon name={SOURCE_ICONS[kind]} size={19} /></span>
+            <div className={styles.sourceBody}>
+              <div className={styles.sourceHeading}><b>{row.title}</b><strong>{rp(row.amount)}</strong></div>
+              {row.date && <small>{tgl(row.date)}</small>}
+              {row.note && <small>{row.note}</small>}
+              {row.excluded && <SheetDisclosure title="Koreksi saldo awal">Dikecualikan dari laba rugi · {row.excluded}</SheetDisclosure>}
+              {(row.href || origin) && <div className={styles.sourceActions}>
+                {row.href && <Link href={row.href}>{row.linkLabel || 'Buka nota penjualan'}</Link>}
+                {origin && <button onClick={() => onChange({ title: `Jurnal · ${row.title}`, kinds: ['journal'], range, origin, back: source,
+                  explanation: 'Termasuk posting dan koreksi untuk catatan ini, sesuai tanggal jurnal masing-masing.' })}>
+                  <NavIcon name="/buku-besar" size={15} /> Lihat jurnal terkait
+                </button>}
+              </div>}
+            </div>
+          </article>;
+        })}</div>}
     {result?.data && kind === 'journal' && source.reconcile && <p className="notice">Laba dari jurnal {rp(journalNet)} · Selisih terhadap laba Laporan Toko {rp(round(journalNet - source.reconcile.net))}. Pembukuan mencakup jurnal manual, koreksi, serta akun pendapatan dan beban lain.</p>}
     {result?.data?.length > limit && <button onClick={() => setLimit(limit + 20)}>Tampilkan lebih banyak</button>}
-    {['journal', 'stockJournal'].includes(kind) && <Link href="/pembukuan">Buka Pembukuan</Link>}
+    {['journal', 'stockJournal'].includes(kind) && <Link href={`/pembukuan?tab=jurnal&bulan=${range.to.slice(0, 7)}`}>Buka Pembukuan</Link>}
   </Sheet>;
 }

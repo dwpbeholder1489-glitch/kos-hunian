@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useActiveSheet } from './SmartDetailSheet';
 import { isDraft, pathAllowed, tabsFor, typeOf } from '@/lib/business';
 import { contextualHelp } from '@/lib/learning';
 import { useLearningStorage } from '@/lib/learningStorage';
@@ -132,6 +133,7 @@ function Spotlight({ active, onClose, onMove, onRestart, customer }) {
 }
 
 export function GuideBoundary({ scope, path, kos, customer, customerHelp, children }) {
+  const sheet = useActiveSheet();
   const [record, update, ready] = useLearningStorage(scope, 'guides');
   const [active, setActive] = useState(null);
   const [field, setField] = useState(null);
@@ -149,8 +151,9 @@ export function GuideBoundary({ scope, path, kos, customer, customerHelp, childr
     setFieldOpen(false);
     const focus = (e) => {
       // [data-no-field-help] = layar yang sedang dipakai mengetik cepat (mis. chat) — bantuan kolom tidak ditampilkan
-      if (e.target.matches?.(controls) && !e.target.closest('dialog') && !e.target.closest('[data-no-field-help]')) setField(describeField(e.target));
-      else if (!e.target.closest?.('[data-guide-field]')) { setField(null); setFieldOpen(false); }
+      if (e.target.matches?.(controls) && !e.target.closest('dialog:not([data-smart-sheet])') && !e.target.closest('[data-no-field-help]')) setField(describeField(e.target));
+      // Keep the sheet's help slot stable when a field loses focus to its action button.
+      else if (!e.target.closest?.('[data-guide-field], [data-smart-sheet]')) { setField(null); setFieldOpen(false); }
     };
     const keyboard = (e) => {
       if (e.key === 'Escape') setFieldOpen(false);
@@ -197,13 +200,15 @@ export function GuideBoundary({ scope, path, kos, customer, customerHelp, childr
     setActive({ ...displayed, index });
   }
 
+  const fieldHelp = !displayed && field?.element.isConnected && (!sheet || sheet.contains(field.element)) && <aside className={styles.field} data-guide-field>
+    {fieldOpen && <div id="prasara-field-help" role="status"><b>{field.name}</b><p>{field.hint}{field.required ? ' Kolom wajib diisi.' : ''}</p></div>}
+    <button className="helpchip" type="button" aria-expanded={fieldOpen} aria-controls={fieldOpen ? 'prasara-field-help' : undefined} onPointerDown={(event) => event.preventDefault()} onClick={() => setFieldOpen(!fieldOpen)}>ⓘ Bantuan kolom</button>
+  </aside>;
+
   return <GuideContext.Provider value={{ start, ready, onboarding, prompt, dismissPage: () => update({ ['page:' + path]: { status: 'skipped', index: 0 } }), dismissOnboarding: () => update({ onboarding: { status: 'skipped', index: 0 } }) }}>
     {children}
-    {!displayed && field?.element.isConnected && <aside className={styles.field} data-guide-field>
-      {fieldOpen && <div id="prasara-field-help" role="status"><b>{field.name}</b><p>{field.hint}{field.required ? ' Kolom wajib diisi.' : ''}</p></div>}
-      <button className="helpchip" type="button" aria-expanded={fieldOpen} aria-controls={fieldOpen ? "prasara-field-help" : undefined} onPointerDown={(e) => e.preventDefault()} onClick={() => setFieldOpen(!fieldOpen)}>ⓘ Bantuan kolom</button>
-    </aside>}
-    {displayed && <Spotlight key={displayed.key} active={displayed} onClose={close} onMove={move} onRestart={() => move(0, true)} customer={customer} />}
+    {fieldHelp && (sheet ? createPortal(fieldHelp, sheet.querySelector('[data-smart-sheet-assist]')) : fieldHelp)}
+    {displayed && !sheet && <Spotlight key={displayed.key} active={displayed} onClose={close} onMove={move} onRestart={() => move(0, true)} customer={customer} />}
   </GuideContext.Provider>;
 }
 

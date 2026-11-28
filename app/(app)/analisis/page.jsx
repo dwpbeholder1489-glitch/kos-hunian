@@ -616,9 +616,9 @@ function BranchCard({ d, onPick }) {
 // ---------- Lembar rincian ----------
 function DetailView({ detail, d, k, T, health, ins, proj, extra, kosId, kas, range, retail, branchNote, reportHref, pembukuan, metric, open, onClose, lanjut, lock, vs }) {
   const common = { onClose };
-  if (detail.type === 'metric') return <DetailSheet {...common} title={detail.title} value={detail.value} formula={detail.formula} rows={detail.rows}
+  if (detail.type === 'metric') return <DetailSheet {...common} title={detail.title} period={fmtRange(range.from, range.to)} value={detail.value} formula={detail.formula} rows={detail.rows}
     links={[[reportHref, 'Buka laporan'], [pembukuan('laporan'), 'Laba rugi di Pembukuan']]}>
-    <h3 className={styles.sh}>Transaksi sumber ({fmtRange(range.from, range.to)})</h3>
+    <h3 className={styles.sh}>Transaksi sumber</h3>
     <JournalLines kosId={kosId} from={range.from} to={range.to} kinds={detail.kinds} retail={retail} branchNote={branchNote} />
   </DetailSheet>;
 
@@ -664,7 +664,7 @@ function DetailView({ detail, d, k, T, health, ins, proj, extra, kosId, kas, ran
   }
 
   if (detail.type === 'point') { const p = detail.p; const from = p.mulai; const to = p.grain === 'harian' ? p.mulai : monthEndOf(p.mulai);
-    return <DetailSheet {...common} title={p.label} rows={[[T.omzet, rp(p.pendapatan)], ['HPP', rp(p.hpp)], ['Biaya operasional', rp(p.biaya)], ['Laba bersih', rp(p.laba)], [T.trx, angka(p.transaksi)], [`${T.pelanggan} bertransaksi`, angka(p.pelanggan)]]}
+    return <DetailSheet {...common} title={p.label} period={fmtRange(from, to)} rows={[[T.omzet, rp(p.pendapatan)], ['HPP', rp(p.hpp)], ['Biaya operasional', rp(p.biaya)], ['Laba bersih', rp(p.laba)], [T.trx, angka(p.transaksi)], [`${T.pelanggan} bertransaksi`, angka(p.pelanggan)]]}
       links={[[`/pembukuan?tab=jurnal&bulan=${from.slice(0, 7)}`, 'Jurnal bulan ini'], [reportHref, 'Buka laporan']]}>
       <h3 className={styles.sh}>Transaksi sumber</h3><JournalLines kosId={kosId} from={from} to={to} kinds={['pendapatan', 'hpp', 'biaya']} retail={retail} branchNote={branchNote} />
     </DetailSheet>; }

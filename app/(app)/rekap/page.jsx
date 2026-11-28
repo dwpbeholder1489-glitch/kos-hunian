@@ -485,7 +485,7 @@ function Center({ kos, kosId, ver }) {
     }
     if (key === 'titik') {
       const x = arg;
-      return <DetailSheet title={x.label} value={rp(x.v.pendapatan)} onClose={close} formula="Pendapatan, HPP, dan biaya dari jurnal; transaksi dari dokumen selesai (sama dengan angka di atas)."
+      return <DetailSheet title={x.label} period={x.from === x.to ? tgl(x.from) : `${tgl(x.from)} – ${tgl(x.to)}`} value={rp(x.v.pendapatan)} onClose={close} formula="Pendapatan, HPP, dan biaya dari jurnal; transaksi dari dokumen selesai (sama dengan angka di atas)."
         rows={[['Pendapatan', rp(x.v.pendapatan)], ['HPP', rp(x.v.hpp)], ['Biaya', rp(x.v.biaya)], ['Laba bersih', rp(x.v.laba)], [T.trx, angka(x.v.transaksi)]]}
         links={[c.jenis === 'retail' && x.from === x.to && [`/penjualan?tanggal=${x.from}`, 'Penjualan hari itu']].filter(Boolean)}>
         <JournalLines kosId={kosId} from={x.from} to={x.to} kinds={['pendapatan', 'hpp', 'biaya']} retail={retailLike} branchNote={branchNote} />
@@ -494,7 +494,7 @@ function Center({ kos, kosId, ver }) {
     const spec = D2[key]?.(arg);
     if (!spec) return null;
     const [docKind, docKey] = spec.docs || [];
-    return <DetailSheet title={spec.title} value={spec.value} formula={spec.formula} rows={spec.rows} links={spec.links?.filter(Boolean)} onClose={close}>
+    return <DetailSheet title={spec.title} period={c.from === c.to ? tgl(c.from) : `${tgl(c.from)} – ${tgl(c.to)}`} value={spec.value} formula={spec.formula} rows={spec.rows} links={spec.links?.filter(Boolean)} onClose={close}>
       {spec.table && <>{spec.table.title && <h3 className={styles.sh}>{spec.table.title}</h3>}<div className={styles.tblWrap}><table className={styles.tbl}><thead><tr>{spec.table.cols.map((x, i) => <th key={i} className={i ? styles.num : undefined}>{x}</th>)}</tr></thead>
         <tbody>{spec.table.rows.map((r, i) => <tr key={i}>{r.map((x, j) => <td key={j} className={j ? styles.num : undefined}>{x}</td>)}</tr>)}</tbody></table></div></>}
       {docKind && <Docs kosId={kosId} kind={docKind} k={docKey} R={R} retail={retailLike} extra={spec.extraDocs} />}
