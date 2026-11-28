@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
@@ -16,6 +17,8 @@ const when = (ts) => { const s = String(ts); return `${tgl(s.slice(0, 10))} ${ne
 // Mutasi stok antar lokasi (blueprint 25.12): tercatat sebagai transaksi transfer dengan jejak asal & tujuan; total stok bisnis tidak berubah
 export default function Mutasi() {
   const { kos, kosId, ver, bump } = useKos();
+  const target = useSearchParams().get('mutasi');
+  const transferId = target && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(target) ? target : null;
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
   const locs = kos?.locs?.list || [];
@@ -30,17 +33,20 @@ export default function Mutasi() {
   const [mode, setMode] = useState('langsung');   // langsung | kirim (dalam perjalanan)
   const [recv, setRecv] = useState(null);
   const load = async () => {
-    const [p, u, l, h] = await Promise.all([
+    const [p, u, l, h, linked] = await Promise.all([
       supabase.from('products').select('id,name,base_unit,active').eq('kos_id', kosId).eq('active', true).order('name'),
       supabase.from('product_units').select('*').eq('kos_id', kosId),
       supabase.rpc('stock_levels_list', { p_kos: kosId }),
       supabase.from('stock_transfers').select('*').eq('kos_id', kosId).order('created_at', { ascending: false }).limit(30),
+      transferId ? supabase.from('stock_transfers').select('*').eq('kos_id', kosId).eq('id', transferId).maybeSingle() : null,
     ]);
     const e = p.error || u.error || l.error || h.error;
     if (e) return setErr(errMsg(e));
-    setD({ products: p.data, units: u.data, levels: l.data || [], hist: h.data || [] });
+    setErr(null);
+    setD({ products: p.data, units: u.data, levels: l.data || [], hist: h.data || [], linked: linked?.data });
   };
-  useEffect(() => { load(); }, [kosId, ver]);
+  useEffect(() => { load(); }, [kosId, ver, transferId]);
+  useEffect(() => { if (d?.linked) document.getElementById(`mutasi-${d.linked.id}`)?.scrollIntoView({ block: 'center' }); }, [d?.linked]);
   useEffect(() => { setFrom(kos?.locs?.current || ''); }, [kos?.locs?.current]);
   if (!multiLoc(kos)) return (
     <div className="stack">
@@ -121,8 +127,10 @@ export default function Mutasi() {
       </section>
       <section className="panel">
         <h3>Riwayat mutasi</h3>
-        {d.hist.length === 0 ? <span className="small muted">Belum ada mutasi.</span> : <div className="list">{d.hist.map((h) => (
-          <div className="li" key={h.id} style={{ alignItems: 'flex-start' }}>
+        {transferId && !d.linked && <p className="small muted">Mutasi rujukan tidak ditemukan di bisnis aktif.</p>}
+        {!d.hist.length && !d.linked ? <span className="small muted">Belum ada mutasi.</span> : <div className="list">{(d.linked
+          ? [d.linked, ...d.hist.filter((item) => item.id !== d.linked.id)] : d.hist).map((h) => (
+          <div className="li" key={h.id} id={`mutasi-${h.id}`} style={{ alignItems: 'flex-start' }}>
             <div className="main"><b className="small">{name(h.from_branch)} → {name(h.to_branch)} {h.status === 'dikirim' ? <span className="chip warn">Dalam perjalanan</span> : h.status === 'batal' ? <span className="chip void">Dibatalkan</span> : null}</b>
               <span className="small muted">{h.number} · {when(h.created_at)}{h.created_email ? ` · ${h.created_email}` : ''}{h.note ? ` · ${h.note}` : ''}</span>
               <span className="small">{(h.received || h.lines || []).map((x) => (x.received != null && Number(x.short) > 0 ? `${x.name} dikirim ${angka(x.sent)}, diterima ${angka(x.received)}` : `${x.name} ${angka(x.qty ?? x.received)} ${x.unit || ''}`)).join(', ')}</span>

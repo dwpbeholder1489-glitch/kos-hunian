@@ -23,7 +23,6 @@ import { BudgetModule, CashModule, FinancialsModule, InvestModule, MapModule, Re
 import ScenarioModule from './Scenario';
 import IndustryModule from './Industry';
 import ProfitModule from './Profit';
-import StockReorder from './StockReorder';
 import styles from './analisis.module.css';
 
 const n = (v) => Number(v || 0);
@@ -374,7 +373,11 @@ function Center({ kos, kosId, ver }) {
     {header}{filterSheet}
     {modNav}
     {notes}
-    {retail && canArea(kos, 'stock') && pathAllowed(kos, '/belanja') && <StockReorder kosId={kosId} version={ver} />}
+    {retail && canArea(kos, 'stock') && pathAllowed(kos, '/belanja') && <section className={styles.card}>
+      <div className={styles.cardH}><h2 className={styles.cardT}><span className={styles.tIco}><NavIcon name="/grosir" size={20} /></span>Saran Belanja Stok</h2></div>
+      <p className={styles.note}>Periksa prioritas stok lokasi kerja dan susun pesanan pemasok.</p>
+      <Link className={styles.link} href="/belanja/saran">Buka Saran Belanja Stok <NavIcon name="next" size={14} /></Link>
+    </section>}
     {kosong && <div className="notice">Belum ada transaksi tercatat pada {fmtRange(d.from, d.to)}. Angka akan muncul setelah ada penjualan, pembayaran, atau pengeluaran.</div>}
     {mobile ? <>
       {healthCard}

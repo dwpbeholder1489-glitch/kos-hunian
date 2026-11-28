@@ -17,7 +17,6 @@ import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, angka, tgl, today, errMsg, bulan, monthEnd } from '@/lib/format';
 import { qtyNum, uid } from '@/lib/retail';
 import { Permintaan, Faktur, FakturSheet, KinerjaSupplier } from '@/components/Pengadaan';
-import RestockGuidance from './RestockGuidance';
 import { ReceiptHistory, ReceiptMatching } from './ReceiptMatching';
 
 import { BUY, loadPurchaseCatalog, purchasePath, storePurchasePrefill } from './purchase-data';
@@ -144,14 +143,6 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
       router.push(purchasePath({ month, draft }));
     } catch { toast('Formulir belum bisa dibuka. Penyimpanan sesi browser tidak tersedia.'); }
   };
-  const reviewPurchase = async (id) => {
-    const { data, error } = await supabase.from('purchases').select('*').eq('kos_id', kosId).eq('id', id).maybeSingle();
-    if (error || !data) return toast(error ? errMsg(error) : 'Pesanan supplier tidak ditemukan.');
-    setSaran(false);
-    setTab('belanja');
-    setOpen(data);
-  };
-
   return (
     <div className={styles.page}>
       <section className={styles.hero} aria-label="Procurement Management Center">
@@ -164,7 +155,9 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
       </section>
       <div className={styles.actions}>
         <Link className={styles.primary} href={newHref}><NavIcon name="/penjualan" />＋ Belanja</Link>
-        <button onClick={() => setSaran(true)} disabled={!d.products.length}><NavIcon name="/konfirmasi" />Saran Belanja</button>
+        {kos.business_type === 'retail' && canReceive
+          ? <Link href="/belanja/saran"><NavIcon name="/konfirmasi" />Saran Belanja</Link>
+          : <button onClick={() => setSaran(true)} disabled={!d.products.length}><NavIcon name="/konfirmasi" />Saran Belanja</button>}
         <button onClick={() => setMenu('receive')}><NavIcon name="/grosir" />Penerimaan Barang</button>
         <button onClick={() => setMenu('more')}><NavIcon name="more" />Lainnya</button>
       </div>
@@ -270,9 +263,7 @@ function BelanjaWorkspace({ kosId, kos, ver }) {
         </SheetEmpty>}
       </Sheet>}
       {menu === 'scan' && <SupplierReceiptScan onClose={() => setMenu(null)} onInvoices={() => { setMenu(null); setTab('faktur'); }} />}
-      {saran && (kos.business_type === 'retail'
-        ? <RestockGuidance kosId={kosId} version={ver} onClose={() => setSaran(false)} onPick={fromSuggestion} onReview={reviewPurchase} />
-        : <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={fromSuggestion} />)}
+      {saran && <SaranBelanja kosId={kosId} d={d} onClose={() => setSaran(false)} onPick={fromSuggestion} />}
 
       {open && <Detail key={open.id} units={d.units} canReceive={canReceive} matchOnOpen={matchOnOpen === open.id} b={open} supplier={sup.get(open.contact_id)} loc={multiLoc(kos) ? locName(open.branch_id) : null}
         canOpenOrder={canArea(kos, 'sell') || canArea(kos, 'finance')} onClose={() => { setMatchOnOpen(null); setOpen(null); }} onChanged={() => { setMatchOnOpen(null); setOpen(null); setRevision((value) => value + 1); }} onFaktur={() => { setFk(open.id); setMatchOnOpen(null); setOpen(null); }} />}
