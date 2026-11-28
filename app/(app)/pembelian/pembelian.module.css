@@ -1,0 +1,5 @@
+.page{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ways{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.ways{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ways article{display:flex;flex-direction:column;gap:8px}
+.ways article > span{flex:1}

@@ -1,4 +1,5 @@
 'use client';
+import { rentText } from '@/components/SewaFleksibel';
 import PortalBox from '@/components/PortalBox';
 import { useBaru } from '@/lib/useBaru';
 import DepositBox from '@/components/DepositBox';
@@ -214,7 +215,7 @@ function OccDetail({ d, record, owner, go, onClose }) {
         {first?.outstanding > 0 && <><dt>Batas bayar bulan pertama</dt><dd><FirstDueEdit lease={l} inv={first} /></dd></>}</dl>}
       {l?.end_date && l.end_date < today() && <div className="notice">Rencana selesai sudah lewat. Akhiri sewa bila penghuni sudah keluar, atau perbarui rencana selesai jika masih tinggal.</div>}
       <Entries rows={history} empty="Belum ada kontrak sewa." render={(lease) => <div className={css.entry}>
-        <b>Kamar {d.roomCode(lease.room_id)} · {rp(lease.rent)}/bln</b><small>{tgl(lease.start_date)}{lease.end_date && ` – ${tgl(lease.end_date)}`} · {lease.status === 'aktif' ? 'Aktif' : 'Selesai'}</small>
+        <b>Kamar {d.roomCode(lease.room_id)} · {rentText(lease)}</b><small>{tgl(lease.start_date)}{lease.end_date && ` – ${tgl(lease.end_date)}`} · {lease.status === 'aktif' ? 'Aktif' : 'Selesai'}</small>
         {lease.end_reason && <span>{lease.end_reason}</span>}<Link href="/kamar">Buka modul Kamar</Link>
       </div>} />
       <div className="row">{l ? <><button onClick={() => act('move', { lease: l })}>Pindah kamar</button><button className="danger" onClick={() => act('end', { lease: l })}>Akhiri sewa</button></>

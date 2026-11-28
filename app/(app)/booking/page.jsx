@@ -13,7 +13,8 @@ import { Sheet, Field, Loading, Empty, run, toast } from '@/components/ui';
 import { rp, tgl, today, parseRp, errMsg, waLink, bulan, addMonthsYm } from '@/lib/format';
 import { uid } from '@/lib/retail';
 import { FirstDue } from '@/components/LeaseForms';
-import { canArea, pathAllowed } from '@/lib/business';
+import { canArea, pathAllowed, moduleOn } from '@/lib/business';
+import { UnitPicker, SpanFields, emptySpan, spanBody, useQuote, QuoteBox, UNITS, UNIT_NAME } from '@/components/SewaFleksibel';
 
 const ACC = [['kas', 'Kas (tunai)'], ['bank', 'Bank / transfer']];
 const addDays = (iso, n) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
@@ -24,9 +25,12 @@ const statusList = [
   ['selesai', 'Sudah Masuk', 'Sudah Masuk', 'done'],
   ['batal', 'Batal', 'Dibatalkan', 'info'],
 ];
-const remaining = (b) => Math.max(0, b.rent - b.dp_amount);
+// Booking bersatuan (harian/jam/khusus) dibayar sekaligus = total; berkala = tarif per periode
+const once = (b) => ['jam', 'hari', 'khusus'].includes(b.unit);
+const price = (b) => (once(b) ? Number(b.total || b.rent) : Number(b.rent));
+const remaining = (b) => Math.max(0, price(b) - b.dp_amount);
 const formatBalance = (b) => [
-  ['Tarif Sewa', `${rp(b.rent)}/bln`], ['Uang Tanda Jadi (DP)', rp(b.dp_amount)],
+  [once(b) ? 'Total Sewa' : 'Tarif Sewa', once(b) ? rp(b.total) : `${rp(b.rent)}/${b.unit === 'bulan' || !b.unit ? 'bln' : UNIT_NAME[b.unit]}`], ['Uang Tanda Jadi (DP)', rp(b.dp_amount)],
   ...(b.status === 'aktif' ? [['Sisa sewa saat masuk¹', rp(remaining(b))]] : b.status === 'batal'
     ? [['DP Dikembalikan', rp(b.refund_amount)]] : []),
 ];
@@ -182,15 +186,31 @@ function BookingForm({ d, kosId, init, b, onClose, onSaved }) {
     rent: src.rent != null ? String(Math.round(src.rent)) : '', expires_on: src.expires_on || '', note: src.note || '', dp: '', dp_account: 'kas', dp_date: today() });
   const [busy, setBusy] = useState(false);
   const [id] = useState(uid);
+  const { kos } = useKos();
+  const flex = !edit && moduleOn(kos, 'p_tarif');
+  const [unit, setUnit] = useState('bulan');
+  const [span, setSpan] = useState(emptySpan('hari'));
+  const q = useQuote(kosId, unit !== 'bulan' ? p.room_id : null, unit, span);
   const set = (k, v) => setP((x) => ({ ...x, [k]: v }));
   const room = p.room_id && d.roomById.get(p.room_id);
   useEffect(() => { if (room && !edit && !p.rent && room.rent) set('rent', String(Math.round(room.rent))); }, [p.room_id]);
   const occ = room && d.activeByRoom.get(room.id);
   // kamar yang bisa dipilih: belum dibooking orang lain dan bukan "tidak disewakan"
-  const rooms = d.rooms.filter((r) => r.status !== 'tidak_disewakan' && (!d.bookByRoom.get(r.id) || d.bookByRoom.get(r.id).id === b?.id));
+  // sewa bersatuan (harian dst): beberapa booking per kamar boleh selama jadwalnya tidak bertumpuk (dicek server)
+  const rooms = d.rooms.filter((r) => r.status !== 'tidak_disewakan' && (unit !== 'bulan' || !d.bookByRoom.get(r.id) || d.bookByRoom.get(r.id).id === b?.id));
   const save = async () => {
     if (!p.room_id) return toast('Pilih kamar.');
     if (p.name.trim().length < 2) return toast('Isi nama calon penghuni.');
+    if (unit !== 'bulan') {
+      if (!q || q.error || q.clash) return toast(q?.error || q?.clash || 'Lengkapi jadwal sewa.');
+      const dp = p.dp.trim() ? parseRp(p.dp) : 0;
+      setBusy(true);
+      const ok = await run(() => supabase.rpc('booking_create', { p_id: id, p_kos: kosId, p: { room_id: p.room_id, name: p.name, phone: p.phone, note: p.note, expires_on: p.expires_on, ...spanBody(unit, span),
+        lead_id: init.lead_id || null, dp_amount: dp, dp_account: p.dp_account, dp_date: p.dp_date } }), `Booking dicatat · total ${rp(q.total)}`, errMsg);
+      setBusy(false);
+      if (ok) { bump(); onSaved(); }
+      return;
+    }
     if (!p.check_in) return toast('Isi tanggal masuk.');
     const rent = parseRp(p.rent);
     if (!(rent >= 0) || p.rent === '') return toast('Isi harga sewa yang disepakati.');
@@ -209,17 +229,19 @@ function BookingForm({ d, kosId, init, b, onClose, onSaved }) {
       {init?.lead_id && <div className="notice small">Dari prospek: {init.name}. Saat check-in, prospek otomatis ditandai Jadi.</div>}
       <Field label="Kamar"><select value={p.room_id} onChange={(e) => set('room_id', e.target.value)}><option value="">Pilih kamar…</option>
         {rooms.map((r) => { const l = d.activeByRoom.get(r.id); return <option key={r.id} value={r.id}>{r.code}{l ? ` · terisi${l.end_date ? ` s/d ${tgl(l.end_date)}` : ''}` : r.status === 'perbaikan' ? ' · perbaikan' : ' · kosong'}{r.rent ? ` · ${rp(r.rent)}` : ''}</option>; })}</select></Field>
-      {occ && <span className="small muted">Kamar ini masih terisi {d.occName(occ.occupant_id)}{occ.end_date ? ` sampai ${tgl(occ.end_date)} — tanggal masuk harus setelahnya.` : ' tanpa rencana selesai. Isi dulu di Penghuni › ketuk nama › Rencana selesai › ubah.'}</span>}
+      {flex && <UnitPicker value={unit} onChange={(u) => { setUnit(u); if (u !== 'bulan') setSpan(emptySpan(u)); }} />}
+      {occ && unit === 'bulan' && <span className="small muted">Kamar ini masih terisi {d.occName(occ.occupant_id)}{occ.end_date ? ` sampai ${tgl(occ.end_date)} — tanggal masuk harus setelahnya.` : ' tanpa rencana selesai. Isi dulu di Penghuni › ketuk nama › Rencana selesai › ubah.'}</span>}
       <div className="row">
         <Field label="Nama calon penghuni"><input value={p.name} maxLength={80} onChange={(e) => set('name', e.target.value)} /></Field>
         <Field label="No. WhatsApp"><input inputMode="tel" value={p.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
       </div>
+      {unit !== 'bulan' ? <><SpanFields unit={unit} value={span} onChange={setSpan} /><QuoteBox q={q} unit={unit} /></> : <>
       <div className="row">
         <Field label="Tanggal masuk"><input type="date" value={p.check_in} onChange={(e) => set('check_in', e.target.value)} /></Field>
         <Field label="Lama sewa (bulan, opsional)"><input inputMode="numeric" value={p.months} onChange={(e) => set('months', e.target.value.replace(/\D/g, ''))} placeholder="mis. 6" /></Field>
-      </div>
+      </div></>}
       <div className="row">
-        <Field label="Sewa per bulan (disepakati)"><input inputMode="numeric" value={p.rent} onChange={(e) => set('rent', e.target.value)} /></Field>
+        {unit === 'bulan' && <Field label="Sewa per bulan (disepakati)"><input inputMode="numeric" value={p.rent} onChange={(e) => set('rent', e.target.value)} /></Field>}
         <Field label="Batas konfirmasi (opsional)" hint="lewat tanggal ini tampil peringatan"><input type="date" value={p.expires_on} onChange={(e) => set('expires_on', e.target.value)} /></Field>
       </div>
       {!edit && <>
@@ -244,7 +266,7 @@ function Detail({ d, kos, b, now, onClose }) {
   const first = b.lease_id && d.invoices.filter((i) => i.lease_id === b.lease_id && i.kind === 'sewa' && i.status !== 'batal')
     .reduce((old, i) => !old || i.period_start < old.period_start ? i : old, null);
   const canIn = b.status === 'aktif' && room?.status === 'tersedia';
-  const msg = `Halo ${b.name}, booking kamar ${room?.code} di ${kos.name} sudah kami catat (${b.number}). Tanggal masuk ${tgl(b.check_in)}, sewa ${rp(b.rent)}/bulan${b.dp_amount > 0 ? `, uang tanda jadi ${rp(b.dp_amount)} sudah kami terima` : ''}${b.expires_on ? `. Mohon konfirmasi sebelum ${tgl(b.expires_on)}` : ''}. Terima kasih.`;
+  const msg = `Halo ${b.name}, booking kamar ${room?.code} di ${kos.name} sudah kami catat (${b.number}). Tanggal masuk ${tgl(b.check_in)}${b.check_out ? ` s/d ${tgl(b.check_out)}` : ''}, sewa ${once(b) ? `${rp(b.total)} total` : `${rp(b.rent)}/${UNIT_NAME[b.unit || 'bulan']}`}${b.dp_amount > 0 ? `, uang tanda jadi ${rp(b.dp_amount)} sudah kami terima` : ''}${b.expires_on ? `. Mohon konfirmasi sebelum ${tgl(b.expires_on)}` : ''}. Terima kasih.`;
   if (mode === 'ubah') return <BookingForm d={d} kosId={kos.id} b={b} onClose={() => setMode(null)} onSaved={() => setMode(null)} />;
   return (
     <Sheet title={b.name} subtitle={b.number} icon="calendar" wide onClose={onClose}>
@@ -259,7 +281,8 @@ function Detail({ d, kos, b, now, onClose }) {
         <dt>Kamar</dt><dd>{room?.code}</dd>
         <dt>Tanggal masuk</dt><dd>{tgl(b.check_in)}{b.status === 'aktif' ? ` (${when(b.check_in, now)})` : ''}</dd>
         {b.months && <><dt>Lama sewa</dt><dd>{b.months} bulan</dd></>}
-        <dt>Sewa</dt><dd>{rp(b.rent)}/bulan</dd>
+        {b.unit && b.unit !== 'bulan' && <><dt>Jenis sewa</dt><dd>{UNITS.find(([k]) => k === b.unit)?.[1]}{b.start_at ? ` · ${new Date(b.start_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} – ${new Date(b.end_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}` : b.check_out ? ` · keluar ${tgl(b.check_out)}` : ''}</dd></>}
+        <dt>Sewa</dt><dd>{once(b) ? `${rp(b.total)} total (${b.quote?.qty || ''} ${UNIT_NAME[b.unit]})` : `${rp(b.rent)}/${UNIT_NAME[b.unit || 'bulan']}`}</dd>
         <dt>Uang tanda jadi</dt><dd>{b.dp_amount > 0 ? `${rp(b.dp_amount)} · ${b.dp_account === 'bank' ? 'bank' : 'kas'} · ${tgl(b.dp_date)}` : '—'}</dd>
         {b.phone && <><dt>WhatsApp</dt><dd>{b.phone}</dd></>}
         {b.applicant?.address && <><dt>Alamat asal</dt><dd style={{ overflowWrap: 'anywhere' }}>{b.applicant.address}</dd></>}
@@ -319,18 +342,18 @@ function CheckIn({ d, b, settle, onDone }) {
     <div className="unitbox">
       <Field label="Tanggal masuk" hint="Sewa dihitung mulai tanggal ini"><input type="date" value={start} onChange={(e) => { const v = e.target.value; if (v && (!start || due < v || due === addDays(start, 3))) setDue(addDays(v, 3)); setStart(v); }} /></Field>
       <div className="row">
-        <Field label="Sewa bulan pertama sudah dibayar?" hint={`Kosongkan bila belum. Sewa ${rp(b.rent)}/bulan`}><input inputMode="numeric" value={paid} onChange={(e) => setPaid(e.target.value)} placeholder="Rp" /></Field>
+        <Field label={once(b) ? 'Sewa sudah dibayar?' : 'Sewa periode pertama sudah dibayar?'} hint={`Kosongkan bila belum. ${once(b) ? `Total ${rp(b.total)}` : `Sewa ${rp(b.rent)}/${UNIT_NAME[b.unit || 'bulan']}`}`}><input inputMode="numeric" value={paid} onChange={(e) => setPaid(e.target.value)} placeholder="Rp" /></Field>
         {paid.trim() && <Field label="Cara bayar"><select value={method} onChange={(e) => setMethod(e.target.value)}><option value="tunai">Tunai</option><option value="transfer">Transfer</option><option value="ewallet">QRIS / e-wallet</option></select></Field>}
       </div>
-      {!paid.trim() && <button type="button" className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setPaid(String(Math.max(0, Math.round(b.rent - (apply ? b.dp_amount : 0)))))}>Sudah dibayar penuh → isi {rp(Math.max(0, b.rent - (apply ? b.dp_amount : 0)))}</button>}
-      {(parseRp(paid) || 0) + (apply ? Number(b.dp_amount) : 0) < Number(b.rent) && <FirstDue start={start} value={due} onChange={setDue} />}
-      <Field label="Rencana selesai (opsional)" hint={b.months ? `kosongkan = ${b.months} bulan dari tanggal masuk` : undefined}><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+      {!paid.trim() && <button type="button" className="sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setPaid(String(Math.max(0, Math.round(price(b) - (apply ? b.dp_amount : 0)))))}>Sudah dibayar penuh → isi {rp(Math.max(0, price(b) - (apply ? b.dp_amount : 0)))}</button>}
+      {(parseRp(paid) || 0) + (apply ? Number(b.dp_amount) : 0) < price(b) && <FirstDue start={start} value={due} onChange={setDue} />}
+      {!once(b) && <Field label="Rencana selesai (opsional)" hint={b.months ? `kosongkan = ${b.months} bulan dari tanggal masuk` : undefined}><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>}
       {matches.length > 0 && <p className="small muted">Nama dan nomor WhatsApp cocok dengan data penghuni yang sudah ada. Gunakan kembali datanya jika sewa sebelumnya sudah selesai.</p>}
       <Field label="Data penghuni"><select value={occ} onChange={(e) => setOcc(e.target.value)}><option value="">Buat penghuni baru: {b.name}{b.phone ? ` · ${b.phone}` : ''}</option>{free.map((o) => <option key={o.id} value={o.id}>Pakai data lama: {o.name}</option>)}</select></Field>
       {b.dp_amount > 0 && <>
         <label className="row small" style={{ flexWrap: 'nowrap' }}><input type="checkbox" style={{ width: 22, minHeight: 22, flex: 'none' }} checked={apply} onChange={(e) => {
-          if (settle && (!paid || Number(paid) === (apply ? remaining(b) : b.rent))) {
-            const next = e.target.checked ? remaining(b) : b.rent;
+          if (settle && (!paid || Number(paid) === (apply ? remaining(b) : price(b)))) {
+            const next = e.target.checked ? remaining(b) : price(b);
             setPaid(next > 0 ? String(next) : '');
           }
           setApply(e.target.checked);

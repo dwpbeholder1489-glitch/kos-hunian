@@ -8,7 +8,7 @@ export const maxDuration = 30;
 
 const BUCKET = 'lampiran';
 const MAX = 4 * 1024 * 1024; // batas body Vercel ±4,5 MB
-const ENTITIES = ['bb_record', 'svc_order', 'maint_ticket', 'occupant', 'expense', 'project'];
+const ENTITIES = ['bb_record', 'svc_order', 'maint_ticket', 'occupant', 'expense', 'project', 'contract'];
 const json = (b, s = 200) => Response.json(b, { status: s });
 const clean = (m) => String(m || 'Gagal').replace(/^BATAS_GRATIS:\s*/, '');
 

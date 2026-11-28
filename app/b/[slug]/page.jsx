@@ -8,7 +8,7 @@ import PublicPay from '@/components/PublicPay';
 import Linkify from '@/components/Linkify';
 import { logoUrl } from '@/lib/logo';
 import { PublicCover, PublicGallery, ItemThumb } from '@/components/media/PublicPics';
-import { getPublicPage as getPage, getPublicShop, getPublicQuoteCatalog } from '@/lib/publicPage';
+import { getPublicPage as getPage, getPublicShop, getPublicQuoteCatalog, getPublicCampaigns } from '@/lib/publicPage';
 import PublicShop from '@/components/commerce/PublicShop';
 import { linkBannerMetadata } from '@/lib/linkBannerServer';
 import { isBannerId } from '@/lib/linkBanner';
@@ -52,6 +52,8 @@ export default async function PublicPage({ params, searchParams }) {
   const quoteViews = ['layanan', 'penawaran', 'permintaan', 'riwayat-penawaran', 'lacak', 'katalog', 'keranjang', 'produk', 'favorit', 'chat', 'info', 'pesanan'];
   const initialScreen = [typeof view === 'string' ? view : 'beranda', typeof query?.id === 'string' ? query.id : null];
   const help = CUSTOMER_HELP[p.type] || CUSTOMER_HELP.jasa;
+  const promos = p.type === 'properti' ? await getPublicCampaigns(slug) : [];
+  const refCode = typeof query?.ref === 'string' ? query.ref.replace(/[^A-Za-z0-9]/g, '').slice(0, 20).toUpperCase() : '';
   if (shop) {
     const media = p.media && {
       ...p.media,
@@ -78,6 +80,11 @@ export default async function PublicPage({ params, searchParams }) {
         ))}</div>}
       </header>
       {p.about && <section className="panel"><h3>Tentang kami</h3><p style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.about} /></p></section>}
+      {promos.length > 0 && <section className="panel" id="promo"><h3>Promo</h3>
+        <div className="list">{promos.map((c) => <div className="li" key={c.name} style={{ alignItems: 'flex-start' }}><div className="main"><b>{c.name}</b>
+          {c.text && <span className="small">{c.text}</span>}
+          <span className="small muted">{c.kind !== 'pengumuman' && `Potongan ${c.discount_kind === 'persen' ? `${Number(c.discount_value)}%` : rp(c.discount_value)}${c.months > 1 ? ` untuk ${c.months} bulan pertama` : ''}`}{c.code ? ` · kode ${c.code}` : ''}{c.end_date ? ` · sampai ${new Date(c.end_date + 'T00:00:00').toLocaleDateString('id-ID', { dateStyle: 'medium' })}` : ''}</span></div></div>)}</div>
+        <span className="small muted">Sebutkan kode/promo saat mendaftar. Potongan dikonfirmasi oleh {p.name}.</span></section>}
       <PublicGallery items={p.media?.gallery} title={p.type === 'properti' ? 'Foto kos & fasilitas' : 'Galeri'} />
       {p.items?.length > 0 && (
         <section className="panel" id="katalog">
@@ -97,7 +104,7 @@ export default async function PublicPage({ params, searchParams }) {
       )}
       <div id="booking">{quoteCatalog
         ? <a href={`/b/${p.slug}?tampilan=layanan`} className="primary">Layanan Toko</a>
-        : <PublicForm page={p} initialReservation={view === 'booking'} />}</div>
+        : <PublicForm page={p} initialReservation={view === 'booking'} refCode={refCode} />}</div>
       {p.type === 'jasa' && p.order && <a href={`/b/${p.slug}/cek`} className="small" style={{ textAlign: 'center' }}>Sudah memesan? Cek status pesanan →</a>}
       {p.type !== 'properti' && <div id="bayar"><PublicPay slug={p.slug} panel /></div>}
       {p.policy && <section className="panel"><h3>Ketentuan</h3><p className="small" style={{ margin: 0, whiteSpace: 'pre-line' }}><Linkify text={p.policy} /></p></section>}
