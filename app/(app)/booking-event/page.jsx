@@ -9,9 +9,11 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader, DataTable, FilterToolbar } from '@/components/Page';
+import { DataTable, FilterToolbar } from '@/components/Page';
+import NavIcon from '@/components/NavIcon';
+import { EventHero, EventActions, EventMetrics, evStyles as ev } from '@/components/EventPage';
 import { useBaru } from '@/lib/useBaru';
-import { Loading, Empty, Tile, run } from '@/components/ui';
+import { Loading, Empty, run } from '@/components/ui';
 import { rp, tglShort, errMsg } from '@/lib/format';
 import { EV_ST } from '@/lib/event';
 import { ProjectForm, jadwal } from '@/components/Proyek';
@@ -50,14 +52,20 @@ export default function BookingEvent() {
     if (await run(() => supabase.rpc('prj_status', { p_project: p.id, p_status: 'berjalan', p_note: null }), 'Event dikonfirmasi', errMsg)) load();
   };
   return (
-    <div className="stack">
-      <PageHeader title="Booking & Pesanan" help={<PageHelp page="booking-event" />} desc="Permintaan & pesanan event dari calon klien: dari draft, penawaran, sampai dikonfirmasi."
-        actions={canNew && <button className="primary" onClick={() => setForm({ kind: 'event', status: 'penawaran' })}>+ Booking baru</button>} />
-      <div className="grid">
-        <Tile label="Belum dikonfirmasi" value={cnt('baru')} sub={pipe != null ? `nilai ${rp(pipe)}` : 'draft & penawaran'} />
-        <Tile label="Menunggu jawaban klien" value={wait.length} sub="penawaran sudah dikirim" />
-        <Tile label="Terkonfirmasi" value={cnt('ok')} sub="event yang akan/sedang berjalan" />
-      </div>
+    <div className={ev.page}>
+      <EventHero title="Booking & Pesanan" art="booking" desc="Permintaan event dari calon klien — dari draft, penawaran, sampai dikonfirmasi."
+        help={<PageHelp page="booking-event" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Booking <NavIcon name="next" size={14} /></>} />} />
+      <EventActions items={[
+        canNew && { key: 'baru', primary: true, icon: '/booking-event', label: '+ Booking baru', onClick: () => setForm({ kind: 'event', status: 'penawaran' }) },
+        d.can_quote && { key: 'penawaran', icon: '/kontrak', label: 'Penawaran', href: '/proyek?tab=penawaran', note: !d.lanjut ? 'Paket Bisnis' : undefined },
+        { key: 'pelanggan', icon: '/kontak', label: 'Pelanggan', href: '/kontak' },
+        { key: 'kalender', icon: 'calendar', label: 'Kalender', href: '/jadwal' },
+      ]} />
+      <EventMetrics label="Ringkasan booking" items={[
+        { key: 'baru', tone: 'gold', icon: '/booking-event', label: 'Belum dikonfirmasi', value: cnt('baru'), caption: pipe != null ? `nilai ${rp(pipe)}` : 'draft & penawaran' },
+        { key: 'tunggu', tone: 'blue', icon: 'clock', label: 'Menunggu jawaban klien', value: wait.length, caption: 'penawaran sudah dikirim' },
+        { key: 'ok', tone: 'green', icon: 'done', label: 'Terkonfirmasi', value: cnt('ok'), caption: 'event akan/sedang berjalan' },
+      ]} />
       {d.projects.length === 0 ? <Empty title="Belum ada booking" text="Catat setiap permintaan event dari calon klien sebagai booking: tanggal, lokasi, jumlah peserta, dan perkiraan nilai. Setelah klien setuju, konfirmasi — event otomatis masuk kalender & jadwal tim.">
         {canNew && <button className="primary" onClick={() => setForm({ kind: 'event', status: 'penawaran' })}>+ Catat booking pertama</button>}</Empty> : <>
         <div className="seg">{GROUPS.map(([k, l]) => <button key={k} className={g === k ? 'on' : ''} onClick={() => setG(k)}>{l} ({cnt(k)})</button>)}</div>

@@ -17,6 +17,7 @@ const P = {
 
   plus: <path d="M12 5v14M5 12h14" />,
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></>,
+  ticket: <><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2.5a2.5 2.5 0 0 0 0-5Z" /><path d="M15 5v14" strokeDasharray="2 2.2" /><path d="m9 9.2.9 1.8 2 .3-1.45 1.4.35 2L9 13.8l-1.8.9.35-2L6.1 11.3l2-.3Z" /></>,
   gift: <path d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12m0-12H8a2.5 2.5 0 1 1 2.4-3.3L12 9Zm0 0h4a2.5 2.5 0 1 0-2.4-3.3L12 9Z" />,
   done: <><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></>,
   barcode: <path d="M3 4v16m4-16v16m5-16v16m4-16v16m5-16v16" />,

@@ -13,6 +13,7 @@ import FiturUpgrade from '@/components/FiturUpgrade';
 import Persiapan from '@/components/Persiapan';
 import NavIcon from '@/components/NavIcon';
 import EventCal from '@/components/EventCal';
+import { EventMetrics, evStyles as ev } from '@/components/EventPage';
 import { Loading, Sheet, run } from '@/components/ui';
 import { canArea, tabsFor } from '@/lib/business';
 import { rp, tglShort, errMsg } from '@/lib/format';
@@ -35,29 +36,6 @@ const niceMax = (v) => {
   const p = 10 ** Math.floor(Math.log10(v));
   return [1, 2, 4, 6, 8, 10].map((k) => k * p).find((k) => k >= v);   // dibagi 4 garis → angka bulat
 };
-
-const Ic = ({ d }) => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
-const ICON = {
-  cal: <Ic d={<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /><path d="m9 15 2 2 4-4" /></>} />,
-  book: <Ic d={<><path d="M8 4h11v16H8a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z" /><path d="M5 17a3 3 0 0 1 3-3h11" /><path d="M10 8h6" /></>} />,
-  month: <Ic d={<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4M7.5 14h2M11 14h2M14.5 14h2M7.5 17.5h2M11 17.5h2" /></>} />,
-  money: <Ic d={<><rect x="2.5" y="6" width="19" height="12" rx="2" /><circle cx="12" cy="12" r="2.6" /><path d="M6 9.5v5M18 9.5v5" /></>} />,
-  task: <Ic d={<><rect x="4" y="4" width="16" height="17" rx="2" /><path d="M9 3h6v3H9zM8 11l1.5 1.5L12 10M8 16l1.5 1.5L12 15M14 11.5h3M14 16.5h3" /></>} />,
-};
-
-function Kpi({ icon, label, value, d, note }) {
-  return (
-    <div className="ev-kpi">
-      <span className="ev-kpi-ic">{icon}</span>
-      <div className="ev-kpi-b">
-        <span>{label}</span>
-        <b>{value}</b>
-        {d && <span className={'ev-delta' + (d.dir < 0 ? ' down' : d.dir === 0 ? ' flat' : '')}>{d.dir > 0 ? '▲' : d.dir < 0 ? '▼' : '•'} {d.txt}<span style={{ fontWeight: 500 }}>{note ? ` ${note}` : ''}</span></span>}
-        {!d && note && <span className="small muted">{note}</span>}
-      </div>
-    </div>
-  );
-}
 
 export default function BerandaEvent() {
   const { kos, kosId, ver, user } = useKos();
@@ -85,7 +63,7 @@ export default function BerandaEvent() {
   const settings = canArea(kos, 'settings');
   const qa = [
     d.can_create && { key: 'new', icon: '/proyek', label: 'Buat Event', href: '/proyek?baru=1' },
-    d.can_create && has('/proyek') && { key: 'quote', icon: '/grosir', label: 'Buat Penawaran', href: '/proyek?tab=penawaran&baru=penawaran', lock: !d.lanjut && 'Paket Bisnis' },
+    d.can_create && has('/proyek') && { key: 'quote', icon: '/kontrak', label: 'Buat Penawaran', href: '/proyek?tab=penawaran&baru=penawaran', lock: !d.lanjut && 'Paket Bisnis' },
     d.fin && d.allowed && { key: 'inv', icon: '/tagihan', label: 'Buat Invoice', onClick: () => setPick(true) },
     has('/kontak') && { key: 'cust', icon: '/kontak', label: 'Tambah Pelanggan', href: '/kontak?baru=1' },
     has('/jadwal') && { key: 'team', icon: '/karyawan', label: 'Kelola Tim', href: '/jadwal' },
@@ -93,33 +71,37 @@ export default function BerandaEvent() {
   ].filter(Boolean);
 
   return (
-    <div className="ev-page">
-      <header className="ev-head">
+    <div className={`ev-page ${ev.page}`}>
+      {/* Sapaan bergaya Beranda Toko: maskot versi Event + pemilih periode */}
+      <section className={ev.masthead} aria-label="Sambutan Beranda Event">
         <div style={{ minWidth: 0 }}>
-          <div className="pg-tt"><h1>Beranda Event</h1><PageHelp page="event" /></div>
-          <p>{salam()}{name ? `, ${name.split(' ')[0]}` : ''}. Kelola semua kegiatan, booking, tim, dan keuangan event Anda.</p>
+          <div className={ev.title}><h1>{salam()}{name ? `, ${name.split(' ')[0]}` : ''}</h1><PageHelp page="event" /></div>
+          <p>Beranda Event · kelola kegiatan, booking, tim, dan keuangan event Anda.</p>
         </div>
-        <div className="ev-month" role="group" aria-label="Periode">
-          <button type="button" aria-label="Bulan sebelumnya" onClick={() => go(-1)}>‹</button>
-          <b>{bulanTahun(d.month)}</b>
-          <button type="button" aria-label="Bulan berikutnya" onClick={() => go(1)}>›</button>
-          {!thisMonth && <button type="button" className="small" onClick={() => { setSel(null); setMonth(null); }}>Bulan ini</button>}
+        <img className={ev.mascot} src="/event/maskot.webp" width="640" height="414" alt="" />
+        <div className={ev.controls}>
+          <div className="ev-month" role="group" aria-label="Periode">
+            <button type="button" aria-label="Bulan sebelumnya" onClick={() => go(-1)}>‹</button>
+            <b>{bulanTahun(d.month)}</b>
+            <button type="button" aria-label="Bulan berikutnya" onClick={() => go(1)}>›</button>
+            {!thisMonth && <button type="button" className="small" onClick={() => { setSel(null); setMonth(null); }}>Bulan ini</button>}
+          </div>
         </div>
-      </header>
+      </section>
 
       {settings && <Persiapan kos={kos} />}
       {!d.allowed && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.REQUESTED" plan="dasar" title="Kelola event tersedia mulai Paket Dasar"
         text="Event yang sudah ada tetap bisa dibuka dan diselesaikan. Membuat event baru, jadwal, tugas tim, dan tagihan DP & pelunasan butuh Paket Dasar." />}
 
       {/* A. Ringkasan */}
-      <section className="ev-kpis" aria-label="Ringkasan">
-        <Kpi icon={ICON.cal} label="Event Aktif" value={k.active} d={delta(k.active, k.active_prev, 'abs')} note="dari awal bulan" />
-        {d.fin ? <Kpi icon={ICON.book} label="Booking Masuk" value={rp(k.booking_value)} d={delta(k.booking_value, k.booking_value_prev)} note={`· ${k.booking_count} event dikonfirmasi`} />
-          : <Kpi icon={ICON.book} label="Booking Masuk" value={`${k.booking_count} event`} d={delta(k.booking_count, k.booking_count_prev)} note="dari bulan lalu" />}
-        <Kpi icon={ICON.month} label={thisMonth ? 'Event Bulan Ini' : `Event ${bulanTahun(d.month)}`} value={k.events} d={delta(k.events, k.events_prev)} note="dari bulan lalu" />
-        {d.fin ? <Kpi icon={ICON.money} label={thisMonth ? 'Pendapatan Bulan Ini' : `Pendapatan ${bulanPendek(d.month)}`} value={rp(k.revenue)} d={delta(k.revenue, k.revenue_prev)} note="dari bulan lalu" />
-          : <Kpi icon={ICON.task} label="Tugas Terbuka" value={d.tasks_open} note="belum selesai di event berjalan" />}
-      </section>
+      <EventMetrics label="Ringkasan" items={[
+        { key: 'aktif', tone: 'green', icon: 'ticket', label: 'Event Aktif', value: k.active, trend: delta(k.active, k.active_prev, 'abs'), caption: 'dari awal bulan', href: '/proyek' },
+        d.fin ? { key: 'booking', tone: 'blue', icon: '/booking-event', label: 'Booking Masuk', value: rp(k.booking_value), trend: delta(k.booking_value, k.booking_value_prev), caption: `· ${k.booking_count} dikonfirmasi`, href: '/booking-event' }
+          : { key: 'booking', tone: 'blue', icon: '/booking-event', label: 'Booking Masuk', value: `${k.booking_count} event`, trend: delta(k.booking_count, k.booking_count_prev), caption: 'dari bulan lalu', href: '/booking-event' },
+        { key: 'bulan', tone: 'gold', icon: 'calendar', label: thisMonth ? 'Event Bulan Ini' : `Event ${bulanTahun(d.month)}`, value: k.events, trend: delta(k.events, k.events_prev), caption: 'dari bulan lalu', href: '/jadwal' },
+        d.fin ? { key: 'pendapatan', tone: 'red', icon: 'coins', label: thisMonth ? 'Pendapatan Bulan Ini' : `Pendapatan ${bulanPendek(d.month)}`, value: rp(k.revenue), trend: delta(k.revenue, k.revenue_prev), caption: 'dari bulan lalu' }
+          : { key: 'tugas', tone: 'red', icon: 'done', label: 'Tugas Terbuka', value: d.tasks_open, caption: 'belum selesai di event berjalan', href: '/jadwal' },
+      ]} />
 
       <div className="ev-row2">
         {/* B. Event mendatang */}
@@ -128,7 +110,7 @@ export default function BerandaEvent() {
           {d.upcoming.length === 0 ? <span className="small muted">{d.undated ? `Belum ada event bertanggal. ${d.undated} event belum diberi tanggal — isi tanggalnya agar muncul di sini dan di kalender.` : 'Belum ada event mendatang. Event yang dibuat akan tampil di sini sesuai tanggal acara.'}</span>
             : <div className="ev-up">{d.upcoming.map((p) => { const s = EV_ST[p.event_status] || [p.event_status, 'void']; const img = mediaUrl(p.cover);
               return <Link key={p.id} href={`/proyek/${p.id}`}>
-                {img ? <img src={img} alt="" loading="lazy" /> : <span className="ev-noimg" aria-hidden="true"><NavIcon name="/event" /></span>}
+                {img ? <img src={img} alt="" loading="lazy" /> : <span className="ev-noimg" aria-hidden="true"><NavIcon name="ticket" /></span>}
                 <span className="ev-up-b">
                   <b>{p.name}</b>
                   <span>{tglHari(p.start_date)}{p.end_date && p.end_date !== p.start_date ? ` – ${tglShort(p.end_date)}` : ''}{p.start_time ? ` · ${p.start_time}` : ''}{p.location ? ` • ${p.location}` : ''}</span>

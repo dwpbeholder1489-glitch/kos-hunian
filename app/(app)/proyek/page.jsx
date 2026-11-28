@@ -19,6 +19,9 @@ import { QuoteForm, qStatus } from '@/components/Penawaran';
 import { ProfitTable } from '@/components/ProyekBiaya';
 import { EV_ST, termOf } from '@/lib/event';
 import ListThumb from '@/components/media/ListThumb';
+import { EventHero, EventActions, EventMetrics, evStyles as ev } from '@/components/EventPage';
+import NavIcon from '@/components/NavIcon';
+import { isEvent } from '@/lib/business';
 
 // Status tampil: event memakai status event otomatis (Draft…Berlangsung), jenis lain status proyek
 const StChip = ({ p }) => (p.kind === 'event' && EV_ST[p.event_status] ? <span className={'chip ' + EV_ST[p.event_status][1]}>{EV_ST[p.event_status][0]}</span> : <Chip map={STATUS} v={p.status} />);
@@ -58,15 +61,23 @@ export default function Proyek() {
   const nilai = d.fin ? aktif.filter((p) => p.status !== 'penawaran').reduce((n, p) => n + Number(p.value || 0), 0) : null;
   const T = termOf(kos);
   const toggle = async (t) => { if (await run(() => supabase.rpc('prj_task_status', { p_id: t.id, p_status: t.status === 'proses' ? 'selesai' : 'proses' }), t.status === 'proses' ? 'Tugas selesai' : 'Tugas mulai dikerjakan', errMsg)) load(); };
+  const evBiz = isEvent(kos);
   return (
-    <div className="stack">
-      <PageHeader title={T.list} help={<PageHelp page="proyek" />} actions={view === 'penawaran'
-        ? d.allowed && d.lanjut && <button className="primary" onClick={() => setQform(true)}>+ Penawaran baru</button>
-        : canNew && <button className="primary" onClick={() => setForm({})}>+ {T.One} baru</button>} />
+    <div className={ev.page}>
+      <EventHero title={T.list} art={evBiz ? 'kegiatan' : 'jadwal'}
+        desc={evBiz ? 'Semua acara Anda: jadwal, klien, status, persiapan tim, dan nilai kontrak.' : 'Setiap pekerjaan klien di satu tempat: jadwal, milestone, tugas tim, tagihan, dan laba.'}
+        help={<PageHelp page="proyek" label={<><NavIcon name="/buku-besar" size={17} /> Panduan {T.One} <NavIcon name="next" size={14} /></>} />} />
+      <EventActions items={[
+        view === 'penawaran' ? d.allowed && d.lanjut && { key: 'pnw', primary: true, icon: 'plus', label: '+ Penawaran baru', onClick: () => setQform(true) }
+          : canNew && { key: 'baru', primary: true, icon: 'plus', label: `+ ${T.One} baru`, onClick: () => setForm({}) },
+        evBiz && { key: 'booking', icon: '/booking-event', label: 'Booking', href: '/booking-event' },
+        d.can_quote && { key: 'penawaran', icon: '/kontrak', label: 'Penawaran', onClick: () => setView('penawaran'), note: !d.lanjut ? 'Paket Bisnis' : undefined },
+        evBiz ? { key: 'jadwal', icon: '/jadwal', label: 'Jadwal', href: '/jadwal' } : d.fin && { key: 'laba', icon: 'coins', label: `Laba ${T.one}`, onClick: () => setView('laba') },
+      ]} />
       {!d.allowed && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.REQUESTED" plan="dasar" title={`${T.list} tersedia mulai Paket Dasar`}
         text={d.projects.length ? `${T.One} yang sudah ada tetap bisa dibuka, tugasnya ditandai, dan diselesaikan atau dibatalkan. Membuat & mengubah ${T.one} butuh Paket Dasar.`
           : `Kelola setiap acara & pekerjaan klien sebagai ${T.one}: klien, PIC, jadwal, milestone & rencana termin, tugas tiap anggota tim, tagihan DP & pelunasan, lampiran, dan riwayat.`} />}
-      {(d.can_quote || d.fin) && <div className="seg">{[['proyek', 'Proyek'], ...(d.can_quote ? [['penawaran', `Penawaran${d.quotes_open ? ` (${d.quotes_open} berjalan)` : ''}`]] : []), ...(d.fin ? [['laba', 'Laba proyek']] : [])]
+      {(d.can_quote || d.fin) && <div className="seg">{[['proyek', T.One], ...(d.can_quote ? [['penawaran', `Penawaran${d.quotes_open ? ` (${d.quotes_open} berjalan)` : ''}`]] : []), ...(d.fin ? [['laba', `Laba ${T.one}`]] : [])]
         .map(([k, l]) => <button key={k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}</div>}
       {(view === 'penawaran' || view === 'laba') && d.allowed && !d.lanjut && <FiturUpgrade kosId={kosId} owner={canArea(kos, 'team')} event="PROJECT.ADVANCED.REQUESTED"
         title={view === 'penawaran' ? 'Penawaran ke klien — Paket Bisnis' : `Laba per ${T.one} — Paket Bisnis`}
@@ -85,12 +96,12 @@ export default function Proyek() {
         {d.mine.length > 8 && <span className="small muted">… dan {d.mine.length - 8} tugas lain di halaman proyeknya.</span>}
       </section>}
 
-      {d.projects.length > 0 && <div className="grid">
-        <Tile label={`${T.One} berjalan`} value={aktif.filter((p) => p.status === 'berjalan').length} sub={`${aktif.filter((p) => p.status === 'penawaran').length} belum dikonfirmasi`} />
-        <Tile label="Mulai 7 hari ke depan" value={minggu} sub="sesuai tanggal mulai" />
-        <Tile label="Tugas terlambat" value={telat} tone={telat ? 'bad' : ''} sub="lewat tenggat, belum selesai" />
-        {nilai != null && <Tile label="Nilai kontrak berjalan" value={rp(nilai)} sub="proyek berjalan (bukan penawaran)" />}
-      </div>}
+      {d.projects.length > 0 && <EventMetrics label={`Ringkasan ${T.one}`} items={[
+        { key: 'jalan', tone: 'green', icon: 'ticket', label: `${T.One} berjalan`, value: aktif.filter((p) => p.status === 'berjalan').length, caption: `${aktif.filter((p) => p.status === 'penawaran').length} belum dikonfirmasi` },
+        { key: 'minggu', tone: 'blue', icon: 'calendar', label: 'Mulai 7 hari ke depan', value: minggu, caption: 'sesuai tanggal acara', href: '/jadwal' },
+        { key: 'telat', tone: telat ? 'red' : 'gold', icon: 'clock', label: 'Tugas terlambat', value: telat, caption: 'lewat tenggat, belum selesai', href: '/jadwal' },
+        nilai != null && { key: 'nilai', tone: 'gold', icon: 'coins', label: 'Nilai kontrak berjalan', value: rp(nilai), caption: `${T.one} dikonfirmasi` },
+      ]} />}
 
       {d.projects.length === 0 ? (
         <Empty title={`Belum ada ${T.one}`} text={d.can_create ? `Buat ${T.one} untuk setiap acara atau pekerjaan klien. Semua jadwal, tahap, tugas tiap orang, dan dokumennya ada di satu tempat — tidak tercecer di chat.` : `Belum ada ${T.one} yang melibatkan Anda. ${T.One} akan muncul di sini saat Anda ditambahkan sebagai anggota atau diberi tugas.`}>

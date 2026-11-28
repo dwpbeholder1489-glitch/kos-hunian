@@ -103,7 +103,7 @@ function ContactsWorkspace({ kosId, kos, ver, fin, bump, only }) {
             : only ? 'Klien event: kontak, piutang, dan riwayat transaksi.' : 'Kelola data kontak, sisa kasbon dan utang, serta riwayat transaksi.'}</p>
           <PageHelp page="kontak" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Kontak <NavIcon name="next" size={14} /></>} />
         </div>
-        <span className={styles.heroArt}><Image src="/pelanggan-supplier.webp" alt="" fill sizes="(max-width: 600px) 36vw, 300px" priority /></span>
+        <span className={styles.heroArt}><Image src={only === 'supplier' && isEvent(kos) ? '/event/vendor.webp' : '/pelanggan-supplier.webp'} alt="" fill sizes="(max-width: 600px) 36vw, 300px" priority /></span>
       </section>
       <div className={styles.actions}>
         {fin && only !== 'supplier' && <button onClick={() => setOpen({ kind: 'pelanggan' })}><NavIcon name="/penghuni" />＋ Pelanggan</button>}

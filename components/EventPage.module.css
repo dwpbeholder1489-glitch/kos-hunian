@@ -1,0 +1,65 @@
+/* Tampilan halaman bisnis Event = gaya Toko & Ritel (hero hijau + ilustrasi 3D, tombol aksi, kartu metrik berwarna).
+   Pola & ukuran mengikuti app/(app)/penjualan/penjualan.module.css; ilustrasi di public/event/*.webp. */
+.page { display: grid; gap: clamp(12px, 4vw, 22px); color: var(--fg); min-width: 0;
+  --ev-shadow: 0 3px 10px rgb(8 38 28 / 10%); --ev-mint: color-mix(in srgb, var(--brand-2) 13%, var(--surface)); }
+@media screen and (min-width: 1024px) { .page { container-type: inline-size; gap: 18px; } }
+
+.hero { position: relative; isolation: isolate; color: white; background: linear-gradient(155deg, #034436, #05634e 55%, #09845a);
+  border-radius: 14px; padding: clamp(14px, 4vw, 30px) clamp(14px, 5vw, 36px); overflow: hidden; min-height: 128px; }
+.hero > div { position: relative; z-index: 1; width: 62%; }
+.hero h1 { font-size: clamp(24px, 6vw, 40px); line-height: 1.08; letter-spacing: -.025em; margin: 0 0 5px; overflow-wrap: anywhere; }
+.hero p { font-size: clamp(12px, 2.8vw, 17px); line-height: 1.35; margin: 0 0 9px; color: rgb(255 255 255 / 92%); }
+.heroArt { position: absolute; right: 1.5%; bottom: 4%; width: 37%; height: 92%; }
+.heroArt img { width: 100%; height: 100%; object-fit: contain; object-position: right bottom; }
+.hero :global(.helpchip) { display: inline-flex; align-items: center; gap: 5px; border-color: transparent; border-radius: 12px; background: white;
+  color: #12241d; padding: 4px 9px; font-size: clamp(11px, 2.5vw, 14px); white-space: nowrap; }
+.hero :global(.helpchip) svg { color: #087632; flex-shrink: 0; }
+.heroExtra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+
+.actions { display: grid; gap: clamp(4px, 1.6vw, 13px); grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); }
+.actions > * { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--ev-shadow); color: var(--fg);
+  font: inherit; font-size: clamp(11px, 2.45vw, 15px); font-weight: 700; line-height: 1.14; min-width: 0; min-height: 52px;
+  padding: 6px 3px; text-decoration: none; cursor: pointer; }
+.actions > * svg { flex: none; width: clamp(16px, 4vw, 24px); height: auto; color: var(--brand-2); }
+.actions > .primary { background: #08762e; color: #fff; border-color: transparent; box-shadow: none; }
+.actions > .primary svg { color: #fff; }
+.actions small { font-size: 10px; font-weight: 700; color: var(--att-fg); }
+.actions > .primary small { color: #d8ffe6; }
+
+.metrics { display: grid; gap: clamp(6px, 1.6vw, 13px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.metric { display: flex; align-items: center; gap: clamp(6px, 2vw, 14px); border-radius: 13px; padding: clamp(8px, 2.2vw, 14px); min-height: 70px;
+  background: color-mix(in srgb, var(--tint) 12%, var(--surface)); font-size: clamp(11px, 2.7vw, 15px); line-height: 1.3; min-width: 0;
+  color: inherit; text-decoration: none; border: 0; text-align: left; font-family: inherit; }
+.metric[data-tone=green] { --tint: #43c578; --ink: #0b7c35; }
+.metric[data-tone=blue] { --tint: #58bced; --ink: #067caa; }
+.metric[data-tone=gold] { --tint: #f3c94f; --ink: #9b6100; }
+.metric[data-tone=red] { --tint: #f47c81; --ink: #b51c27; }
+.metric > div { min-width: 0; }
+.metricIcon { flex: none; display: grid; place-items: center; width: clamp(30px, 9.5vw, 52px); aspect-ratio: 1; border-radius: 11px;
+  background: color-mix(in srgb, var(--tint) 21%, var(--surface)); color: var(--ink); }
+.metricIcon svg { width: 58%; height: auto; }
+.metric strong { display: block; font-size: clamp(15px, 3.8vw, 23px); letter-spacing: -.025em; overflow-wrap: normal; word-break: keep-all; }
+.metric small { display: block; color: var(--muted); font-size: clamp(10px, 2.45vw, 13px); }
+.metric small[data-trend=up] { color: var(--brand-2); }
+.metric small[data-trend=down] { color: var(--bad); }
+
+/* Beranda: sapaan + maskot + periode (sama dengan Beranda Toko) */
+.masthead { display: grid; grid-template-columns: minmax(0, 1fr) clamp(96px, 32%, 300px); align-items: center; gap: 6px;
+  padding: clamp(12px, 1.4vw, 19px); border: 1px solid var(--line); border-radius: var(--radius-xl, 18px);
+  background: linear-gradient(110deg, var(--surface), color-mix(in srgb, var(--gold-soft) 75%, var(--surface))); }
+.masthead h1 { margin: 0; font-size: clamp(19px, 2.25vw, 30px); line-height: 1.15; overflow-wrap: anywhere; letter-spacing: -.02em; }
+.masthead p { margin: 4px 0 0; color: var(--muted); font-size: clamp(12px, 2.6vw, 15px); }
+.mascot { grid-column: 2; grid-row: 1 / span 2; width: 100%; height: auto; max-height: 150px; object-fit: contain; justify-self: end; align-self: center; }
+.controls { grid-column: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+@media (max-width: 355px) { .hero > div { width: 70%; } }
+@container (min-width: 700px) {
+  .hero { min-height: 168px; display: flex; align-items: center; }
+  .heroArt { width: min(36%, 320px); }
+  .actions > * { flex-direction: row; gap: 8px; min-height: 48px; }
+  .metrics { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .masthead { grid-template-columns: minmax(0, 1fr) clamp(180px, 30%, 320px); }
+  .mascot { max-height: 170px; }
+}

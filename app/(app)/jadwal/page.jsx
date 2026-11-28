@@ -7,12 +7,13 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import PageHelp from '@/components/PageHelp';
-import { PageHeader } from '@/components/Page';
+import NavIcon from '@/components/NavIcon';
+import { EventHero, EventActions, EventMetrics, evStyles as ev } from '@/components/EventPage';
 import EventCal, { eventsOn } from '@/components/EventCal';
 import { Loading, Empty, run } from '@/components/ui';
 import { canArea } from '@/lib/business';
 import { tglShort, errMsg } from '@/lib/format';
-import { EV_ST, RD_ST, tglHari, addMonths, addDays } from '@/lib/event';
+import { EV_ST, RD_ST, tglHari, addMonths, addDays, bulanTahun } from '@/lib/event';
 import { PRIO, Chip } from '@/components/Proyek';
 
 export default function Jadwal() {
@@ -43,8 +44,20 @@ export default function Jadwal() {
   const shown = sel ? eventsOn(d.events, sel) : d.events;
   const besok = addDays(d.today, 1);
   return (
-    <div className="stack">
-      <PageHeader title="Jadwal & Tim" help={<PageHelp page="jadwal" />} desc="Kalender event, tugas persiapan setiap anggota tim, dan siapa mengerjakan apa." />
+    <div className={ev.page}>
+      <EventHero title="Jadwal & Tim" art="jadwal" desc="Kalender event, agenda rundown hari ini, dan tugas persiapan setiap anggota tim."
+        help={<PageHelp page="jadwal" label={<><NavIcon name="/buku-besar" size={17} /> Panduan Jadwal <NavIcon name="next" size={14} /></>} />} />
+      <EventActions items={[
+        { key: 'event', primary: true, icon: 'ticket', label: 'Daftar Event', href: '/proyek' },
+        canArea(kos, 'team') && { key: 'tim', icon: '/karyawan', label: 'Karyawan', href: '/karyawan' },
+        { key: 'booking', icon: '/booking-event', label: 'Booking', href: '/booking-event' },
+      ]} />
+      <EventMetrics label="Ringkasan jadwal" items={[
+        { key: 'event', tone: 'green', icon: 'ticket', label: 'Event bulan ini', value: d.events.length, caption: bulanTahun(d.month) },
+        { key: 'agenda', tone: 'blue', icon: 'clock', label: 'Agenda hari ini', value: ag?.items && ag.day === d.today ? ag.items.length : '—', caption: 'kegiatan rundown' },
+        { key: 'tugas', tone: 'gold', icon: 'done', label: 'Tugas terbuka', value: d.tasks_total, caption: 'semua event berjalan' },
+        { key: 'telat', tone: 'red', icon: 'calendar', label: 'Tugas terlambat', value: d.tasks.filter((t) => t.late).length, caption: 'lewat tenggat' },
+      ]} />
       <div className="ev-row3">
         <section className="ev-card" aria-label="Kalender">
           <EventCal month={d.month} today={d.today} events={d.events} sel={sel} onSel={setSel} onMonth={go} link={false} />
