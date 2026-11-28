@@ -119,6 +119,8 @@ const PARTS = [
     ], null, null, <ScrInvoices />],
     ['Catat pembayaran', 'Tagihan › ketuk tagihan › Catat pembayaran (atau Penghuni / Kamar › Catat pembayaran / tandai lunas)', [
       <>Isi <b>Jumlah</b>. Bayar sebagian boleh — sisanya tetap tercatat.</>,
+      <>Di halaman <b>Pembayaran</b>, ketuk KPI untuk melihat transaksi pada periode yang dipilih. Buka detail untuk memeriksa bukti transfer, melihat riwayat verifikasi, atau mengunduh kuitansi PDF.</>,
+      <>Jika transaksi perlu dikoreksi, buka detail, pilih <b>Batalkan pembayaran</b>, isi alasan, lalu konfirmasi. Pembayaran yang sudah diposting mendapat jurnal pembalik.</>,
       <>Isi <b>Tanggal bayar</b> dan <b>Metode</b>: tunai, transfer, QRIS, atau <b>Dipotong dari deposit</b> (muncul bila penghuni punya deposit).</>,
       <>Centang <b>Uang sudah saya terima</b> bila uang sudah dicek masuk.</>,
       <>Tekan <b>Simpan pembayaran</b>. Status tagihan berubah otomatis.</>,

@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { useKos } from '@/components/KosProvider';
 import { useData } from '@/lib/useData';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Sheet, Field, Loading, Empty, InvChip, PayChip, run, toast } from '@/components/ui';
 import { hasFeature } from '@/lib/plan';
 import { rp, tgl, today, parseRp, angka, invTitle, METHOD, errMsg } from '@/lib/format';
@@ -40,7 +41,9 @@ function InvoiceCenter({ kos, owner }) {
   const [filtersOpen, setFilters] = useState(false);
   const [due, setDue] = useState('');
   const [month, setMonth] = useState('');
-  const [sheet, setSheet] = useState(null);
+  const startPayment = useSearchParams().get('bayar') === '1';
+  const [sheet, setSheet] = useState(startPayment ? { t: 'batch' } : null);
+  useEffect(() => { if (startPayment) setSheet({ t: 'batch' }); }, [startPayment]);
   const [limit, setLimit] = useState(24);
   useEffect(() => {
     if (!d.ready) return;
