@@ -1141,3 +1141,31 @@ export function ScrTrackingPesanan() {
     </Phone>
   );
 }
+
+export function ScrPropertiIntel() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Property Intelligence</h3>
+      <div className="row between small"><span>Tingkat hunian</span><b>90%</b></div>
+      <div className="row between small"><span>NOI bulan ini</span><b>Rp3.250.000</b></div>
+      <div className="row between small"><span>Rental yield <span className="chip">ESTIMASI</span></span><b>8,4% / thn</b></div>
+      <div className="row between small"><span>ROI</span><b>16,8% / thn</b></div>
+      <div className="row between small"><span>Estimasi balik modal</span><b>5,9 tahun</b></div>
+      <div className="unitbox small" style={{ gap: 2 }}><b>Proyeksi sewa 12 bulan <span className="chip">PROYEKSI</span></b><span>Dasar Rp54.000.000 · Potensi penuh Rp60.000.000</span></div>
+    </Phone>
+  );
+}
+
+export function ScrInventarisKamar() {
+  return (
+    <Phone bare>
+      <span className="chip">DATA CONTOH</span>
+      <h3>Periksa kamar A05 · Check-out</h3>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Kasur</b><span>Baik · Perlu perbaikan · <b>Rusak</b> · Hilang</span><span className="muted">sobek di sudut</span></div>
+      <div className="unitbox small" style={{ gap: 4 }}><b>Lemari</b><span><b>Baik</b> · Perlu perbaikan · Rusak · Hilang</span></div>
+      <div className="row between small"><span>Nilai kerusakan</span><b>Rp250.000</b></div>
+      <span className="small muted">Simpan → potong deposit penghuni (dengan alasan)</span>
+    </Phone>
+  );
+}
