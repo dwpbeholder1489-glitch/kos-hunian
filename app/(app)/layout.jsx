@@ -26,7 +26,7 @@ import { isKuliner, typeOf, pathAllowed, pathOfType, tabsFor, homeOf, roleOf, RO
 import { sectionsFor, fourthTab, mainTabOf, groupIcon, pinsFor } from '@/lib/menu';
 import QuickPanel from '@/components/QuickPanel';
 import HomeTop from '@/components/HomeTop';
-import { createPortal } from 'react-dom';
+import SmartDetailSheet from '@/components/SmartDetailSheet';
 import { logoUrl } from '@/lib/logo';
 import { GuideBoundary, GuideFallback, OnboardingPrompt } from '@/components/InteractiveGuide';
 import { Sidebar, Topbar, Crumbs, toggleSide } from '@/components/AppShell';
@@ -51,11 +51,8 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
   const pins = pinsFor(kos);
   const [open, setOpen] = useState(() => groups.find(([, , , items]) => items.some(([h]) => on(h)))?.[0] || groups[0]?.[0]);
   const home = homeOf(kos);
-  const el = (
-    <div className="drawer-bg" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <aside className="drawer" role="dialog" aria-modal="true" aria-label="Menu">
-        <div className="drawer-h"><span className="logo"><LogoMark size={34} /><span className="logo-t"><b>PRASARA</b><small>Adaptive Business System</small></span></span>
-          <button className="iconbtn" onClick={onClose} aria-label="Tutup menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></div>
+  return (
+    <SmartDetailSheet title="Menu PRASARA" subtitle={kos.name} icon="/operasional" side onClose={onClose}>
         <nav className="drawer-nav" aria-label="Semua menu">
           <Link href={home} className={'drawer-i' + (on(home) ? ' on' : '')} onClick={onClose}><NavIcon name="/beranda" />Beranda</Link>
           {pins.length > 0 && <><span className="drawer-sh">Pintasan</span>{pins.map(([h, l]) => <Link key={'pin' + h} href={h} className={'drawer-i' + (on(h) ? ' on' : '')} onClick={onClose}><NavIcon name={h} />{l}</Link>)}</>}
@@ -80,10 +77,8 @@ function Drawer({ kos, on, onClose, onBiz, admin }) {
           <Link href="/akun" className={'drawer-i' + (on('/akun') ? ' on' : '')} onClick={onClose}><NavIcon name="/karyawan" />Akun & tampilan</Link>
         </nav>
         <button className="drawer-biz" onClick={onBiz}><span className="ic" aria-hidden="true">{typeOf(kos).icon}</span><span className="t"><b>{kos.name}</b><small>{isDraft(kos) ? 'Draf · menunggu konfirmasi' : kos.closed_at ? 'Ditutup (arsip)' : 'Bisnis aktif'} · ganti bisnis</small></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>
-      </aside>
-    </div>
+    </SmartDetailSheet>
   );
-  return typeof document === 'undefined' ? el : createPortal(el, document.body);
 }
 
 // Tablet & desktop (≥768px) memakai sidebar + topbar; HP memakai header + menu bawah. Hanya satu yang dirender agar

@@ -107,9 +107,6 @@ textarea{min-height:70px}
 .room.tidak_disewakan{background:var(--sunk)}
 .dot.tersedia{background:var(--info)}.dot.terisi{background:var(--good)}.dot.perbaikan{background:var(--warn)}.dot.tidak_disewakan{background:var(--muted)}
 .room .who{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sheet-bg{position:fixed;inset:0;background:rgba(8,14,10,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:20px 16px 28px;display:flex;flex-direction:column;gap:14px}
-@media (min-width:720px){.sheet-bg{align-items:center}.sheet{border-radius:18px}}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;z-index:30;max-width:calc(100% - 32px)}
 .notice{padding:12px 14px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-weight:600}
 .notice.info{background:var(--info-bg);color:var(--info)}
@@ -778,7 +775,6 @@ nav.tabs.ptabs{display:flex} /* portal penghuni tidak punya navigasi bawah: tab 
 /* iPhone/Safari: input tanggal & jam punya lebar bawaan sendiri sehingga keluar dari kartu */
 input[type="date"],input[type="time"],input[type="datetime-local"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
 input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value,input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;min-height:1.4em}
-.sheet{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
 /* ---------- Media: foto, galeri, pustaka ---------- */
 .bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}.bar>span{display:block;height:100%;background:var(--gold);border-radius:99px}
 .mediaprev{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:120px;max-height:52vh;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;padding:0}
@@ -795,12 +791,6 @@ input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date
 .thumbrow::-webkit-scrollbar{display:none}
 .thumb{position:relative;flex:none;width:96px;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);min-height:0}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.lightbox{position:fixed;inset:0;z-index:40;background:rgba(5,8,12,.94);display:flex;align-items:center;justify-content:center;padding:48px 8px calc(48px + env(safe-area-inset-bottom))}
-.lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
-.lb-close{position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;border:0;font-size:18px}
-.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;border:0;font-size:30px}
-.lb-nav.l{left:6px}.lb-nav.r{right:6px}
-.lb-cap{position:absolute;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));text-align:center;color:#ddd;font-size:13px;padding:0 56px}
 /* halaman publik: cover (dibatasi tingginya di HP), galeri, foto item */
 .pubcover{width:100%;aspect-ratio:16/9;max-height:240px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
 .pubcover img{width:100%;height:100%;object-fit:cover;display:block}
@@ -982,11 +972,7 @@ nav.tabs a.on{color:var(--fg);border-bottom-color:var(--gold)}
 main{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 
 /* menu samping */
-.drawer-bg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);display:flex}
-.drawer{width:min(86vw,340px);height:100%;background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));overflow-y:auto;animation:drawerIn .18s ease-out}
-@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
 @media (prefers-reduced-motion:reduce){.drawer{animation:none}}
-.drawer-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 4px 16px}
 .logo{display:inline-flex;align-items:center;gap:10px;min-width:0}
 .logo-t{display:flex;flex-direction:column;line-height:1.15}
 .logo-t b{font-size:19px;letter-spacing:.01em}
@@ -1121,14 +1107,13 @@ main{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 body{font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;font-feature-settings:'cv11','ss01'}
 h2{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.25}
 h3{font-size:15px;font-weight:600;letter-spacing:-.005em}
-.sheet h2{font-size:18px;letter-spacing:-.01em}
 b,strong{font-weight:600}
 .label{font-size:12.5px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}
 .small{font-size:13px}
 th{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}
 td,th{padding:10px 12px 10px 0}
 .num,.tile .v,td.n{font-variant-numeric:tabular-nums}
-@media (min-width:1024px){body{font-size:14.5px}h2{font-size:26px}main h2{font-size:24px}.sheet h2{font-size:18px}}
+@media (min-width:1024px){body{font-size:14.5px}h2{font-size:26px}main h2{font-size:24px}}
 
 /* --- fokus keyboard (§18) --- */
 :where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -1163,8 +1148,6 @@ input::placeholder,textarea::placeholder{color:var(--muted-2)}
 .empty{border-radius:var(--r);border-width:1px}
 .chip{font-weight:600;padding:2px 9px}
 .notice{border-radius:var(--radius-md);font-weight:500}
-.sheet{border-radius:var(--radius-xl) var(--radius-xl) 0 0}
-@media (min-width:720px){.sheet{border-radius:var(--radius-xl)}}
 .helpchip{border-width:1px;font-weight:600}
 .toast{border-radius:var(--radius-md);font-weight:600;box-shadow:var(--shadow-md)}
 @media (min-width:768px){.panel{padding:var(--space-5)}.grid{gap:var(--space-4);grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}.tile .v{font-size:20px}}
@@ -1306,7 +1289,6 @@ input::placeholder,textarea::placeholder{color:var(--muted-2)}
 .crumbs [aria-current]{color:var(--fg);font-weight:500}
 
 /* menu samping (☰) di HP & tablet: token baru */
-.drawer{background:var(--surface)}
 .drawer-i{border-radius:var(--radius-md);font-size:15px;font-weight:500}
 .drawer-sub a{border-radius:var(--radius-md);font-weight:500}
 .drawer-biz{border-radius:var(--radius-lg)}
@@ -1833,3 +1815,5 @@ button.wf-line{background:none;border-width:0 0 1px;border-radius:0;color:inheri
   .nt-dev{grid-template-columns:auto 1fr}
   .nt-dev-a{grid-column:1/-1;justify-content:flex-start}
 }
+
+.toast.toast-in-sheet{position:absolute;top:10px;bottom:auto;width:max-content;pointer-events:none;text-align:center}

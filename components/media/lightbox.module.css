@@ -1,0 +1,4 @@
+.figure { display: grid; gap: 8px; justify-items: center; margin: 0; padding: 8px; border-radius: 12px; background: var(--bg); }
+.figure img { display: block; width: auto; height: auto; max-width: 100%; max-height: 63dvh; object-fit: contain; border-radius: 8px; }
+.figure figcaption { text-align: center; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }

@@ -114,11 +114,9 @@
 .chart text { fill: var(--muted); font-size: 16px; }
 .chartTarget { fill: transparent; cursor: pointer; }
 .chartTarget:focus-visible { outline: none; stroke: var(--brand-2); stroke-width: 2; }
-.sourceValue { font-size: 20px; overflow-wrap: anywhere; }
 .sourceList { overflow-wrap: anywhere; }
 .sourceList > button { grid-template-columns: minmax(0, 1fr) fit-content(45%); padding-inline: 5px; }
 .sourceList article { padding: 9px 0; border-bottom: 1px solid var(--line); }
-.sourceList article > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
 .printPeriod { display: none; }
 @container (max-width: 525px) {
   .dashboardColumns { grid-template-columns: minmax(0, 1fr); }
@@ -138,6 +136,14 @@
   .metric[data-primary] small { color: #123026; }
   .chartTarget, .controls { display: none; }
 }
-.sourceActions { margin-top: 5px; align-items: center; font-size: 12px; }
+.sourceActions { display:flex; justify-content:space-between; flex-wrap:wrap; gap:5px 12px; margin-top: 6px; align-items: center; font-size: 13px; }
 .sourceActions button { min-height: 32px; padding: 4px 8px; font-size: inherit; }
 .inline { border: 0; padding: 0; min-height: 26px; background: transparent; color: var(--brand-2); text-align: right; white-space: normal; overflow-wrap: anywhere; }
+
+.sheetAction { align-self: stretch; min-height: 42px; gap: 8px; white-space: normal; }
+.sourceEntry { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: start; gap: 8px; }
+.sourceIcon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: var(--report-mint); color: var(--gold); }
+.sourceHeading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; align-items: baseline; }
+.sourceHeading strong { color: var(--gold); font-size: 15px; }
+.sourceBody { min-width: 0; }
+.sourceActions a { color: var(--gold); text-underline-offset: 2px; }

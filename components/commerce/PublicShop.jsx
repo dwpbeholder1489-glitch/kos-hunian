@@ -1,6 +1,7 @@
 'use client';
 
 import CustomerChat from './CustomerChat';
+import SmartDetailSheet from '@/components/SmartDetailSheet';
 import { TrackingView } from './ChatParts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LogoMark } from '@/components/Logo';
@@ -79,15 +80,6 @@ function ProductSelection({ product, photos, quick, close, add, favorite, toggle
   const [quantity, setQuantity] = useState(1);
   const [activePhoto, setActivePhoto] = useState(0);
   const description = product.description || photos[0]?.caption;
-  const dialog = useRef(null);
-  useEffect(() => {
-    if (!quick) return;
-    const element = dialog.current;
-    element.showModal();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { element.close(); document.body.style.overflow = overflow; };
-  }, [quick]);
   function submit() { add(product, unit, Number(quantity)); }
   const controls = <div className={styles.selectionActions}>
     <Stepper quantity={quantity} setQuantity={setQuantity} />
@@ -95,15 +87,13 @@ function ProductSelection({ product, photos, quick, close, add, favorite, toggle
       <Icon name="/penjualan" />{quick ? 'Tambah' : 'Tambah ke Keranjang'}
     </button>
   </div>;
-  if (quick) return <dialog ref={dialog} className={styles.sheet} aria-labelledby="quick-product"
-    onCancel={(e) => { e.preventDefault(); close(); }} onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
-    <div className={styles.sheetContent}>
-      <header><Picture photo={photos[0]} name="" thumb className={styles.thumbnail} /><div><b id="quick-product">{product.name}</b>{product.packaging && <small>{product.packaging}</small>}</div>
-        <button type="button" aria-label="Tutup pilihan kemasan" onClick={close} autoFocus><Icon name="close" /></button></header>
+  if (quick) return <SmartDetailSheet title={product.name} subtitle={product.packaging} icon="/penjualan" onClose={close}>
+    <div className={styles.quickContent}>
+      {photos[0] && <Picture photo={photos[0]} name="" thumb className={styles.thumbnail} />}
       <UnitPicker product={product} unit={unit} onChange={setUnit} quoteOnly={quoteOnly} compact />
       {controls}
     </div>
-  </dialog>;
+  </SmartDetailSheet>;
   return <>
     <Bar title="Detail Produk" back={close}><button type="button" aria-label="Favorit" aria-pressed={favorite} className={favorite ? styles.favorited : ''} onClick={toggleFavorite}><Icon name="heart" /></button></Bar>
     <div className={styles.detail}>
